@@ -27,14 +27,17 @@
     "addons": {},
     "decorators": {},
     "seeds": {
-      "DevMinimal": {
-        "src": "src/seeds/DevMinimal"
-      },
       "nn": {
         "src": "src/seeds/nn"
       },
       "devTests": {
         "src": "src/seeds/devTests"
+      },
+      "devMinimal": {
+        "src": "src/seeds/devMinimal"
+      },
+      "devUtilTests": {
+        "src": "src/seeds/devUtilTests"
       }
     }
   },

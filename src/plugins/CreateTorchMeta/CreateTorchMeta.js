@@ -244,6 +244,9 @@ define([
 
         // Determine a default value
         initial = def.hasOwnProperty('default') ? def.default : def.min || null;
+        if (schema.type === 'boolean') {
+            initial = initial !== null ? initial : false;
+        }
         if (initial !== null) {  // optional attribute - set default value
             this.core.setAttribute(node, name, initial);
         }

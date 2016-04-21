@@ -69,7 +69,11 @@ describe('ImportTorch', function () {
                 checker = new GraphChecker({
                     core: core,
                     ignore: {
-                        attributes: ['calculateDimensionality', 'dimensionalityTransform']
+                        attributes: [
+                            'input',  // this could be inferred
+                            'calculateDimensionality',
+                            'dimensionalityTransform'
+                        ]
                     }
                 });
                 return project.createBranch('test', commitHash);

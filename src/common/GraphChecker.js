@@ -6,7 +6,7 @@ define([
 
     var Importer = function(opts) {
         opts = opts || {};
-        this._core = opts.core;
+        this._core = opts.core || opts;
 
         // Add attributes to ignore
         this._ignore = opts.ignore || {};

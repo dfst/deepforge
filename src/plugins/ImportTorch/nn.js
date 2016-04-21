@@ -67,8 +67,8 @@ define([
 
                 // TODO: Update this to check if inferred and the value matches
                 // our inferred value. If so, skip it
-                if (!this._attrs[i].infer) {
-                    core.setAttribute(node, name, (value === undefined ? null : value));
+                if (value !== undefined/*&& !this._attrs[i].infer*/) {
+                    core.setAttribute(node, name, value);
                 }
             }
 

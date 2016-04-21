@@ -72,7 +72,7 @@ define([
         code = [
             'require \'nn\'',
             '',
-            'model = nn.Sequential()'
+            'local net = nn.Sequential()'
         ].join('\n');
 
         // Start with sequential (just one input)
@@ -84,11 +84,13 @@ define([
             } else {
                 // args
                 args = this.createArgString(layers[i]);
-                template = _.template('model:add(nn.{{= name }}' + args + ')');
+                template = _.template('net:add(nn.{{= name }}' + args + ')');
                 snippet = template(layers[i]);
                 code += '\n' + snippet;
             }
         }
+
+        code += '\n\nreturn net';
 
         result[tree.name + '.lua'] = code;
         return result;

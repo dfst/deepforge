@@ -38,7 +38,7 @@ describe('utils', function () {
             })
             .then(function () {
                 var importParam = {
-                    projectSeed: path.join(SEED_DIR, 'devTests', 'devTests.zip'),
+                    projectSeed: path.join(SEED_DIR, 'devUtilTests', 'devUtilTests.zip'),
                     projectName: projectName,
                     branchName: 'master',
                     logger: logger,
@@ -109,9 +109,9 @@ describe('utils', function () {
 
     describe('matching architectures', function() {
         var cases = [
-            ['/8', 'concat-parallel'],
-            ['/6', 'concat-y'],
-            ['/U', 'concat-y-bad-conn']  // disconnected graph
+            ['/z', 'concat-parallel'],
+            ['/i', 'concat-y'],
+            ['/J', 'concat-y-bad-conn']  // disconnected graph
         ];
 
         cases.forEach(pair => it('should validate ' + pair[1],
@@ -120,10 +120,10 @@ describe('utils', function () {
 
     describe('mismatching architectures', function() {
         var cases = [
-            ['/U', 'concat-y'],
-            ['/6', 'concat-parallel'],
-            ['/8', 'concat-y'],
-            ['/F', 'concat-y']
+            ['/J', 'concat-y'],
+            ['/i', 'concat-parallel'],
+            ['/z', 'concat-y'],
+            ['/O', 'concat-y']
         ];
 
         cases.forEach(pair => it('should validate ' + pair[1],

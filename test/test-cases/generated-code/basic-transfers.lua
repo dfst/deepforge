@@ -1,14 +1,16 @@
 require 'nn'
 
-model = nn.Sequential()
-model:add(nn.Reshape(100))
-model:add(nn.Linear(100, 300))
-model:add(nn.RReLU())
-model:add(nn.Linear(300, 100))
-model:add(nn.ReLU())
-model:add(nn.Linear(100, 100))
-model:add(nn.Sigmoid())
-model:add(nn.Linear(100, 120))
-model:add(nn.LeakyReLU())
-model:add(nn.Linear(120, 5))
-model:add(nn.SoftMax())
+local net = nn.Sequential()
+net:add(nn.Reshape(100))
+net:add(nn.Linear(100, 300))
+net:add(nn.RReLU())
+net:add(nn.Linear(300, 100))
+net:add(nn.ReLU())
+net:add(nn.Linear(100, 100))
+net:add(nn.Sigmoid())
+net:add(nn.Linear(100, 120))
+net:add(nn.LeakyReLU())
+net:add(nn.Linear(120, 5))
+net:add(nn.SoftMax())
+
+return net

@@ -85,9 +85,9 @@ describe('GenerateArchitecture', function () {
 
     describe('test cases', function() {
         var cases = [
-            ['/F', 'basic.lua'],
-            ['/P', 'basic-transfers.lua'],
-            ['/O', 'overfeat.lua']
+            ['/4', 'basic.lua'],
+            ['/T', 'basic-transfers.lua'],
+            ['/W', 'overfeat.lua']
             // TODO: Add more tests
             // Need a concat test
             // TODO
@@ -105,7 +105,8 @@ describe('GenerateArchitecture', function () {
                     branchName: 'test',
                     activeNode: id,
                 },
-                expected = fs.readFileSync(path.join(TEST_CASE_DIR, name), 'utf8');
+                expected = fs.readFileSync(path.join(TEST_CASE_DIR, name), 'utf8')
+                    .replace(/\n$/, '');
 
             manager.executePlugin(pluginName, pluginConfig, context, function (err, pluginResult) {
                 var codeHash = pluginResult.artifacts[0];

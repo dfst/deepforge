@@ -12,9 +12,10 @@ config.plugin.basePaths.push('src/plugins');
 config.plugin.basePaths.push('node_modules/webgme-simple-nodes/src/plugins');
 config.visualization.layout.basePaths.push('node_modules/webgme-chflayout/src/layouts');
 config.visualization.decoratorPaths.push('node_modules/webgme-easydag/src/decorators');
-config.seedProjects.basePaths.push('src/seeds/DevMinimal');
 config.seedProjects.basePaths.push('src/seeds/nn');
 config.seedProjects.basePaths.push('src/seeds/devTests');
+config.seedProjects.basePaths.push('src/seeds/devMinimal');
+config.seedProjects.basePaths.push('src/seeds/devUtilTests');
 
 
 

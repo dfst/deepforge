@@ -96,7 +96,7 @@ ConvLayer:
         - strideWidth:
             min: 1
             default: 1
-        - strideWidth:
+        - strideHeight:
             min: 1
             default: 1
         - padWidth:
@@ -118,7 +118,7 @@ ConvLayer:
         - strideWidth:
             min: 1
             default: 1
-        - strideWidth:
+        - strideHeight:
             min: 1
             default: 1
 
@@ -132,7 +132,7 @@ ConvLayer:
         - strideWidth:
             min: 1
             default: 1
-        - strideWidth:
+        - strideHeight:
             min: 1
             default: 1
 
@@ -148,7 +148,7 @@ ConvLayer:
         - strideWidth:
             min: 1
             default: 1
-        - strideWidth:
+        - strideHeight:
             min: 1
             default: 1
 
@@ -160,7 +160,7 @@ ConvLayer:
         - strideWidth:
             min: 1
             default: 1
-        - strideWidth:
+        - strideHeight:
             min: 1
             default: 1
 
@@ -172,7 +172,7 @@ ConvLayer:
         - strideWidth:
             min: 1
             default: 1
-        - strideWidth:
+        - strideHeight:
             min: 1
             default: 1
 
@@ -192,7 +192,7 @@ ConvLayer:
         - strideWidth:
             min: 1
             default: 1
-        - strideWidth:
+        - strideHeight:
             min: 1
             default: 1
 
