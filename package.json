@@ -8,13 +8,13 @@
   "version": "1.0.0",
   "dependencies": {
     "lodash.difference": "^4.1.2",
-    "webgme": "^1.1.0",
+    "webgme": "^1.7.1",
     "webgme-autoviz": "dfst/webgme-autoviz",
     "webgme-breadcrumbheader": "dfst/webgme-breadcrumbheader",
     "webgme-chflayout": "^1.0.0",
-    "webgme-simple-nodes": "brollb/webgme-simple-nodes",
     "webgme-easydag": "dfst/webgme-easydag",
-    "webgme-fab": "dfst/webgme-fab"
+    "webgme-fab": "dfst/webgme-fab",
+    "webgme-simple-nodes": "brollb/webgme-simple-nodes"
   },
   "devDependencies": {
     "jszip": "^2.5.0",
