@@ -34,7 +34,7 @@ describe('GenerateArchitecture', function () {
             })
             .then(function () {
                 var importParam = {
-                    projectSeed: testFixture.path.join(SEED_DIR, 'devTests.zip'),
+                    projectSeed: testFixture.path.join(SEED_DIR, 'devTests.webgmex'),
                     projectName: projectName,
                     branchName: 'master',
                     logger: logger,
@@ -67,7 +67,7 @@ describe('GenerateArchitecture', function () {
                 project: project,
                 commitHash: commitHash,
                 branchName: 'test',
-                activeNode: '/960660211',
+                activeNode: '/4',
             };
 
         manager.executePlugin(pluginName, pluginConfig, context, function (err, pluginResult) {

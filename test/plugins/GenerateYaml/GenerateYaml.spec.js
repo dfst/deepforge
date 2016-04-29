@@ -31,7 +31,7 @@ describe('GenerateYaml', function () {
             })
             .then(function () {
                 var importParam = {
-                    projectSeed: testFixture.path.join(BASE_DIR, 'devTests', 'devTests.zip'),
+                    projectSeed: testFixture.path.join(BASE_DIR, 'devTests', 'devTests.webgmex'),
                     projectName: projectName,
                     branchName: 'master',
                     logger: logger,
@@ -65,7 +65,7 @@ describe('GenerateYaml', function () {
                 project: project,
                 commitHash: commitHash,
                 branchName: 'test',
-                activeNode: '/960660211',
+                activeNode: '/Y',
             };
 
         manager.executePlugin(pluginName, pluginConfig, context, function (err, pluginResult) {

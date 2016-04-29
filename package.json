@@ -8,7 +8,7 @@
   "version": "1.0.0",
   "dependencies": {
     "lodash.difference": "^4.1.2",
-    "webgme": "^1.7.1",
+    "webgme": "^1.7.2",
     "webgme-autoviz": "dfst/webgme-autoviz",
     "webgme-breadcrumbheader": "dfst/webgme-breadcrumbheader",
     "webgme-chflayout": "^1.0.0",

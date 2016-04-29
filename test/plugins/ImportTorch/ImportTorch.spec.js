@@ -52,7 +52,7 @@ describe('ImportTorch', function () {
             })
             .then(function () {
                 var importParam = {
-                    projectSeed: testFixture.path.join(BASE_DIR, 'devTests', 'devTests.zip'),
+                    projectSeed: testFixture.path.join(BASE_DIR, 'devTests', 'devTests.webgmex'),
                     projectName: projectName,
                     branchName: 'master',
                     logger: logger,

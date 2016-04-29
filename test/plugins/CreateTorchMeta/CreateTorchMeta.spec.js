@@ -31,7 +31,7 @@ describe('CreateTorchMeta', function () {
             })
             .then(function () {
                 var importParam = {
-                    projectSeed: testFixture.path.join(testFixture.SEED_DIR, 'devMinimal.zip'),
+                    projectSeed: testFixture.path.join(testFixture.SEED_DIR, 'devMinimal.webgmex'),
                     projectName: projectName,
                     branchName: 'master',
                     logger: logger,
