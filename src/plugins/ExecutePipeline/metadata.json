@@ -1,0 +1,31 @@
+{
+  "id": "ExecutePipeline",
+  "name": "ExecutePipeline",
+  "version": "0.1.0",
+  "description": "",
+  "icon": {
+    "class": "glyphicon glyphicon-cog",
+    "src": ""
+  },
+  "disableServerSideExecution": false,
+  "disableBrowserSideExecution": false,
+  "configStructure": [
+        {
+            "name": "debug",
+            "displayName": "Debug Mode",
+            "description": "Download all files for each operation",
+            "value": false,
+            "valueType": "boolean",
+            "readOnly": false
+        },
+        {
+            "name": "reset",
+            "displayName": "Reset",
+            "description": "Clear existing results",
+            "value": false,
+            "valueType": "boolean",
+            "readOnly": false
+        }
+  ]
+
+}

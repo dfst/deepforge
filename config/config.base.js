@@ -9,5 +9,7 @@ var config = require('./config.webgme'),
 config.requirejsPaths.deepforge = './src/common';
 config.seedProjects.defaultProject = 'nn';
 
+config.executor.enable = true;
+
 validateConfig(config);
 module.exports = config;

@@ -3,6 +3,7 @@
   "scripts": {
     "start": "node app.js",
     "start-dev": "NODE_ENV=dev node app.js",
+    "worker": "node ./bin/start-worker.js",
     "test": "node ./node_modules/mocha/bin/mocha --recursive test"
   },
   "version": "0.1.0",

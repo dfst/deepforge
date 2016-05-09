@@ -56,6 +56,7 @@ define([
 
     GenerateArchitecture.prototype.main = function () {
         this.LayerDict = createLayerDict(this.core, this.META);
+        this._oldTemplateSettings = _.templateSettings;
         return PluginBase.prototype.main.apply(this, arguments);
     };
 
@@ -91,6 +92,7 @@ define([
         code += '\n\nreturn net';
 
         result[tree.name + '.lua'] = code;
+        _.templateSettings = this._oldTemplateSettings;  // FIXME: Fix this in SimpleNodes
         return result;
     };
 

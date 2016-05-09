@@ -1,0 +1,12 @@
+-- run the <%= name %> and serialize the results
+<%= outputs.map(p => p[0])[0] %> = require './main'
+print('<%= name %> operation complete!')
+
+-- serialize by type
+outputs = require './outputs'
+<% outputs.forEach(pair => { 
+    var name = pair[0],
+        type = pair[1];
+%>
+outputs.<%= type %>('<%= name %>', <%= name %>)
+<% }); %>

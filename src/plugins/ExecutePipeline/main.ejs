@@ -1,0 +1,12 @@
+-- input data
+<% inputs.forEach(function(pair) { var input = pair[0]%>
+<%= input %> = require './inputs/<%= input %>'
+<% }); %>
+
+-- load references
+<% pointers.forEach(function(pointer) { %><%= pointer %> = require './pointers/<%= pointer %>'
+<% }); %>
+attributes = require './attributes'
+
+-- main operation code for <%= name %>
+<%= code %>

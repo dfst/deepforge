@@ -20,6 +20,10 @@
       "ImportYaml": {
         "src": "src/plugins/ImportYaml",
         "test": "test/plugins/ImportYaml"
+      },
+      "ExecutePipeline": {
+        "src": "src/plugins/ExecutePipeline",
+        "test": "test/plugins/ExecutePipeline"
       }
     },
     "layouts": {},
@@ -38,6 +42,12 @@
       },
       "devUtilTests": {
         "src": "src/seeds/devUtilTests"
+      },
+      "pipeline": {
+        "src": "src/seeds/pipeline"
+      },
+      "devPipelineTests": {
+        "src": "src/seeds/devPipelineTests"
       }
     }
   },
