@@ -1,0 +1,22 @@
+{
+  "id": "ImportTorch",
+  "name": "Import Torch architecture",
+  "version": "0.1.0",
+  "description": "Import a Torch nn architecture.",
+  "icon": {
+    "src": "",
+    "class": "glyphicon glyphicon-ok-circle"
+  },
+  "disableServerSideExecution": false,
+  "disableBrowserSideExecution": false,
+  "configStructure": [
+        {
+            "name": "srcHash",
+            "displayName": "Torch Source Code",
+            "description": "",
+            "value": "",
+            "valueType": "asset",
+            "readOnly": false
+        }
+    ]
+}

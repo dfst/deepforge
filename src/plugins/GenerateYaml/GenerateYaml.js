@@ -7,10 +7,12 @@
 
 define([
     'deepforge/GraphChecker',
-    'plugin/PluginBase'
+    'plugin/PluginBase',
+    'text!./metadata.json'
 ], function (
     GraphChecker,
-    PluginBase
+    PluginBase,
+    metadata
 ) {
     'use strict';
 
@@ -24,29 +26,14 @@ define([
     var GenerateYaml = function () {
         // Call base class' constructor.
         PluginBase.call(this);
+        this.pluginMetadata = GenerateYaml.metadata;
     };
+
+    GenerateYaml.metadata = JSON.parse(metadata);
 
     // Prototypal inheritance from PluginBase.
     GenerateYaml.prototype = Object.create(PluginBase.prototype);
     GenerateYaml.prototype.constructor = GenerateYaml;
-
-    /**
-     * Gets the name of the GenerateYaml.
-     * @returns {string} The name of the plugin.
-     * @public
-     */
-    GenerateYaml.prototype.getName = function () {
-        return 'GenerateYaml';
-    };
-
-    /**
-     * Gets the semantic version (semver.org) of the GenerateYaml.
-     * @returns {string} The version of the plugin.
-     * @public
-     */
-    GenerateYaml.prototype.getVersion = function () {
-        return '0.1.0';
-    };
 
     /**
      * Main function for the plugin to execute. This will perform the execution.

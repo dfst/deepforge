@@ -1,0 +1,22 @@
+{
+  "id": "CreateTorchMeta",
+  "name": "Create Torch Meta",
+  "version": "0.1.0",
+  "description": "Create metamodel from Torch yaml",
+  "icon": {
+    "src": "",
+    "class": "glyphicon glyphicon-ok-circle"
+  },
+  "disableServerSideExecution": false,
+  "disableBrowserSideExecution": false,
+  "configStructure": [
+      {
+          "name": "layerNameHash",
+          "displayName": "Torch Layers",
+          "description": "Yaml file of torch layer descriptors (optional)",
+          "value": "",
+          "valueType": "asset",
+          "readOnly": false
+      }
+  ]
+}

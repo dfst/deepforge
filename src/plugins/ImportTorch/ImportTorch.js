@@ -9,12 +9,14 @@ define([
     'deepforge/layer-args',
     'deepforge/lua',
     './nn',
-    'plugin/PluginBase'
+    'plugin/PluginBase',
+    'text!./metadata.json'
 ], function (
     LayerDict,
     luajs,
     createNNSearcher,
-    PluginBase
+    PluginBase,
+    metadata
 ) {
     'use strict';
 
@@ -28,50 +30,14 @@ define([
     var ImportTorch = function () {
         // Call base class' constructor.
         PluginBase.call(this);
+        this.pluginMetadata = ImportTorch.metadata;
     };
+
+    ImportTorch.metadata = JSON.parse(metadata);
 
     // Prototypal inheritance from PluginBase.
     ImportTorch.prototype = Object.create(PluginBase.prototype);
     ImportTorch.prototype.constructor = ImportTorch;
-
-    /**
-     * Gets the name of the ImportTorch.
-     * @returns {string} The name of the plugin.
-     * @public
-     */
-    ImportTorch.prototype.getName = function () {
-        return 'ImportTorch';
-    };
-
-    /**
-     * Gets the semantic version (semver.org) of the ImportTorch.
-     * @returns {string} The version of the plugin.
-     * @public
-     */
-    ImportTorch.prototype.getVersion = function () {
-        return '0.1.0';
-    };
-
-    /**
-     * Gets the configuration structure for the ImportTorch.
-     * The ConfigurationStructure defines the configuration for the plugin
-     * and will be used to populate the GUI when invoking the plugin from webGME.
-     * @returns {object} The version of the plugin.
-     * @public
-     */
-    ImportTorch.prototype.getConfigStructure = function () {
-        return [
-            {
-                name: 'srcHash',
-                displayName: 'Torch Source Code',
-                description: '',
-                value: '',
-                valueType: 'asset',
-                readOnly: false
-            }
-        ];
-    };
-
 
     /**
      * Main function for the plugin to execute. This will perform the execution.

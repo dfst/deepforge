@@ -35,5 +35,5 @@ testFixture.requirejs.config({
 });
 testFixture.getGmeConfig = getGmeConfig;
 
-testFixture.SEED_DIR = testFixture.path.join(__dirname, '..', 'src', 'seeds', 'devMinimal');
+testFixture.DF_SEED_DIR = testFixture.path.join(__dirname, '..', 'src', 'seeds');
 module.exports = testFixture;

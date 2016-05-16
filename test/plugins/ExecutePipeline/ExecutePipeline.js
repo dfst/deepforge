@@ -6,7 +6,7 @@
 'use strict';
 var testFixture = require('../../globals'),
     path = testFixture.path,
-    SEED_DIR = path.join(testFixture.SEED_DIR, '..', 'devPipelineTests');
+    SEED_DIR = path.join(testFixture.DF_SEED_DIR, 'devPipelineTests');
 
 describe('ExecutePipeline', function () {
     var gmeConfig = testFixture.getGmeConfig(),
@@ -64,6 +64,7 @@ describe('ExecutePipeline', function () {
             context = {
                 project: project,
                 commitHash: commitHash,
+                namespace: 'pipeline',
                 branchName: 'test',
                 activeNode: '/s',
             };

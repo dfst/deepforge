@@ -9,12 +9,14 @@ define([
     'plugin/PluginConfig',
     'plugin/PluginBase',
     'deepforge/js-yaml.min',
-    'text!deepforge/layers.yml'
+    'text!deepforge/layers.yml',
+    'text!./metadata.json'
 ], function (
     PluginConfig,
     PluginBase,
     yaml,
-    DEFAULT_LAYERS
+    DEFAULT_LAYERS,
+    metadata
 ) {
     'use strict';
 
@@ -28,50 +30,14 @@ define([
     var CreateTorchMeta = function () {
         // Call base class' constructor.
         PluginBase.call(this);
+        this.pluginMetadata = CreateTorchMeta.metadata;
     };
+
+    CreateTorchMeta.metadata = JSON.parse(metadata);
 
     // Prototypal inheritance from PluginBase.
     CreateTorchMeta.prototype = Object.create(PluginBase.prototype);
     CreateTorchMeta.prototype.constructor = CreateTorchMeta;
-
-    /**
-     * Gets the name of the CreateTorchMeta.
-     * @returns {string} The name of the plugin.
-     * @public
-     */
-    CreateTorchMeta.prototype.getName = function () {
-        return 'CreateTorchMeta';
-    };
-
-    /**
-     * Gets the semantic version (semver.org) of the CreateTorchMeta.
-     * @returns {string} The version of the plugin.
-     * @public
-     */
-    CreateTorchMeta.prototype.getVersion = function () {
-        return '0.1.0';
-    };
-
-    /**
-     * Gets the configuration structure for the CreateTorchMeta.
-     * The ConfigurationStructure defines the configuration for the plugin
-     * and will be used to populate the GUI when invoking the plugin from webGME.
-     * @returns {object} The version of the plugin.
-     * @public
-     */
-    CreateTorchMeta.prototype.getConfigStructure = function () {
-        return [
-            {
-                name: 'layerNameHash',
-                displayName: 'Torch Layers',
-                description: 'Yaml file of torch layer descriptors (optional)',
-                value: '',
-                valueType: 'asset',
-                readOnly: false
-            }
-        ];
-    };
-
 
     /**
      * Main function for the plugin to execute. This will perform the execution.

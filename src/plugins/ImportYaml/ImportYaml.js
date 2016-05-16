@@ -7,10 +7,12 @@
 
 define([
     'deepforge/GraphChecker',
-    'plugin/PluginBase'
+    'plugin/PluginBase',
+    'text!./metadata.json'
 ], function (
     GraphChecker,
-    PluginBase
+    PluginBase,
+    metadata
 ) {
     'use strict';
 
@@ -24,65 +26,13 @@ define([
     var ImportYaml = function () {
         // Call base class' constructor.
         PluginBase.call(this);
+        this.pluginMetadata = ImportYaml.metadata;
     };
 
+    ImportYaml.metadata = JSON.parse(metadata);
     // Prototypal inheritance from PluginBase.
     ImportYaml.prototype = Object.create(PluginBase.prototype);
     ImportYaml.prototype.constructor = ImportYaml;
-
-    /**
-     * Gets the name of the ImportYaml.
-     * @returns {string} The name of the plugin.
-     * @public
-     */
-    ImportYaml.prototype.getName = function () {
-        return 'ImportYaml';
-    };
-
-    /**
-     * Gets the semantic version (semver.org) of the ImportYaml.
-     * @returns {string} The version of the plugin.
-     * @public
-     */
-    ImportYaml.prototype.getVersion = function () {
-        return '0.1.0';
-    };
-
-    /**
-     * Gets the configuration structure for the ImportYaml.
-     * The ConfigurationStructure defines the configuration for the plugin
-     * and will be used to populate the GUI when invoking the plugin from webGME.
-     * @returns {object} The version of the plugin.
-     * @public
-     */
-    ImportYaml.prototype.getConfigStructure = function () {
-        return [
-            {
-                name: 'srcHash',
-                displayName: 'yaml nodes',
-                description: '',
-                value: '',
-                valueType: 'asset',
-                readOnly: false
-            },
-            {
-                name: 'baseType',
-                displayName: 'Base type of model container',
-                description: '',
-                value: '',
-                valueType: 'string',
-                readOnly: false
-            },
-            {
-                name: 'connType',
-                displayName: 'Base type of connections to use',
-                description: '',
-                value: '',
-                valueType: 'string',
-                readOnly: false
-            }
-        ];
-    };
 
     /**
      * Main function for the plugin to execute. This will perform the execution.

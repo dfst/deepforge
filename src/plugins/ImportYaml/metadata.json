@@ -1,0 +1,38 @@
+{
+  "id": "ImportYaml",
+  "name": "Import Yaml architecture",
+  "version": "0.1.0",
+  "description": "Import a Yaml model.",
+  "icon": {
+    "src": "",
+    "class": "glyphicon glyphicon-ok-circle"
+  },
+  "disableServerSideExecution": false,
+  "disableBrowserSideExecution": false,
+  "configStructure": [
+      {
+          "name": "srcHash",
+          "displayName": "yaml nodes",
+          "description": "",
+          "value": "",
+          "valueType": "asset",
+          "readOnly": false
+      },
+      {
+          "name": "baseType",
+          "displayName": "Base type of model container",
+          "description": "",
+          "value": "",
+          "valueType": "string",
+          "readOnly": false
+      },
+      {
+          "name": "connType",
+          "displayName": "Base type of connections to use",
+          "description": "",
+          "value": "",
+          "valueType": "string",
+          "readOnly": false
+      }
+  ]
+}

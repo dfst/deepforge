@@ -6,7 +6,7 @@
 'use strict';
 var testFixture = require('../../globals'),
     path = testFixture.path,
-    BASE_DIR = path.join(testFixture.SEED_DIR, '..');
+    BASE_DIR = testFixture.DF_SEED_DIR;
 
 describe('GenerateYaml', function () {
     var gmeConfig = testFixture.getGmeConfig(),

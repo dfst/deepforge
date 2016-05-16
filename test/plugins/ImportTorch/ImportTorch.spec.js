@@ -7,7 +7,7 @@
 var testFixture = require('../../globals'),
     path = testFixture.path,
     fs = require('fs'),
-    BASE_DIR = path.join(testFixture.SEED_DIR, '..'),
+    BASE_DIR = testFixture.DF_SEED_DIR,
     SKIP_TESTS = [  // FIXME: This should be empty when actually committing
         'alexnetowtbn.lua',
         'alexnet.lua',
@@ -98,6 +98,7 @@ describe('ImportTorch', function () {
             },
             context = {
                 project: project,
+                namespace: 'nn',
                 commitHash: commitHash,
                 branchName: 'test',
                 activeNode: '',
@@ -115,6 +116,7 @@ describe('ImportTorch', function () {
         var manager = new PluginCliManager(null, logger, gmeConfig),
             pluginConfig = {},
             context = {
+                namespace: 'nn',
                 project: project,
                 branchName: 'test',
                 activeNode: '',

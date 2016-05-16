@@ -9,7 +9,7 @@ var testFixture = require('../../globals'),
     jszip = require('jszip'),
     fs = require('fs'),
     TEST_CASE_DIR = path.join(__dirname, '..', '..', 'test-cases', 'generated-code'),
-    SEED_DIR = path.join(testFixture.SEED_DIR, '..', 'devTests');
+    SEED_DIR = path.join(testFixture.DF_SEED_DIR, 'devTests');
 
 describe('GenerateArchitecture', function () {
     var gmeConfig = testFixture.getGmeConfig(),
@@ -34,7 +34,7 @@ describe('GenerateArchitecture', function () {
             })
             .then(function () {
                 var importParam = {
-                    projectSeed: testFixture.path.join(SEED_DIR, 'devTests.webgmex'),
+                    projectSeed: path.join(SEED_DIR, 'devTests.webgmex'),
                     projectName: projectName,
                     branchName: 'master',
                     logger: logger,
@@ -65,6 +65,7 @@ describe('GenerateArchitecture', function () {
             },
             context = {
                 project: project,
+                namespace: 'nn',
                 commitHash: commitHash,
                 branchName: 'test',
                 activeNode: '/4',
@@ -101,6 +102,7 @@ describe('GenerateArchitecture', function () {
                 },
                 context = {
                     project: project,
+                    namespace: 'nn',
                     commitHash: commitHash,
                     branchName: 'test',
                     activeNode: id,

@@ -7,7 +7,7 @@
 var testFixture = require('../globals'),
     path = testFixture.path,
     assert = require('assert'),
-    SEED_DIR = path.join(testFixture.SEED_DIR, '..'),
+    SEED_DIR = testFixture.DF_SEED_DIR,
     fs = require('fs');
 
 describe('utils', function () {

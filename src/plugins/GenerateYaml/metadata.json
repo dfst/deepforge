@@ -1,0 +1,13 @@
+{
+  "id": "GenerateYaml",
+  "name": "Generate Yaml",
+  "version": "0.1.0",
+  "description": "Generate yaml representation of the model",
+  "icon": {
+    "src": "",
+    "class": "glyphicon glyphicon-ok-circle"
+  },
+  "disableServerSideExecution": false,
+  "disableBrowserSideExecution": false,
+  "configStructure": []
+}

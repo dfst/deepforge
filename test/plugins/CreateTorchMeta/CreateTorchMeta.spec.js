@@ -5,6 +5,7 @@
 
 'use strict';
 var testFixture = require('../../globals'),
+    SEED_DIR = testFixture.path.join(testFixture.DF_SEED_DIR, 'devMinimal'),
     assert = require('assert');
 
 describe('CreateTorchMeta', function () {
@@ -31,7 +32,7 @@ describe('CreateTorchMeta', function () {
             })
             .then(function () {
                 var importParam = {
-                    projectSeed: testFixture.path.join(testFixture.SEED_DIR, 'devMinimal.webgmex'),
+                    projectSeed: testFixture.path.join(SEED_DIR, 'devMinimal.webgmex'),
                     projectName: projectName,
                     branchName: 'master',
                     logger: logger,

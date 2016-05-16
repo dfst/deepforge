@@ -10,13 +10,15 @@ define([
     'SimpleNodes/Constants',
     'deepforge/layer-args',
     './dimensionality',
-    'underscore'
+    'underscore',
+    'text!./metadata.json'
 ], function (
     PluginBase,
     Constants,
     createLayerDict,
     dimensionality,
-    _
+    _,
+    metadata
 ) {
     'use strict';
 
@@ -30,29 +32,14 @@ define([
     var GenerateArchitecture = function () {
         // Call base class' constructor.
         PluginBase.call(this);
+        this.pluginMetadata = GenerateArchitecture.metadata;
     };
+
+    GenerateArchitecture.metadata = JSON.parse(metadata);
 
     // Prototypal inheritance from PluginBase.
     GenerateArchitecture.prototype = Object.create(PluginBase.prototype);
     GenerateArchitecture.prototype.constructor = GenerateArchitecture;
-
-    /**
-     * Gets the name of the GenerateArchitecture.
-     * @returns {string} The name of the plugin.
-     * @public
-     */
-    GenerateArchitecture.prototype.getName = function () {
-        return 'GenerateArchitecture';
-    };
-
-    /**
-     * Gets the semantic version (semver.org) of the GenerateArchitecture.
-     * @returns {string} The version of the plugin.
-     * @public
-     */
-    GenerateArchitecture.prototype.getVersion = function () {
-        return '0.1.0';
-    };
 
     GenerateArchitecture.prototype.main = function () {
         this.LayerDict = createLayerDict(this.core, this.META);
