@@ -27,7 +27,15 @@
       }
     },
     "layouts": {},
-    "visualizers": {},
+    "visualizers": {
+      "ArchEditor": {
+        "src": "panels/ArchEditor/ArchEditorPanel",
+        "title": "ArchEditor",
+        "panel": "src/visualizers/panels/ArchEditor",
+        "secondary": false,
+        "widget": "src/visualizers/widgets/ArchEditor"
+      }
+    },
     "addons": {},
     "decorators": {},
     "seeds": {

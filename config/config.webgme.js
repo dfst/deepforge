@@ -25,6 +25,7 @@ config.visualization.panelPaths.push('node_modules/webgme-fab/src/visualizers/pa
 config.visualization.panelPaths.push('node_modules/webgme-breadcrumbheader/src/visualizers/panels');
 config.visualization.panelPaths.push('node_modules/webgme-autoviz/src/visualizers/panels');
 config.visualization.panelPaths.push('node_modules/webgme-easydag/src/visualizers/panels');
+config.visualization.panelPaths.push('src/visualizers/panels');
 
 
 // Visualizer descriptors
