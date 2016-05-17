@@ -18,6 +18,7 @@ config.seedProjects.basePaths.push('src/seeds/devMinimal');
 config.seedProjects.basePaths.push('src/seeds/devUtilTests');
 config.seedProjects.basePaths.push('src/seeds/pipeline');
 config.seedProjects.basePaths.push('src/seeds/devPipelineTests');
+config.seedProjects.basePaths.push('src/seeds/demo');
 
 
 

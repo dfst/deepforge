@@ -56,6 +56,9 @@
       },
       "devPipelineTests": {
         "src": "src/seeds/devPipelineTests"
+      },
+      "demo": {
+        "src": "src/seeds/demo"
       }
     }
   },
