@@ -94,7 +94,7 @@ define([
                 var name = mdata.name.replace('.lua', '');
                 this.tgtNode = this.core.createNode({
                     base: this.META.Architecture,
-                    parent: this.rootNode
+                    parent: this.activeNode
                 });
                 this.core.setAttribute(this.tgtNode, 'name', name);
                 return this.blobClient.getObjectAsString(srcHash);
