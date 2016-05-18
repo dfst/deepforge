@@ -16,5 +16,17 @@
     "title": "ArchEditor",
     "panel": "panels/ArchEditor/ArchEditorPanel",
     "DEBUG_ONLY": false
+  },
+  {
+    "id": "TextEditor",
+    "title": "TextEditor",
+    "panel": "panels/TextEditor/TextEditorPanel",
+    "DEBUG_ONLY": false
+  },
+  {
+    "id": "OperationEditor",
+    "title": "OperationEditor",
+    "panel": "panels/OperationEditor/OperationEditorPanel",
+    "DEBUG_ONLY": false
   }
 ]

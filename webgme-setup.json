@@ -34,6 +34,20 @@
         "panel": "src/visualizers/panels/ArchEditor",
         "secondary": false,
         "widget": "src/visualizers/widgets/ArchEditor"
+      },
+      "TextEditor": {
+        "src": "panels/TextEditor/TextEditorPanel",
+        "title": "TextEditor",
+        "panel": "src/visualizers/panels/TextEditor",
+        "secondary": false,
+        "widget": "src/visualizers/widgets/TextEditor"
+      },
+      "OperationEditor": {
+        "src": "panels/OperationEditor/OperationEditorPanel",
+        "title": "OperationEditor",
+        "panel": "src/visualizers/panels/OperationEditor",
+        "secondary": false,
+        "widget": "src/visualizers/widgets/OperationEditor"
       }
     },
     "addons": {},
