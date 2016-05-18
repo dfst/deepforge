@@ -19,17 +19,21 @@ define([
 
     var ArchEditorWidget,
         WIDGET_CLASS = 'arch-editor',
-        COLORS = [
-            '#ffb74d',
-            '#ba68c8',
-            '#7e57c2',
-            '#ff9100',
-            '#2196f3',
-            '#80deea'
-        ];
+        DEFAULT_COLOR = '#ffb74d',
+        LAYER_COLORS = {
+            Containers: '#ffb74d',
+            Module: '#ba68c8',
+            ConvLayer: '#2196f3',
+            SimpleLayer: '#ff9100',
+            TransferLayer: '#80deea',
+            MiscLayers: '#ce93d8',
+            Criterion: '#7e57c2'
+        };
 
     ArchEditorWidget = function (logger, container) {
         EasyDAGWidget.call(this, logger, container);
+        this.LAYER_COLORS = _.extend(LAYER_COLORS, this._config.LayerColors);
+        this.DEFAULT_COLOR = this._config.DefaultColor || DEFAULT_COLOR;
     };
 
     _.extend(ArchEditorWidget.prototype, EasyDAGWidget.prototype);
@@ -46,9 +50,13 @@ define([
     };
 
     ArchEditorWidget.prototype.getColor = function(desc) {
-        // Dumb assignment for now
-        var index = Math.floor(Math.random()*COLORS.length);
-        return COLORS[index];
+        // Assign by the layerType
+        var color = this.LAYER_COLORS[desc.layerType];
+        if (!color) {
+            this._logger.warn(`No color found for ${desc.layerType}`);
+            color = this.DEFAULT_COLOR;
+        }
+        return color;
     };
 
     return ArchEditorWidget;

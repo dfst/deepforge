@@ -1,6 +1,7 @@
 {
     "ArchEditor": {
-        "hotkeys": "none"
+        "hotkeys": "none",
+	"LayerColors": {}
     },
     "CHFLayout": {
         "panels": [

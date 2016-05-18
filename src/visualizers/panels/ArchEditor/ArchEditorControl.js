@@ -6,9 +6,11 @@
 
 define([
     'panels/EasyDAG/EasyDAGControl',
+    'js/NodePropertyNames',
     'underscore'
 ], function (
     EasyDAGControl,
+    nodePropertyNames,
     _
 ) {
 
@@ -38,6 +40,18 @@ define([
                     desc.attributes[names[i]] = allAttrs[names[i]];
                 }
             }
+
+            // Add layer type (base class's base class)
+	    desc.layerType = null;
+	    if (desc.baseName) {
+	        var node = this._client.getNode(id),
+	            base = this._client.getNode(node.getMetaTypeId()),
+	            layerType = this._client.getNode(base.getBaseId());
+    
+	        if (layerType) {
+	            desc.layerType = layerType.getAttribute(nodePropertyNames.Attributes.name);
+	        }
+	    }
         }
         return desc;
     };
