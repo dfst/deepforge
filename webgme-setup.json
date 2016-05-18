@@ -53,7 +53,7 @@
         "src": "panels/ForgeActionButton/ForgeActionButtonPanel",
         "title": "ForgeActionButton",
         "panel": "src/visualizers/panels/ForgeActionButton",
-        "secondary": false,
+        "secondary": true,
         "widget": "src/visualizers/widgets/ForgeActionButton"
       }
     },
