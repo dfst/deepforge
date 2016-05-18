@@ -48,6 +48,13 @@
         "panel": "src/visualizers/panels/OperationEditor",
         "secondary": false,
         "widget": "src/visualizers/widgets/OperationEditor"
+      },
+      "ForgeActionButton": {
+        "src": "panels/ForgeActionButton/ForgeActionButtonPanel",
+        "title": "ForgeActionButton",
+        "panel": "src/visualizers/panels/ForgeActionButton",
+        "secondary": false,
+        "widget": "src/visualizers/widgets/ForgeActionButton"
       }
     },
     "addons": {},

@@ -28,5 +28,11 @@
     "title": "OperationEditor",
     "panel": "panels/OperationEditor/OperationEditorPanel",
     "DEBUG_ONLY": false
+  },
+  {
+    "id": "ForgeActionButton",
+    "title": "ForgeActionButton",
+    "panel": "panels/ForgeActionButton/ForgeActionButtonPanel",
+    "DEBUG_ONLY": false
   }
 ]

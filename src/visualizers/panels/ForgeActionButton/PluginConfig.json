@@ -1,0 +1,14 @@
+{
+    "GenerateArchitecture": {
+        "icon": "description",
+        "priority": -1
+    },
+    "ExecutePipeline": {
+        "icon": "play_arrow",
+        "priority": 1
+    },
+    "ImportTorch": {
+        "icon": "import_export",
+        "priority": -1
+    }
+}
