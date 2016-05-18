@@ -18684,4 +18684,8 @@ exports.version = "1.2.3";
                         window.ace[key] = a[key];
                 });
             })();
-        
+
+// Added this so I can use ace normally
+define(['ace/ace'], function(a) {
+	return a;
+});

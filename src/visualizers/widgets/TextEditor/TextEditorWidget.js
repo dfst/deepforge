@@ -9,7 +9,7 @@ define([
     './lib/ace',
     'css!./styles/TextEditorWidget.css'
 ], function (
-    Ace
+    ace
 ) {
     'use strict';
 
