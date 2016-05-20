@@ -55,10 +55,21 @@
         "panel": "src/visualizers/panels/ForgeActionButton",
         "secondary": true,
         "widget": "src/visualizers/widgets/ForgeActionButton"
+      },
+      "PipelineEditor": {
+        "src": "panels/PipelineEditor/PipelineEditorPanel",
+        "title": "PipelineEditor",
+        "panel": "src/visualizers/panels/PipelineEditor",
+        "secondary": false,
+        "widget": "src/visualizers/widgets/PipelineEditor"
       }
     },
     "addons": {},
-    "decorators": {},
+    "decorators": {
+      "OperationDecorator": {
+        "src": "src/decorators/OperationDecorator"
+      }
+    },
     "seeds": {
       "nn": {
         "src": "src/seeds/nn"

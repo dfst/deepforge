@@ -28,5 +28,11 @@
     "title": "OperationEditor",
     "panel": "panels/OperationEditor/OperationEditorPanel",
     "DEBUG_ONLY": false
+  },
+  {
+    "id": "PipelineEditor",
+    "title": "PipelineEditor",
+    "panel": "panels/PipelineEditor/PipelineEditorPanel",
+    "DEBUG_ONLY": false
   }
 ]

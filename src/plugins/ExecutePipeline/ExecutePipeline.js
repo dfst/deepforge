@@ -512,6 +512,7 @@ define([
                     //     - Set the activeNode to the given referenced node
                     //     - If the activeNode is namespaced, set META to the given namespace
                     //
+                    // FIXXME: Update this to the webgme 2.x method name
                     WebGMEGlobal.InterpreterManager.run(pluginName, config, result => {
                         if (!result.success) {
                             return callback(result.getError());
