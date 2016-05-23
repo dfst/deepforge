@@ -24,6 +24,10 @@
       "ExecutePipeline": {
         "src": "src/plugins/ExecutePipeline",
         "test": "test/plugins/ExecutePipeline"
+      },
+      "CreateExecution": {
+        "src": "src/plugins/CreateExecution",
+        "test": "test/plugins/CreateExecution"
       }
     },
     "layouts": {},
