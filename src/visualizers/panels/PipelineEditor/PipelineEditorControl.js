@@ -24,6 +24,7 @@ define([
 
     PipelineEditorControl = function (options) {
         EasyDAGControl.call(this, options);
+        this.addedIds = {};
     };
 
     _.extend(PipelineEditorControl.prototype, EasyDAGControl.prototype);
@@ -31,6 +32,64 @@ define([
     // TODO: Update the territory rules!
     PipelineEditorControl.prototype.DEFAULT_DECORATOR = 'OperationDecorator';
     PipelineEditorControl.prototype.TERRITORY_RULE = {children: 3};
+    PipelineEditorControl.prototype.selectedObjectChanged = function (nodeId) {
+        var desc = this._getObjectDescriptor(nodeId);
+
+        this._logger.debug('activeObject nodeId \'' + nodeId + '\'');
+
+        // Remove current territory patterns
+        if (this._currentNodeId) {
+            this._client.removeUI(this._territoryId);
+        }
+
+        this._currentNodeId = nodeId;
+        this._currentNodeParentId = undefined;
+
+        if (typeof this._currentNodeId === 'string') {
+            this._widget.setTitle(desc.name.toUpperCase());
+
+            if (typeof desc.parentId === 'string') {
+                this.$btnModelHierarchyUp.show();
+            } else {
+                this.$btnModelHierarchyUp.hide();
+            }
+
+            this._currentNodeParentId = desc.parentId;
+
+            // Put new node's info into territory rules
+            this.updateTerritory();
+        }
+    };
+
+    PipelineEditorControl.prototype.updateTerritory = function() {
+        var nodeId = this._currentNodeId;
+
+        // activeNode rules
+        this._territories = {};
+
+        this._territoryId = this._client.addUI(this, events => {
+            this._eventCallback(events);
+        });
+
+        this._territories[nodeId] = {children: 0};  // Territory "rule"
+        this._client.updateTerritory(this._territoryId, this._territories);
+
+        this._territories[nodeId] = this.TERRITORY_RULE;
+
+        // Add the operation definitions to the territory
+        var metanodes = this._client.getAllMetaNodes(),
+            operation = metanodes.find(n => n.getAttribute('name') === 'Operation'),
+            operations;
+
+        // Get all the meta nodes that are instances of Operations
+        metanodes.map(n => n.getId())
+            .filter(nId => this._client.isTypeOf(nId, operation.getId()))
+            // Add a rule for them
+            .forEach(opId => this._territories[opId] = this.TERRITORY_RULE);
+
+        this._client.updateTerritory(this._territoryId, this._territories);
+    };
+
     PipelineEditorControl.prototype.hasMetaName = function(id, name) {
         var node = this._client.getNode(id),
             bId = node.getBaseId(),
@@ -131,20 +190,36 @@ define([
         return n && n.getId();
     };
 
+    PipelineEditorControl.prototype.isContainedInActive = function (gmeId) {
+        // Check if the given id is contained in the active node
+        return gmeId.indexOf(this._currentNodeId) === 0;
+    };
+
     ////////////////////// Node Load/Update/Unload Overrides //////////////////////
     // Filter out the child nodes (bc of the larger territory)
     PipelineEditorControl.prototype._onLoad = function (gmeId) {
         var desc = this._getObjectDescriptor(gmeId);
         if (desc.parentId === this._currentNodeId) {
+            this.addedIds[desc.id] = true;
             return EasyDAGControl.prototype._onLoad.call(this, gmeId);
-        } else if (desc.isDataPort) {  // port added!
+        } else if (this.isContainedInActive(desc.parentId) && desc.isDataPort) {
+            // port added!
+            this.addedIds[desc.id] = true;
             this._widget.addPort(desc);
+        }
+    };
+
+    PipelineEditorControl.prototype._onUnload = function (gmeId) {
+        // Check if it has been added
+        if(this.addedIds[gmeId]) {
+            delete this.addedIds[gmeId];
+            return EasyDAGControl.prototype._onUnload.call(this, gmeId);
         }
     };
 
     PipelineEditorControl.prototype._onUpdate = function (gmeId) {
         var desc = this._getObjectDescriptor(gmeId);
-        if (desc.isDataPort) {  // port added!
+        if (desc.isDataPort && this.isContainedInActive(desc.parentId)) {  // port added!
             this._widget.updatePort(desc);
         } else if (desc.isConnection) {
             this._widget.updateConnection(desc);
