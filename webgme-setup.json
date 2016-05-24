@@ -62,6 +62,13 @@
         "panel": "src/visualizers/panels/PipelineEditor",
         "secondary": false,
         "widget": "src/visualizers/widgets/PipelineEditor"
+      },
+      "ExecutionView": {
+        "src": "panels/ExecutionView/ExecutionViewPanel",
+        "title": "ExecutionView",
+        "panel": "src/visualizers/panels/ExecutionView",
+        "secondary": false,
+        "widget": "src/visualizers/widgets/ExecutionView"
       }
     },
     "addons": {},

@@ -34,5 +34,11 @@
     "title": "PipelineEditor",
     "panel": "panels/PipelineEditor/PipelineEditorPanel",
     "DEBUG_ONLY": false
+  },
+  {
+    "id": "ExecutionView",
+    "title": "ExecutionView",
+    "panel": "panels/ExecutionView/ExecutionViewPanel",
+    "DEBUG_ONLY": false
   }
 ]
