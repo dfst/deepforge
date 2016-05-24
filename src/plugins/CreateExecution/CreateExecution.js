@@ -54,13 +54,21 @@ define([
      * @param {function(string, plugin.PluginResult)} callback - the result callback
      */
     CreateExecution.prototype.main = function (callback) {
-        var self = this,
-            name = this.core.getAttribute(this.activeNode, 'name');
-
-        // Verify that the activeNode is a pipeline
+        // Verify that the node is a pipeline
         if (!this.core.isTypeOf(this.activeNode, this.META.Pipeline)) {
-            return callback(`Current node is not a Pipeline!`, this.result);
+            return callback('Current node is not a Pipeline!', this.result);
         }
+
+        return this.createExecution(this.activeNode)
+            .then(node => {
+                this.result.setSuccess(true);
+                callback(null, this.result);
+            })
+            .catch(err => callback(err, this.result));
+    };
+
+    CreateExecution.prototype.createExecution = function (node) {
+        var name = this.core.getAttribute(node, 'name');
 
         // Given a pipeline, copy all the operations to a custom job
         //   - Copy the operations 
@@ -71,7 +79,7 @@ define([
         //   - Update the references
         var tgtNode,
             copies,
-            operations,
+            opTuples,  // [[op, index], [op, index], ...]
             dataMapping = {};
 
         tgtNode = this.core.createNode({
@@ -80,29 +88,26 @@ define([
         });
         this.core.setAttribute(tgtNode, 'name', `${name} Execution`);
 
-        this.core.loadChildren(this.activeNode)
+        return this.core.loadChildren(node)
             .then(children => {
                 copies = this.core.copyNodes(children, tgtNode);
-                operations = copies
-                    .filter(copy => this.core.isTypeOf(copy, this.META.Operation))
+                opTuples = copies
+                    .map((copy, i) => [copy, i])  // zip w/ index
+                    .filter(pair => this.core.isTypeOf(pair[0], this.META.Operation));
 
                 // Create a mapping of old names to new names
-                return Q.all(operations.map((copy, i) =>
+                return Q.all(opTuples.map(pair =>
                         // Add the input/output mappings to the dataMapping
-                        this.addDataToMap(children[i], copy, dataMapping)
+                        this.addDataToMap(children[pair[1]], pair[0], dataMapping)
                     )
                 );
             })
             .then(() => {  // datamapping is set!
                 this.updateReferences(copies, dataMapping)
-                this.boxOperations(operations, tgtNode);
+                this.boxOperations(opTuples.map(o => o[0]), tgtNode);
                 return this.save(`Created execution of ${name}`);
             })
-            .then(function () {
-                self.result.setSuccess(true);
-                callback(null, self.result);
-            })
-            .catch(err => callback(err, self.result));
+            .then(() => tgtNode);  // return tgtNode
     };
 
     CreateExecution.prototype.getExecutionsDir = function () {
@@ -122,7 +127,9 @@ define([
                                 outputs = containers
                                     .find((c, i) => names[i] === 'Outputs');
 
-                            return Q.all([inputs, outputs].map(c => this.core.loadChildren(c)));
+                            return Q.all(
+                                [inputs, outputs].map(c => c ? this.core.loadChildren(c) : [])
+                            );
                         });
                 })
             )
