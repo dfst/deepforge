@@ -76,8 +76,12 @@ define([
         var desc = EasyDAGControl.prototype._getObjectDescriptor.call(this, id),
             node = this._client.getNode(id);
 
-        // Filter attributes
         if (this.hasMetaName(id, 'Operation')) {
+            // Only decorate operations in the currently active node
+            if (this._currentNodeId !== desc.parentId) {
+                return desc;
+            }
+
             // Add inputs and outputs
             var childrenIds = node.getChildrenIds(),
                 inputId = childrenIds.find(cId => this.hasMetaName(cId, 'Inputs')),
@@ -108,12 +112,13 @@ define([
             if (desc.src === null || desc.dst === null) {
                 this._logger.warn(`Could not get src/dst for ${desc.id}`);
             }
-        } else {  // port
+        } else if (this.hasMetaName(desc.id, 'Data')) {  // port
             // Add nodeId for container
             desc.nodeId = this.getSiblingContaining(desc.id);
-            // TODO: Verify that it isn't the Inputs/Outputs containers...
-            desc.isDataPort = this.hasMetaName(desc.parentId, 'Inputs') ||
-                this.hasMetaName(desc.parentId, 'Outputs');
+            // It is a data port if it has a parentId and the parent is either
+            // 'Inputs' or 'Outputs'
+            desc.isDataPort = desc.parentId &&
+                (this.hasMetaName(desc.parentId, 'Inputs') || this.hasMetaName(desc.parentId, 'Outputs'));
         }
         return desc;
     };
