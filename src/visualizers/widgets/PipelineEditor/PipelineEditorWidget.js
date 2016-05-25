@@ -68,7 +68,7 @@ define([
     //////////////////// Action Overrides ////////////////////
 
     PipelineEditorWidget.prototype.onAddItemSelected = function(item, selected) {
-        this.createConnectedNode(item.id, selected.id);
+        this.createConnectedNode(item.id, selected.node.id);
     };
 
     //PipelineEditorWidget.prototype.createNodeAfter = function(srcId, type) {

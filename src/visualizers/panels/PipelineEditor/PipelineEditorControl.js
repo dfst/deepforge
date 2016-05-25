@@ -259,12 +259,30 @@ define([
             .map(id => this._client.getNode(id).getMetaTypeId());
 
         // For all valid children, return all that have at least one
-	// (unoccupied) input that is a superclass (or same class) as
-	// one of the outputs
+        // (unoccupied) input that is a superclass (or same class) as
+        // one of the outputs
         return children
-		.filter(node => this.getOperationInputs(node)
-		    .filter(id => this.hasValidOutputs(id, outputs)).length)
-		.map(node => this._getObjectDescriptor(node.getId()));
+            .filter(node => this.getOperationInputs(node)
+            .filter(id => this.hasValidOutputs(id, outputs)).length)
+            .map(node => {
+                return {
+                    node: this._getObjectDescriptor(node.getId())
+                };
+            });
+    };
+
+    PipelineEditorControl.prototype._getValidInitialNodes = function () {
+        // Get all nodes that have no inputs
+        return this._getAllValidChildren(this._currentNodeId)
+            .map(id => this._client.getNode(id))
+            .filter(node => !node.isAbstract() && !node.isConnection())
+            // Checking the name (below) is simply convenience so we can
+            // still create operation prototypes from Operation (which we
+            // wouldn't be able to do if it was abstract - which it probably
+            // should be)
+            .filter(node => node.getAttribute('name') !== 'Operation' &&
+                this.getOperationInputs(node).length === 0)
+            .map(node => this._getObjectDescriptor(node.getId()));
     };
 
     PipelineEditorControl.prototype._getPortPairs = function (outputs, inputs) {
@@ -273,15 +291,16 @@ define([
         // in the src operation and `inputId` is the id of an incoming port in
         // the dst operation
         var result = [],
-        ipairs = inputs.map(id => [id, this._client.getNode(id).getMetaTypeId()]),
-        oType;
+            ipairs = inputs.map(id => [id, this._client.getNode(id).getMetaTypeId()]),
+            oType;
 
         // For each output, get all possible (valid) input destinations
         outputs.forEach(outputId => {
             oType = this._client.getNode(outputId).getMetaTypeId();
-            result = result.concat(ipairs
-                // output type should be valid input type
-                .filter(pair => this._client.isTypeOf(oType, pair[1]))
+            result = result.concat(ipairs.filter(pair =>
+                    // output type should be valid input type
+                    this._client.isTypeOf(oType, pair[1])
+                )
                 .map(pair => [outputId, pair[0]])  // Get the input data id
             );
         });
@@ -290,7 +309,7 @@ define([
 
     PipelineEditorControl.prototype.getConnectionId = function () {
         return this._client.getAllMetaNodes()
-		    .find(node => node.isConnection()).getId();
+            .find(node => node.isConnection()).getId();
     };
 
     PipelineEditorControl.prototype._createConnectedNode = function (nodeId, typeId) {
