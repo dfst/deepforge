@@ -1,7 +1,7 @@
 {
     "ArchEditor": {
         "hotkeys": "none",
-	"LayerColors": {}
+        "LayerColors": {}
     },
     "CHFLayout": {
         "panels": [
@@ -30,6 +30,34 @@
                 "DEBUG_ONLY": false
             }
             
+        ]
+    },
+    "RootViz": {
+        "nodes": [
+            {
+                "nodeId": "/6",
+                "description": "Neural network architectures are stored here and can be used in pipelines."
+            },
+            {
+                "nodeId": "/o",
+                "description": "Executions are read-only snapshots of pipelines that have been executed. Past and current executing pipelines are stored here."
+            },
+            {
+                "nodeId": "/m",
+                "description": "Pipelines are used for training, testing and ensembling models."
+            },
+            {
+                "nodeId": "/S",
+                "description": "Operations are the building blocks of pipelines. Custom operations can be created and stored here."
+            },
+            {
+                "nodeId": "/J",
+                "description": "Artifacts from pipeline executions are stored here."
+            },
+            {
+                "nodeId": "/w",
+                "description": "Custom defined data types are stored here."
+            }
         ]
     }
 }

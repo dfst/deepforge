@@ -1,44 +1,50 @@
 [
-    {
-        "id": "AutoViz",
-        "title": "AutoViz",
-        "panel": "panels/AutoViz/AutoVizPanel",
-        "DEBUG_ONLY": false
-    },
-    {
-        "id": "EasyDAG",
-        "title": "EasyDAG",
-        "panel": "panels/EasyDAG/EasyDAGPanel",
-        "DEBUG_ONLY": false
-    },
-    {
-        "id": "ArchEditor",
-        "title": "ArchEditor",
-        "panel": "panels/ArchEditor/ArchEditorPanel",
-        "DEBUG_ONLY": false
-    },
-    {
-        "id": "TextEditor",
-        "title": "TextEditor",
-        "panel": "panels/TextEditor/TextEditorPanel",
-        "DEBUG_ONLY": false
-    },
-    {
-        "id": "OperationEditor",
-        "title": "OperationEditor",
-        "panel": "panels/OperationEditor/OperationEditorPanel",
-        "DEBUG_ONLY": false
-    },
-    {
-        "id": "PipelineEditor",
-        "title": "PipelineEditor",
-        "panel": "panels/PipelineEditor/PipelineEditorPanel",
-        "DEBUG_ONLY": false
-    },
-    {
-        "id": "ExecutionView",
-        "title": "ExecutionView",
-        "panel": "panels/ExecutionView/ExecutionViewPanel",
-        "DEBUG_ONLY": false
-    }
+  {
+    "id": "AutoViz",
+    "title": "AutoViz",
+    "panel": "panels/AutoViz/AutoVizPanel",
+    "DEBUG_ONLY": false
+  },
+  {
+    "id": "EasyDAG",
+    "title": "EasyDAG",
+    "panel": "panels/EasyDAG/EasyDAGPanel",
+    "DEBUG_ONLY": false
+  },
+  {
+    "id": "ArchEditor",
+    "title": "ArchEditor",
+    "panel": "panels/ArchEditor/ArchEditorPanel",
+    "DEBUG_ONLY": false
+  },
+  {
+    "id": "TextEditor",
+    "title": "TextEditor",
+    "panel": "panels/TextEditor/TextEditorPanel",
+    "DEBUG_ONLY": false
+  },
+  {
+    "id": "OperationEditor",
+    "title": "OperationEditor",
+    "panel": "panels/OperationEditor/OperationEditorPanel",
+    "DEBUG_ONLY": false
+  },
+  {
+    "id": "PipelineEditor",
+    "title": "PipelineEditor",
+    "panel": "panels/PipelineEditor/PipelineEditorPanel",
+    "DEBUG_ONLY": false
+  },
+  {
+    "id": "ExecutionView",
+    "title": "ExecutionView",
+    "panel": "panels/ExecutionView/ExecutionViewPanel",
+    "DEBUG_ONLY": false
+  },
+  {
+    "id": "RootViz",
+    "title": "RootViz",
+    "panel": "panels/RootViz/RootVizPanel",
+    "DEBUG_ONLY": false
+  }
 ]

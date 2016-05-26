@@ -73,6 +73,13 @@
         "panel": "src/visualizers/panels/ExecutionView",
         "secondary": false,
         "widget": "src/visualizers/widgets/ExecutionView"
+      },
+      "RootViz": {
+        "src": "panels/RootViz/RootVizPanel",
+        "title": "RootViz",
+        "panel": "src/visualizers/panels/RootViz",
+        "secondary": false,
+        "widget": "src/visualizers/widgets/RootViz"
       }
     },
     "addons": {},
