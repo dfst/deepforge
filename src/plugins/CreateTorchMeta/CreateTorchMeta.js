@@ -13,7 +13,7 @@ define([
     'js/RegistryKeys',
     'js/Constants',
     'js/Panels/MetaEditor/MetaEditorConstants',
-    'text!deepforge/layers.yml',
+    'text!deepforge/layers.json',
     'text!./metadata.json'
 ], function (
     PluginConfig,
@@ -68,7 +68,7 @@ define([
         }
 
         // Extra layer names
-        this.getYamlText((err, text) => {
+        this.getJsonLayers((err, text) => {
             if (err) {
                 return callback(err, this.result);
             }
@@ -77,15 +77,24 @@ define([
             //      - (Abstract) CategoryLayerTypes
             //          - LayerName
             //              - Attributes (if exists)
-            var content,
+            var content = {},
                 categories,
-                nodes = {};
+                nodes = {},
+                layers;
 
             try {
-                content = yaml.load(text);
+                layers = JSON.parse(text)
+                    .filter(layer => layer.type !== 'Criterion');
             } catch (e) {
-                return callback('YAML parse error: ' + e, this.result);
+                return callback('JSON parse error: ' + e, this.result);
             }
+            layers.forEach(layer => {
+                if (!content[layer.type]) {
+                    content[layer.type] = [];
+                }
+                content[layer.type].push(layer);
+            });
+
             categories = Object.keys(content);
             // Create the base class, if needed
             if (!this.META.Layer) {
@@ -104,17 +113,14 @@ define([
             // Make them abstract
             categories
                 .forEach(name => this.core.setRegistry(nodes[name], 'isAbstract', true));
-            
+
 
             // Create the actual nodes
             categories.forEach(cat => {
                 content[cat]
-                    .forEach(name => {
-                        var attrs = null;
-                        if (typeof name !== 'string') {
-                            attrs = name[Object.keys(name)[0]];
-                            name = Object.keys(name)[0];
-                        }
+                    .forEach(layer => {
+                        var attrs = layer.params,
+                            name = layer.name;
                         nodes[name] = this.createMetaNode(name, nodes[cat], cat, attrs);
                         // Make the node non-abstract
                         this.core.setRegistry(nodes[name], 'isAbstract', false);
@@ -146,7 +152,7 @@ define([
         return id;
     };
 
-    CreateTorchMeta.prototype.getYamlText = function (callback) {
+    CreateTorchMeta.prototype.getJsonLayers = function (callback) {
         var config = this.getCurrentConfig();
 
         if (config.layerNameHash) {
@@ -170,7 +176,6 @@ define([
 
         if (!tabId) {
             this.logger.error(`No meta sheet for ${tabName}`);
-            debugger;
         }
 
         if (this.META[name]) {
@@ -207,12 +212,7 @@ define([
 
         if (attrs) {  // Add the attributes
             attrs.forEach((name, index) => {
-                var desc = null;
-                if (typeof name !== 'string') {
-                    desc = name[Object.keys(name)[0]];
-                    name = Object.keys(name)[0];
-                }
-                desc = desc || {};
+                var desc = {};
                 desc.argindex = index;
                 this.addAttribute(name, node, desc);
             });
@@ -228,8 +228,8 @@ define([
             dy = 100,
             MAX_WIDTH = 1200,
             x;
-            
-        if (tabName === 'ConvLayer') {
+
+        if (tabName === 'Convolution') {
             dx *= 1.3;
             dy *= 1.5;
         }
@@ -253,7 +253,7 @@ define([
         var initial,
             schema = {};
 
-        schema.type = def.type || 'integer';
+        schema.type = def.type || 'string';
         if (schema.type === 'list') {  // FIXME: add support for lists
             schema.type = 'string';
         }

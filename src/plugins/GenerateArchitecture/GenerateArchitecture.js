@@ -164,14 +164,14 @@ define([
     };
 
     GenerateArchitecture.prototype.createArgString = function (layer) {
-        return '(' + this.LayerDict[layer.name].map(arg => {
-            var value = layer[arg.name];
-            // Infer if value is unset and infer.dimensionality is set
-            if (!value && arg.infer === 'dimensionality') {
-                value = dimensionality(layer[Constants.PREV][0]);
-            }
-            return value;
-        }).join(', ') + ')';
+        return '(' + this.LayerDict[layer.name]
+            .map(arg => layer[arg.name])
+            .filter(GenerateArchitecture.isSet)
+        .join(', ') + ')';
+    };
+
+    GenerateArchitecture.isSet = function (value) {
+        return !(value === undefined || value === null || value === '');
     };
 
     return GenerateArchitecture;
