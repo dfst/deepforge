@@ -53,6 +53,7 @@ define([
     // One major concept here is with managing the territory. The territory
     // defines the parts of the project that the visualizer is interested in
     // (this allows the browser to then only load those relevant parts).
+    TextEditorControl.prototype.TERRITORY_RULE = {children: 0};
     TextEditorControl.prototype.selectedObjectChanged = function (nodeId) {
         var desc = this._getObjectDescriptor(nodeId),
             self = this;
@@ -91,7 +92,7 @@ define([
             // Update the territory
             self._client.updateTerritory(self._territoryId, self._selfPatterns);
 
-            self._selfPatterns[nodeId] = {children: 0};
+            self._selfPatterns[nodeId] = this.TERRITORY_RULE;
             self._client.updateTerritory(self._territoryId, self._selfPatterns);
         }
     };
@@ -147,8 +148,10 @@ define([
     };
 
     TextEditorControl.prototype._onLoad = function (gmeId) {
-        var description = this._getObjectDescriptor(gmeId);
-        this._widget.addNode(description);
+        if (this._currentNodeId === gmeId) {  // Only load the text for the current node
+            var description = this._getObjectDescriptor(gmeId);
+            this._widget.addNode(description);
+        }
     };
 
     TextEditorControl.prototype._onUpdate = function (gmeId) {
