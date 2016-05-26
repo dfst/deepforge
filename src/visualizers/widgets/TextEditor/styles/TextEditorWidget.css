@@ -7,4 +7,6 @@
  */
 
 .text-editor {
-  outline: none; }
+  outline: none;
+  text-align: left !important;
+}

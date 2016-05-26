@@ -27,8 +27,10 @@ define([
         // Initialize core collections and variables
         this._widget = options.widget;
         this.ATTRIBUTE_NAME = options.attributeName || 'code';  // TODO: load from config
+
         this._currentNodeId = null;
         this._currentNodeParentId = undefined;
+        this._currentNodeHasAttr = false;
 
         this._initWidgetEventHandlers();
 
@@ -38,7 +40,12 @@ define([
     TextEditorControl.prototype._initWidgetEventHandlers = function () {
         // TODO: Add a way to navigate out of the current widget...
         this._widget.saveTextFor = (id, text) => {
-            this._client.setAttributes(id, this.ATTRIBUTE_NAME, text);
+            if (this._currentNodeHasAttr) {
+                this._client.setAttributes(id, this.ATTRIBUTE_NAME, text);
+            } else {
+                this._logger.warn(`Cannot save attribute ${this.ATTRIBUTE_NAME} ` +
+                   `for ${id} - node doesn't have the given attribute!`);
+            }
         };
     };
 
@@ -59,6 +66,8 @@ define([
 
         self._currentNodeId = nodeId;
         self._currentNodeParentId = undefined;
+        self._currentNodeHasAttr = (typeof self._client.getNode(self._currentNodeId)
+            .getAttribute(self.ATTRIBUTE_NAME)) === 'string';
 
         if (typeof self._currentNodeId === 'string') {
             // Put new node's info into territory rules
@@ -82,7 +91,7 @@ define([
             // Update the territory
             self._client.updateTerritory(self._territoryId, self._selfPatterns);
 
-            self._selfPatterns[nodeId] = {children: 1};
+            self._selfPatterns[nodeId] = {children: 0};
             self._client.updateTerritory(self._territoryId, self._selfPatterns);
         }
     };
@@ -96,8 +105,8 @@ define([
             desc = {
                 id: undefined,
                 name: undefined,
-		parentId: undefined,
-		text: ''
+                parentId: undefined,
+                text: ''
             };
 
             desc.id = nodeObj.getId();
@@ -119,17 +128,18 @@ define([
         while (i--) {
             event = events[i];
             switch (event.etype) {
-                case CONSTANTS.TERRITORY_EVENT_LOAD:
-                    this._onLoad(event.eid);
-                    break;
-                case CONSTANTS.TERRITORY_EVENT_UPDATE:
-                    this._onUpdate(event.eid);
-                    break;
-                case CONSTANTS.TERRITORY_EVENT_UNLOAD:
-                    this._onUnload(event.eid);
-                    break;
-                default:
-                    break;
+
+            case CONSTANTS.TERRITORY_EVENT_LOAD:
+                this._onLoad(event.eid);
+                break;
+            case CONSTANTS.TERRITORY_EVENT_UPDATE:
+                this._onUpdate(event.eid);
+                break;
+            case CONSTANTS.TERRITORY_EVENT_UNLOAD:
+                this._onUnload(event.eid);
+                break;
+            default:
+                break;
             }
         }
 
@@ -186,6 +196,7 @@ define([
 
     TextEditorControl.prototype.onDeactivate = function () {
         this._detachClientEventListeners();
+        // TODO: Destroy the ace instance!
         this._hideToolbarItems();
     };
 
@@ -239,15 +250,6 @@ define([
         this.$btnModelHierarchyUp.hide();
 
         /************** Checkbox example *******************/
-
-        this.$cbShowConnection = toolBar.addCheckBox({
-            title: 'toggle checkbox',
-            icon: 'gme icon-gme_diagonal-arrow',
-            checkChangedFn: function (data, checked) {
-                self._logger.debug('Checkbox has been clicked!');
-            }
-        });
-        this._toolbarItems.push(this.$cbShowConnection);
 
         this._toolbarInitialized = true;
     };
