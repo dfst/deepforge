@@ -7,6 +7,7 @@ define([
     'q',
     'text!./metadata.json',
     './Templates',
+    './LocalExecutor',
     'executor/ExecutorClient',
     'jszip',
     'underscore'
@@ -16,6 +17,7 @@ define([
     Q,
     pluginMetadata,
     Templates,
+    LocalExecutor,  // DeepForge operation primitives
     ExecutorClient,
     JsZip,
     _
@@ -761,15 +763,14 @@ define([
     };
 
     //////////////////////////// Special Operations ////////////////////////////
-    ExecutePipeline.LOCAL_OPS = [
-        'UploadedText',
-        'Save'
-    ];
-
     ExecutePipeline.prototype.getLocalOpType = function (node) {
         var type;
-        for (var i = ExecutePipeline.LOCAL_OPS.length; i--;) {
-            type = ExecutePipeline.LOCAL_OPS[i];
+        for (var i = LocalExecutor.TYPES.length; i--;) {
+            type = LocalExecutor.TYPES[i];
+            if (!this.META[type]) {
+                this.logger.warn(`Missing local operation: ${type}`);
+                continue;
+            }
             if (this.isMetaTypeOf(node, this.META[type])) {
                 return type;
             }
@@ -787,59 +788,7 @@ define([
         return this[type](node);
     };
 
-    // Should these be in lua?
-    ExecutePipeline.prototype.UploadedText = function(node) {
-        var hash = this.core.getAttribute(node, 'data');
-        return this.getOutputs(node)
-            .then(outputTuples => {
-                var outputs = outputTuples.map(tuple => tuple[2]),
-                    paths;
-
-                paths = outputs.map(output => this.core.getPath(output));
-                // Get the 'data' hash and store it in the output data ports
-                this.logger.info(`Loading text (${hash}) to ${paths.map(p => `"${p}"`)}`);
-                outputs.forEach(output => this.core.setAttribute(output, 'data', hash));
-
-                // Set the metadata as appropriate
-                // TODO
-                this.onOperationComplete(node);
-            });
-    };
-
-    ExecutePipeline.prototype.Save = function(node) {
-        var nodeId = this.core.getPath(node),
-            parentNode = this.rootNode;
-        
-        // Get the input node
-        this.logger.info('Calling save operation!');
-        return this.getInputs(node)
-            .then(inputs => {
-                var ids = inputs.map(i => this.core.getPath(i[2])),
-                    dataNodes;
-
-                dataNodes = Object.keys(this.nodes)
-                    .map(id => this.nodes[id])
-                    .filter(node => this.isMetaTypeOf(node, this.META.Transporter))
-                    .filter(node => 
-                        ids.indexOf(this.core.getPointerPath(node, 'dst')) > -1
-                    )
-                    .map(node => this.core.getPointerPath(node, 'src'))
-                    .map(id => this.nodes[id]);
-
-                // get the input node
-                if (dataNodes.length === 0) {
-                    this.logger.error(`Could not find data to save! ${nodeId}`);
-                } else {
-                    this.core.copyNodes(dataNodes, parentNode);
-                }
-                var hashes = dataNodes.map(n => this.core.getAttribute(n, 'data'));
-                this.logger.info(`saving hashes: ${hashes.map(h => `"${h}"`)}`);
-                this.onOperationComplete(node);
-            });
-
-        // Overwrite existing node w/ this name?
-        // TODO
-    };
+    _.extend(ExecutePipeline.prototype, LocalExecutor.prototype);
 
     return ExecutePipeline;
 });
