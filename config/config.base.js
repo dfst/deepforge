@@ -1,3 +1,4 @@
+/*globals require, module*/
 'use strict';
 
 var config = require('./config.webgme'),
@@ -7,7 +8,7 @@ var config = require('./config.webgme'),
 // config.server.port = 8080;
 // config.mongo.uri = 'mongodb://127.0.0.1:27017/webgme_my_app';
 config.requirejsPaths.deepforge = './src/common';
-config.seedProjects.defaultProject = 'nn';
+config.seedProjects.defaultProject = 'project';
 
 config.executor.enable = true;
 

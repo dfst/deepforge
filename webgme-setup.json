@@ -102,6 +102,9 @@
       },
       "demo": {
         "src": "src/seeds/demo"
+      },
+      "project": {
+        "src": "src/seeds/project"
       }
     }
   },
