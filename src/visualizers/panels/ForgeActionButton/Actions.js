@@ -1,25 +1,70 @@
-/*globals define*/
+/*globals define, WebGMEGlobal*/
 // These are actions defined for specific meta types. They are evaluated from
 // the context of the ForgeActionButton
-define([], function() {
-    var createNewArchitecture = function() {
-        return createNew.call(this, 'Architecture');
-    };
+define([
+    'js/RegistryKeys',
+    'js/Constants'
+], function(
+    REGISTRY_KEYS,
+    CONSTANTS
+) {
+    var instances = [
+            'Architecture',
+            'Pipeline'
+        ],
+        metaNodes = [
+            'Operation',
+            'Data'
+        ],
+        create = {};
 
-    var createNewPipeline = function() {
-        return createNew.call(this, 'Pipeline');
-    };
-
-    var createNew = function(type) {
+    var createNew = function(type, metasheetName) {
         // Create CNN node in the current dir
         // Get CNN node type
         var parentId = this._currentNodeId,
-            baseId = this.client.getAllMetaNodes()
+            newId,
+            baseId;
+
+        baseId = this.client.getAllMetaNodes()
                 .find(node => node.getAttribute('name') === type)
                 .getId();
 
-        this.client.createChild({parentId, baseId});
+        this.client.startTransaction('Created new operation prototype');
+        newId = this.client.createChild({parentId, baseId});
+        if (metasheetName) {  // Add to metasheet
+            var root = this.client.getNode(CONSTANTS.PROJECT_ROOT_ID),
+                metatabs = root.getRegistry(REGISTRY_KEYS.META_SHEETS),
+                metatab = metatabs.find(tab => tab.title === metasheetName) || metatabs[0],
+                metatabId = metatab.SetID;
+
+            this.client.addMember(CONSTANTS.PROJECT_ROOT_ID, newId, metatabId);
+            this.client.setMemberRegistry(
+                CONSTANTS.PROJECT_ROOT_ID,
+                newId,
+                metatabId,
+                REGISTRY_KEYS.POSITION,
+                {
+                    x: 100,
+                    y: 100
+                }
+            );
+        }
+        this.client.completeTransaction();
+
+        WebGMEGlobal.State.registerActiveObject(newId);
     };
+
+    instances.forEach(type => {
+        create[type] = function() {
+            return createNew.call(this, type);
+        };
+    });
+
+    metaNodes.forEach(type => {
+        create[type] = function() {
+            return createNew.call(this, type, type);
+        };
+    });
 
     // Add download model button
     var downloadButton = function() {
@@ -42,18 +87,34 @@ define([], function() {
             }
         ],
 
-        Pipelines: [
+        MyPipelines: [
             {
                 name: 'Create new pipeline',
                 icon: 'queue',
-                action: createNewPipeline
+                action: create.Pipeline
             }
         ],
-        Architectures: [
+        MyArchitectures: [
             {
                 name: 'Create new architecture',
                 icon: 'queue',
-                action: createNewArchitecture
+                action: create.Architecture
+            }
+        ],
+        // FIXME: the next two should also add the created node to
+        // the meta
+        MyDataTypes: [
+            {
+                name: 'Create new data type',
+                icon: 'queue',
+                action: create.Data
+            }
+        ],
+        MyOperations: [
+            {
+                name: 'Create new operation',
+                icon: 'queue',
+                action: create.Operation
             }
         ]
     };
