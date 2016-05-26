@@ -3,9 +3,11 @@
 // the context of the ForgeActionButton
 define([
     'js/RegistryKeys',
+    'js/Panels/MetaEditor/MetaEditorConstants',
     'js/Constants'
 ], function(
     REGISTRY_KEYS,
+    META_CONSTANTS,
     CONSTANTS
 ) {
     var instances = [
@@ -37,6 +39,24 @@ define([
                 metatab = metatabs.find(tab => tab.title === metasheetName) || metatabs[0],
                 metatabId = metatab.SetID;
 
+            // Add to the general meta
+            this.client.addMember(
+                CONSTANTS.PROJECT_ROOT_ID,
+                newId,
+                META_CONSTANTS.META_ASPECT_SET_NAME
+            );
+            this.client.setMemberRegistry(
+                CONSTANTS.PROJECT_ROOT_ID,
+                newId,
+                META_CONSTANTS.META_ASPECT_SET_NAME,
+                REGISTRY_KEYS.POSITION,
+                {
+                    x: 100,
+                    y: 100
+                }
+            );
+
+            // Add to the specific sheet
             this.client.addMember(CONSTANTS.PROJECT_ROOT_ID, newId, metatabId);
             this.client.setMemberRegistry(
                 CONSTANTS.PROJECT_ROOT_ID,
