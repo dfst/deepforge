@@ -1,6 +1,7 @@
 src/worker/tmp
 *.swp
 *.swo
+**.sass-cache
 # Logs
 logs
 *.log
@@ -29,4 +30,5 @@ build/Release
 # https://www.npmjs.org/doc/misc/npm-faq.html#should-i-check-my-node_modules-folder-into-git
 node_modules
 tmp/
+test-tmp/
 blob-local-storage/

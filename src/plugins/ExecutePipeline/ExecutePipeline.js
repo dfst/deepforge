@@ -6,7 +6,7 @@ define([
     'common/core/constants',
     'q',
     'text!./metadata.json',
-    './Templates',
+    './Templates/index',
     './LocalExecutor',
     'executor/ExecutorClient',
     'jszip',
