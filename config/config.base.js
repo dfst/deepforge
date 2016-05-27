@@ -1,12 +1,13 @@
-/*globals require, module*/
+/*globals require, module, process*/
 'use strict';
 
 var config = require('./config.webgme'),
     validateConfig = require('webgme/config/validator');
 
+require('dotenv').load();
 // Add/overwrite any additional settings here
-// config.server.port = 8080;
-// config.mongo.uri = 'mongodb://127.0.0.1:27017/webgme_my_app';
+config.server.port = process.env.PORT || config.server.port;
+config.mongo.uri = process.env.MONGO_URI || config.mongo.uri;
 config.requirejsPaths.deepforge = './src/common';
 config.seedProjects.defaultProject = 'project';
 

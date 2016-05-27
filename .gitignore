@@ -1,4 +1,5 @@
 src/worker/tmp
+.env
 *.swp
 *.swo
 **.sass-cache
