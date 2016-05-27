@@ -24,6 +24,7 @@ define([
 
     _.extend(ArchEditorControl.prototype, EasyDAGControl.prototype);
 
+    ArchEditorControl.prototype.TERRITORY_RULE = {children: 1};
     ArchEditorControl.prototype._getObjectDescriptor = function(id) {
         var desc = EasyDAGControl.prototype._getObjectDescriptor.call(this, id);
 
