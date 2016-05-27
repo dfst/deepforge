@@ -265,7 +265,7 @@ define([
             // Generate all execution files
             this.createOperationFiles(node).then(results => {
                 files = results;
-                artifactName = jobId.replace(/\//g, '_') + '-execution-files';
+                artifactName = `${name}_${jobId.replace(/\//g, '_')}-execution-files`;
                 artifact = this.blobClient.createArtifact(artifactName);
 
                 // Add the input assets
@@ -571,18 +571,18 @@ define([
         )
         .then(nodes => {
 
-            var executePlugin = function(pluginName, config, callback) {
+            var executePlugin = (pluginId, config, callback) => {
                 // Call the Interpreter manager in a Q.ninvoke friendly way
                 // I need to create a custom context for the given plugin:
                 //     - Set the activeNode to the given referenced node
                 //     - If the activeNode is namespaced, set META to the given namespace
                 //
-                // FIXXME: Update this to the webgme 2.x method name
-                WebGMEGlobal.InterpreterManager.run(pluginName, config, result => {
+                // FIXME: Check if it is running in the browser or on the server
+                WebGMEGlobal.Client.runBrowserPlugin(pluginId, config, (err, result) => {
                     if (!result.success) {
                         return callback(result.getError());
                     }
-                    this.logger.info('Finished calling ' + pluginName);
+                    this.logger.info('Finished calling ' + pluginId);
                     callback(null, result.artifacts);
                 });
             };
@@ -590,17 +590,19 @@ define([
             return Q.all(
                 nodes.map(ptrNode => {
                     // Look up the plugin to use
-                    var pluginName = this.core.getRegistry(ptrNode, 'validPlugins').split(' ').shift();
-                    this.logger.info(`generating code for ${this.core.getAttribute(ptrNode, 'name')} using ${pluginName}`);
+                    var metanode = this.core.getMetaType(ptrNode),
+                        pluginId;
 
-                    // Add plugin config?
-                    // TODO
-                    var pluginConfig = {
-                        activeNode: this.core.getPath(ptrNode)
-                    };
+                    pluginId = this.core.getRegistry(ptrNode, 'validPlugins').split(' ').shift();
+                    this.logger.info(`generating code for ${this.core.getAttribute(ptrNode, 'name')} using ${pluginId}`);
+
+                    var context = WebGMEGlobal.Client.getCurrentPluginContext(pluginId);
+
+                    context.managerConfig.namespace = this.core.getNamespace(metanode);
+                    context.managerConfig.activeNode = this.core.getPath(ptrNode);
 
                     // Load and run the plugin
-                    return Q.nfcall(executePlugin, pluginName, pluginConfig);
+                    return Q.nfcall(executePlugin, pluginId, context);
                 })
             );
         })
@@ -625,9 +627,9 @@ define([
         // create the `outputs/init.lua` file
         return this.getOutputs(node)
             .then(outputs => {
-                var outputTypes = outputs.map(pair => pair[1])
+                var outputTypes = outputs
                 // Get the serialize functions for each
-                    .map(type => [type, this.core.getAttribute(this.META[type], 'serialize')]);
+                    .map(tuple => [tuple[1], this.core.getAttribute(tuple[2], 'serialize')]);
 
                 // Remove duplicates
                 // TODO

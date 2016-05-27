@@ -9,7 +9,7 @@ define([
     };
 
     // Should these be in lua?
-    LocalExecutor.prototype.UploadedText = function(node) {
+    LocalExecutor.prototype.BlobLoader = function(node) {
         var hash = this.core.getAttribute(node, 'data');
         return this.getOutputs(node)
             .then(outputTuples => {
@@ -18,7 +18,7 @@ define([
 
                 paths = outputs.map(output => this.core.getPath(output));
                 // Get the 'data' hash and store it in the output data ports
-                this.logger.info(`Loading text (${hash}) to ${paths.map(p => `"${p}"`)}`);
+                this.logger.info(`Loading blob data (${hash}) to ${paths.map(p => `"${p}"`)}`);
                 outputs.forEach(output => this.core.setAttribute(output, 'data', hash));
 
                 // Set the metadata as appropriate
@@ -27,13 +27,40 @@ define([
             });
     };
 
+    LocalExecutor.prototype._getSaveDir = function () {
+        return this.core.loadChildren(this.rootNode)
+            .then(children => {
+                var execPath = this.core.getPath(this.META.Data),
+                    containers,
+                    saveDir;
+
+                // Find a node in the root that can contain only executions
+                containers = children.filter(child => {
+                    var metarule = this.core.getChildrenMeta(child);
+                    return metarule && metarule[execPath];
+                });
+
+                if (containers.length > 1) {
+                    saveDir = containers.find(c =>
+                        this.core.getAttribute(c, 'name').toLowerCase().indexOf('artifacts') > -1
+                    ) || containers[0];
+                }
+
+                return saveDir || this.rootNode;  // default to rootNode
+            });
+    };
+
     LocalExecutor.prototype.Save = function(node) {
         var nodeId = this.core.getPath(node),
-            parentNode = this.rootNode;
+            parentNode;
         
         // Get the input node
         this.logger.info('Calling save operation!');
-        return this.getInputs(node)
+        return this._getSaveDir()
+            .then(_saveDir => {
+                parentNode = _saveDir;
+                return this.getInputs(node);
+            })
             .then(inputs => {
                 var ids = inputs.map(i => this.core.getPath(i[2])),
                     dataNodes;
@@ -51,7 +78,13 @@ define([
                 if (dataNodes.length === 0) {
                     this.logger.error(`Could not find data to save! ${nodeId}`);
                 } else {
-                    this.core.copyNodes(dataNodes, parentNode);
+                    var newNodes = this.core.copyNodes(dataNodes, parentNode),
+                        newName = this.core.getOwnAttribute(node, 'saveName');
+                    if (newName) {
+                        newNodes.forEach(node =>
+                            this.core.setAttribute(node, 'name', newName)
+                        );
+                    }
                 }
                 var hashes = dataNodes.map(n => this.core.getAttribute(n, 'data'));
                 this.logger.info(`saving hashes: ${hashes.map(h => `"${h}"`)}`);
@@ -62,7 +95,8 @@ define([
         // TODO
     };
 
-    LocalExecutor.TYPES = Object.keys(LocalExecutor.prototype);
+    LocalExecutor.TYPES = Object.keys(LocalExecutor.prototype)
+        .filter(name => name.indexOf('_') !== 0);
     
     return LocalExecutor;
 });

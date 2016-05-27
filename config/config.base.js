@@ -11,6 +11,9 @@ config.mongo.uri = process.env.MONGO_URI || config.mongo.uri;
 config.requirejsPaths.deepforge = './src/common';
 config.seedProjects.defaultProject = 'project';
 
+config.plugin.allowBrowserExecution = true;
+config.plugin.allowServerExecution = true;
+
 config.executor.enable = true;
 
 validateConfig(config);
