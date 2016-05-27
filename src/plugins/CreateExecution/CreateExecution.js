@@ -67,6 +67,19 @@ define([
             .catch(err => callback(err, this.result));
     };
 
+    CreateExecution.prototype.getExecutionDir = function () {
+        return this.core.loadChildren(this.rootNode)
+            .then(children => {
+                var execPath = this.core.getPath(this.META.Execution);
+
+                // Find a node in the root that can contain only executions
+                return children.find(child => {
+                    var metarule = this.core.getChildrenMeta(child);
+                    return metarule && metarule[execPath];
+                }) || this.rootNode;  // default to rootNode
+            });
+    };
+
     CreateExecution.prototype.createExecution = function (node) {
         var name = this.core.getAttribute(node, 'name');
 
@@ -82,15 +95,21 @@ define([
             opTuples,  // [[op, index], [op, index], ...]
             dataMapping = {};
 
-        tgtNode = this.core.createNode({
-            base: this.META.Execution,
-            parent: this.rootNode
-        });
-        this.core.setAttribute(tgtNode, 'name', `${name} Execution`);
-
-        return this.core.loadChildren(node)
+        return this.getExecutionDir()
+            .then(execDir => {
+                tgtNode = this.core.createNode({
+                    base: this.META.Execution,
+                    parent: execDir
+                });
+                this.core.setAttribute(tgtNode, 'name', `${name} Execution`);
+                return this.core.loadChildren(node);
+            })
             .then(children => {
-                copies = this.core.copyNodes(children, tgtNode);
+                if (!children.length) {
+                    this.logger.warn(`No children in pipeline. Will proceed anyway`);
+                }
+
+                copies = children.length ? this.core.copyNodes(children, tgtNode) : [];
                 opTuples = copies
                     .map((copy, i) => [copy, i])  // zip w/ index
                     .filter(pair => this.core.isTypeOf(pair[0], this.META.Operation));
