@@ -28,15 +28,21 @@ define([
     // inherit from PanelBaseWithHeader
     _.extend(ForgeActionButton.prototype, PluginButton.prototype);
 
-    ForgeActionButton.prototype.addActionsForObject = function(models, nodeId) {
-        var baseName,
-            node = this.client.getNode(nodeId),
+    ForgeActionButton.prototype.findActionsFor = function(nodeId) {
+        var node = this.client.getNode(nodeId),
             base = this.client.getNode(node.getMetaTypeId()),
-            actions,
-            i;
+            basename;
 
-        // Get node baseName and look up actions
-        baseName = base ? base.getAttribute('name') : 'ROOT';
+        while (base && !ACTIONS[basename]) {
+            basename = base.getAttribute('name');
+            base = this.client.getNode(base.getBaseId());
+        }
+        return ACTIONS[basename] || [];
+    };
+
+    ForgeActionButton.prototype.addActionsForObject = function(models, nodeId) {
+        var actions = this.findActionsFor(nodeId),
+            i;
 
         // Remove old actions
         for (i = this._actions.length; i--;) {
@@ -44,7 +50,6 @@ define([
         }
 
         // Get node name and look up actions
-        actions = ACTIONS[baseName] || [];
         for (i = actions.length; i--;) {
             this.buttons[actions[i].name] = actions[i];
         }
