@@ -311,7 +311,7 @@ define([
                     .map(name => {
                         return {
                             name: name,
-                            resultPatterns: [`outputs/${name}/**`]
+                            resultPatterns: [`outputs/${name}`]
                         };
                     });
 
@@ -544,6 +544,7 @@ define([
     };
 
     ExecutePipeline.prototype.createInputs = function (node, files) {
+        var tplContents;
         return this.getInputs(node)
             .then(inputs => {
                 // For each input, match the connection with the input name
@@ -557,27 +558,29 @@ define([
                 //  - put it in inputs/<name>/init.lua
                 //  - copy the data asset to /inputs/<name>/init.lua
                 files.inputAssets = {};  // data assets
-                inputs.forEach(pair => {
+                tplContents = inputs.map(pair => {
                     var name = pair[0],
-                        type = pair[1],
-                        node = pair[2],
-                        content;
+                        node = pair[2];
 
-                    // Create the deserializer
-                    content = {
+                    return {
                         name: name,
-                        code: this.core.getAttribute(this.META[type], 'deserialize')
+                        code: this.core.getAttribute(node, 'deserialize')
                     };
-                    files['inputs/' + name + '/init.lua'] = _.template(Templates.DESERIALIZE)(content);
-
-                    // copy the data asset to /inputs/<name>/
-
-                    // For more complex examples, I will have to unpack the artifact
-                    // TODO
-
-                    // storing the hash for now...
-                    files.inputAssets[name] = this.core.getAttribute(node, 'data');
                 });
+                var hashes = inputs.map(pair =>
+                    // storing the hash for now...
+                    files.inputAssets[pair[0]] = this.core.getAttribute(pair[2], 'data')
+                );
+                return Q.all(hashes.map(h => this.blobClient.getMetadata(h)));
+            })
+            .then(metadatas => {
+                // Create the deserializer
+                tplContents.forEach((ctnt, i) => {
+                    // Get the name of the given asset
+                    ctnt.filename = metadatas[i].name;
+                    files['inputs/' + ctnt.name + '/init.lua'] = _.template(Templates.DESERIALIZE)(ctnt);
+                });
+                return files;
             });
     };
 

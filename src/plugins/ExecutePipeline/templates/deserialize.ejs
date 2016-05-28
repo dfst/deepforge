@@ -1,3 +1,4 @@
 require 'paths'
-local dir = paths.concat('inputs', '<%= name %>')
+local path = 'inputs/<%= name %>/<%= filename %>'
+local abs_path = paths.concat('inputs', '<%= name %>', '<%= filename %>')
 <%= code %>
