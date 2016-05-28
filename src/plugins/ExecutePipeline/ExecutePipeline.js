@@ -348,9 +348,10 @@ define([
                 this.result.addArtifact(hash);  // Probably only need this for debugging...
                 this.executeDistOperation(jobId, node, hash);
             })
-            .fail(e =>
-                this.onPipelineComplete(`Distributed operation "${name}" failed ${e}`)
-            );
+            .fail(e => {
+                this.core.setAttribute(this.nodes[jobId], 'status', 'fail');
+                this.onPipelineComplete(`Distributed operation "${name}" failed ${e}`);
+            });
         }
     };
 
@@ -419,57 +420,23 @@ define([
                 outputs = outputPorts.map(tuple => [tuple[0], tuple[2]]);
                 outputs.forEach(output => outputMap[output[0]] = output[1]);
 
-                // FIXME: this should not be in directories -> flatten the data!
-                // Ideally, this would be performed on the worker -> not on DeepForge
-                // get the files from the hash
+                // this should not be in directories -> flatten the data!
                 return Q.all(outputs.map(tuple =>  // [ name, node ]
-                    this.blobClient.getObject(result.resultHashes[tuple[0]])
+                    this.blobClient.getArtifact(result.resultHashes[tuple[0]])
                 ));
             })
-            .then(objects => {
-                this.logger.info(`preparing outputs -> retrieved ${objects.length} objects`);
-                return Q.all(
-                    objects.map(object => {
-                        var output = new JsZip();
-                        return output.load(object);
-                    })
-                );
+            .then(artifacts => {
+                this.logger.info(`preparing outputs -> retrieved ${artifacts.length} objects`);
+                // Create new metadata for each
+                artifacts.forEach((artifact, i) => {
+                    var name = outputs[i][0],
+                        hash = artifact.descriptor.content[`outputs/${name}`].content;
+
+                    this.core.setAttribute(outputMap[name], 'data', hash);
+                });
+
+                return this.onOperationComplete(node);
             })
-            .then(zipfiles => {
-                return Q.all(
-                    zipfiles.map((zip, index) => {
-                        var pair = outputs[index],
-                            name = pair[0],
-                            artifact = this.blobClient.createArtifact(name),
-                            files = {};
-
-                        // move the files from /outputs/<name> to /
-                        Object.keys(zip.files)
-                            .forEach(filename => {
-                                var newName = filename.replace('outputs/' + name + '/', '');
-                                files[newName] = zip.files[filename].asArrayBuffer();
-                            });
-
-                        // save artifact and get the new hash
-                        var filenames = Object.keys(files),
-                            savePromise;
-
-                        if (filenames.length > 1) {
-                            savePromise = artifact.addFiles(files)
-                                .then(() => artifact.save());
-                        } else {  // only one file - don't zip it!
-                            savePromise = this.blobClient.putFile(filenames[0], files[filenames[0]]);
-                        }
-                        return savePromise.then(hash => {
-                            // store the new hash in the given output node
-                            this.logger.debug(`Storing dist results of ${nodeId}` +
-                                ` : setting ${this.core.getPath(outputMap[name])} to ${hash}`);
-                            this.core.setAttribute(outputMap[name], 'data', hash);
-                        });
-                    })
-                );
-            })
-            .then(() => this.onOperationComplete(node))
             .fail(e => this.onPipelineComplete(`Operation ${nodeId} failed: ${e}`));
     };
 
@@ -606,7 +573,7 @@ define([
 
             var executePlugin = function(pluginName, config, callback) {
                 // Call the Interpreter manager in a Q.ninvoke friendly way
-                // FIXME: I need to create a custom context for the given plugin:
+                // I need to create a custom context for the given plugin:
                 //     - Set the activeNode to the given referenced node
                 //     - If the activeNode is namespaced, set META to the given namespace
                 //
@@ -646,32 +613,7 @@ define([
                 files.ptrAssets[`pointers/${pointers[index]}/init.lua`] = hashes[0];
             });
             return cb(null, files);
-
-            // For each hash:
-            //   - retrieve the zip archive
-            //   - get the generated files for the plugin
-            //     - if only one file, rename it to `init.lua`
-            //return Q.all(
-                //resultHashes.map(hash => this.blobClient.getObjectAsString(hash))
-            //);
         })
-        // Add support for zip files
-        // TODO
-        //.then(objects =>
-            //Q.all(objects.map(object => {
-                    //var output = new JsZip();
-
-                    //return output.load(object);
-                //})
-            //)
-        //)
-        //.then(zipfiles => {  // TODO
-            //// If it generates one artifact, rename it to `init.lua`. Otherwise, expect
-            //// an `init.lua` file
-            //// TODO
-            //console.log('zipfiles:', zipfiles);
-            //cb(null, files);
-        //})
         .fail(e => {
             this.logger.error(`Could not generate pointer files for ${this.core.getAttribute(node, 'name')}: ${JSON.stringify(e)}`);
             return cb(e);
