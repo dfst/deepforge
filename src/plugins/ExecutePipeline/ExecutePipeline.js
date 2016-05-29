@@ -93,7 +93,7 @@ define([
         }
 
         // Set debug and the final callback
-        this.debug = this.getCurrentConfig().debug;
+        this.debug = true;  // this.getCurrentConfig().debug;
         this._callback = callback;
 
         startPromise.then(subtree => {
@@ -103,9 +103,9 @@ define([
             this.buildCache(subtree);
             this.parsePipeline(children);  // record deps, etc
 
-            if (this.getCurrentConfig().reset) {
-                this.clearResults();
-            }
+            //if (this.getCurrentConfig().reset) {
+            this.clearResults();
+            //}
 
             // Execute the operations in the proper order
             this.executePipeline();
@@ -114,14 +114,16 @@ define([
     };
 
     ExecutePipeline.prototype.clearResults = function () {
+        var nodes = Object.keys(this.nodes).map(id => this.nodes[id]);
         // Clear the pipeline's results
         this.logger.info('Clearing all intermediate execution results');
-        Object.keys(this.nodes).map(nodeId => this.nodes[nodeId])
-            .filter(node =>  // get all connections
-                !(this.core.getPointerPath(node, 'src') && this.core.getPointerPath(node, 'dst'))
-            )
-        // FIXME: this need to be updated
-        .forEach(conn => this.core.delAttribute(conn, 'data'));
+
+        nodes.filter(node => this.core.isTypeOf(node, this.META.Data))
+            .forEach(conn => this.core.delAttribute(conn, 'data'));
+
+        // Set the status for each job to 'pending'
+        nodes.filter(node => this.core.isTypeOf(node, this.META.Job))
+            .forEach(node => this.core.setAttribute(node, 'status', 'pending'));
     };
 
     //////////////////////////// Operation Preparation/Execution ////////////////////////////
@@ -344,7 +346,7 @@ define([
             .then(hash => {
                 this.logger.info(`Saved execution files "${artifactName}"`);
                 this.result.addArtifact(hash);  // Probably only need this for debugging...
-                this.executeDistOperation(node, hash);
+                this.executeDistOperation(jobId, node, hash);
             })
             .fail(e =>
                 this.onPipelineComplete(`Distributed operation "${name}" failed ${e}`)
@@ -352,9 +354,9 @@ define([
         }
     };
 
-    ExecutePipeline.prototype.executeDistOperation = function (node, hash) {
-        var name = this.core.getAttribute(node, 'name'),
-            nodeId = this.core.getPath(node),
+    ExecutePipeline.prototype.executeDistOperation = function (jobId, opNode, hash) {
+        var name = this.core.getAttribute(opNode, 'name'),
+            opId = this.core.getPath(opNode),
             executor = new ExecutorClient({
                 logger: this.logger,
                 serverPort: this.gmeConfig.server.port
@@ -362,40 +364,45 @@ define([
 
         this.logger.info(`Executing operation "${name}"`);
 
+        // Set the job status to 'running'
+        this.core.setAttribute(this.nodes[jobId], 'status', 'running');
+
         // Run the operation on an executor
         executor.createJob({hash})
-            .then(() => this.watchOperation(executor, hash, nodeId))
+            .then(() => this.watchOperation(executor, hash, opId, jobId))
             .catch(err => this.logger.error(`Could not execute "${name}": ${err}`));
 
     };
 
-    ExecutePipeline.prototype.watchOperation = function (executor, hash, nodeId) {
+    ExecutePipeline.prototype.watchOperation = function (executor, hash, opId, jobId) {
         var name;
 
         return executor.getInfo(hash)
             .then(info => {
                 if (info.status === 'CREATED' || info.status === 'RUNNING') {
                     setTimeout(
-                        this.watchOperation.bind(this, executor, hash, nodeId),
+                        this.watchOperation.bind(this, executor, hash, opId, jobId),
                         ExecutePipeline.UPDATE_INTERVAL
                     );
                     return;
                 }
 
                 if (info.status !== 'SUCCESS') {
-                    name = this.core.getAttribute(this.nodes[nodeId], 'name');
+                    name = this.core.getAttribute(this.nodes[opId], 'name');
                     // Download all files
                     this.result.addArtifact(info.resultHashes[name + '-all-files']);
-                    this.onPipelineComplete(`Operation "${nodeId}" failed! ${JSON.stringify(info)}`);  // Failed
+                    // Set the job to failed! Store the error
+                    this.core.setAttribute(this.nodes[jobId], 'status', 'fail');
+                    this.onPipelineComplete(`Operation "${opId}" failed! ${JSON.stringify(info)}`);  // Failed
                 } else {
-                    name = this.core.getAttribute(this.nodes[nodeId], 'name');
+                    name = this.core.getAttribute(this.nodes[opId], 'name');
                     if (this.debug) {
                         this.result.addArtifact(info.resultHashes[name + '-all-files']);
                     }
-                    this.onDistOperationComplete(nodeId, info);
+                    this.onDistOperationComplete(opId, info);
                 }
             })
-            .catch(err => this.logger.error(`Could not get op info for ${nodeId}: ${err}`));
+            .catch(err => this.logger.error(`Could not get op info for ${opId}: ${err}`));
     };
 
     ExecutePipeline.prototype.onDistOperationComplete = function (nodeId, result) {
@@ -469,9 +476,12 @@ define([
     ExecutePipeline.prototype.onOperationComplete = function (opNode) {
         var name = this.core.getAttribute(opNode, 'name'),
             nextPortIds = this.getOperationOutputIds(opNode),
+            jNode = this.core.getParent(opNode),
             resultPorts,
             hasReadyOps;
 
+        // Set the operation to 'success'!
+        this.core.setAttribute(jNode, 'status', 'success');
 
         // Transport the data from the outputs to any connected inputs
         //   - Get all the connections from each outputId

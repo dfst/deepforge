@@ -17,14 +17,6 @@
             "value": false,
             "valueType": "boolean",
             "readOnly": false
-        },
-        {
-            "name": "reset",
-            "displayName": "Reset",
-            "description": "Clear existing results",
-            "value": false,
-            "valueType": "boolean",
-            "readOnly": false
         }
   ]
 

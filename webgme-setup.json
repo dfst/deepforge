@@ -86,6 +86,9 @@
     "decorators": {
       "OperationDecorator": {
         "src": "src/decorators/OperationDecorator"
+      },
+      "JobDecorator": {
+        "src": "src/decorators/JobDecorator"
       }
     },
     "seeds": {

@@ -25,6 +25,7 @@ define([
 
     /* * * * * * * * Visualizer content update callbacks * * * * * * * */
     ExecutionViewControl.prototype.TERRITORY_RULE = {children: 4};
+    ExecutionViewControl.prototype.DEFAULT_DECORATOR = 'JobDecorator';
 
     ExecutionViewControl.prototype.updateTerritory = function() {
         var nodeId = this._currentNodeId;
