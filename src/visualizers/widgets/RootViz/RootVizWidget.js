@@ -29,8 +29,15 @@ define([
         this.$el = container;
 
         // Load the component settings
-        this._config = [];
+        this._config = {
+            nodes:[]
+        };
         ComponentSettings.resolveWithWebGMEGlobal(this._config, this.getComponentId());
+        this.NODE_ATTR = 'nodeId';
+
+        if (this._config.nodes.length) {
+            this.NODE_ATTR = this._config.nodes[0].nodeId ? 'nodeId' : 'nodeName';
+        }
         this.nodes = {};
         this._initialize();
 
@@ -44,7 +51,8 @@ define([
     RootVizWidget.prototype._initialize = function () {
         // create the whitelist
         this.validNodes = {};
-        this._config.nodes.forEach(node => this.validNodes[node.nodeId] = node);
+        this._config.nodes
+            .forEach(node => this.validNodes[node[this.NODE_ATTR]] = node);
 
         // set widget class and set up the container
         this.$el.addClass(WIDGET_CLASS);
@@ -57,7 +65,8 @@ define([
     // Adding/Removing/Updating items
     RootVizWidget.prototype.addNode = function (desc) {
         if (desc) {
-            var node = this.validNodes[desc.id];
+            var attr = this.NODE_ATTR === 'nodeId' ? 'id' : 'name',
+                node = this.validNodes[desc[attr]];
 
             if (node) {
                 _.extend(desc, node);

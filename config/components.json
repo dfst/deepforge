@@ -35,27 +35,27 @@
     "RootViz": {
         "nodes": [
             {
-                "nodeId": "/6",
+                "nodeName": "MyArchitectures",
                 "description": "Neural network architectures are stored here and can be used in pipelines."
             },
             {
-                "nodeId": "/o",
+                "nodeName": "MyExecutions",
                 "description": "Executions are read-only snapshots of pipelines that have been executed. Past and current executing pipelines are stored here."
             },
             {
-                "nodeId": "/m",
+                "nodeName": "MyPipelines",
                 "description": "Pipelines are used for training, testing and ensembling models."
             },
             {
-                "nodeId": "/S",
+                "nodeName": "MyOperations",
                 "description": "Operations are the building blocks of pipelines. Custom operations can be created and stored here."
             },
             {
-                "nodeId": "/J",
+                "nodeName": "MyArtifacts",
                 "description": "Artifacts from pipeline executions are stored here."
             },
             {
-                "nodeId": "/w",
+                "nodeName": "MyDataTypes",
                 "description": "Custom defined data types are stored here."
             }
         ]
