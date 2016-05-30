@@ -36,6 +36,10 @@ define([
 
     JobDecorator.prototype.DECORATOR_ID = DECORATOR_ID;
 
+    JobDecorator.prototype.getDisplayName = function() {
+        return this._node.attributes.name;
+    };
+
     JobDecorator.prototype.setAttributes = function() {
         EllipseDecorator.prototype.setAttributes.call(this);
         var status = this._attributes.status;
