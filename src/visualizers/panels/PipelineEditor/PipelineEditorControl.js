@@ -282,7 +282,8 @@ define([
 
     PipelineEditorControl.prototype.getConnectionId = function () {
         return this._client.getAllMetaNodes()
-            .find(node => node.isConnection()).getId();
+            .find(node => node.getAttribute('name') === 'Transporter')
+            .getId();
     };
 
     PipelineEditorControl.prototype._createConnectedNode = function (nodeId, typeId) {
