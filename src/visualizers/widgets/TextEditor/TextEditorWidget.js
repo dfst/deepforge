@@ -22,6 +22,7 @@ define([
         this._logger = logger.fork('Widget');
 
         this._el = container;
+        this._el.css({height: '100%'});
         this.editor = ace.edit(this._el[0]);
         this.editor.getSession().setMode('ace/mode/lua');
 
@@ -31,7 +32,7 @@ define([
             fontSize: '12pt'
         });
         this.editor.$blockScrolling = Infinity;
-        this.DELAY = 250;
+        this.DELAY = 750;
         // this.editor.setTheme('ace/theme/monokai');
 
         this.editor.on('input', _.debounce(this.saveText.bind(this), this.DELAY));
@@ -48,6 +49,7 @@ define([
     };
 
     TextEditorWidget.prototype.onWidgetContainerResize = function () {
+        this.editor.resize();
     };
 
     // Adding/Removing/Updating items
@@ -61,7 +63,7 @@ define([
         var header = this.getHeader(desc) + '\n';
 
         this.activeNode = desc.id;
-        this.editor.setValue(header + desc.text, -1);
+        this.editor.setValue(header + desc.text, 2);
         this.currentHeader = header;
     };
 
@@ -81,7 +83,11 @@ define([
         }
     };
 
-    TextEditorWidget.prototype.updateNode = function (/*desc*/) {
+    TextEditorWidget.prototype.updateNode = function (desc) {
+        // Check for header changes
+        if (this.activeNode === desc.id) {
+            this.addNode(desc);
+        }
         // TODO: Handle concurrent editing... Currently, last save wins and there are no
         // updates after opening the node. Supporting multiple users editing the same
         // operation/layer is important but more work than it is worth for now

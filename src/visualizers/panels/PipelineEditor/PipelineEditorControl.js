@@ -32,7 +32,6 @@ define([
         OperationControl.prototype
     );
 
-    // TODO: Update the territory rules!
     PipelineEditorControl.prototype.DEFAULT_DECORATOR = 'OperationDecorator';
     PipelineEditorControl.prototype.TERRITORY_RULE = {children: 3};
     PipelineEditorControl.prototype.selectedObjectChanged = function (nodeId) {

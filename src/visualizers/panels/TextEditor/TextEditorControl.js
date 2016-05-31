@@ -31,6 +31,7 @@ define([
         this._currentNodeId = null;
         this._currentNodeParentId = undefined;
         this._currentNodeHasAttr = false;
+        this._embedded = options.embedded;
 
         this._initWidgetEventHandlers();
 
@@ -55,7 +56,7 @@ define([
     // (this allows the browser to then only load those relevant parts).
     TextEditorControl.prototype.TERRITORY_RULE = {children: 0};
     TextEditorControl.prototype.selectedObjectChanged = function (nodeId) {
-        var desc = this._getObjectDescriptor(nodeId),
+        var parentId = this._getParentId(nodeId),
             self = this;
 
         self._logger.debug('activeObject nodeId \'' + nodeId + '\'');
@@ -73,28 +74,29 @@ define([
         if (typeof self._currentNodeId === 'string') {
             // Put new node's info into territory rules
             self._selfPatterns = {};
-            self._selfPatterns[nodeId] = {children: 0};  // Territory "rule"
-
             //self._widget.setTitle(desc.name.toUpperCase());
 
-            if (typeof desc.parentId === 'string') {
+            if (typeof parentId === 'string') {
                 self.$btnModelHierarchyUp.show();
             } else {
                 self.$btnModelHierarchyUp.hide();
             }
 
-            self._currentNodeParentId = desc.parentId;
+            self._currentNodeParentId = parentId;
 
             self._territoryId = self._client.addUI(self, function (events) {
                 self._eventCallback(events);
             });
 
             // Update the territory
-            self._client.updateTerritory(self._territoryId, self._selfPatterns);
-
             self._selfPatterns[nodeId] = this.TERRITORY_RULE;
             self._client.updateTerritory(self._territoryId, self._selfPatterns);
         }
+    };
+
+    TextEditorControl.prototype._getParentId = function (nodeId) {
+        var node = this._client.getNode(nodeId);
+        return node ? node.getParentId() : null;
     };
 
     // This next function retrieves the relevant node information for the widget
@@ -178,12 +180,16 @@ define([
     };
 
     TextEditorControl.prototype._attachClientEventListeners = function () {
-        this._detachClientEventListeners();
-        WebGMEGlobal.State.on('change:' + CONSTANTS.STATE_ACTIVE_OBJECT, this._stateActiveObjectChanged, this);
+        if (!this._embedded) {
+            this._detachClientEventListeners();
+            WebGMEGlobal.State.on('change:' + CONSTANTS.STATE_ACTIVE_OBJECT, this._stateActiveObjectChanged, this);
+        }
     };
 
     TextEditorControl.prototype._detachClientEventListeners = function () {
-        WebGMEGlobal.State.off('change:' + CONSTANTS.STATE_ACTIVE_OBJECT, this._stateActiveObjectChanged);
+        if (!this._embedded) {
+            WebGMEGlobal.State.off('change:' + CONSTANTS.STATE_ACTIVE_OBJECT, this._stateActiveObjectChanged);
+        }
     };
 
     TextEditorControl.prototype.onActivate = function () {

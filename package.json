@@ -11,7 +11,7 @@
     "dotenv": "^2.0.0",
     "lodash.difference": "^4.1.2",
     "webgme": "^2.0.0",
-    "webgme-autoviz": "^2.0.0",
+    "webgme-autoviz": "^2.0.1",
     "webgme-breadcrumbheader": "^2.0.0",
     "webgme-chflayout": "^2.0.0",
     "webgme-easydag": "dfst/webgme-easydag",

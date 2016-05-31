@@ -46,5 +46,23 @@
     "title": "RootViz",
     "panel": "panels/RootViz/RootVizPanel",
     "DEBUG_ONLY": false
+  },
+  {
+    "id": "TilingViz",
+    "title": "TilingViz",
+    "panel": "panels/TilingViz/TilingVizPanel",
+    "DEBUG_ONLY": false
+  },
+  {
+    "id": "OperationCodeEditor",
+    "title": "OperationCodeEditor",
+    "panel": "panels/OperationCodeEditor/OperationCodeEditorPanel",
+    "DEBUG_ONLY": false
+  },
+  {
+    "id": "OperationInterfaceEditor",
+    "title": "OperationInterfaceEditor",
+    "panel": "panels/OperationInterfaceEditor/OperationInterfaceEditorPanel",
+    "DEBUG_ONLY": false
   }
 ]

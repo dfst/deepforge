@@ -8,41 +8,54 @@
 define([
     'widgets/TextEditor/TextEditorWidget',
     'underscore',
-    'css!./styles/OperationEditorWidget.css'
+    'css!./styles/OperationCodeEditorWidget.css'
 ], function (
     TextEditorWidget,
     _
 ) {
     'use strict';
 
-    var OperationEditorWidget;
+    var OperationCodeEditorWidget;
         //WIDGET_CLASS = 'operation-editor';
 
-    OperationEditorWidget = function (logger, container) {
+    OperationCodeEditorWidget = function (logger, container) {
         TextEditorWidget.call(this, logger, container);
     };
 
-    _.extend(OperationEditorWidget.prototype, TextEditorWidget.prototype);
+    _.extend(OperationCodeEditorWidget.prototype, TextEditorWidget.prototype);
 
-    OperationEditorWidget.prototype.getHeader = function (desc) {
+    OperationCodeEditorWidget.prototype.getHeader = function (desc) {
         // Add comment about the inputs, attributes and references
         var inputs = desc.inputs.map(pair => `-- ${pair[0]} (${pair[1]})`).join('\n'),
             refs = desc.references.map(name => `-- ${name}`).join('\n'),
+            outputs,
             header = [
                 `-- Editing "${desc.name}"`,
-                '-- ',
-                '-- Defined variables:'
+                '-- '
             ];
 
-        if (inputs) {
+        if (inputs.length) {
+            header.push('-- Defined variables:');
             header.push(inputs);
         }
         if (refs) {
             header.push(refs);
         }
         header.push('--');
+
+        // Add info about outputs
+        outputs = desc.outputs.map(pair => `--   ${pair[0]} = <some ${pair[1]}>`)
+            .join('\n');
+
+        if (outputs.length) {
+            header.push('-- Returning something like:');
+            header.push('-- {');
+            header.push(outputs);
+            header.push('-- }');
+        }
+
         return header.join('\n');
     };
 
-    return OperationEditorWidget;
+    return OperationCodeEditorWidget;
 });

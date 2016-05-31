@@ -80,6 +80,27 @@
         "panel": "src/visualizers/panels/RootViz",
         "secondary": false,
         "widget": "src/visualizers/widgets/RootViz"
+      },
+      "TilingViz": {
+        "src": "panels/TilingViz/TilingVizPanel",
+        "title": "TilingViz",
+        "panel": "src/visualizers/panels/TilingViz",
+        "secondary": false,
+        "widget": "src/visualizers/widgets/TilingViz"
+      },
+      "OperationCodeEditor": {
+        "src": "panels/OperationCodeEditor/OperationCodeEditorPanel",
+        "title": "OperationCodeEditor",
+        "panel": "src/visualizers/panels/OperationCodeEditor",
+        "secondary": false,
+        "widget": "src/visualizers/widgets/OperationCodeEditor"
+      },
+      "OperationInterfaceEditor": {
+        "src": "panels/OperationInterfaceEditor/OperationInterfaceEditorPanel",
+        "title": "OperationInterfaceEditor",
+        "panel": "src/visualizers/panels/OperationInterfaceEditor",
+        "secondary": false,
+        "widget": "src/visualizers/widgets/OperationInterfaceEditor"
       }
     },
     "addons": {},
@@ -89,6 +110,12 @@
       },
       "JobDecorator": {
         "src": "src/decorators/JobDecorator"
+      },
+      "OpIntDecorator": {
+        "src": "src/decorators/OpIntDecorator"
+      },
+      "OpIntPtrDecorator": {
+        "src": "src/decorators/OpIntPtrDecorator"
       }
     },
     "seeds": {
