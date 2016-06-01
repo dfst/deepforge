@@ -64,5 +64,23 @@
     "title": "OperationInterfaceEditor",
     "panel": "panels/OperationInterfaceEditor/OperationInterfaceEditorPanel",
     "DEBUG_ONLY": false
+  },
+  {
+    "id": "DataTypeEditor",
+    "title": "DataTypeEditor",
+    "panel": "panels/DataTypeEditor/DataTypeEditorPanel",
+    "DEBUG_ONLY": false
+  },
+  {
+    "id": "SerializeEditor",
+    "title": "SerializeEditor",
+    "panel": "panels/SerializeEditor/SerializeEditorPanel",
+    "DEBUG_ONLY": false
+  },
+  {
+    "id": "DeserializeEditor",
+    "title": "DeserializeEditor",
+    "panel": "panels/DeserializeEditor/DeserializeEditorPanel",
+    "DEBUG_ONLY": false
   }
 ]

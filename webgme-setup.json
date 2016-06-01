@@ -101,6 +101,27 @@
         "panel": "src/visualizers/panels/OperationInterfaceEditor",
         "secondary": false,
         "widget": "src/visualizers/widgets/OperationInterfaceEditor"
+      },
+      "DataTypeEditor": {
+        "src": "panels/DataTypeEditor/DataTypeEditorPanel",
+        "title": "DataTypeEditor",
+        "panel": "src/visualizers/panels/DataTypeEditor",
+        "secondary": false,
+        "widget": "src/visualizers/widgets/DataTypeEditor"
+      },
+      "SerializeEditor": {
+        "src": "panels/SerializeEditor/SerializeEditorPanel",
+        "title": "SerializeEditor",
+        "panel": "src/visualizers/panels/SerializeEditor",
+        "secondary": false,
+        "widget": "src/visualizers/widgets/SerializeEditor"
+      },
+      "DeserializeEditor": {
+        "src": "panels/DeserializeEditor/DeserializeEditorPanel",
+        "title": "DeserializeEditor",
+        "panel": "src/visualizers/panels/DeserializeEditor",
+        "secondary": false,
+        "widget": "src/visualizers/widgets/DeserializeEditor"
       }
     },
     "addons": {},
