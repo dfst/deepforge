@@ -20,6 +20,23 @@ define([
         ],
         create = {};
 
+    var getUniqueName = function(parentId, basename) {
+        var pNode = this.client.getNode(parentId),
+            children = pNode.getChildrenIds().map(id => this.client.getNode(id)),
+            name = basename,
+            exists = {},
+            i = 2;
+
+        children.forEach(child => exists[child.getAttribute('name')] = true);
+
+        while (exists[name]) {
+            name = basename + '_' + i;
+            i++;
+        }
+
+        return name;
+    };
+
     var createNew = function(type, metasheetName) {
         // Create CNN node in the current dir
         // Get CNN node type
@@ -33,6 +50,17 @@ define([
 
         this.client.startTransaction('Created new operation prototype');
         newId = this.client.createChild({parentId, baseId});
+
+        // Name the new node
+        var basename = 'New' + this.client.getNode(baseId).getAttribute('name'),
+            newName = getUniqueName.call(this, parentId, basename);
+
+        // If instance, make the first char lowercase
+        if (!metasheetName) {
+            newName = newName.substring(0, 1).toLowerCase() + newName.substring(1);
+        }
+
+        this.client.setAttributes(newId, 'name', newName);
         if (metasheetName) {  // Add to metasheet
             var root = this.client.getNode(CONSTANTS.PROJECT_ROOT_ID),
                 metatabs = root.getRegistry(REGISTRY_KEYS.META_SHEETS),
