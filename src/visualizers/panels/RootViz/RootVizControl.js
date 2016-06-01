@@ -23,6 +23,7 @@ define([
         this._logger = options.logger.fork('Control');
 
         this._client = options.client;
+        this._embedded = options.embedded;
 
         // Initialize core collections and variables
         this._widget = options.widget;
@@ -162,12 +163,16 @@ define([
     };
 
     RootVizControl.prototype._attachClientEventListeners = function () {
-        this._detachClientEventListeners();
-        WebGMEGlobal.State.on('change:' + CONSTANTS.STATE_ACTIVE_OBJECT, this._stateActiveObjectChanged, this);
+        if (!this._embedded) {
+            this._detachClientEventListeners();
+            WebGMEGlobal.State.on('change:' + CONSTANTS.STATE_ACTIVE_OBJECT, this._stateActiveObjectChanged, this);
+        }
     };
 
     RootVizControl.prototype._detachClientEventListeners = function () {
-        WebGMEGlobal.State.off('change:' + CONSTANTS.STATE_ACTIVE_OBJECT, this._stateActiveObjectChanged);
+        if (!this._embedded) {
+            WebGMEGlobal.State.off('change:' + CONSTANTS.STATE_ACTIVE_OBJECT, this._stateActiveObjectChanged);
+        }
     };
 
     RootVizControl.prototype.onActivate = function () {
