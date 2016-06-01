@@ -149,8 +149,6 @@ define([
                 action: create.Architecture
             }
         ],
-        // FIXME: the next two should also add the created node to
-        // the meta
         MyDataTypes: [
             {
                 name: 'Create new data type',
@@ -163,6 +161,17 @@ define([
                 name: 'Create new operation',
                 icon: 'queue',
                 action: create.Operation
+            }
+        ],
+
+        Pipeline: [
+            {
+                name: 'Create new node',
+                icon: 'queue',
+                priority: 2,
+                action: function() {
+                    this.onCreateInitialNode();
+                }
             }
         ]
     };

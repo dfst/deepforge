@@ -4,11 +4,13 @@
 define([
     'js/Constants',
     'panel/FloatingActionButton/FloatingActionButton',
+    'deepforge/viz/PipelineControl',
     './Actions',
     'text!./PluginConfig.json'
 ], function (
     CONSTANTS,
     PluginButton,
+    PipelineControl,
     ACTIONS,
     PluginConfig
 ) {
@@ -17,6 +19,7 @@ define([
     var ForgeActionButton= function (layoutManager, params) {
         PluginButton.call(this, layoutManager, params);
         this._pluginConfig = JSON.parse(PluginConfig);
+        this._client = this.client;
         this._actions = [];
 
         WebGMEGlobal.State.on('change:' + CONSTANTS.STATE_ACTIVE_OBJECT,
@@ -26,7 +29,11 @@ define([
     };
 
     // inherit from PanelBaseWithHeader
-    _.extend(ForgeActionButton.prototype, PluginButton.prototype);
+    _.extend(
+        ForgeActionButton.prototype,
+        PluginButton.prototype,
+        PipelineControl.prototype
+    );
 
     ForgeActionButton.prototype.findActionsFor = function(nodeId) {
         var node = this.client.getNode(nodeId),
@@ -57,6 +64,9 @@ define([
         this._actions = actions;
         this.update();
     };
+
+    // Add the ability to create initial nodes
+    // TODO
 
     return ForgeActionButton;
 });

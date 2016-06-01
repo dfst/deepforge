@@ -3,14 +3,14 @@
 
 define([
     'panels/EasyDAG/EasyDAGControl',
-    'deepforge/viz/OperationControl',
+    'deepforge/viz/PipelineControl',
     'common/core/coreQ',
     'common/storage/constants',
     'q',
     'underscore'
 ], function (
     EasyDAGControl,
-    OperationControl,
+    PipelineControl,
     Core,
     STORAGE_CONSTANTS,
     Q,
@@ -29,10 +29,9 @@ define([
     _.extend(
         PipelineEditorControl.prototype,
         EasyDAGControl.prototype,
-        OperationControl.prototype
+        PipelineControl.prototype
     );
 
-    PipelineEditorControl.prototype.DEFAULT_DECORATOR = 'OperationDecorator';
     PipelineEditorControl.prototype.TERRITORY_RULE = {children: 3};
     PipelineEditorControl.prototype.selectedObjectChanged = function (nodeId) {
         var desc = this._getObjectDescriptor(nodeId);
@@ -99,59 +98,6 @@ define([
             //node.getBaseId()
         //];
         return node.getAttribute('name');
-    };
-
-    PipelineEditorControl.prototype._getObjectDescriptor = function(id) {
-        var desc = EasyDAGControl.prototype._getObjectDescriptor.call(this, id),
-            node = this._client.getNode(id);
-
-        if (this.hasMetaName(id, 'Operation')) {
-            // Only decorate operations in the currently active node
-            if (this._currentNodeId !== desc.parentId) {
-                return desc;
-            }
-
-            // Add inputs and outputs
-            var childrenIds = node.getChildrenIds(),
-                inputId = childrenIds.find(cId => this.hasMetaName(cId, 'Inputs')),
-                outputId = childrenIds.find(cId => this.hasMetaName(cId, 'Outputs')),
-                inputs,
-                outputs;
-
-            inputs = inputId ? this._client.getNode(inputId).getChildrenIds() : [];
-            outputs = outputId ? this._client.getNode(outputId).getChildrenIds() : [];
-
-            // Add the inputs, outputs in the form:
-            //   [ name, baseId ]
-            desc.inputs = inputs.map(id => this.formatIO(id));
-            desc.outputs = outputs.map(id => this.formatIO(id));
-
-            // Remove the 'code' attribute
-            if (desc.attributes.code) {
-                delete desc.attributes.code;
-            }
-
-        } else if (desc.isConnection) {
-            // Set src, dst to siblings and add srcPort, dstPort
-            desc.srcPort = desc.src;
-            desc.dstPort = desc.dst;
-
-            // Get the src/dst that are in the currentNode
-            desc.src = this.getSiblingContaining(desc.src);
-            desc.dst = this.getSiblingContaining(desc.dst);
-
-            if (desc.src === null || desc.dst === null) {
-                this._logger.warn(`Could not get src/dst for ${desc.id}`);
-            }
-        } else if (this.hasMetaName(desc.id, 'Data')) {  // port
-            // Add nodeId for container
-            desc.nodeId = this.getSiblingContaining(desc.id);
-            // It is a data port if it has a parentId and the parent is either
-            // 'Inputs' or 'Outputs'
-            desc.isDataPort = desc.parentId &&
-                (this.hasMetaName(desc.parentId, 'Inputs') || this.hasMetaName(desc.parentId, 'Outputs'));
-        }
-        return desc;
     };
 
     PipelineEditorControl.prototype.getSiblingContaining = function(containedId) {

@@ -7,11 +7,13 @@
 
 define([
     'widgets/EasyDAG/EasyDAGWidget',
+    'deepforge/viz/PipelineControl',
     './OperationNode',
     'underscore',
     'css!./styles/PipelineEditorWidget.css'
 ], function (
     EasyDAGWidget,
+    PipelineControl,
     OperationNode,
     _
 ) {
@@ -28,6 +30,9 @@ define([
 
     _.extend(PipelineEditorWidget.prototype, EasyDAGWidget.prototype);
     PipelineEditorWidget.prototype.ItemClass = OperationNode;
+
+    PipelineEditorWidget.prototype.onCreateInitialNode =
+        PipelineControl.prototype.onCreateInitialNode;
 
     //////////////////// Port Support ////////////////////
     PipelineEditorWidget.prototype.addPort = function(desc) {
