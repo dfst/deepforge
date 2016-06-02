@@ -57,8 +57,7 @@ define([
             // still create operation prototypes from Operation (which we
             // wouldn't be able to do if it was abstract - which it probably
             // should be)
-            .filter(node => node.getAttribute('name') !== 'Operation' &&
-                this.getOperationInputs(node).length === 0)
+            .filter(node => node.getAttribute('name') !== 'Operation')
             .map(node => this._getObjectDescriptor(node.getId()));
     };
 
