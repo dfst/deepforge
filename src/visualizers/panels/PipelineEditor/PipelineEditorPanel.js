@@ -26,6 +26,7 @@ define(['js/PanelBase/PanelBaseWithHeader',
         PanelBaseWithHeader.apply(this, [options, layoutManager]);
 
         this._client = params.client;
+        this._embedded = params.embedded;
 
         //initialize UI
         this._initialize();
@@ -52,6 +53,7 @@ define(['js/PanelBase/PanelBaseWithHeader',
         this.control = new PipelineEditorControl({
             logger: this.logger,
             client: this._client,
+            embedded: this._embedded,
             widget: this.widget
         });
 

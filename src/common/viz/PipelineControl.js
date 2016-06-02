@@ -122,5 +122,13 @@ define([
         return desc;
     };
 
+    PipelineControl.prototype.formatIO = function(id) {
+        var node = this._client.getNode(id);
+        return {
+            id: id,
+            name: node.getAttribute('name')
+        };
+    };
+
     return PipelineControl;
 });

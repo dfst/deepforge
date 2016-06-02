@@ -9,32 +9,102 @@ define([
     'widgets/EasyDAG/EasyDAGWidget',
     'deepforge/viz/PipelineControl',
     './OperationNode',
+    './Connection',
+    './SelectionManager',
     'underscore',
     'css!./styles/PipelineEditorWidget.css'
 ], function (
     EasyDAGWidget,
     PipelineControl,
     OperationNode,
+    Connection,
+    SelectionManager,
     _
 ) {
     'use strict';
 
     var PipelineEditorWidget,
-        WIDGET_CLASS = 'pipeline-editor';
+        WIDGET_CLASS = 'pipeline-editor',
+        STATE = {
+            DEFAULT: 'default',
+            CONNECTING: 'connecting'
+        };
 
     PipelineEditorWidget = function (logger, container) {
         EasyDAGWidget.call(this, logger, container);
         this.$el.addClass(WIDGET_CLASS);
         this.portIdToNode = {};
+        this.PORT_STATE = STATE.DEFAULT;
+        this._connForPort = {};
+        this._itemsShowingPorts = [];
     };
 
     _.extend(PipelineEditorWidget.prototype, EasyDAGWidget.prototype);
     PipelineEditorWidget.prototype.ItemClass = OperationNode;
+    PipelineEditorWidget.prototype.SelectionManager = SelectionManager;
+    PipelineEditorWidget.prototype.Connection = Connection;
 
     PipelineEditorWidget.prototype.onCreateInitialNode =
         PipelineControl.prototype.onCreateInitialNode;
 
+    PipelineEditorWidget.prototype.setupItemCallbacks = function() {
+        EasyDAGWidget.prototype.setupItemCallbacks.call(this);
+        this.ItemClass.prototype.connectPort =
+            PipelineEditorWidget.prototype.connectPort.bind(this);
+        this.ItemClass.prototype.disconnectPort =
+            PipelineEditorWidget.prototype.disconnectPort.bind(this);
+    };
+
     //////////////////// Port Support ////////////////////
+    PipelineEditorWidget.prototype.addConnection = function(desc) {
+        EasyDAGWidget.prototype.addConnection.call(this, desc);
+        // Record the connection with the input (dst) port
+        var dstItem = this.items[desc.dst],
+            dstPort;
+
+        this._connForPort[desc.dstPort] = desc.id;
+        if (dstItem) {
+            dstPort = dstItem.inputs.find(port => port.id === desc.dstPort);
+
+            if (!dstPort) {
+                this._logger.error(`Could not find port ${desc.dstPort}`);
+                return;
+            }
+
+            dstPort.connection = desc.id;
+            // Update the given port...
+            dstItem.refreshPorts();
+        }
+    };
+
+    PipelineEditorWidget.prototype.addNode = function(desc) {
+        EasyDAGWidget.prototype.addNode.call(this, desc);
+        // Update the input port connections (if not connection)
+        var item = this.items[desc.id];
+        if (item) {
+            item.inputs.forEach(port => 
+                port.connection = this._connForPort[port.id]
+            );
+            // Update the item's ports
+            item.refreshPorts();
+        }
+    };
+
+    PipelineEditorWidget.prototype._removeConnection = function(id) {
+        // Update the input node (dstPort)
+        var conn = this.connections[id].desc,
+            dst = this.items[conn.dst],
+            port;
+
+        if (dst) {
+            port = dst.inputs.find(port => port.id === conn.dstPort);
+            port.connection = null;
+            dst.refreshPorts();
+        }
+        EasyDAGWidget.prototype._removeConnection.call(this, id);
+    };
+
+    // May not actually need these port methods
     PipelineEditorWidget.prototype.addPort = function(desc) {
         this.items[desc.nodeId].addPort(desc);
         this.portIdToNode[desc.id] = desc.nodeId;
@@ -62,8 +132,84 @@ define([
         }
     };
 
-    // Change the default decorator to show the inputs and outputs as ports
-    // when expanded
+    PipelineEditorWidget.prototype.disconnectPort = function(portId, connId) {
+        this.removeConnection(connId);
+    };
+
+    PipelineEditorWidget.prototype.connectPort = function(nodeId, id, isOutput) {
+        this._logger.info('port ' + id + ' has been clicked! (', isOutput, ')');
+        if (this.PORT_STATE === STATE.DEFAULT) {
+            this.startPortConnection(nodeId, id, isOutput);
+        } else if (this._selectedPort !== id) {
+            this._logger.info('connecting ' + this._selectedPort + ' to ' + id);
+            var src = !isOutput ? this._selectedPort : id,
+                dst = isOutput ? this._selectedPort : id;
+
+            this.createConnection(src, dst);
+        } else if (!this._selectedPort) {
+            this._logger.error(`Invalid connection state: ${this.PORT_STATE} w/ ${this._selectedPort}`);
+            this.resetPortState();
+        }
+    };
+
+    PipelineEditorWidget.prototype.startPortConnection = function(nodeId, id, isOutput) {
+        var existingMatches = this.getExistingPortMatches(id, isOutput),
+            item = this.items[nodeId];
+        
+        // Hide all ports except 'id' on 'nodeId'
+        this._selectedPort = id;
+        item.showPorts(id, !isOutput);
+
+        // Get all existing potential port destinations for the id
+        existingMatches.forEach(match =>
+            this.showPorts(match.nodeId, match.portIds, isOutput)
+        );
+
+        // Show the 'add' button
+        // TODO
+
+        this.PORT_STATE = STATE.CONNECTING;
+    };
+
+    PipelineEditorWidget.prototype.onDeselect =
+    PipelineEditorWidget.prototype.resetPortState = function() {
+        // Reset connecting state
+        this._itemsShowingPorts.forEach(item => item.hidePorts());
+        this.PORT_STATE = STATE.DEFAULT;
+    };
+
+    PipelineEditorWidget.prototype.showPorts = function(nodeId, portIds, areInputs) {
+        var item = this.items[nodeId];
+        item.showPorts(portIds, areInputs);
+        this._itemsShowingPorts.push(item);
+    };
+
+    // No extra buttons - just the empty message!
+    PipelineEditorWidget.prototype.refreshExtras =
+        PipelineEditorWidget.prototype.updateEmptyMsg;
+
+    PipelineEditorWidget.prototype.refreshConnections = function() {
+        // Update the connections to they first update their start/end points
+        var connIds = Object.keys(this.connections),
+            src,
+            dst,
+            conn;
+
+        for (var i = connIds.length; i--;) {
+            conn = this.connections[connIds[i]];
+
+            // Update the start/end point
+            src = this.items[conn.src];
+            conn.setStartPoint(src.getPortLocation(conn.srcPort));
+
+            dst = this.items[conn.dst];
+            conn.setEndPoint(dst.getPortLocation(conn.dstPort, true));
+            
+            conn.redraw();
+        }
+    };
+
+    // Record the connections connected to input ports on connection creation
     // TODO
 
     // Also, render the connections so they connect operations using the ports

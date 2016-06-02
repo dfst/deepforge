@@ -19,7 +19,11 @@ define([
 
     'use strict';
 
-    var PipelineEditorControl;
+    var PipelineEditorControl,
+        CONN = {
+            SRC: 'src',
+            DST: 'dst'
+        };
 
     PipelineEditorControl = function (options) {
         EasyDAGControl.call(this, options);
@@ -31,6 +35,9 @@ define([
         EasyDAGControl.prototype,
         PipelineControl.prototype
     );
+
+    PipelineEditorControl.prototype._getValidInitialNodes =
+        PipelineControl.prototype.getValidInitialNodes;
 
     PipelineEditorControl.prototype.TERRITORY_RULE = {children: 3};
     PipelineEditorControl.prototype.selectedObjectChanged = function (nodeId) {
@@ -90,22 +97,19 @@ define([
         this._client.updateTerritory(this._territoryId, this._territories);
     };
 
-    PipelineEditorControl.prototype.formatIO = function(id) {
-        var node = this._client.getNode(id);
-        // This might not be necessary...
-        //return [
-            //node.getAttribute('name'),
-            //node.getBaseId()
-        //];
-        return node.getAttribute('name');
-    };
-
     PipelineEditorControl.prototype.getSiblingContaining = function(containedId) {
         var n = this._client.getNode(containedId);
         while (n && n.getParentId() !== this._currentNodeId) {
             n = this._client.getNode(n.getParentId());
         }
         return n && n.getId();
+    };
+
+    PipelineEditorControl.prototype._initWidgetEventHandlers = function () {
+        EasyDAGControl.prototype._initWidgetEventHandlers.call(this);
+        this._widget.getExistingPortMatches = this.getExistingPortMatches.bind(this);
+        this._widget.createConnection = this.createConnection.bind(this);
+        this._widget.removeConnection = this.removeConnection.bind(this);
     };
 
     PipelineEditorControl.prototype.isContainedInActive = function (gmeId) {
@@ -189,18 +193,97 @@ define([
             });
     };
 
-    PipelineEditorControl.prototype._getValidInitialNodes = function () {
-        // Get all nodes that have no inputs
-        return this._getAllValidChildren(this._currentNodeId)
-            .map(id => this._client.getNode(id))
-            .filter(node => !node.isAbstract() && !node.isConnection())
-            // Checking the name (below) is simply convenience so we can
-            // still create operation prototypes from Operation (which we
-            // wouldn't be able to do if it was abstract - which it probably
-            // should be)
-            .filter(node => node.getAttribute('name') !== 'Operation' &&
-                this.getOperationInputs(node).length === 0)
-            .map(node => this._getObjectDescriptor(node.getId()));
+    PipelineEditorControl.prototype.removeConnection = function (id) {
+        var conn = this._client.getNode(id),
+            names,
+            msg;
+
+        names = ['src', 'dst']  // srcPort, srcOp, dstPort, dstOp
+            .map(type => conn.getPointer(type).to)
+            .map(portId => [portId, this.getSiblingContaining(portId)])
+            .reduce((l1, l2) => l1.concat(l2))
+            .map(id => this._client.getNode(id));
+
+        msg = `Disconnecting ${names[0]} of ${names[1]} from ${names[2]} of ${names[3]}`;
+
+        this._client.startTransaction(msg);
+        this._client.delMoreNodes([id]);
+        this._client.completeTransaction();
+    };
+
+    PipelineEditorControl.prototype.getExistingPortMatches = function (portId, isOutput) {
+        // Get the children nodeIds
+        var srcOpId = this.getSiblingContaining(portId),
+            childrenIds,
+            skipIds,  // Either ancestors or predecessors -> no cycles allowed!
+            skipType = isOutput ? 'Predecessors' : 'Successors',
+            method = 'get' + skipType,
+            matches;
+
+        childrenIds = this._client.getNode(this._currentNodeId).getChildrenIds();
+
+        // Remove either ancestors or descendents
+        skipIds = this[method](childrenIds.map(id => this._client.getNode(id)), srcOpId);
+        childrenIds = _.difference(childrenIds, skipIds);
+
+        matches = this._getPortMatchFor(portId, childrenIds, isOutput);
+
+        // Get the port matches in the children
+        return matches.map(tuple => {
+            return {
+                nodeId: tuple[0],
+                portIds: tuple[1]
+            };
+        });
+    };
+
+    PipelineEditorControl.prototype._getPortMatchFor = function (portId, opIds, isOutput) {
+        //opIds = opIds || this._getAllValidChildren(node.getParentId());
+        var opNodes = opIds.map(id => this._client.getNode(id)),
+            portType = this._client.getNode(portId).getMetaTypeId(),
+            getNodes = node => {
+                var searchType = isOutput ? 'Inputs' : 'Outputs',
+                    searchFn = 'getOperation' + searchType,
+                    dstPorts = this[searchFn](node);
+
+                return [
+                    node.getId(),
+                    dstPorts.filter(id => {
+                        var typeId = this._client.getNode(id).getMetaTypeId();
+                        return isOutput ?
+                            this._client.isTypeOf(portType, typeId) :
+                            this._client.isTypeOf(typeId, portType);
+                    })
+                ];
+            };
+
+        return opNodes
+            .map(getNodes)  // Get all valid src/dst ports
+            .filter(tuple => tuple[1].length);
+    };
+
+    PipelineEditorControl.prototype.createConnection = function (srcId, dstId) {
+        var connId,
+            names,
+            msg;
+
+        names = [srcId, dstId]  // srcPort, srcOp, dstPort, dstOp
+            .map(id => [id, this.getSiblingContaining(srcId)])
+            .reduce((l1, l2) => l1.concat(l2))
+            .map(id => this._client.getNode(id));
+
+        msg = `Connecting ${names[0]} of ${names[1]} to ${names[2]} of ${names[4]}`;
+
+        this._client.startTransaction(msg);
+
+        connId = this._client.createChild({
+            parentId: this._currentNodeId,
+            baseId: this.getConnectionId()
+        });
+        this._client.makePointer(connId, CONN.SRC, srcId);
+        this._client.makePointer(connId, CONN.DST, dstId);
+
+        this._client.completeTransaction();
     };
 
     PipelineEditorControl.prototype._getPortPairs = function (outputs, inputs) {
@@ -264,13 +347,12 @@ define([
                 commitMsg,
                 root;
 
-            // FIXME: This should use the core...
-            // For now, I am going to try to load the core and use it here...
+            // This next portion uses the core bc it requires async loading and batching
+            // into a single commit
             var core = new Core(project, {
                 globConf: WebGMEGlobal.gmeConfig,
                 logger: this._logger.fork('core')
             });
-            //this._client.startTransaction();
             // Load the first node/commit...
             core.loadRoot(rootGuid)
             .then(_root => {
@@ -340,6 +422,7 @@ define([
         } else if (pairs.length > 1) {
             // Else, prompt!
             // TODO
+            this._logger.error('multiple port combinations... This is currently unsupported');
         }
     };
 
