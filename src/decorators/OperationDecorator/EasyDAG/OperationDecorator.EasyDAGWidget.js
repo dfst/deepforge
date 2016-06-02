@@ -52,5 +52,9 @@ define([
         // TODO
     };
 
+    OperationDecorator.prototype.getDisplayName = function() {
+        return this._node.name;
+    };
+
     return OperationDecorator;
 });
