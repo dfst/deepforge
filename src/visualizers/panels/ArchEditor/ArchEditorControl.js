@@ -7,24 +7,44 @@
 define([
     'panels/EasyDAG/EasyDAGControl',
     'js/NodePropertyNames',
+    'js/Utils/ComponentSettings',
     'underscore'
 ], function (
     EasyDAGControl,
     nodePropertyNames,
+    ComponentSettings,
     _
 ) {
 
     'use strict';
 
-    var ArchEditorControl;
+    var ArchEditorControl,
+        DEFAULT_CONFIG = {
+            DefaultColor: '#ffb74d',
+            LayerColors: {
+                Containers: '#ffb74d',
+                Module: '#ba68c8',
+                ConvLayer: '#2196f3',
+                SimpleLayer: '#ff9100',
+                TransferLayer: '#80deea',
+                MiscLayers: '#ce93d8',
+                Criterion: '#7e57c2'
+            }
+        };
 
     ArchEditorControl = function (options) {
         EasyDAGControl.call(this, options);
+        this._config = DEFAULT_CONFIG;
+        ComponentSettings.resolveWithWebGMEGlobal(this._config, this.getComponentId());
     };
 
     _.extend(ArchEditorControl.prototype, EasyDAGControl.prototype);
 
     ArchEditorControl.prototype.TERRITORY_RULE = {children: 1};
+    ArchEditorControl.prototype.getComponentId = function() {
+        return 'ArchEditor';
+    };
+
     ArchEditorControl.prototype._getObjectDescriptor = function(id) {
         var desc = EasyDAGControl.prototype._getObjectDescriptor.call(this, id);
 
@@ -47,10 +67,19 @@ define([
             if (desc.baseName) {
                 var node = this._client.getNode(id),
                     base = this._client.getNode(node.getMetaTypeId()),
-                    layerType = this._client.getNode(base.getBaseId());
+                    layerType = this._client.getNode(base.getBaseId()),
+                    color;
 
+                desc.baseName = base.getAttribute(nodePropertyNames.Attributes.name);
                 if (layerType) {
                     desc.layerType = layerType.getAttribute(nodePropertyNames.Attributes.name);
+
+                    color = this._config.LayerColors[desc.layerType];
+                    if (!color) {
+                        this._logger.warn(`No color found for ${desc.layerType}`);
+                        color = this._config.DefaultColor;
+                    }
+                    desc.color = color;
                 }
             }
         }
