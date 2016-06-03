@@ -16,7 +16,7 @@
     "webgme-breadcrumbheader": "^2.0.0",
     "webgme-chflayout": "^2.0.0",
     "webgme-easydag": "dfst/webgme-easydag",
-    "webgme-fab": "^2.0.1",
+    "webgme-fab": "dfst/webgme-fab",
     "webgme-simple-nodes": "^2.0.0"
   },
   "devDependencies": {

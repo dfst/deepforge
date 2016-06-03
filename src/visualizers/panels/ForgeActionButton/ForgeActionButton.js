@@ -1,4 +1,4 @@
-/*globals define, _, WebGMEGlobal*/
+/*globals define, _ */
 /*jshint browser: true*/
 
 define([
@@ -21,9 +21,6 @@ define([
         this._pluginConfig = JSON.parse(PluginConfig);
         this._client = this.client;
         this._actions = [];
-
-        WebGMEGlobal.State.on('change:' + CONSTANTS.STATE_ACTIVE_OBJECT,
-            this.addActionsForObject, this);
 
         this.logger.debug('ctor finished');
     };
@@ -50,7 +47,12 @@ define([
         return ACTIONS[basename] || [];
     };
 
-    ForgeActionButton.prototype.addActionsForObject = function(models, nodeId) {
+    ForgeActionButton.prototype.onNodeLoad = function(nodeId) {
+        PluginButton.prototype.onNodeLoad.call(this, nodeId);
+        this.addActionsForObject(nodeId);
+    };
+
+    ForgeActionButton.prototype.addActionsForObject = function(nodeId) {
         var actions = this.findActionsFor(nodeId),
             i;
 
