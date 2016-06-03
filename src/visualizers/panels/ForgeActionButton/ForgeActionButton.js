@@ -38,12 +38,15 @@ define([
     ForgeActionButton.prototype.findActionsFor = function(nodeId) {
         var node = this.client.getNode(nodeId),
             base = this.client.getNode(node.getMetaTypeId()),
+            isMeta = base.getId() === node.getId(),
+            suffix = isMeta ? '_META' : '',
             basename;
 
         while (base && !ACTIONS[basename]) {
-            basename = base.getAttribute('name');
+            basename = base.getAttribute('name') + suffix;
             base = this.client.getNode(base.getBaseId());
         }
+
         return ACTIONS[basename] || [];
     };
 
@@ -64,9 +67,6 @@ define([
         this._actions = actions;
         this.update();
     };
-
-    // Add the ability to create initial nodes
-    // TODO
 
     return ForgeActionButton;
 });

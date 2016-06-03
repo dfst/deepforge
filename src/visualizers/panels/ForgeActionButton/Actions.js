@@ -135,35 +135,34 @@ define([
             }
         ],
 
-        MyPipelines: [
+        MyPipelines_META: [
             {
                 name: 'Create new pipeline',
                 icon: 'queue',
                 action: create.Pipeline
             }
         ],
-        MyArchitectures: [
+        MyArchitectures_META: [
             {
                 name: 'Create new architecture',
                 icon: 'queue',
                 action: create.Architecture
             }
         ],
-        MyDataTypes: [
+        MyDataTypes_META: [
             {
                 name: 'Create new data type',
                 icon: 'queue',
                 action: create.Data
             }
         ],
-        MyOperations: [
+        MyOperations_META: [
             {
                 name: 'Create new operation',
                 icon: 'queue',
                 action: create.Operation
             }
         ],
-
         Pipeline: [
             {
                 name: 'Create new node',
