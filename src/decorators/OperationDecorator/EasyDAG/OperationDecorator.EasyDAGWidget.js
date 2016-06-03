@@ -43,15 +43,13 @@ define([
     OperationDecorator.prototype.condense = function() {
         var path,
             width,
-            rx,
-            ry;
+            rx;
 
         width = Math.max(this.nameWidth + 2 * NAME_MARGIN, this.dense.width);
         rx = width/2;
-        ry = this.dense.height/2;
 
         path = [
-            `M${-rx},${-ry}`,
+            `M${-rx},0`,
             `l ${width} 0`,
             `l 0 ${this.dense.height}`,
             `l -${width} 0`,
@@ -70,10 +68,10 @@ define([
         this.height = this.dense.height;
         this.width = width;
 
-        this.$name.attr('y', '0');
+        this.$name.attr('y', this.height/2);
 
         this.$el
-            .attr('transform', `translate(${this.width/2}, ${this.height/2})`);
+            .attr('transform', `translate(${this.width/2}, 0)`);
         this.expanded = false;
         this.onResize();
     };
@@ -83,11 +81,7 @@ define([
             ports = ids ? allPorts.filter(port => ids.indexOf(port.id) > -1) : allPorts,
             x = -this.width/2,
             dx = this.width/(ports.length+1),
-            y = (this.height/2);
-
-        if (areInputs) {
-            y *= -1;
-        }
+            y = areInputs ? 0 : this.height;  // (this.height/2);
 
         ports.forEach(port => {
             x += dx;
