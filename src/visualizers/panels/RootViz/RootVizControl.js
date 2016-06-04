@@ -77,6 +77,7 @@ define([
             self._territoryId = self._client.addUI(self, function (events) {
                 self._eventCallback(events);
             });
+            self._logger.debug(`RootViz territory id is ${this._territoryId}`);
 
             // Update the territory
             self._client.updateTerritory(self._territoryId, self._selfPatterns);

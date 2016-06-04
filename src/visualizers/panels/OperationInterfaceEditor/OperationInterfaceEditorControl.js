@@ -42,10 +42,6 @@ define([
     OperationInterfaceEditorControl.prototype.TERRITORY_RULE = {children: 3};
     OperationInterfaceEditorControl.prototype.DEFAULT_DECORATOR = 'OpIntDecorator';
     OperationInterfaceEditorControl.prototype.selectedObjectChanged = function (nodeId) {
-        var node = this._client.getNode(nodeId),
-            name = node.getAttribute('name'),
-            parentId = node.getParentId();
-
         this._logger.debug('activeObject nodeId \'' + nodeId + '\'');
 
         // Remove current territory patterns
@@ -57,6 +53,10 @@ define([
         this._currentNodeParentId = undefined;
 
         if (typeof this._currentNodeId === 'string') {
+            var node = this._client.getNode(nodeId),
+                name = node.getAttribute('name'),
+                parentId = node.getParentId();
+
             this._widget.setTitle(name.toUpperCase());
 
             if (typeof parentId === 'string') {
@@ -81,17 +81,17 @@ define([
         for (var i = 0; i < events.length; i++) {
             event = events[i];
             switch (event.etype) {
-                case CONSTANTS.TERRITORY_EVENT_LOAD:
-                    this._onLoad(event.eid);
-                    break;
-                case CONSTANTS.TERRITORY_EVENT_UPDATE:
-                    this._onUpdate(event.eid);
-                    break;
-                case CONSTANTS.TERRITORY_EVENT_UNLOAD:
-                    this._onUnload(event.eid);
-                    break;
-                default:
-                    break;
+            case CONSTANTS.TERRITORY_EVENT_LOAD:
+                this._onLoad(event.eid);
+                break;
+            case CONSTANTS.TERRITORY_EVENT_UPDATE:
+                this._onUpdate(event.eid);
+                break;
+            case CONSTANTS.TERRITORY_EVENT_UNLOAD:
+                this._onUnload(event.eid);
+                break;
+            default:
+                break;
             }
         }
 
@@ -110,6 +110,7 @@ define([
 
         this._territories[nodeId] = {children: 0};  // Territory "rule"
         this._client.updateTerritory(this._territoryId, this._territories);
+        this.logger.debug(`OpIntEditor current territory id is ${this._territoryId}`);
 
         this._territories[nodeId] = this.TERRITORY_RULE;
 

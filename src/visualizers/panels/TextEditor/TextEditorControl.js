@@ -56,8 +56,7 @@ define([
     // (this allows the browser to then only load those relevant parts).
     TextEditorControl.prototype.TERRITORY_RULE = {children: 0};
     TextEditorControl.prototype.selectedObjectChanged = function (nodeId) {
-        var parentId = this._getParentId(nodeId),
-            self = this;
+        var self = this;
 
         self._logger.debug('activeObject nodeId \'' + nodeId + '\'');
 
@@ -72,6 +71,7 @@ define([
             .getAttribute(self.ATTRIBUTE_NAME)) === 'string';
 
         if (typeof self._currentNodeId === 'string') {
+            var parentId = this._getParentId(nodeId);
             // Put new node's info into territory rules
             self._selfPatterns = {};
             //self._widget.setTitle(desc.name.toUpperCase());
@@ -87,6 +87,7 @@ define([
             self._territoryId = self._client.addUI(self, function (events) {
                 self._eventCallback(events);
             });
+            self._logger.debug(`TextEditor territory id is ${this._territoryId}`);
 
             // Update the territory
             self._selfPatterns[nodeId] = this.TERRITORY_RULE;

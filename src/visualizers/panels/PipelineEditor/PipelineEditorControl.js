@@ -41,8 +41,6 @@ define([
 
     PipelineEditorControl.prototype.TERRITORY_RULE = {children: 3};
     PipelineEditorControl.prototype.selectedObjectChanged = function (nodeId) {
-        var desc = this._getObjectDescriptor(nodeId);
-
         this._logger.debug('activeObject nodeId \'' + nodeId + '\'');
 
         // Remove current territory patterns
@@ -54,6 +52,7 @@ define([
         this._currentNodeParentId = undefined;
 
         if (typeof this._currentNodeId === 'string') {
+            var desc = this._getObjectDescriptor(nodeId);
             this._widget.setTitle(desc.name.toUpperCase());
 
             if (typeof desc.parentId === 'string') {
@@ -78,6 +77,7 @@ define([
         this._territoryId = this._client.addUI(this, events => {
             this._eventCallback(events);
         });
+        this._logger.debug(`PipelineEditor territory id is ${this._territoryId}`);
 
         this._territories[nodeId] = {children: 0};  // Territory "rule"
         this._client.updateTerritory(this._territoryId, this._territories);
