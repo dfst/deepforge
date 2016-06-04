@@ -121,6 +121,14 @@ define([
         return desc;
     };
 
+    PipelineControl.prototype.getSiblingContaining = function(containedId) {
+        var n = this._client.getNode(containedId);
+        while (n && n.getParentId() !== this._currentNodeId) {
+            n = this._client.getNode(n.getParentId());
+        }
+        return n && n.getId();
+    };
+
     PipelineControl.prototype.formatIO = function(id) {
         var node = this._client.getNode(id);
         return {

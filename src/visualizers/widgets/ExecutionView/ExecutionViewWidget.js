@@ -6,12 +6,12 @@
  */
 
 define([
-    'widgets/PipelineEditor/PipelineEditorWidget',
+    'widgets/EasyDAG/EasyDAGWidget',
     './SelectionManager',
     'underscore',
     'css!./styles/ExecutionViewWidget.css'
 ], function (
-    PipelineEditorWidget,
+    EasyDAGWidget,
     SelectionManager,
     _
 ) {
@@ -20,10 +20,10 @@ define([
     var ExecutionViewWidget;
 
     ExecutionViewWidget = function (logger, container) {
-        PipelineEditorWidget.call(this, logger, container);
+        EasyDAGWidget.call(this, logger, container);
     };
 
-    _.extend(ExecutionViewWidget.prototype, PipelineEditorWidget.prototype);
+    _.extend(ExecutionViewWidget.prototype, EasyDAGWidget.prototype);
 
     ExecutionViewWidget.prototype.SelectionManager = SelectionManager;
 

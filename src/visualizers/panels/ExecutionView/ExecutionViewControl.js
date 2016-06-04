@@ -5,10 +5,12 @@
  */
 
 define([
-    'panels/PipelineEditor/PipelineEditorControl',
+    'panels/EasyDAG/EasyDAGControl',
+    'deepforge/viz/PipelineControl',
     'underscore'
 ], function (
-    PipelineEditorControl,
+    EasyDAGControl,
+    PipelineControl,
     _
 ) {
 
@@ -17,33 +19,41 @@ define([
     var ExecutionViewControl;
 
     ExecutionViewControl = function (options) {
-        PipelineEditorControl.call(this, options);
-        // TODO: Set read only (rm selection's action btns)
+        EasyDAGControl.call(this, options);
+        this.addedNodes = {};
     };
 
-    _.extend(ExecutionViewControl.prototype, PipelineEditorControl.prototype);
+    _.extend(
+        ExecutionViewControl.prototype,
+        EasyDAGControl.prototype,
+        PipelineControl.prototype
+    );
 
     /* * * * * * * * Visualizer content update callbacks * * * * * * * */
     ExecutionViewControl.prototype.TERRITORY_RULE = {children: 4};
     ExecutionViewControl.prototype.DEFAULT_DECORATOR = 'JobDecorator';
 
-    ExecutionViewControl.prototype.updateTerritory = function() {
-        var nodeId = this._currentNodeId;
-
-        // activeNode rules
-        this._territories = {};
-
-        this._territoryId = this._client.addUI(this, events => {
-            this._eventCallback(events);
-        });
-        this._logger.debug(`ExecutionView current territory id is ${this._territoryId}`);
-
-        this._territories[nodeId] = {children: 0};  // Territory "rule"
-        this._client.updateTerritory(this._territoryId, this._territories);
-
-        this._territories[nodeId] = this.TERRITORY_RULE;
-        this._client.updateTerritory(this._territoryId, this._territories);
+    ExecutionViewControl.prototype._onLoad = function(id) {
+        var desc = this._getObjectDescriptor(id);
+        if (desc.parentId === this._currentNodeId) {
+            this.addedNodes[id] = true;
+            EasyDAGControl.prototype._onLoad.call(this, id);
+        }
     };
 
+    ExecutionViewControl.prototype._onUnload = function(id) {
+        if (this.addedNodes[id] === true) {
+            EasyDAGControl.prototype._onUnload.call(this, id);
+            delete this.addedNodes[id];
+        }
+    };
+
+    ExecutionViewControl.prototype._onUpdate = function(id) {
+        if (this.addedNodes[id] === true) {
+            EasyDAGControl.prototype._onUpdate.call(this, id);
+        }
+    };
+
+    // Add the connection detection
     return ExecutionViewControl;
 });

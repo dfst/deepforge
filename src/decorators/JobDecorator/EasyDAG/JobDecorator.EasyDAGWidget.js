@@ -37,12 +37,12 @@ define([
     JobDecorator.prototype.DECORATOR_ID = DECORATOR_ID;
 
     JobDecorator.prototype.getDisplayName = function() {
-        return this._node.attributes.name;
+        return this._node.name;
     };
 
     JobDecorator.prototype.setAttributes = function() {
         EllipseDecorator.prototype.setAttributes.call(this);
-        var status = this._attributes.status;
+        var status = this._attributes.status && this._attributes.status.value;
 
         // Update the color based on the 'status' attr
         this.color = COLORS[status] || COLORS.fail;

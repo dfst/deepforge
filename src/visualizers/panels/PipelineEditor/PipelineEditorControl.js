@@ -97,14 +97,6 @@ define([
         this._client.updateTerritory(this._territoryId, this._territories);
     };
 
-    PipelineEditorControl.prototype.getSiblingContaining = function(containedId) {
-        var n = this._client.getNode(containedId);
-        while (n && n.getParentId() !== this._currentNodeId) {
-            n = this._client.getNode(n.getParentId());
-        }
-        return n && n.getId();
-    };
-
     PipelineEditorControl.prototype._initWidgetEventHandlers = function () {
         EasyDAGControl.prototype._initWidgetEventHandlers.call(this);
         this._widget.getExistingPortMatches = this.getExistingPortMatches.bind(this);
