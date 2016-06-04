@@ -110,7 +110,7 @@ define([
 
         this._territories[nodeId] = {children: 0};  // Territory "rule"
         this._client.updateTerritory(this._territoryId, this._territories);
-        this.logger.debug(`OpIntEditor current territory id is ${this._territoryId}`);
+        this._logger.debug(`OpIntEditor current territory id is ${this._territoryId}`);
 
         this._territories[nodeId] = this.TERRITORY_RULE;
 

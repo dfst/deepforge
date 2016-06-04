@@ -36,7 +36,7 @@ define([
         this._territoryId = this._client.addUI(this, events => {
             this._eventCallback(events);
         });
-        this.logger.debug(`ExecutionView current territory id is ${this._territoryId}`);
+        this._logger.debug(`ExecutionView current territory id is ${this._territoryId}`);
 
         this._territories[nodeId] = {children: 0};  // Territory "rule"
         this._client.updateTerritory(this._territoryId, this._territories);
