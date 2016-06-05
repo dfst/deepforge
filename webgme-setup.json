@@ -28,6 +28,10 @@
       "CreateExecution": {
         "src": "src/plugins/CreateExecution",
         "test": "test/plugins/CreateExecution"
+      },
+      "GenerateExecFile": {
+        "src": "src/plugins/GenerateExecFile",
+        "test": "test/plugins/GenerateExecFile"
       }
     },
     "layouts": {},

@@ -3,6 +3,7 @@
 
 define([
     'plugin/CreateExecution/CreateExecution/CreateExecution',
+    'deepforge/plugin/PtrCodeGen',
     'common/core/constants',
     'q',
     'text!./metadata.json',
@@ -13,6 +14,7 @@ define([
     'underscore'
 ], function (
     CreateExecution,
+    PtrCodeGen,
     CONSTANTS,
     Q,
     pluginMetadata,
@@ -567,52 +569,13 @@ define([
 
         files.ptrAssets = {};
         Q.all(
-            nIds.map(nId => this.core.loadByPath(this.rootNode, nId))
+            nIds.map(nId => this.getPtrCodeHash(nId))
         )
-        .then(nodes => {
-
-            var executePlugin = (pluginId, config, callback) => {
-                // Call the Interpreter manager in a Q.ninvoke friendly way
-                // I need to create a custom context for the given plugin:
-                //     - Set the activeNode to the given referenced node
-                //     - If the activeNode is namespaced, set META to the given namespace
-                //
-                // FIXME: Check if it is running in the browser or on the server
-                WebGMEGlobal.Client.runBrowserPlugin(pluginId, config, (err, result) => {
-                    if (!result.success) {
-                        return callback(result.getError());
-                    }
-                    this.logger.info('Finished calling ' + pluginId);
-                    callback(null, result.artifacts);
-                });
-            };
-                
-            return Q.all(
-                nodes.map(ptrNode => {
-                    // Look up the plugin to use
-                    var metanode = this.core.getMetaType(ptrNode),
-                        pluginId;
-
-                    pluginId = this.core.getRegistry(ptrNode, 'validPlugins').split(' ').shift();
-                    this.logger.info(`generating code for ${this.core.getAttribute(ptrNode, 'name')} using ${pluginId}`);
-
-                    var context = WebGMEGlobal.Client.getCurrentPluginContext(pluginId);
-
-                    context.managerConfig.namespace = this.core.getNamespace(metanode);
-                    context.managerConfig.activeNode = this.core.getPath(ptrNode);
-
-                    // Load and run the plugin
-                    return Q.nfcall(executePlugin, pluginId, context);
-                })
-            );
-        })
         .then(resultHashes => {
             var name = this.core.getAttribute(node, 'name');
             this.logger.info(`Pointer generation for ${name} FINISHED!`);
-            resultHashes.forEach((hashes, index) => {
-                // Grab the first asset for now
-                // FIXME
-                files.ptrAssets[`pointers/${pointers[index]}/init.lua`] = hashes[0];
+            resultHashes.forEach((hash, index) => {
+                files.ptrAssets[`pointers/${pointers[index]}/init.lua`] = hash;
             });
             return cb(null, files);
         })
@@ -745,7 +708,11 @@ define([
         return this[type](node);
     };
 
-    _.extend(ExecutePipeline.prototype, LocalExecutor.prototype);
+    _.extend(
+        ExecutePipeline.prototype,
+        LocalExecutor.prototype,
+        PtrCodeGen.prototype
+    );
 
     return ExecutePipeline;
 });
