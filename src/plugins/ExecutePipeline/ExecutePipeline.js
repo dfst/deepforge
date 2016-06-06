@@ -1,4 +1,4 @@
-/*globals define, WebGMEGlobal*/
+/*globals define */
 /*jshint node:true, browser:true, esversion: 6*/
 
 define([
@@ -80,6 +80,7 @@ define([
         // inputs for the next operation cannot be created until the inputs have
         // been generated
 
+        this.pipelineName = this.core.getAttribute(this.activeNode, 'name');
         var startPromise;
         if (this.core.isTypeOf(this.activeNode, this.META.Pipeline)) {
             // If starting with a pipeline, we will create an Execution first
@@ -105,13 +106,9 @@ define([
             this.buildCache(subtree);
             this.parsePipeline(children);  // record deps, etc
 
-            //if (this.getCurrentConfig().reset) {
-            this.clearResults();
-            //}
-
-            // Execute the operations in the proper order
-            this.executePipeline();
+            return this.clearResults();
         })
+        .then(() => this.executePipeline())
         .fail(e => this.logger.error(e));
     };
 
@@ -126,6 +123,10 @@ define([
         // Set the status for each job to 'pending'
         nodes.filter(node => this.core.isTypeOf(node, this.META.Job))
             .forEach(node => this.core.setAttribute(node, 'status', 'pending'));
+
+        this.logger.info('Setting all jobs status to "pending"');
+        this.logger.debug(`Making a commit from ${this.currentHash}`);
+        return this.save(`Initializing ${this.pipelineName} for execution`);
     };
 
     //////////////////////////// Operation Preparation/Execution ////////////////////////////
@@ -237,8 +238,10 @@ define([
         // Execute all ready operations
         readyOps.forEach(jobId => {
             delete this.incomingCounts[jobId];
-            this.executeOperation(jobId);
         });
+        readyOps.reduce((prev, jobId) => {
+            return prev.then(() => this.executeOperation(jobId));
+        }, Q());
         return readyOps.length;
     };
 
@@ -262,10 +265,10 @@ define([
 
         // Execute any special operation types here - not on an executor
         if (localTypeId !== null) {
-            this.executeLocalOperation(localTypeId, node);
+            return this.executeLocalOperation(localTypeId, node);
         } else {
             // Generate all execution files
-            this.createOperationFiles(node).then(results => {
+            return this.createOperationFiles(node).then(results => {
                 files = results;
                 artifactName = `${name}_${jobId.replace(/\//g, '_')}-execution-files`;
                 artifact = this.blobClient.createArtifact(artifactName);
@@ -352,6 +355,7 @@ define([
             })
             .fail(e => {
                 this.core.setAttribute(this.nodes[jobId], 'status', 'fail');
+                this.logger.info(`Setting ${jobId} status to "fail"`);
                 this.onPipelineComplete(`Distributed operation "${name}" failed ${e}`);
             });
         }
@@ -369,9 +373,10 @@ define([
 
         // Set the job status to 'running'
         this.core.setAttribute(this.nodes[jobId], 'status', 'running');
-
-        // Run the operation on an executor
-        executor.createJob({hash})
+        this.logger.info(`Setting ${jobId} status to "running" (${this.currentHash})`);
+        this.logger.debug(`Making a commit from ${this.currentHash}`);
+        this.save(`Started "${name}" operation in ${this.pipelineName}`)
+            .then(() => executor.createJob({hash}))
             .then(() => this.watchOperation(executor, hash, opId, jobId))
             .catch(err => this.logger.error(`Could not execute "${name}": ${err}`));
 
@@ -396,6 +401,7 @@ define([
                     this.result.addArtifact(info.resultHashes[name + '-all-files']);
                     // Set the job to failed! Store the error
                     this.core.setAttribute(this.nodes[jobId], 'status', 'fail');
+                    this.logger.info(`Setting ${jobId} status to "fail"`);
                     this.onPipelineComplete(`Operation "${opId}" failed! ${JSON.stringify(info)}`);  // Failed
                 } else {
                     name = this.core.getAttribute(this.nodes[opId], 'name');
@@ -435,6 +441,7 @@ define([
                         hash = artifact.descriptor.content[`outputs/${name}`].content;
 
                     this.core.setAttribute(outputMap[name], 'data', hash);
+                    this.logger.info(`Setting ${nodeId} data to ${hash}`);
                 });
 
                 return this.onOperationComplete(node);
@@ -447,45 +454,53 @@ define([
             nextPortIds = this.getOperationOutputIds(opNode),
             jNode = this.core.getParent(opNode),
             resultPorts,
+            jobId = this.core.getPath(jNode),
             hasReadyOps;
 
         // Set the operation to 'success'!
         this.core.setAttribute(jNode, 'status', 'success');
+        this.logger.info(`Setting ${jobId} status to "success"`);
+        this.logger.debug(`Making a commit from ${this.currentHash}`);
+        this.save(`Operation "${name}" in ${this.pipelineName} completed successfully`)
+            .then(() => {
 
-        // Transport the data from the outputs to any connected inputs
-        //   - Get all the connections from each outputId
-        //   - Get the corresponding dst outputs
-        //   - Use these new ids for checking 'hasReadyOps'
-        resultPorts = nextPortIds.map(id => this.inputPortsFor[id])
-            .reduce((l1, l2) => l1.concat(l2), []);
+                // Transport the data from the outputs to any connected inputs
+                //   - Get all the connections from each outputId
+                //   - Get the corresponding dst outputs
+                //   - Use these new ids for checking 'hasReadyOps'
+                resultPorts = nextPortIds.map(id => this.inputPortsFor[id])
+                    .reduce((l1, l2) => l1.concat(l2), []);
 
-        resultPorts.map((id, i) => [this.nodes[id], this.nodes[nextPortIds[i]]])
-            .forEach(pair => {  // [ resultPort, nextPort ]
-                var result = pair[0],
-                    next = pair[1],
-                    hash = this.core.getAttribute(result, 'data');
-                
-                this.logger.info(`forwarding data (${hash}) from ${this.core.getPath(result)} ` +
-                    `to ${this.core.getPath(next)}`);
-                this.core.setAttribute(next, 'data', hash);
+                resultPorts
+                    .map((id, i) => [this.nodes[id], this.nodes[nextPortIds[i]]])
+                    .forEach(pair => {  // [ resultPort, nextPort ]
+                        var result = pair[0],
+                            next = pair[1],
+                            hash = this.core.getAttribute(result, 'data');
+                        
+                        this.logger.info(`forwarding data (${hash}) from ${this.core.getPath(result)} ` +
+                            `to ${this.core.getPath(next)}`);
+                        this.core.setAttribute(next, 'data', hash);
+                        this.logger.info(`Setting ${jobId} data to ${hash}`);
+                    });
+
+                // For all the nextPortIds, decrement the corresponding operation's incoming counts
+                hasReadyOps = resultPorts.map(id => this.opFor[id])
+                    .reduce((l1, l2) => l1.concat(l2), [])
+
+                    // decrement the incoming counts for each operation id
+                    .map(opId => --this.incomingCounts[opId])
+                    .indexOf(0) > -1;
+
+                this.completedCount++;
+                this.logger.info(`Operation "${name}" completed. ` + 
+                    `${this.totalCount - this.completedCount} remaining.`);
+                if (hasReadyOps) {
+                    this.executeReadyOperations();
+                } else if (this.completedCount === this.totalCount) {
+                    this.onPipelineComplete();
+                }
             });
-
-        // For all the nextPortIds, decrement the corresponding operation's incoming counts
-        hasReadyOps = resultPorts.map(id => this.opFor[id])
-            .reduce((l1, l2) => l1.concat(l2), [])
-
-            // decrement the incoming counts for each operation id
-            .map(opId => --this.incomingCounts[opId])
-            .indexOf(0) > -1;
-
-        this.completedCount++;
-        this.logger.info(`Operation "${name}" completed. ` + 
-            `${this.totalCount - this.completedCount} remaining.`);
-        if (hasReadyOps) {
-            this.executeReadyOperations();
-        } else if (this.completedCount === this.totalCount) {
-            this.onPipelineComplete();
-        }
     };
 
     ExecutePipeline.prototype.getOperationOutputIds = function(node) {
@@ -564,9 +579,14 @@ define([
     };
 
     ExecutePipeline.prototype.createPointers = function (node, files, cb) {
-        var pointers = this.core.getPointerNames(node).filter(name => name !== 'base'),
-            nIds = pointers.map(p => this.core.getPointerPath(node, p));
+        var pointers,
+            nIds;
 
+        pointers = this.core.getPointerNames(node)
+            .filter(name => name !== 'base');
+            //.filter(id => this.core.getPointerPath(node, id) !== null);
+
+        nIds = pointers.map(p => this.core.getPointerPath(node, p));
         files.ptrAssets = {};
         Q.all(
             nIds.map(nId => this.getPtrCodeHash(nId))
