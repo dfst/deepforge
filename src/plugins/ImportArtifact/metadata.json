@@ -1,0 +1,31 @@
+{
+  "id": "ImportArtifact",
+  "name": "ImportArtifact",
+  "version": "0.1.0",
+  "description": "",
+  "icon": {
+    "class": "glyphicon glyphicon-cog",
+    "src": ""
+  },
+  "disableServerSideExecution": false,
+  "disableBrowserSideExecution": false,
+  "writeAccessRequired": true,
+  "configStructure": [
+        {
+            "name": "name",
+            "displayName": "Data name",
+            "description": "Optional name for artifact",
+            "value": "",
+            "valueType": "string",
+            "readOnly": false
+        },
+        {
+            "name": "dataHash",
+            "displayName": "Data to upload",
+            "description": "",
+            "value": "",
+            "valueType": "asset",
+            "readOnly": false
+        }
+  ]
+}

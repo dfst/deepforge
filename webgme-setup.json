@@ -32,6 +32,10 @@
       "GenerateExecFile": {
         "src": "src/plugins/GenerateExecFile",
         "test": "test/plugins/GenerateExecFile"
+      },
+      "ImportArtifact": {
+        "src": "src/plugins/ImportArtifact",
+        "test": "test/plugins/ImportArtifact"
       }
     },
     "layouts": {},
