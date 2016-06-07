@@ -145,6 +145,9 @@
       },
       "OpIntPtrDecorator": {
         "src": "src/decorators/OpIntPtrDecorator"
+      },
+      "DcOpDecorator": {
+        "src": "src/decorators/DcOpDecorator"
       }
     },
     "seeds": {

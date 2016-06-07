@@ -25,7 +25,11 @@ define([
         CONN = {
             SRC: 'src',
             DST: 'dst'
-        };
+        },
+        DECORATORS = {
+            ArtifactLoader: 'DcOpDecorator'
+        },
+        WIDGET_NAME = 'EasyDAG';
 
     PipelineEditorControl = function (options) {
         EasyDAGControl.call(this, options);
@@ -148,6 +152,19 @@ define([
         } else if (desc.parentId === this._currentNodeId) {
             this._widget.updateNode(desc);
         }  // Ignore any other updates - ie, Inputs/Outputs containers
+    };
+
+    PipelineEditorControl.prototype._getNodeDecorator = function (nodeObj) {
+        var decoratorManager = this._client.decoratorManager,
+            decorator,
+            decoratorClass;
+
+        var base = this._client.getNode(nodeObj.getMetaTypeId()),
+            baseName = base && base.getAttribute('name');
+
+        decorator = DECORATORS[baseName] || this.DEFAULT_DECORATOR;
+        decoratorClass = decoratorManager.getDecoratorForWidget(decorator, WIDGET_NAME);
+        return decoratorClass;
     };
 
     // Override the getSuccessors method to look up successors by operations
@@ -428,7 +445,8 @@ define([
 
     PipelineEditorControl.prototype._getTargetDirs = function (typeIds) {
         // Find the directories containing these types
-        return this._client.getNode('').getChildrenIds()
+        return this._client.getNode(CONSTANTS.PROJECT_ROOT_ID).getChildrenIds()
+            // No referencing data meta types
             .filter(id => {
                 var cMeta = this._client.getChildrenMeta(id),
                     validChildIds;

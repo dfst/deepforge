@@ -9,9 +9,24 @@ define([
     };
 
     // Should these be in lua?
-    LocalExecutor.prototype.BlobLoader = function(node) {
-        var hash = this.core.getAttribute(node, 'data');
-        return this.getOutputs(node)
+    LocalExecutor.prototype.ArtifactLoader = function(node) {
+        // FIXME: Get the hash from the output node
+        var hash;
+        return this.core.loadChildren(node)
+            .then(cntrs => {
+                // Get the output container and load it's children
+                var output = cntrs
+                    .find(cntr => {
+                        var metaNode = this.core.getMetaType(cntr),
+                            metaName = this.core.getAttribute(metaNode, 'name');
+                        return metaName === 'Outputs';
+                    });
+                return this.core.loadChildren(output);
+            })
+            .then(dataNodes => {
+                hash = this.core.getAttribute(dataNodes[0], 'data');
+                return this.getOutputs(node);
+            })
             .then(outputTuples => {
                 var outputs = outputTuples.map(tuple => tuple[2]),
                     paths;
