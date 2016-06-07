@@ -2,6 +2,7 @@
 /*jshint browser: true*/
 
 define([
+    'js/Constants',
     'panels/EasyDAG/EasyDAGControl',
     'deepforge/viz/PipelineControl',
     'common/core/coreQ',
@@ -9,6 +10,7 @@ define([
     'q',
     'underscore'
 ], function (
+    CONSTANTS,
     EasyDAGControl,
     PipelineControl,
     Core,
@@ -94,6 +96,11 @@ define([
             // Add a rule for them
             .forEach(opId => this._territories[opId] = this.TERRITORY_RULE);
 
+        // Add arch/artifact dir to the territory
+        // loading more than necessary.... can restrict it in the future
+        // if perf is a problem
+        this._territories[CONSTANTS.PROJECT_ROOT_ID] = {children: 2};
+
         this._client.updateTerritory(this._territoryId, this._territories);
     };
 
@@ -116,7 +123,8 @@ define([
         if (desc.parentId === this._currentNodeId) {
             this.addedIds[desc.id] = true;
             return EasyDAGControl.prototype._onLoad.call(this, gmeId);
-        } else if (this.isContainedInActive(desc.parentId) && desc.isDataPort) {
+        } else if (desc.parentId !== null &&
+            this.isContainedInActive(desc.parentId) && desc.isDataPort) {
             // port added!
             this.addedIds[desc.id] = true;
             this._widget.addPort(desc);
@@ -416,6 +424,27 @@ define([
             // TODO
             this._logger.error('multiple port combinations... This is currently unsupported');
         }
+    };
+
+    PipelineEditorControl.prototype._getTargetDirs = function (typeIds) {
+        // Find the directories containing these types
+        return this._client.getNode('').getChildrenIds()
+            .filter(id => {
+                var cMeta = this._client.getChildrenMeta(id),
+                    validChildIds;
+
+                if (!cMeta) {
+                    return false;
+                }
+
+                validChildIds = cMeta.items.map(item => item.id);
+                for (var i = typeIds.length; i--;) {
+                    if (validChildIds.indexOf(typeIds[i]) !== -1) {
+                        return true;
+                    }
+                }
+                return false;
+            });
     };
 
     return PipelineEditorControl;
