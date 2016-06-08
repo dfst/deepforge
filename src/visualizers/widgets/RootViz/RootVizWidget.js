@@ -30,6 +30,10 @@ define([
 
         // Load the component settings
         this._config = {
+            defaults: {
+                color: 'blue',
+                shade: 'lighten-2'
+            },
             nodes:[]
         };
         ComponentSettings.resolveWithWebGMEGlobal(this._config, this.getComponentId());
@@ -69,7 +73,7 @@ define([
                 node = this.validNodes[desc[attr]];
 
             if (node) {
-                _.extend(desc, node);
+                _.extend(desc, this._config.defaults, node);
                 desc.title = desc.title || desc.name;
                 this.addPanel(desc);
             }
@@ -77,15 +81,40 @@ define([
     };
 
     RootVizWidget.prototype.addPanel = function (desc) {
-        var html = $(NodeTpl(desc));
+        var html;
 
-        // Create the html from template
-        if (this.nodes[desc.id]) {
+        if (this.nodes[desc.id]) {  // refresh, if already exists
             this.removeNode(desc.id);
         }
 
         // Create the html from template
-        this.$container.append(html);
+        desc.htmlId = desc.id.replace('/', '-');
+        html = $(NodeTpl(desc));
+
+        // Find the child just before the given one
+        var children = this.$container.children(),
+            rank = -Infinity,
+            id;
+
+        desc.rank = +desc.rank;
+        if (children.length) {  // Add it in order
+            for (var i = 0; i < children.length; i++) {
+                rank = +children[i].getAttribute('data-rank');
+                if (rank > desc.rank) {
+                    break;
+                }
+            }
+
+            if (i < children.length) {
+                id = children[i].getAttribute('id');
+                this.$container.find('#' + id).before(html);
+            } else {
+                this.$container.append(html);
+            }
+        } else {
+            this.$container.append(html);
+        }
+
         html.on('click', () => {
             this.onNodeClick(desc.id);
             event.stopPropagation();

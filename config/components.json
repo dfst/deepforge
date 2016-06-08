@@ -36,26 +36,41 @@
         "nodes": [
             {
                 "nodeName": "MyArchitectures",
+                "icon": "shuffle",
+                "rank": 1,
                 "description": "Neural network architectures are stored here and can be used in pipelines."
             },
             {
-                "nodeName": "MyExecutions",
-                "description": "Executions are read-only snapshots of pipelines that have been executed. Past and current executing pipelines are stored here."
-            },
-            {
-                "nodeName": "MyPipelines",
-                "description": "Pipelines are used for training, testing and ensembling models."
-            },
-            {
                 "nodeName": "MyOperations",
+                "icon": "mode_edit",
+                "rank": 2,
+                "color": "blue-grey",
                 "description": "Operations are the building blocks of pipelines. Custom operations can be created and stored here."
             },
             {
+                "nodeName": "MyPipelines",
+                "icon": "input",
+                "rank": 3,
+                "description": "Pipelines compose operations together to effectively train, test and/or ensemble models."
+            },
+            {
                 "nodeName": "MyArtifacts",
+                "icon": "view_quilt",
+                "rank": 4,
+                "color": "blue-grey",
                 "description": "Artifacts from pipeline executions are stored here."
             },
             {
+                "nodeName": "MyExecutions",
+                "icon": "list",
+                "rank": 5,
+                "description": "Executions are read-only snapshots of pipelines that have been executed. Past and current executing pipelines are stored here."
+            },
+            {
                 "nodeName": "MyDataTypes",
+                "icon": "settings",
+                "rank": 6,
+                "color": "blue-grey",
                 "description": "Custom defined data types are stored here."
             }
         ]

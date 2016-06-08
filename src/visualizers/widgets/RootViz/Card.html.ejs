@@ -1,7 +1,11 @@
-<div class="col s2 m4">
-    <div class="card blue lighten-2">
+<div class="col s2 m4" id="card-node<%= htmlId %>" data-rank="<%= rank %>">
+    <div class="card <%= color %> <%= shade %>">
         <div class="card-content">
+            <% if (typeof icon !== 'undefined') {%>
+                <div><i class="large material-icons"><%=icon%></i></div>
+            <%}%>
             <span class="card-title"><%= title %></span>
+            <div
             <p><%= description %></p>
         </div>
     </div>
