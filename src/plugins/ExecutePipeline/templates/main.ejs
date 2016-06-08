@@ -1,11 +1,8 @@
--- input data
-<% inputs.forEach(function(pair) { var input = pair[0]%>
-<%= input %> = require './inputs/<%= input %>'
-<% }); %>
+-- input data<% inputs.forEach(function(pair) { var input = pair[0], isNil = pair[1];%>
+<%= isNil ? 'local ' : ''%><%= input %> = <% if (isNil) { %>nil<% } else { %>require './inputs/<%= input %>'<%}}); %>
 
--- load references
-<% pointers.forEach(function(pointer) { %><%= pointer %> = require './pointers/<%= pointer %>'
-<% }); %>
+-- load references<% pointers.forEach(function(pair) { var pointer = pair[0], isNil = pair[1];%>
+<%= isNil ? 'local ' : ''%><%= pointer %> = <% if (isNil) { %>nil<% } else { %>require './pointers/<%= pointer %>'<%}}); %>
 attributes = require './attributes'
 
 -- main operation code for <%= name %>

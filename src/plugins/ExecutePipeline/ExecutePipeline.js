@@ -144,8 +144,6 @@ define([
     //////////////////////////// Operation Preparation/Execution ////////////////////////////
     ExecutePipeline.prototype.buildCache = function (nodes) {
         // Cache all nodes
-        // Do I need to cache the data inputs? TODO
-        // Probably not - I should be able to look them up as needed
         nodes.forEach(node => this.nodes[this.core.getPath(node)] = node);
     };
 
@@ -325,7 +323,8 @@ define([
             .then(outputArgs => {
                 var config,
                     args = ['init.lua'],
-                    outputs;
+                    outputs,
+                    file;
 
                 outputs = outputArgs.map(pair => pair[0])
                     .map(name => {
@@ -351,6 +350,13 @@ define([
                 files['executor_config.json'] = JSON.stringify(config, null, 4);
 
                 // Save the artifact
+                // Remove empty hashes
+                for (file in data) {
+                    if (!data[file]) {
+                        this.logger.warn(`Empty data hash has been found for file "${file}". Removing it...`);
+                        delete data[file];
+                    }
+                }
                 return artifact.addObjectHashes(data);
             })
             .then(() => {
@@ -561,6 +567,9 @@ define([
                 //  - create the deserializer
                 //  - put it in inputs/<name>/init.lua
                 //  - copy the data asset to /inputs/<name>/init.lua
+                inputs = inputs
+                    .filter(pair => !!this.core.getAttribute(pair[2], 'data'));  // remove empty inputs
+
                 files.inputAssets = {};  // data assets
                 tplContents = inputs.map(pair => {
                     var name = pair[0],
@@ -571,10 +580,11 @@ define([
                         code: this.core.getAttribute(node, 'deserialize')
                     };
                 });
-                var hashes = inputs.map(pair =>
+                var hashes = inputs
                     // storing the hash for now...
-                    files.inputAssets[pair[0]] = this.core.getAttribute(pair[2], 'data')
-                );
+                    .map(pair =>
+                        files.inputAssets[pair[0]] = this.core.getAttribute(pair[2], 'data')
+                    );
                 return Q.all(hashes.map(h => this.blobClient.getMetadata(h)));
             })
             .then(metadatas => {
@@ -593,8 +603,8 @@ define([
             nIds;
 
         pointers = this.core.getPointerNames(node)
-            .filter(name => name !== 'base');
-            //.filter(id => this.core.getPointerPath(node, id) !== null);
+            .filter(name => name !== 'base')
+            .filter(id => this.core.getPointerPath(node, id) !== null);
 
         nIds = pointers.map(p => this.core.getPointerPath(node, p));
         files.ptrAssets = {};
@@ -687,10 +697,12 @@ define([
                     };
 
                 // Get input data arguments
-                content.inputs = inputs;
+                content.inputs = inputs
+                    .map(pair => [pair[0], !this.core.getAttribute(pair[2], 'data')]);  // remove empty inputs
 
                 // Defined variables for each pointers
-                content.pointers = pointers;
+                content.pointers = pointers
+                    .map(id => [id, this.core.getPointerPath(node, id) === null]);
 
                 // Add remaining code
                 content.code = code;
