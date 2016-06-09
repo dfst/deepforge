@@ -7,7 +7,7 @@ define([
     'common/core/constants',
     'q',
     'text!./metadata.json',
-    './Templates/index',
+    './templates/index',
     './LocalExecutor',
     'executor/ExecutorClient',
     'jszip',
@@ -543,9 +543,6 @@ define([
             .then(inputs => {
                 // For each input, match the connection with the input name
                 //   [ name, type ] => [ name, type, node ]
-                if (inputs.length > 1) {
-                    this.logger.warn('multiple inputs not yet fully supported!');
-                }
 
                 // For each input,
                 //  - create the deserializer
