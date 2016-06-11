@@ -3,6 +3,10 @@
         "hotkeys": "none",
         "LayerColors": {}
     },
+    "GenericUIProjectNavigatorController": {
+        "rootMenuClass": "deepforge-logo",
+        "rootDisplayName": "DeepForge"
+    },
     "CHFLayout": {
         "panels": [
             {
