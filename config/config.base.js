@@ -17,5 +17,7 @@ config.plugin.allowServerExecution = true;
 
 config.executor.enable = true;
 
+config.visualization.extraCss.push('deepforge/styles/global.css');
+
 validateConfig(config);
 module.exports = config;
