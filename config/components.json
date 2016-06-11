@@ -3,6 +3,10 @@
         "hotkeys": "none",
         "LayerColors": {}
     },
+    "GenericUIProjectNavigatorController": {
+        "rootMenuClass": "deepforge-logo",
+        "rootDisplayName": "DeepForge"
+    },
     "CHFLayout": {
         "panels": [
             {
@@ -13,7 +17,7 @@
             },
             {
                 "id": "Footer",
-                "panel": "FooterControls/FooterControlsPanel",
+                "panel": "Footer/FooterPanel",
                 "container": "footer",
                 "DEBUG_ONLY": false
             },

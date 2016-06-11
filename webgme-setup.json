@@ -130,6 +130,13 @@
         "panel": "src/visualizers/panels/DeserializeEditor",
         "secondary": false,
         "widget": "src/visualizers/widgets/DeserializeEditor"
+      },
+      "Footer": {
+        "src": "panels/Footer/FooterPanel",
+        "title": "Footer",
+        "panel": "src/visualizers/panels/Footer",
+        "secondary": false,
+        "widget": "src/visualizers/widgets/Footer"
       }
     },
     "addons": {},
