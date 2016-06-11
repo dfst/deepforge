@@ -13,7 +13,7 @@
             },
             {
                 "id": "Footer",
-                "panel": "FooterControls/FooterControlsPanel",
+                "panel": "Footer/FooterPanel",
                 "container": "footer",
                 "DEBUG_ONLY": false
             },

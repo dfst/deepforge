@@ -82,5 +82,11 @@
     "title": "DeserializeEditor",
     "panel": "panels/DeserializeEditor/DeserializeEditorPanel",
     "DEBUG_ONLY": false
+  },
+  {
+    "id": "Footer",
+    "title": "Footer",
+    "panel": "panels/Footer/FooterPanel",
+    "DEBUG_ONLY": false
   }
 ]
