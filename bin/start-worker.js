@@ -1,8 +1,9 @@
-'use strict';
+/*globals process, __dirname, require*/
 
 var path = require('path'),
     fs = require('fs'),
-    spawn = require('child_process').spawn,
+    childProcess = require('child_process'),
+    spawn = childProcess.spawn,
     projectConfig = require(__dirname + '/../config'),
     executorSrc = path.join(__dirname, '..', 'node_modules', 'webgme', 'src',
         'server', 'middleware', 'executor', 'worker'),
@@ -12,13 +13,22 @@ var path = require('path'),
     address,
     config = {};
 
+// Check torch support
+var result = childProcess.spawnSync('th', ['--help']);
+if (result.error) {
+    console.error('Checking Torch7 dependency failed. Do you have Torch7 installed ' + 
+        'and in your PATH?\n\nFor Torch7 installation instructions, check out ' +
+        'http://torch.ch/docs/getting-started.html');
+    process.exit(1);
+}
+
 var startExecutor = function() {
     // Start the executor
     var execJob = spawn('node', [
         'node_worker.js',
         workerConfigPath,
         workerTmp
-        ]);
+    ]);
     execJob.stdout.pipe(process.stdout);
     execJob.stderr.pipe(process.stderr);
 };
