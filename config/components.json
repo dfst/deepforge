@@ -3,6 +3,9 @@
         "hotkeys": "none",
         "LayerColors": {}
     },
+    "FloatingActionButton": {
+        "hideOnEmpty": true
+    },
     "GenericUIProjectNavigatorController": {
         "rootMenuClass": "deepforge-logo",
         "rootDisplayName": "DeepForge"
