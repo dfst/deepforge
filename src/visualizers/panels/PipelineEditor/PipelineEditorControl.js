@@ -27,7 +27,8 @@ define([
             DST: 'dst'
         },
         DECORATORS = {
-            ArtifactLoader: 'DcOpDecorator'
+            ArtifactLoader: 'ArtifactOpDecorator',
+            ArtifactFinder: 'ArtifactOpDecorator'
         },
         WIDGET_NAME = 'EasyDAG';
 

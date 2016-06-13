@@ -37,31 +37,18 @@ define([
         };
     };
 
-    DcOpDecorator.prototype.savePointer = function(name, to) {
-        // When the 'artifact' pointer is changed, we should change the base
-        // of the data output node to the target type
-        if (name === 'artifact' && (typeof to === 'string')) {
-            var output = this._node.outputs[0];
+    DcOpDecorator.prototype.castOutputType = function(baseId) {
+        var output = this._node.outputs[0];
 
-            this.client.startTransaction(`Setting output of ${this.name} to ${to}`);
-            if (!output) {
-                // create the output node
-                this._createOutputNode(to);
-            } else {
-                this.client.makePointer(output.id, CONSTANTS.POINTER_BASE, to);
-            }
-
-            // 'cast' the output node to the correct type
-            this.client.makePointer(this._node.id, name, to);
-            this.client.completeTransaction();
+        if (!output) {
+            // create the output node
+            this._createOutputNode(baseId);
         } else {
-            DecoratorBase.prototype.savePointer.call(this, name, to);
+            this.client.makePointer(output.id, CONSTANTS.POINTER_BASE, baseId);
         }
     };
 
     DcOpDecorator.prototype._createOutputNode = function(baseId) {
-        // Get the outputCntrId
-        // TOOD
         var n = this.client.getNode(this._node.id),
             outputCntrId;
 

@@ -155,6 +155,9 @@
       },
       "DcOpDecorator": {
         "src": "src/decorators/DcOpDecorator"
+      },
+      "ArtifactOpDecorator": {
+        "src": "src/decorators/ArtifactOpDecorator"
       }
     },
     "seeds": {

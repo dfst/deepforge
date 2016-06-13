@@ -10,7 +10,7 @@ define([
 
     // Should these be in lua?
     LocalExecutor.prototype.ArtifactLoader = function(node) {
-        // FIXME: Get the hash from the output node
+        // Get the hash from the output node
         var hash;
         return this.core.loadChildren(node)
             .then(cntrs => {
@@ -36,9 +36,49 @@ define([
                 this.logger.info(`Loading blob data (${hash}) to ${paths.map(p => `"${p}"`)}`);
                 outputs.forEach(output => this.core.setAttribute(output, 'data', hash));
 
-                // Set the metadata as appropriate
-                // TODO
                 this.onOperationComplete(node);
+            });
+    };
+
+    LocalExecutor.prototype.ArtifactFinder = function(node) {
+        // Check the save dir for a node with the given name
+        // that has the given type
+        var hash,
+            typeId = this.core.getPointerPath(node, 'type'),
+            type,
+            artifactName = this.core.getAttribute(node, 'artifactName');
+
+        return this.core.loadByPath(this.rootNode, typeId)
+            .then(_type => {
+                type = _type;
+                return this._getSaveDir();
+            })
+            .then(saveDir => this.core.loadChildren(saveDir))
+            .then(artifacts => {
+                return artifacts.find(artifact =>
+                    this.core.getAttribute(artifact, 'name') === artifactName &&
+                        this.isMetaTypeOf(artifact, type));
+            })
+            .then(matchingArtifact => {
+                hash = matchingArtifact && this.core.getAttribute(matchingArtifact, 'data');
+                // If no hash, just 
+                if (!hash) {
+                    return this.onOperationComplete(node);
+                } else {
+                    return this.getOutputs(node)
+                        .then(outputTuples => {
+                            var outputs = outputTuples.map(tuple => tuple[2]),
+                                paths;
+
+                            paths = outputs.map(output => this.core.getPath(output));
+                            // Get the 'data' hash and store it in the output data ports
+                            this.logger.info(`Loading blob data (${hash}) to ${paths.map(p => `"${p}"`)}`);
+
+                            outputs.forEach(output => this.core.setAttribute(output, 'data', hash));
+
+                            this.onOperationComplete(node);
+                        });
+                }
             });
     };
 
