@@ -103,6 +103,7 @@ define([
 
     /* * * * * * * * Visualizer life cycle callbacks * * * * * * * */
     TextEditorWidget.prototype.destroy = function () {
+        this.editor.destroy();
     };
 
     TextEditorWidget.prototype.onActivate = function () {
