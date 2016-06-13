@@ -92,5 +92,13 @@ define([
         this.hidePorts();
     };
 
+    OperationNode.prototype.update = function() {
+        DAGItem.prototype.update.apply(this, arguments);
+        if (this._visiblePorts) {
+            var areInputs = this._visiblePorts[1];
+            this.showPorts.call(this, null, areInputs);
+        }
+    };
+
     return OperationNode;
 });
