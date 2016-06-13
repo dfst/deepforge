@@ -170,11 +170,11 @@ define([
 
         WebGMEGlobal.InterpreterManager.configureAndRun(metadata, (result) => {
             if (!result) {
-                Materialize.toast('Artifact upload failed!');
+                Materialize.toast('Artifact upload failed!', 2000);
                 return;
             }
             this.logger.info('Finished uploading ' + UPLOAD_PLUGIN);
-            Materialize.toast('Artifact upload complete!');
+            Materialize.toast('Artifact upload complete!', 2000);
         });
     };
 
