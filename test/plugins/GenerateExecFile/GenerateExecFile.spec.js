@@ -6,7 +6,7 @@
 'use strict';
 var testFixture = require('../../globals');
 
-describe('GenerateExecFile', function () {
+describe.skip('GenerateExecFile', function () {
     var gmeConfig = testFixture.getGmeConfig(),
         expect = testFixture.expect,
         logger = testFixture.logger.fork('GenerateExecFile'),
@@ -28,7 +28,7 @@ describe('GenerateExecFile', function () {
             })
             .then(function () {
                 var importParam = {
-                    projectSeed: testFixture.path.join(testFixture.SEED_DIR, 'EmptyProject.json'),
+                    projectSeed: testFixture.path.join(testFixture.SEED_DIR, 'EmptyProject.webgmex'),
                     projectName: projectName,
                     branchName: 'master',
                     logger: logger,

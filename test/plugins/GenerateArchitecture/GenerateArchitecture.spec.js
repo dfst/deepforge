@@ -87,10 +87,9 @@ describe('GenerateArchitecture', function () {
         var cases = [
             ['/4', 'basic.lua'],
             ['/T', 'basic-transfers.lua'],
+            ['/t', 'concat-parallel.lua'],
+            ['/w', 'googlenet.lua'],
             ['/W', 'overfeat.lua']
-            // TODO: Add more tests
-            // Need a concat test
-            // TODO
         ];
 
         var runTest = function(pair, done) {

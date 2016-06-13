@@ -6,7 +6,7 @@
 'use strict';
 var testFixture = require('../../globals');
 
-describe('ImportArtifact', function () {
+describe.skip('ImportArtifact', function () {
     var gmeConfig = testFixture.getGmeConfig(),
         expect = testFixture.expect,
         logger = testFixture.logger.fork('ImportArtifact'),
@@ -28,7 +28,7 @@ describe('ImportArtifact', function () {
             })
             .then(function () {
                 var importParam = {
-                    projectSeed: testFixture.path.join(testFixture.SEED_DIR, 'EmptyProject.json'),
+                    projectSeed: testFixture.path.join(testFixture.SEED_DIR, 'EmptyProject.webgmex'),
                     projectName: projectName,
                     branchName: 'master',
                     logger: logger,
