@@ -1,4 +1,4 @@
-/*globals define, _*/
+/*globals define, _, Opentip*/
 /*jshint browser: true, camelcase: false*/
 
 /**
@@ -16,7 +16,12 @@ define([
 
     var OperationDecorator,
         NAME_MARGIN = 25,
-        DECORATOR_ID = 'OperationDecorator';
+        DECORATOR_ID = 'OperationDecorator',
+        PORT_TOOLTIP_OPTS = {
+            tipJoint: 'left',
+            removeElementsOnHide: true,
+            style: 'dark'
+        };
 
     // Operation nodes need to be able to...
     //     - show their ports
@@ -30,6 +35,7 @@ define([
         this.id = this._node.id;
         this.$ports = this.$el.append('g')
             .attr('id', 'ports');
+        this.$portTooltips = {};
     };
 
     _.extend(OperationDecorator.prototype, DecoratorBase.prototype);
@@ -91,7 +97,8 @@ define([
 
     OperationDecorator.prototype.renderPort = function(port, x, y, isInput) {
         var color = this.PORT_COLOR.OPEN,
-            portIcon = this.$ports.append('g');
+            portIcon = this.$ports.append('g'),
+            tooltip;
 
         // If the port is incoming and occupied, render it differently
         if (isInput && port.connection) {
@@ -115,14 +122,26 @@ define([
         portIcon.on('click', this.onPortClick.bind(this, this.id, port.id, !isInput));
 
         // Add tooltip with whole name
-        // TODO
+        if (this.$portTooltips[port.id]) {
+            this.$portTooltips[port.id].hide();
+        }
+        tooltip = new Opentip(portIcon[0][0], PORT_TOOLTIP_OPTS);
+        tooltip.setContent(port.name);
+        portIcon.on('mouseenter', () => tooltip.show());
+        portIcon.on('mouseout', () => tooltip.hide());
+        this.$portTooltips[port.id] = tooltip;
     };
 
     OperationDecorator.prototype.hidePorts = function() {
+        var visiblePortIds = Object.keys(this.$portTooltips);
         this.logger.info(`hiding ports for ${this.name} (${this.id})`);
         this.$ports.remove();
         this.$ports = this.$el.append('g')
             .attr('id', 'ports');
+        
+        for (var i = visiblePortIds.length; i--;) {
+            this.$portTooltips[visiblePortIds[i]].hide();
+        }
     };
 
     OperationDecorator.prototype.getPortLocation = function(id, isInput) {
