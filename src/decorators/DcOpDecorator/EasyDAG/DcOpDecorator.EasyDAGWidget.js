@@ -37,8 +37,11 @@ define([
         };
     };
 
-    DcOpDecorator.prototype.castOutputType = function(baseId) {
-        var output = this._node.outputs[0];
+    DcOpDecorator.prototype.castOutputType = function(targetId) {
+        var target = this.client.getNode(targetId),
+            baseId = target.getBaseId(),
+            output = this._node.outputs[0],
+            hash;
 
         if (!output) {
             // create the output node
@@ -46,6 +49,9 @@ define([
         } else {
             this.client.makePointer(output.id, CONSTANTS.POINTER_BASE, baseId);
         }
+        // Copy the data content to the output node
+        hash = target.getAttribute('data');
+        this.client.setAttributes(this._node.id, 'data', hash);
     };
 
     DcOpDecorator.prototype._createOutputNode = function(baseId) {
