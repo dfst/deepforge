@@ -32,7 +32,7 @@ define([
     // ArtifactOp nodes need to be able to...
     //     - dynamically change their outputs (downcast)
     ArtifactOpDecorator = function (options) {
-        options.color = options.color || '#78909c';
+        options.color = options.color || '#b0bec5';
         DecoratorBase.call(this, options);
         // set the opts...
         this.castOpts = CAST_OPTS[this._node.baseName];
@@ -61,6 +61,41 @@ define([
         } else {
             DecoratorBase.prototype.savePointer.call(this, name, to);
         }
+    };
+
+    ArtifactOpDecorator.prototype.getDisplayName = function() {
+        var ptrName = this._node.baseName === 'ArtifactLoader' ? 'artifact' : 'type',
+            id = this._node.pointers[ptrName],
+            name = this.nameFor[id] || this._node.name;
+        return name;
+    };
+
+    ArtifactOpDecorator.prototype.updateDisplayName = function() {
+        var newName = this.getDisplayName();
+        if (this.name !== newName) {
+            this.name = newName;
+            this.nameWidth = null;
+        }
+    };
+
+    ArtifactOpDecorator.prototype.updateTargetName = function(id, name) {
+        DecoratorBase.prototype.updateTargetName.apply(this, arguments);
+        // Update name
+        var ptrName = this._node.baseName === 'ArtifactLoader' ? 'artifact' : 'type';
+        if (this._node.pointers[ptrName] === id) {
+            this._name = name;
+            this.onResize();
+        }
+    };
+
+    ArtifactOpDecorator.prototype.expand = function() {
+        this.updateDisplayName();
+        DecoratorBase.prototype.expand.call(this);
+    };
+
+    ArtifactOpDecorator.prototype.condense = function() {
+        this.updateDisplayName();
+        DecoratorBase.prototype.condense.call(this);
     };
 
     return ArtifactOpDecorator;
