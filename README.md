@@ -8,11 +8,10 @@ DeepForge is an open-source visual development environment for deep learning. Cu
 
 ## Quick Start
 Install dependencies:  
-+ NodeJS (version 6.2.0)
-+ npm (version 2.x)
-+ Torch7
-+ MongoDB
-+ [git-lfs](https://git-lfs.github.com/)
++ NodeJS (v6.2.0)
++ npm (v2.x)
++ [Torch7](http://torch.ch/docs/getting-started.html#_)
++ [MongoDB](https://www.mongodb.com/download-center#community)
 
 First, start mongodb locally.
 ```
