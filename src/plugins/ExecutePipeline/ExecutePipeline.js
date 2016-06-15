@@ -10,7 +10,6 @@ define([
     './templates/index',
     './LocalExecutor',
     'executor/ExecutorClient',
-    'jszip',
     'underscore'
 ], function (
     CreateExecution,
@@ -21,7 +20,6 @@ define([
     Templates,
     LocalExecutor,  // DeepForge operation primitives
     ExecutorClient,
-    JsZip,
     _
 ) {
     'use strict';
@@ -34,26 +32,14 @@ define([
      * @classdesc This class represents the plugin ExecutePipeline.
      * @constructor
      */
+    var OUTPUT_INTERVAL = 1500;
     var ExecutePipeline = function () {
         // Call base class' constructor.
         CreateExecution.call(this);
         this.pluginMetadata = pluginMetadata;
 
         this._currentSave = Q();
-
-        // Cache
-        this.nodes = {};
-
-        // Record keeping for running operations
-        this.opFor = {};
-        this.incomingCounts = {};
-        this.outputsOf = {};
-        this.inputPortsFor = {};
-        this.inputs = {};
-
-        this.finished = {};
-        this.completedCount = 0;
-        this.totalCount = 0;
+        this.initRun();
     };
 
     /**
@@ -67,6 +53,23 @@ define([
     // Prototypical inheritance from CreateExecution.
     ExecutePipeline.prototype = Object.create(CreateExecution.prototype);
     ExecutePipeline.prototype.constructor = ExecutePipeline;
+
+    ExecutePipeline.prototype.initRun = function () {
+        // Cache
+        this.nodes = {};
+
+        // Record keeping for running operations
+        this.opFor = {};
+        this.incomingCounts = {};
+        this.outputsOf = {};
+        this.inputPortsFor = {};
+        this.inputs = {};
+
+        this.finished = {};
+        this.completedCount = 0;
+        this.totalCount = 0;
+        this.outputLineCount = {};
+    };
 
     /**
      * Main function for the plugin to execute. This will perform the execution.
@@ -82,6 +85,7 @@ define([
         // inputs for the next operation cannot be created until the inputs have
         // been generated
 
+        this.initRun();
         this.pipelineName = this.core.getAttribute(this.activeNode, 'name');
         var startPromise;
         if (this.core.isTypeOf(this.activeNode, this.META.Pipeline)) {
@@ -343,11 +347,13 @@ define([
                 }
 
                 config = {
-                    cmd: 'th',
-                    args: args,
+                    cmd: 'bash',
+                    args: ['run.sh'],
+                    outputInterval: OUTPUT_INTERVAL,
                     resultArtifacts: outputs
                 };
                 files['executor_config.json'] = JSON.stringify(config, null, 4);
+                files['run.sh'] = Templates.BASH;
 
                 // Save the artifact
                 // Remove empty hashes
@@ -390,8 +396,10 @@ define([
 
         this.logger.info(`Executing operation "${name}"`);
 
+        this.outputLineCount[jobId] = 0;
         // Set the job status to 'running'
         this.core.setAttribute(this.nodes[jobId], 'status', 'running');
+        this.core.setAttribute(this.nodes[jobId], 'stdout', '');
         this.logger.info(`Setting ${jobId} status to "running" (${this.currentHash})`);
         this.logger.debug(`Making a commit from ${this.currentHash}`);
         this.save(`Started "${name}" operation in ${this.pipelineName}`)
@@ -405,6 +413,30 @@ define([
         var name;
 
         return executor.getInfo(hash)
+            .then(info => {  // Update the job's stdout
+                var actualLine = info.outputNumber,  // on executing job
+                    currentLine = this.outputLineCount[jobId];
+
+                if (actualLine !== null && actualLine >= currentLine) {
+                    this.outputLineCount[jobId] = actualLine + 1;
+                    return executor.getOutput(hash, currentLine, actualLine+1)
+                        .then(outputLines => {
+                            var job = this.nodes[jobId],
+                                stdout = this.core.getAttribute(job, 'stdout'),
+                                output = outputLines.map(o => o.output).join(''),
+                                jobName = this.core.getAttribute(job, 'name');
+
+                            // Handle the \b
+                            // TODO
+                            stdout += output;
+                            this.core.setAttribute(job, 'stdout', stdout);
+                            return this.save(`Received stdout for ${jobName}`);
+                        })
+                        .then(() => info);
+                } else {
+                    return info;
+                }
+            })
             .then(info => {
                 if (info.status === 'CREATED' || info.status === 'RUNNING') {
                     setTimeout(

@@ -1,4 +1,4 @@
-/*globals define*/
+/*globals $, define*/
 /*jshint browser: true*/
 
 /**
@@ -23,27 +23,41 @@ define([
 
         this._el = container;
         this._el.css({height: '100%'});
-        this.editor = ace.edit(this._el[0]);
-        this.editor.getSession().setOptions({
-            mode: 'ace/mode/lua',
-            tabSize: 3,
-            useSoftTabs: true
-        });
+        this.$editor = $('<div/>');
+        this.$editor.css({height: '100%'});
+        this._el.append(this.$editor[0]);
+
+        this.readOnly = this.readOnly || false;
+        this.editor = ace.edit(this.$editor[0]);
+
         // Get the config from component settings for themes
-        // TODO
-        this.editor.setOptions({
-            fontSize: '12pt'
-        });
+        this.editor.getSession().setOptions(this.getSessionOptions());
+        this.editor.setOptions(this.getEditorOptions());
         this.editor.$blockScrolling = Infinity;
         this.DELAY = 750;
         // this.editor.setTheme('ace/theme/monokai');
 
         this.editor.on('input', _.debounce(this.saveText.bind(this), this.DELAY));
+        this.setReadOnly(this.readOnly);
         this.currentHeader = '';
         this.activeNode = null;
         this._initialize();
 
         this._logger.debug('ctor finished');
+    };
+
+    TextEditorWidget.prototype.getEditorOptions = function () {
+        return {
+            fontSize: '12pt'
+        };
+    };
+
+    TextEditorWidget.prototype.getSessionOptions = function () {
+        return {
+            mode: 'ace/mode/lua',
+            tabSize: 3,
+            useSoftTabs: true
+        };
     };
 
     TextEditorWidget.prototype._initialize = function () {
@@ -71,7 +85,13 @@ define([
     };
 
     TextEditorWidget.prototype.saveText = function () {
-        var text = this.editor.getValue().replace(this.currentHeader + '\n', '');
+        var text;
+
+        if (this.readOnly) {
+            return;
+        }
+
+        text = this.editor.getValue().replace(this.currentHeader + '\n', '');
         if (this.activeNode) {
             this.saveTextFor(this.activeNode, text);
         } else {
@@ -88,7 +108,9 @@ define([
 
     TextEditorWidget.prototype.updateNode = function (desc) {
         // Check for header changes
-        if (this.activeNode === desc.id &&
+        if (this.readOnly) {
+            this.addNode(desc);
+        } else if (this.activeNode === desc.id &&
             this.getHeader(desc) !== this.currentHeader) {
             this.addNode(desc);
         }
@@ -112,6 +134,11 @@ define([
 
     TextEditorWidget.prototype.onDeactivate = function () {
         this._logger.debug('TextEditorWidget has been deactivated');
+    };
+
+    TextEditorWidget.prototype.setReadOnly = function (isReadOnly) {
+        this.readOnly = isReadOnly;
+        this.editor.setReadOnly(isReadOnly);
     };
 
     return TextEditorWidget;

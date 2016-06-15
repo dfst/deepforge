@@ -137,6 +137,13 @@
         "panel": "src/visualizers/panels/Footer",
         "secondary": false,
         "widget": "src/visualizers/widgets/Footer"
+      },
+      "LogViewer": {
+        "src": "panels/LogViewer/LogViewerPanel",
+        "title": "LogViewer",
+        "panel": "src/visualizers/panels/LogViewer",
+        "secondary": false,
+        "widget": "src/visualizers/widgets/LogViewer"
       }
     },
     "addons": {},
