@@ -167,9 +167,6 @@
       "devTests": {
         "src": "src/seeds/devTests"
       },
-      "devMinimal": {
-        "src": "src/seeds/devMinimal"
-      },
       "devUtilTests": {
         "src": "src/seeds/devUtilTests"
       },

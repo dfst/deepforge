@@ -1,6 +1,6 @@
 {
   "id": "CreateTorchMeta",
-  "name": "Create Torch Meta",
+  "name": "Update nn meta",
   "version": "0.1.0",
   "description": "Create metamodel from Torch yaml",
   "icon": {
@@ -16,6 +16,14 @@
           "description": "Yaml file of torch layer descriptors (optional)",
           "value": "",
           "valueType": "asset",
+          "readOnly": false
+      },
+      {
+          "name": "removeOldLayers",
+          "displayName": "Delete old layers",
+          "description": "Delete all layers not in the current description",
+          "value": true,
+          "valueType": "boolean",
           "readOnly": false
       }
   ]

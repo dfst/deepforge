@@ -23,12 +23,10 @@ define([
             DefaultColor: '#ffb74d',
             LayerColors: {
                 Containers: '#ffb74d',
-                Module: '#ba68c8',
-                ConvLayer: '#2196f3',
-                SimpleLayer: '#ff9100',
-                TransferLayer: '#80deea',
-                MiscLayers: '#ce93d8',
-                Criterion: '#7e57c2'
+                Convolution: '#2196f3',
+                Simple: '#ff9100',
+                Transfer: '#80deea',
+                Misc: '#ce93d8'
             }
         };
 
