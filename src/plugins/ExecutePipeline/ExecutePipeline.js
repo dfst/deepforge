@@ -452,27 +452,27 @@ define([
 
                 name = this.core.getAttribute(job, 'name');
                 this.core.setAttribute(job, 'execFiles', info.resultHashes[name + '-all-files']);
-                return this.blobClient.getArtifact(info.resultHashes.stdout);
-            })
-            .then(artifact => {
-                var stdoutHash = artifact.descriptor.content[STDOUT_FILE].content;
-                return this.blobClient.getObjectAsString(stdoutHash);
-            })
-            .then(stdout => {
-                this.core.setAttribute(job, 'stdout', stdout);
-                if (info.status !== 'SUCCESS') {
-                    // Download all files
-                    this.result.addArtifact(info.resultHashes[name + '-all-files']);
-                    // Set the job to failed! Store the error
-                    this.core.setAttribute(this.nodes[jobId], 'status', 'fail');
-                    this.logger.info(`Setting ${jobId} status to "fail"`);
-                    this.onPipelineComplete(`Operation "${opId}" failed! ${JSON.stringify(info)}`);  // Failed
-                } else {
-                    if (this.debug) {
-                        this.result.addArtifact(info.resultHashes[name + '-all-files']);
-                    }
-                    this.onDistOperationComplete(opId, info);
-                }
+                return this.blobClient.getArtifact(info.resultHashes.stdout)
+                    .then(artifact => {
+                        var stdoutHash = artifact.descriptor.content[STDOUT_FILE].content;
+                        return this.blobClient.getObjectAsString(stdoutHash);
+                    })
+                    .then(stdout => {
+                        this.core.setAttribute(job, 'stdout', stdout);
+                        if (info.status !== 'SUCCESS') {
+                            // Download all files
+                            this.result.addArtifact(info.resultHashes[name + '-all-files']);
+                            // Set the job to failed! Store the error
+                            this.core.setAttribute(this.nodes[jobId], 'status', 'fail');
+                            this.logger.info(`Setting ${jobId} status to "fail"`);
+                            this.onPipelineComplete(`Operation "${opId}" failed! ${JSON.stringify(info)}`);  // Failed
+                        } else {
+                            if (this.debug) {
+                                this.result.addArtifact(info.resultHashes[name + '-all-files']);
+                            }
+                            this.onDistOperationComplete(opId, info);
+                        }
+                    });
             })
             .catch(err => this.logger.error(`Could not get op info for ${opId}: ${err}`));
     };
