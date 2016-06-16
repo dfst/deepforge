@@ -10,7 +10,7 @@ var findInitParams = function(ast){
     // Find '__init' function
     var params;
     ast.block.stats.forEach(function(block){
-        if(block.key && block.key.val == '__init' && block.func){
+        if(block.key && block.key.val === '__init' && block.func){
             params = block.func.args;
         }
     });
@@ -23,12 +23,12 @@ var findTorchClass = function(ast){
         baseType,
         params = [];
 
-    if(ast.type == 'function'){
+    if(ast.type === 'function'){
         ast.block.stats.forEach(function(func){
-            if(func.type == 'stat.local' && func.right && func.right[0] &&
+            if(func.type === 'stat.local' && func.right && func.right[0] &&
               func.right[0].func && func.right[0].func.self &&
-              func.right[0].func.self.val == 'torch' &&
-              func.right[0].func.key.val == 'class'){
+              func.right[0].func.self.val === 'torch' &&
+              func.right[0].func.key.val === 'class'){
 
                 torchClassArgs = func.right[0].args.map(arg => arg.val);
                 name = torchClassArgs[0];

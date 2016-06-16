@@ -216,7 +216,7 @@ define([
                 soln;
 
             soln = Object.keys(solnMap)
-                .filter(nId => nId != id && !mappings.hasOwnProperty(nId))  // not assigned
+                .filter(nId => nId !== id && !mappings.hasOwnProperty(nId))  // not assigned
                 .map(id => solnMap[id]);
 
             tuple = getMostConstrained(soln, nodes);
