@@ -24,9 +24,9 @@ concat:add(conv3xx)
 local pool = nn.Sequential()
 pool:add(nn.SpatialZeroPadding(1,1,1,1)) -- remove after getting nn R2 into fbcode
 if config[4][1] == 'max' then
-  pool:add(nn.SpatialMaxPooling(3,3,1,1):ceil())
+  pool:add(nn.SpatialMaxPooling(3,3,1,1))
 elseif config[4][1] == 'avg' then
-  pool:add(nn.SpatialAveragePooling(3,3,1,1):ceil())
+  pool:add(nn.SpatialAveragePooling(3,3,1,1))
 else
   error('Unknown pooling')
 end
@@ -40,10 +40,10 @@ end
 
 local features = nn.Sequential()
 features:add(nn.SpatialConvolution(3,64,7,7,2,2,3,3)):add(nn.ReLU(true))
-features:add(nn.SpatialMaxPooling(3,3,2,2):ceil())
+features:add(nn.SpatialMaxPooling(3,3,2,2))
 features:add(nn.SpatialConvolution(64,64,1,1)):add(nn.ReLU(true))
 features:add(nn.SpatialConvolution(64,192,3,3,1,1,1,1)):add(nn.ReLU(true))
-features:add(nn.SpatialMaxPooling(3,3,2,2):ceil())
+features:add(nn.SpatialMaxPooling(3,3,2,2))
 features:add(inception( 192, {{ 64},{ 64, 64},{ 64, 96},{'avg', 32}})) -- 3(a)
 features:add(inception( 256, {{ 64},{ 64, 96},{ 64, 96},{'avg', 64}})) -- 3(b)
 features:add(inception( 320, {{  0},{128,160},{ 64, 96},{'max',  0}})) -- 3(c)
@@ -59,15 +59,15 @@ main_branch:add(nn.SpatialConvolution(1024,1024,2,2,2,2))
 main_branch:add(inception(1024, {{352},{192,320},{160,224},{'avg',128}})) -- 5(a)
 main_branch:add(inception(1024, {{352},{192,320},{192,224},{'max',128}})) -- 5(b)
 main_branch:add(nn.SpatialAveragePooling(7,7,1,1))
-main_branch:add(nn.View(1024):setNumInputDims(3))
+main_branch:add(nn.View(1024))
 main_branch:add(nn.Linear(1024,nClasses))
 main_branch:add(nn.LogSoftMax())
 
 -- add auxillary classifier here (thanks to Christian Szegedy for the details)
 local aux_classifier = nn.Sequential()
-aux_classifier:add(nn.SpatialAveragePooling(5,5,3,3):ceil())
+aux_classifier:add(nn.SpatialAveragePooling(5,5,3,3))
 aux_classifier:add(nn.SpatialConvolution(576,128,1,1,1,1))
-aux_classifier:add(nn.View(128*4*4):setNumInputDims(3))
+aux_classifier:add(nn.View(128*4*4))
 aux_classifier:add(nn.Linear(128*4*4,768))
 aux_classifier:add(nn.ReLU())
 aux_classifier:add(nn.Linear(768,nClasses))

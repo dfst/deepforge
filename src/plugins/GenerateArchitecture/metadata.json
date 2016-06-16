@@ -9,5 +9,14 @@
   },
   "disableServerSideExecution": false,
   "disableBrowserSideExecution": false,
-  "configStructure": []
+  "configStructure": [
+      {
+            "name": "standalone",
+            "displayName": "Standalone",
+            "description": "Prepend custom layer definitions",
+            "value": false,
+            "valueType": "boolean",
+            "readOnly": false
+      }
+  ]
 }

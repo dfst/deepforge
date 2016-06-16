@@ -167,7 +167,6 @@ define([
 
         // Set the color
         desc.color = '#9e9e9e';
-        // TODO
         return desc;
     };
 

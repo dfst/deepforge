@@ -19,6 +19,7 @@ var testFixture = require('../../globals'),
         'basic4.lua'
     ],
     ONLY_TESTS = [
+        'vgg.lua'
     ];
 
 describe('ImportTorch', function () {

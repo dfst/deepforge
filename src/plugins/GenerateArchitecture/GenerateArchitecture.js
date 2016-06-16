@@ -43,22 +43,39 @@ define([
     GenerateArchitecture.prototype.constructor = GenerateArchitecture;
 
     GenerateArchitecture.prototype.main = function () {
+        this.addCustomLayersToMeta();
         this.LayerDict = createLayerDict(this.core, this.META);
         this.uniqueId = 2;
         this._oldTemplateSettings = _.templateSettings;
         return PluginBase.prototype.main.apply(this, arguments);
     };
 
+    GenerateArchitecture.prototype.addCustomLayersToMeta = function () {
+        var metaDict = this.core.getAllMetaNodes(this.rootNode);
+        
+        Object.keys(metaDict).map(id => metaDict[id])
+            // Get all custom layers
+            .filter(node => this.core.isTypeOf(node, this.META.Layer))
+            // Add them to the meta
+            .forEach(node => this.META[this.core.getAttribute(node, 'name')] = node);
+    };
+
     GenerateArchitecture.prototype.createOutputFiles = function (tree) {
         var layers = tree[Constants.CHILDREN],
             //initialLayers,
             result = {},
-            code;
+            code = 'require \'nn\'\n';
 
         //initialLayers = layers.filter(layer => layer[Constants.PREV].length === 0);
         // Add an index to each layer
         layers.forEach((l, index) => l[INDEX] = index);
-        code = this.genArchCode(layers);
+
+        // Define custom layers
+        if (this.getCurrentConfig().standalone) {
+            code += this.genLayerDefinitions(layers);
+        }
+
+        code += this.genArchCode(layers);
 
         result[tree.name + '.lua'] = code;
         _.templateSettings = this._oldTemplateSettings;  // FIXME: Fix this in SimpleNodes
@@ -66,10 +83,7 @@ define([
     };
 
     GenerateArchitecture.prototype.genArchCode = function (layers) {
-        // Create a 'null' start layer
-
         return [
-            'require \'nn\'',
             this.createSequential(layers[0], 'net').code,
             '\nreturn net'
         ].join('\n');
@@ -174,5 +188,21 @@ define([
         return !(value === undefined || value === null || value === '');
     };
 
+    GenerateArchitecture.prototype.genLayerDefinitions = function(layers) {
+        var code = '',
+            customLayerId = this.core.getPath(this.META.CustomLayer),
+            customLayers = layers.filter(layer => {  // Get the custom layers
+                var node = this.META[layer.name];
+                return this.core.getMixinPaths(node).indexOf(customLayerId) !== -1;
+            });
+
+        if (customLayers.length) {
+            code += '\n-------------- Custom Layer Definitions --------------\n\n';
+            code += customLayers.map(layer => layer.code).join('\n');
+            code += '\n\n-------------- Network --------------\n';
+        }
+
+        return code;
+    };
     return GenerateArchitecture;
 });

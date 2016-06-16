@@ -54,7 +54,7 @@ describe('ImportYaml', function () {
                 checker = new GraphChecker({
                     core: core,
                     ignore: {
-                        attributes: ['calculateDimensionality', 'dimensionalityTransform']
+                        attributes: []
                     }
                 });
                 return project.createBranch('test', commitHash);
@@ -167,7 +167,7 @@ describe('ImportYaml', function () {
     };
 
     describe('run test cases', function() {
-        var cases = fs.readdirSync(YAML_DIR)
+        var cases = ['vgg.yml']  // fs.readdirSync(YAML_DIR)
                 .filter(name => path.extname(name) === '.yml');
 
         // one test for each test name
