@@ -100,6 +100,17 @@ define([
         };
     };
 
+    LogViewerWidget.prototype.addNode = function (desc) {
+        var atEOF = this.editor.getLastVisibleRow()+1 ===
+            this.editor.session.getLength();
+
+        TextEditorWidget.prototype.addNode.call(this, desc);
+
+        if (atEOF) {  // Scroll to bottom
+            this.editor.gotoLine(Infinity);
+        }
+    };
+
     LogViewerWidget.prototype.getEditorOptions = function() {
         return {
             fontSize: '10pt'
