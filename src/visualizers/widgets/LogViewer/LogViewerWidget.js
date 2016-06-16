@@ -19,6 +19,7 @@ define([
         this.readOnly = true;
         TextEditorWidget.apply(this, arguments);
         this.editor.setTheme('ace/theme/twilight');
+        this.editor.setShowPrintMargin(false);
     };
 
     _.extend(LogViewerWidget.prototype, TextEditorWidget.prototype);
