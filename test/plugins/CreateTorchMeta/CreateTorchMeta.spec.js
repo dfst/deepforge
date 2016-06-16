@@ -221,29 +221,12 @@ describe('CreateTorchMeta', function () {
             assert.notEqual(attrs.length, 1, `missing attributes! ${attrs}`);
         });
 
-        it('should support custom types', function () {
-            // check that "Add" has a boolean attribute called 'isScalar'
-            var attr = core.getAttributeMeta(META.Add, 'isScalar');
-            assert.equal(attr.type, 'boolean');
-        });
-
-        it('should create integer type if none specified', function () {
+        it('should create string type', function () {
             // check that "Linear" has an attribute called "output"
-            var attr = core.getAttributeMeta(META.Linear, 'output');
-            assert.notEqual(attr, -1);
-            assert.equal(attr.type, 'integer');
+            var attr = core.getAttributeMeta(META.Add, 'scalar');
+            assert.equal(attr.type, 'string');
         });
 
-        it('should set "min" when specified', function () {
-            var attr = core.getAttributeMeta(META.Linear, 'output');
-            assert.equal(attr.min, 1);
-        });
-
-        it('should ignore "ignore" attributes', function () {
-            // check that "Linear" doesn't have an attribute called "input"
-            var attrs = core.getAttributeNames(META.Linear);
-            assert.equal(attrs.indexOf('input'), -1);
-        });
     });
 
 });

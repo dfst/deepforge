@@ -9,12 +9,20 @@ define([
     'plugin/PluginConfig',
     'plugin/PluginBase',
     'deepforge/js-yaml.min',
-    'text!deepforge/layers.yml',
+    'common/util/guid',
+    'js/RegistryKeys',
+    'js/Constants',
+    'js/Panels/MetaEditor/MetaEditorConstants',
+    'text!deepforge/layers.json',
     'text!./metadata.json'
 ], function (
     PluginConfig,
     PluginBase,
     yaml,
+    generateGuid,
+    REGISTRY_KEYS,
+    CONSTANTS,
+    META_CONSTANTS,
     DEFAULT_LAYERS,
     metadata
 ) {
@@ -31,6 +39,8 @@ define([
         // Call base class' constructor.
         PluginBase.call(this);
         this.pluginMetadata = CreateTorchMeta.metadata;
+        this.metaSheets = {};
+        this.sheetCounts = {};
     };
 
     CreateTorchMeta.metadata = JSON.parse(metadata);
@@ -58,7 +68,7 @@ define([
         }
 
         // Extra layer names
-        this.getYamlText((err, text) => {
+        this.getJsonLayers((err, text) => {
             if (err) {
                 return callback(err, this.result);
             }
@@ -67,15 +77,24 @@ define([
             //      - (Abstract) CategoryLayerTypes
             //          - LayerName
             //              - Attributes (if exists)
-            var content,
+            var content = {},
                 categories,
-                nodes = {};
+                nodes = {},
+                layers;
 
             try {
-                content = yaml.load(text);
+                layers = JSON.parse(text)
+                    .filter(layer => layer.type !== 'Criterion');
             } catch (e) {
-                return callback('YAML parse error: ' + e, this.result);
+                return callback('JSON parse error: ' + e, this.result);
             }
+            layers.forEach(layer => {
+                if (!content[layer.type]) {
+                    content[layer.type] = [];
+                }
+                content[layer.type].push(layer);
+            });
+
             categories = Object.keys(content);
             // Create the base class, if needed
             if (!this.META.Layer) {
@@ -84,23 +103,25 @@ define([
 
             // Create the category nodes
             categories
-                .forEach(name => nodes[name] = this.createMetaNode(name, this.META.Layer));
+                .forEach(name => {
+                    // Create a tab for each
+                    this.metaSheets[name] = this.createMetaSheetTab(name);
+                    this.sheetCounts[name] = 0;
+                    nodes[name] = this.createMetaNode(name, this.META.Layer, name);
+                });
 
             // Make them abstract
             categories
                 .forEach(name => this.core.setRegistry(nodes[name], 'isAbstract', true));
-            
+
 
             // Create the actual nodes
             categories.forEach(cat => {
                 content[cat]
-                    .forEach(name => {
-                        var attrs = null;
-                        if (typeof name !== 'string') {
-                            attrs = name[Object.keys(name)[0]];
-                            name = Object.keys(name)[0];
-                        }
-                        nodes[name] = this.createMetaNode(name, nodes[cat], attrs);
+                    .forEach(layer => {
+                        var attrs = layer.params,
+                            name = layer.name;
+                        nodes[name] = this.createMetaNode(name, nodes[cat], cat, attrs);
                         // Make the node non-abstract
                         this.core.setRegistry(nodes[name], 'isAbstract', false);
                     });
@@ -115,11 +136,23 @@ define([
                 callback(null, self.result);
             });
         });
-
-
     };
 
-    CreateTorchMeta.prototype.getYamlText = function (callback) {
+    CreateTorchMeta.prototype.createMetaSheetTab = function (name) {
+        var sheets = this.core.getRegistry(this.rootNode, REGISTRY_KEYS.META_SHEETS),
+            id = META_CONSTANTS.META_ASPECT_SHEET_NAME_PREFIX + generateGuid(),
+            desc = {
+                SetID: id,
+                order: sheets.length,
+                title: name
+            };
+
+        sheets.push(desc);
+        this.core.setRegistry(this.rootNode, REGISTRY_KEYS.META_SHEETS, sheets);
+        return id;
+    };
+
+    CreateTorchMeta.prototype.getJsonLayers = function (callback) {
         var config = this.getCurrentConfig();
 
         if (config.layerNameHash) {
@@ -135,8 +168,15 @@ define([
         }
     };
 
-    CreateTorchMeta.prototype.createMetaNode = function (name, base, attrs) {
-        var node;
+    CreateTorchMeta.prototype.createMetaNode = function (name, base, tabName, attrs) {
+        var node,
+            nodeId,
+            tabId = this.metaSheets[tabName],
+            position = this.getPositionFor(name, tabName);
+
+        if (!tabId) {
+            this.logger.error(`No meta sheet for ${tabName}`);
+        }
 
         if (this.META[name]) {
             this.logger.warn('"' + name + '" already exists. skipping...');
@@ -148,27 +188,31 @@ define([
             parent: this.META.Language,
             base: base
         });
+        nodeId = this.core.getPath(node);
         this.core.setAttribute(node, 'name', name);
 
         // Add it to the meta sheet
-        this.core.addMember(this.rootNode, 'MetaAspectSet', node);
+        this.core.addMember(this.rootNode, META_CONSTANTS.META_ASPECT_SET_NAME, node);
+        this.core.addMember(this.rootNode, tabId, node);
 
-        // Add it to a tab of the meta sheet
-        var set = this.core.getSetNames(this.rootNode)
-            .find(name => name !== 'MetaAspectSet');
-
-        this.core.addMember(this.rootNode, set, node);
-        // TODO: Position the nodes on the META
-        // TODO: Put each group of nodes on their own META sheet
+        this.core.setMemberRegistry(
+            this.rootNode,
+            META_CONSTANTS.META_ASPECT_SET_NAME,
+            nodeId,
+            REGISTRY_KEYS.POSITION,
+            position
+        );
+        this.core.setMemberRegistry(
+            this.rootNode,
+            tabId,
+            nodeId,
+            REGISTRY_KEYS.POSITION,
+            position
+        );
 
         if (attrs) {  // Add the attributes
             attrs.forEach((name, index) => {
-                var desc = null;
-                if (typeof name !== 'string') {
-                    desc = name[Object.keys(name)[0]];
-                    name = Object.keys(name)[0];
-                }
-                desc = desc || {};
+                var desc = {};
                 desc.argindex = index;
                 this.addAttribute(name, node, desc);
             });
@@ -178,11 +222,38 @@ define([
         return node;
     };
 
+    CreateTorchMeta.prototype.getPositionFor = function(name, tabName) {
+        var index = this.sheetCounts[tabName],
+            dx = 140,
+            dy = 100,
+            MAX_WIDTH = 1200,
+            x;
+
+        if (tabName === 'Convolution') {
+            dx *= 1.3;
+            dy *= 1.5;
+        }
+
+        this.sheetCounts[tabName]++;
+        if (index === 0) {
+            return {
+                x: MAX_WIDTH/2,
+                y: 50
+            };
+        }
+
+        x = dx*index;
+        return {
+            x: x%MAX_WIDTH,
+            y: Math.floor(x/MAX_WIDTH+1)*dy + 50
+        };
+    };
+
     CreateTorchMeta.prototype.addAttribute = function (name, node, def) {
         var initial,
             schema = {};
 
-        schema.type = def.type || 'integer';
+        schema.type = def.type || 'string';
         if (schema.type === 'list') {  // FIXME: add support for lists
             schema.type = 'string';
         }

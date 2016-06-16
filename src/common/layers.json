@@ -1,0 +1,1362 @@
+[
+  {
+    "name": "Abs",
+    "baseType": "Module",
+    "params": [],
+    "type": "Simple",
+    "setters": []
+  },
+  {
+    "name": "AbsCriterion",
+    "baseType": "Criterion",
+    "params": [
+      "sizeAverage"
+    ],
+    "type": "Criterion",
+    "setters": []
+  },
+  {
+    "name": "Add",
+    "baseType": "Module",
+    "params": [
+      "inputSize",
+      "scalar"
+    ],
+    "type": "Simple",
+    "setters": []
+  },
+  {
+    "name": "AddConstant",
+    "baseType": "Module",
+    "params": [
+      "constant_scalar",
+      "ip"
+    ],
+    "type": "Simple",
+    "setters": []
+  },
+  {
+    "name": "BCECriterion",
+    "baseType": "Criterion",
+    "params": [
+      "weights",
+      "sizeAverage"
+    ],
+    "type": "Criterion",
+    "setters": []
+  },
+  {
+    "name": "BatchNormalization",
+    "baseType": "Module",
+    "params": [
+      "nOutput",
+      "eps",
+      "momentum",
+      "affine"
+    ],
+    "type": "Misc",
+    "setters": []
+  },
+  {
+    "name": "Bilinear",
+    "baseType": "Module",
+    "params": [
+      "inputSize1",
+      "inputSize2",
+      "outputSize",
+      "bias"
+    ],
+    "type": "Misc",
+    "setters": []
+  },
+  {
+    "name": "CAddTable",
+    "baseType": "Module",
+    "params": [
+      "ip"
+    ],
+    "type": "Misc",
+    "setters": []
+  },
+  {
+    "name": "CDivTable",
+    "baseType": "Module",
+    "params": [],
+    "type": "Misc",
+    "setters": []
+  },
+  {
+    "name": "CMul",
+    "baseType": "Module",
+    "params": [],
+    "type": "Simple",
+    "setters": []
+  },
+  {
+    "name": "CMulTable",
+    "baseType": "Module",
+    "params": [],
+    "type": "Misc",
+    "setters": []
+  },
+  {
+    "name": "CSubTable",
+    "baseType": "Module",
+    "params": [],
+    "type": "Misc",
+    "setters": []
+  },
+  {
+    "name": "Clamp",
+    "baseType": "HardTanh",
+    "params": [
+      "min_value",
+      "max_value"
+    ],
+    "type": "Misc",
+    "setters": []
+  },
+  {
+    "name": "ClassNLLCriterion",
+    "baseType": "Criterion",
+    "params": [
+      "weights",
+      "sizeAverage"
+    ],
+    "type": "Criterion",
+    "setters": []
+  },
+  {
+    "name": "ClassSimplexCriterion",
+    "baseType": "MSECriterion",
+    "params": [
+      "nClasses"
+    ],
+    "type": "Criterion",
+    "setters": []
+  },
+  {
+    "name": "Concat",
+    "baseType": "Container",
+    "params": [
+      "dimension"
+    ],
+    "type": "Containers",
+    "setters": []
+  },
+  {
+    "name": "ConcatTable",
+    "baseType": "Container",
+    "params": [],
+    "type": "Misc",
+    "setters": []
+  },
+  {
+    "name": "Contiguous",
+    "baseType": "Module",
+    "params": [],
+    "type": "Misc",
+    "setters": []
+  },
+  {
+    "name": "Copy",
+    "baseType": "Module",
+    "params": [
+      "intype",
+      "outtype",
+      "forceCopy",
+      "dontCast"
+    ],
+    "type": "Simple",
+    "setters": []
+  },
+  {
+    "name": "Cosine",
+    "baseType": "Module",
+    "params": [
+      "inputSize",
+      "outputSize"
+    ],
+    "type": "Misc",
+    "setters": []
+  },
+  {
+    "name": "CosineDistance",
+    "baseType": "Module",
+    "params": [],
+    "type": "Misc",
+    "setters": []
+  },
+  {
+    "name": "CosineEmbeddingCriterion",
+    "baseType": "Criterion",
+    "params": [
+      "margin"
+    ],
+    "type": "Criterion",
+    "setters": []
+  },
+  {
+    "name": "CriterionTable",
+    "baseType": "Module",
+    "params": [
+      "criterion"
+    ],
+    "type": "Criterion",
+    "setters": []
+  },
+  {
+    "name": "CrossEntropyCriterion",
+    "baseType": "Criterion",
+    "params": [
+      "weights"
+    ],
+    "type": "Criterion",
+    "setters": []
+  },
+  {
+    "name": "DepthConcat",
+    "baseType": "Concat",
+    "params": [
+      "dimension"
+    ],
+    "type": "Misc",
+    "setters": []
+  },
+  {
+    "name": "DistKLDivCriterion",
+    "baseType": "Criterion",
+    "params": [],
+    "type": "Criterion",
+    "setters": []
+  },
+  {
+    "name": "DotProduct",
+    "baseType": "Module",
+    "params": [],
+    "type": "Misc",
+    "setters": []
+  },
+  {
+    "name": "Dropout",
+    "baseType": "Module",
+    "params": [
+      "p",
+      "v1",
+      "inplace"
+    ],
+    "type": "Simple",
+    "setters": []
+  },
+  {
+    "name": "ELU",
+    "baseType": "Module",
+    "params": [
+      "alpha",
+      "inplace"
+    ],
+    "type": "Misc",
+    "setters": []
+  },
+  {
+    "name": "Euclidean",
+    "baseType": "Module",
+    "params": [
+      "inputSize",
+      "outputSize"
+    ],
+    "type": "Simple",
+    "setters": []
+  },
+  {
+    "name": "Exp",
+    "baseType": "Module",
+    "params": [],
+    "type": "Simple",
+    "setters": []
+  },
+  {
+    "name": "FlattenTable",
+    "baseType": "Module",
+    "params": [],
+    "type": "Misc",
+    "setters": []
+  },
+  {
+    "name": "GradientReversal",
+    "baseType": "Module",
+    "params": [],
+    "type": "Misc",
+    "setters": []
+  },
+  {
+    "name": "HardShrink",
+    "baseType": "Module",
+    "params": [
+      "lam"
+    ],
+    "type": "Transfer",
+    "setters": []
+  },
+  {
+    "name": "HardTanh",
+    "baseType": "Module",
+    "params": [
+      "min_value",
+      "max_value"
+    ],
+    "type": "Transfer",
+    "setters": []
+  },
+  {
+    "name": "HingeEmbeddingCriterion",
+    "baseType": "Criterion",
+    "params": [
+      "margin"
+    ],
+    "type": "Criterion",
+    "setters": []
+  },
+  {
+    "name": "Identity",
+    "baseType": "Module",
+    "params": [],
+    "type": "Simple",
+    "setters": []
+  },
+  {
+    "name": "Index",
+    "baseType": "Module",
+    "params": [
+      "dimension"
+    ],
+    "type": "Misc",
+    "setters": []
+  },
+  {
+    "name": "JoinTable",
+    "baseType": "Module",
+    "params": [
+      "dimension",
+      "nInputDims"
+    ],
+    "type": "Misc",
+    "setters": []
+  },
+  {
+    "name": "L1Cost",
+    "baseType": "Criterion",
+    "params": [],
+    "type": "Misc",
+    "setters": []
+  },
+  {
+    "name": "L1HingeEmbeddingCriterion",
+    "baseType": "Criterion",
+    "params": [
+      "margin"
+    ],
+    "type": "Criterion",
+    "setters": []
+  },
+  {
+    "name": "L1Penalty",
+    "baseType": "Module",
+    "params": [
+      "l1weight",
+      "sizeAverage",
+      "provideOutput"
+    ],
+    "type": "Misc",
+    "setters": []
+  },
+  {
+    "name": "LeakyReLU",
+    "baseType": "Module",
+    "params": [
+      "negval",
+      "ip"
+    ],
+    "type": "Transfer",
+    "setters": []
+  },
+  {
+    "name": "Linear",
+    "baseType": "Module",
+    "params": [
+      "inputSize",
+      "outputSize",
+      "bias"
+    ],
+    "type": "Simple",
+    "setters": []
+  },
+  {
+    "name": "Log",
+    "baseType": "Module",
+    "params": [
+      "inputSize"
+    ],
+    "type": "Misc",
+    "setters": []
+  },
+  {
+    "name": "LogSigmoid",
+    "baseType": "Module",
+    "params": [],
+    "type": "Transfer",
+    "setters": []
+  },
+  {
+    "name": "LogSoftMax",
+    "baseType": "Module",
+    "params": [],
+    "type": "Transfer",
+    "setters": []
+  },
+  {
+    "name": "LookupTable",
+    "baseType": "Module",
+    "params": [
+      "nIndex",
+      "nOutput",
+      "paddingValue",
+      "maxNorm",
+      "normType"
+    ],
+    "type": "Convolution",
+    "setters": []
+  },
+  {
+    "name": "MM",
+    "baseType": "Module",
+    "params": [
+      "transA",
+      "transB"
+    ],
+    "type": "Simple",
+    "setters": []
+  },
+  {
+    "name": "MSECriterion",
+    "baseType": "Criterion",
+    "params": [
+      "sizeAverage"
+    ],
+    "type": "Criterion",
+    "setters": []
+  },
+  {
+    "name": "MV",
+    "baseType": "Module",
+    "params": [
+      "trans"
+    ],
+    "type": "Misc",
+    "setters": []
+  },
+  {
+    "name": "MarginCriterion",
+    "baseType": "Criterion",
+    "params": [
+      "margin"
+    ],
+    "type": "Criterion",
+    "setters": []
+  },
+  {
+    "name": "MarginRankingCriterion",
+    "baseType": "Criterion",
+    "params": [
+      "margin"
+    ],
+    "type": "Criterion",
+    "setters": []
+  },
+  {
+    "name": "MaskedSelect",
+    "baseType": "Module",
+    "params": [],
+    "type": "Misc",
+    "setters": []
+  },
+  {
+    "name": "Max",
+    "baseType": "Module",
+    "params": [
+      "dimension",
+      "nInputDims"
+    ],
+    "type": "Simple",
+    "setters": []
+  },
+  {
+    "name": "Mean",
+    "baseType": "Sum",
+    "params": [
+      "dimension",
+      "nInputDims"
+    ],
+    "type": "Simple",
+    "setters": []
+  },
+  {
+    "name": "Min",
+    "baseType": "Module",
+    "params": [
+      "dimension",
+      "nInputDims"
+    ],
+    "type": "Simple",
+    "setters": []
+  },
+  {
+    "name": "MixtureTable",
+    "baseType": "Module",
+    "params": [
+      "dim"
+    ],
+    "type": "Misc",
+    "setters": []
+  },
+  {
+    "name": "Mul",
+    "baseType": "Module",
+    "params": [],
+    "type": "Simple",
+    "setters": []
+  },
+  {
+    "name": "MulConstant",
+    "baseType": "Module",
+    "params": [
+      "constant_scalar",
+      "ip"
+    ],
+    "type": "Simple",
+    "setters": []
+  },
+  {
+    "name": "MultiCriterion",
+    "baseType": "Criterion",
+    "params": [],
+    "type": "Criterion",
+    "setters": []
+  },
+  {
+    "name": "MultiLabelMarginCriterion",
+    "baseType": "Criterion",
+    "params": [],
+    "type": "Criterion",
+    "setters": []
+  },
+  {
+    "name": "MultiLabelSoftMarginCriterion",
+    "baseType": "Criterion",
+    "params": [
+      "weights"
+    ],
+    "type": "Criterion",
+    "setters": []
+  },
+  {
+    "name": "MultiMarginCriterion",
+    "baseType": "Criterion",
+    "params": [
+      "p",
+      "weights",
+      "margin"
+    ],
+    "type": "Criterion",
+    "setters": []
+  },
+  {
+    "name": "Narrow",
+    "baseType": "Module",
+    "params": [
+      "dimension",
+      "offset",
+      "length"
+    ],
+    "type": "Simple",
+    "setters": []
+  },
+  {
+    "name": "NarrowTable",
+    "baseType": "Module",
+    "params": [
+      "offset",
+      "length"
+    ],
+    "type": "Misc",
+    "setters": []
+  },
+  {
+    "name": "Normalize",
+    "baseType": "Module",
+    "params": [
+      "p",
+      "eps"
+    ],
+    "type": "Misc",
+    "setters": []
+  },
+  {
+    "name": "PReLU",
+    "baseType": "Module",
+    "params": [
+      "nOutputPlane"
+    ],
+    "type": "Transfer",
+    "setters": []
+  },
+  {
+    "name": "Padding",
+    "baseType": "Module",
+    "params": [
+      "dim",
+      "pad",
+      "nInputDim",
+      "value",
+      "index"
+    ],
+    "type": "Misc",
+    "setters": []
+  },
+  {
+    "name": "PairwiseDistance",
+    "baseType": "Module",
+    "params": [
+      "p"
+    ],
+    "type": "Misc",
+    "setters": []
+  },
+  {
+    "name": "Parallel",
+    "baseType": "Container",
+    "params": [
+      "inputDimension",
+      "outputDimension"
+    ],
+    "type": "Misc",
+    "setters": []
+  },
+  {
+    "name": "ParallelCriterion",
+    "baseType": "Criterion",
+    "params": [
+      "repeatTarget"
+    ],
+    "type": "Criterion",
+    "setters": []
+  },
+  {
+    "name": "ParallelTable",
+    "baseType": "Container",
+    "params": [],
+    "type": "Misc",
+    "setters": []
+  },
+  {
+    "name": "PartialLinear",
+    "baseType": "Module",
+    "params": [
+      "inputsize",
+      "outputsize",
+      "bias"
+    ],
+    "type": "Misc",
+    "setters": []
+  },
+  {
+    "name": "Power",
+    "baseType": "Module",
+    "params": [
+      "p"
+    ],
+    "type": "Simple",
+    "setters": []
+  },
+  {
+    "name": "RReLU",
+    "baseType": "Module",
+    "params": [
+      "l",
+      "u",
+      "ip"
+    ],
+    "type": "Transfer",
+    "setters": []
+  },
+  {
+    "name": "ReLU",
+    "baseType": "Threshold",
+    "params": [
+      "p"
+    ],
+    "type": "Transfer",
+    "setters": []
+  },
+  {
+    "name": "Replicate",
+    "baseType": "Module",
+    "params": [
+      "nf",
+      "dim",
+      "ndim"
+    ],
+    "type": "Simple",
+    "setters": []
+  },
+  {
+    "name": "Reshape",
+    "baseType": "Module",
+    "params": [],
+    "type": "Simple",
+    "setters": []
+  },
+  {
+    "name": "Select",
+    "baseType": "Module",
+    "params": [
+      "dimension",
+      "index"
+    ],
+    "type": "Simple",
+    "setters": []
+  },
+  {
+    "name": "SelectTable",
+    "baseType": "Module",
+    "params": [
+      "index"
+    ],
+    "type": "Misc",
+    "setters": []
+  },
+  {
+    "name": "Sigmoid",
+    "baseType": "Module",
+    "params": [],
+    "type": "Transfer",
+    "setters": []
+  },
+  {
+    "name": "SmoothL1Criterion",
+    "baseType": "Criterion",
+    "params": [
+      "sizeAverage"
+    ],
+    "type": "Criterion",
+    "setters": []
+  },
+  {
+    "name": "SoftMarginCriterion",
+    "baseType": "Criterion",
+    "params": [],
+    "type": "Criterion",
+    "setters": []
+  },
+  {
+    "name": "SoftMax",
+    "baseType": "Module",
+    "params": [],
+    "type": "Transfer",
+    "setters": []
+  },
+  {
+    "name": "SoftMin",
+    "baseType": "Module",
+    "params": [],
+    "type": "Transfer",
+    "setters": []
+  },
+  {
+    "name": "SoftPlus",
+    "baseType": "Module",
+    "params": [
+      "beta"
+    ],
+    "type": "Transfer",
+    "setters": []
+  },
+  {
+    "name": "SoftShrink",
+    "baseType": "Module",
+    "params": [
+      "lam"
+    ],
+    "type": "Transfer",
+    "setters": []
+  },
+  {
+    "name": "SoftSign",
+    "baseType": "Module",
+    "params": [],
+    "type": "Transfer",
+    "setters": []
+  },
+  {
+    "name": "SparseLinear",
+    "baseType": "Module",
+    "params": [
+      "inputSize",
+      "outputSize",
+      "doGradInput"
+    ],
+    "type": "Simple",
+    "setters": []
+  },
+  {
+    "name": "SpatialAdaptiveMaxPooling",
+    "baseType": "Module",
+    "params": [
+      "W",
+      "H"
+    ],
+    "type": "Convolution",
+    "setters": []
+  },
+  {
+    "name": "SpatialAveragePooling",
+    "baseType": "Module",
+    "params": [
+      "kW",
+      "kH",
+      "dW",
+      "dH",
+      "padW",
+      "padH"
+    ],
+    "type": "Convolution",
+    "setters": []
+  },
+  {
+    "name": "SpatialBatchNormalization",
+    "baseType": "BatchNormalization",
+    "params": [
+      "nOutput",
+      "eps",
+      "momentum",
+      "affine"
+    ],
+    "type": "Convolution",
+    "setters": []
+  },
+  {
+    "name": "SpatialContrastiveNormalization",
+    "baseType": "Module",
+    "params": [
+      "nInputPlane",
+      "kernel",
+      "threshold",
+      "thresval"
+    ],
+    "type": "Convolution",
+    "setters": []
+  },
+  {
+    "name": "SpatialConvolution",
+    "baseType": "Module",
+    "params": [
+      "nInputPlane",
+      "nOutputPlane",
+      "kW",
+      "kH",
+      "dW",
+      "dH",
+      "padW",
+      "padH"
+    ],
+    "type": "Convolution",
+    "setters": []
+  },
+  {
+    "name": "SpatialConvolutionLocal",
+    "baseType": "Module",
+    "params": [
+      "nInputPlane",
+      "nOutputPlane",
+      "iW",
+      "iH",
+      "kW",
+      "kH",
+      "dW",
+      "dH",
+      "padW",
+      "padH"
+    ],
+    "type": "Convolution",
+    "setters": []
+  },
+  {
+    "name": "SpatialConvolutionMM",
+    "baseType": "Module",
+    "params": [
+      "nInputPlane",
+      "nOutputPlane",
+      "kW",
+      "kH",
+      "dW",
+      "dH",
+      "padW",
+      "padH"
+    ],
+    "type": "Convolution",
+    "setters": []
+  },
+  {
+    "name": "SpatialConvolutionMap",
+    "baseType": "Module",
+    "params": [
+      "conMatrix",
+      "kW",
+      "kH",
+      "dW",
+      "dH"
+    ],
+    "type": "Convolution",
+    "setters": []
+  },
+  {
+    "name": "SpatialCrossMapLRN",
+    "baseType": "Module",
+    "params": [
+      "size",
+      "alpha",
+      "beta",
+      "k"
+    ],
+    "type": "Convolution",
+    "setters": []
+  },
+  {
+    "name": "SpatialDivisiveNormalization",
+    "baseType": "Module",
+    "params": [
+      "nInputPlane",
+      "kernel",
+      "threshold",
+      "thresval"
+    ],
+    "type": "Convolution",
+    "setters": []
+  },
+  {
+    "name": "SpatialDropout",
+    "baseType": "Module",
+    "params": [
+      "p"
+    ],
+    "type": "Convolution",
+    "setters": []
+  },
+  {
+    "name": "SpatialFractionalMaxPooling",
+    "baseType": "Module",
+    "params": [
+      "poolSizeW",
+      "poolSizeH",
+      "arg1",
+      "arg2"
+    ],
+    "type": "Convolution",
+    "setters": []
+  },
+  {
+    "name": "SpatialFullConvolution",
+    "baseType": "Module",
+    "params": [
+      "nInputPlane",
+      "nOutputPlane",
+      "kW",
+      "kH",
+      "dW",
+      "dH",
+      "padW",
+      "padH",
+      "adjW",
+      "adjH"
+    ],
+    "type": "Convolution",
+    "setters": []
+  },
+  {
+    "name": "SpatialFullConvolutionMap",
+    "baseType": "Module",
+    "params": [
+      "conMatrix",
+      "kW",
+      "kH",
+      "dW",
+      "dH"
+    ],
+    "type": "Convolution",
+    "setters": []
+  },
+  {
+    "name": "SpatialLPPooling",
+    "baseType": "Sequential",
+    "params": [
+      "nInputPlane",
+      "pnorm",
+      "kW",
+      "kH",
+      "dW",
+      "dH"
+    ],
+    "type": "Convolution",
+    "setters": []
+  },
+  {
+    "name": "SpatialMaxPooling",
+    "baseType": "Module",
+    "params": [
+      "kW",
+      "kH",
+      "dW",
+      "dH",
+      "padW",
+      "padH"
+    ],
+    "type": "Convolution",
+    "setters": []
+  },
+  {
+    "name": "SpatialMaxUnpooling",
+    "baseType": "Module",
+    "params": [
+      "poolingModule"
+    ],
+    "type": "Convolution",
+    "setters": []
+  },
+  {
+    "name": "SpatialReflectionPadding",
+    "baseType": "Module",
+    "params": [
+      "pad_l",
+      "pad_r",
+      "pad_t",
+      "pad_b"
+    ],
+    "type": "Convolution",
+    "setters": []
+  },
+  {
+    "name": "SpatialReplicationPadding",
+    "baseType": "Module",
+    "params": [
+      "pad_l",
+      "pad_r",
+      "pad_t",
+      "pad_b"
+    ],
+    "type": "Convolution",
+    "setters": []
+  },
+  {
+    "name": "SpatialSoftMax",
+    "baseType": "Module",
+    "params": [],
+    "type": "Transfer",
+    "setters": []
+  },
+  {
+    "name": "SpatialSubSampling",
+    "baseType": "Module",
+    "params": [
+      "nInputPlane",
+      "kW",
+      "kH",
+      "dW",
+      "dH"
+    ],
+    "type": "Convolution",
+    "setters": []
+  },
+  {
+    "name": "SpatialSubtractiveNormalization",
+    "baseType": "Module",
+    "params": [
+      "nInputPlane",
+      "kernel"
+    ],
+    "type": "Convolution",
+    "setters": []
+  },
+  {
+    "name": "SpatialUpSamplingNearest",
+    "baseType": "Module",
+    "params": [
+      "scale"
+    ],
+    "type": "Convolution",
+    "setters": []
+  },
+  {
+    "name": "SpatialZeroPadding",
+    "baseType": "Module",
+    "params": [
+      "pad_l",
+      "pad_r",
+      "pad_t",
+      "pad_b"
+    ],
+    "type": "Convolution",
+    "setters": []
+  },
+  {
+    "name": "SplitTable",
+    "baseType": "Module",
+    "params": [
+      "dimension",
+      "nInputDims"
+    ],
+    "type": "Misc",
+    "setters": []
+  },
+  {
+    "name": "Sqrt",
+    "baseType": "Module",
+    "params": [
+      "b"
+    ],
+    "type": "Simple",
+    "setters": []
+  },
+  {
+    "name": "Square",
+    "baseType": "Module",
+    "params": [
+      "args"
+    ],
+    "type": "Simple",
+    "setters": []
+  },
+  {
+    "name": "Squeeze",
+    "baseType": "Module",
+    "params": [
+      "dim",
+      "numInputDims"
+    ],
+    "type": "Misc",
+    "setters": []
+  },
+  {
+    "name": "Sum",
+    "baseType": "Module",
+    "params": [
+      "dimension",
+      "nInputDims",
+      "sizeAverage"
+    ],
+    "type": "Simple",
+    "setters": []
+  },
+  {
+    "name": "Tanh",
+    "baseType": "Module",
+    "params": [],
+    "type": "Transfer",
+    "setters": []
+  },
+  {
+    "name": "TanhShrink",
+    "baseType": "Module",
+    "params": [],
+    "type": "Misc",
+    "setters": []
+  },
+  {
+    "name": "TemporalConvolution",
+    "baseType": "Module",
+    "params": [
+      "inputFrameSize",
+      "outputFrameSize",
+      "kW",
+      "dW"
+    ],
+    "type": "Convolution",
+    "setters": []
+  },
+  {
+    "name": "TemporalMaxPooling",
+    "baseType": "Module",
+    "params": [
+      "kW",
+      "dW"
+    ],
+    "type": "Convolution",
+    "setters": []
+  },
+  {
+    "name": "TemporalSubSampling",
+    "baseType": "Module",
+    "params": [
+      "inputFrameSize",
+      "kW",
+      "dW"
+    ],
+    "type": "Convolution",
+    "setters": []
+  },
+  {
+    "name": "Threshold",
+    "baseType": "Module",
+    "params": [
+      "th",
+      "v",
+      "ip"
+    ],
+    "type": "Transfer",
+    "setters": []
+  },
+  {
+    "name": "Transpose",
+    "baseType": "Module",
+    "params": [],
+    "type": "Misc",
+    "setters": []
+  },
+  {
+    "name": "Unsqueeze",
+    "baseType": "Module",
+    "params": [
+      "pos",
+      "numInputDims"
+    ],
+    "type": "Misc",
+    "setters": []
+  },
+  {
+    "name": "View",
+    "baseType": "Module",
+    "params": [],
+    "type": "Simple",
+    "setters": []
+  },
+  {
+    "name": "VolumetricAveragePooling",
+    "baseType": "Module",
+    "params": [
+      "kT",
+      "kW",
+      "kH",
+      "dT",
+      "dW",
+      "dH"
+    ],
+    "type": "Convolution",
+    "setters": []
+  },
+  {
+    "name": "VolumetricBatchNormalization",
+    "baseType": "BatchNormalization",
+    "params": [
+      "nOutput",
+      "eps",
+      "momentum",
+      "affine"
+    ],
+    "type": "Convolution",
+    "setters": []
+  },
+  {
+    "name": "VolumetricConvolution",
+    "baseType": "Module",
+    "params": [
+      "nInputPlane",
+      "nOutputPlane",
+      "kT",
+      "kW",
+      "kH",
+      "dT",
+      "dW",
+      "dH",
+      "padT",
+      "padW",
+      "padH"
+    ],
+    "type": "Convolution",
+    "setters": []
+  },
+  {
+    "name": "VolumetricDropout",
+    "baseType": "Module",
+    "params": [
+      "p"
+    ],
+    "type": "Convolution",
+    "setters": []
+  },
+  {
+    "name": "VolumetricFullConvolution",
+    "baseType": "Module",
+    "params": [
+      "nInputPlane",
+      "nOutputPlane",
+      "kT",
+      "kW",
+      "kH",
+      "dT",
+      "dW",
+      "dH",
+      "padT",
+      "padW",
+      "padH",
+      "adjT",
+      "adjW",
+      "adjH"
+    ],
+    "type": "Convolution",
+    "setters": []
+  },
+  {
+    "name": "VolumetricMaxPooling",
+    "baseType": "Module",
+    "params": [
+      "kT",
+      "kW",
+      "kH",
+      "dT",
+      "dW",
+      "dH",
+      "padT",
+      "padW",
+      "padH"
+    ],
+    "type": "Convolution",
+    "setters": []
+  },
+  {
+    "name": "VolumetricMaxUnpooling",
+    "baseType": "Module",
+    "params": [
+      "poolingModule"
+    ],
+    "type": "Convolution",
+    "setters": []
+  },
+  {
+    "name": "WeightedEuclidean",
+    "baseType": "Module",
+    "params": [
+      "inputSize",
+      "outputSize"
+    ],
+    "type": "Simple",
+    "setters": []
+  },
+  {
+    "name": "WeightedMSECriterion",
+    "baseType": "MSECriterion",
+    "params": [
+      "w"
+    ],
+    "type": "Criterion",
+    "setters": []
+  }
+]

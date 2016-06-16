@@ -35,6 +35,7 @@ define([
         this.$el.addClass(WIDGET_CLASS);
         this.portIdToNode = {};
         this.PORT_STATE = STATE.DEFAULT;
+        this.srcPortToConnectArgs = null;
         this._connForPort = {};
         this._itemsShowingPorts = [];
     };
@@ -88,6 +89,12 @@ define([
             // Update the item's ports
             item.refreshPorts();
         }
+
+        // If in a "connecting-port" state, refresh the port
+        if (this.PORT_STATE === STATE.CONNECTING) {
+            this.PORT_STATE = STATE.DEFAULT;
+            this.connectPort.apply(this, this.srcPortToConnectArgs);
+        }
     };
 
     PipelineEditorWidget.prototype._removeConnection = function(id) {
@@ -139,6 +146,7 @@ define([
     PipelineEditorWidget.prototype.connectPort = function(nodeId, id, isOutput) {
         this._logger.info('port ' + id + ' has been clicked! (', isOutput, ')');
         if (this.PORT_STATE === STATE.DEFAULT) {
+            this.srcPortToConnectArgs = arguments;
             this.startPortConnection(nodeId, id, isOutput);
         } else if (this._selectedPort !== id) {
             this._logger.info('connecting ' + this._selectedPort + ' to ' + id);
