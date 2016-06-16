@@ -32,7 +32,8 @@ define([
      * @classdesc This class represents the plugin ExecutePipeline.
      * @constructor
      */
-    var OUTPUT_INTERVAL = 1500;
+    var OUTPUT_INTERVAL = 1500,
+        STDOUT_FILE = 'job_stdout.txt';
     var ExecutePipeline = function () {
         // Call base class' constructor.
         CreateExecution.call(this);
@@ -326,7 +327,6 @@ define([
             })
             .then(outputArgs => {
                 var config,
-                    args = ['init.lua'],
                     outputs,
                     file;
 
@@ -338,8 +338,12 @@ define([
                         };
                     });
 
+                outputs.push({
+                    name: 'stdout',
+                    resultPatterns: [STDOUT_FILE]
+                });
+
                 if (this.debug) {
-                    args.push('#' + Date.now());
                     outputs.push({
                         name: name + '-all-files',
                         resultPatterns: []
@@ -410,13 +414,17 @@ define([
     };
 
     ExecutePipeline.prototype.watchOperation = function (executor, hash, opId, jobId) {
-        var name;
+        var job = this.nodes[jobId],
+            info,
+            name;
 
         return executor.getInfo(hash)
-            .then(info => {  // Update the job's stdout
-                var actualLine = info.outputNumber,  // on executing job
+            .then(_info => {  // Update the job's stdout
+                var actualLine,  // on executing job
                     currentLine = this.outputLineCount[jobId];
 
+                info = _info;
+                actualLine = info.outputNumber;
                 if (actualLine !== null && actualLine >= currentLine) {
                     this.outputLineCount[jobId] = actualLine + 1;
                     return executor.getOutput(hash, currentLine, actualLine+1)
@@ -431,13 +439,10 @@ define([
                             stdout += output;
                             this.core.setAttribute(job, 'stdout', stdout);
                             return this.save(`Received stdout for ${jobName}`);
-                        })
-                        .then(() => info);
-                } else {
-                    return info;
+                        });
                 }
             })
-            .then(info => {
+            .then(() => {
                 if (info.status === 'CREATED' || info.status === 'RUNNING') {
                     setTimeout(
                         this.watchOperation.bind(this, executor, hash, opId, jobId),
@@ -446,6 +451,16 @@ define([
                     return;
                 }
 
+                name = this.core.getAttribute(job, 'name');
+                this.core.setAttribute(job, 'execFiles', info.resultHashes[name + '-all-files']);
+                return this.blobClient.getArtifact(info.resultHashes.stdout);
+            })
+            .then(artifact => {
+                var stdoutHash = artifact.descriptor.content[STDOUT_FILE].content;
+                return this.blobClient.getObjectAsString(stdoutHash);
+            })
+            .then(stdout => {
+                this.core.setAttribute(job, 'stdout', stdout);
                 if (info.status !== 'SUCCESS') {
                     name = this.core.getAttribute(this.nodes[opId], 'name');
                     // Download all files
