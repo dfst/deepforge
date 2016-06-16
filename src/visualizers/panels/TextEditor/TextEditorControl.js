@@ -41,7 +41,7 @@ define([
     TextEditorControl.prototype._initWidgetEventHandlers = function () {
         this._widget.saveTextFor = (id, text) => {
             if (this._currentNodeHasAttr) {
-                this._client.setAttributes(id, this.ATTRIBUTE_NAME, text);
+                this.saveTextFor(id, text);
             } else {
                 this._logger.warn(`Cannot save attribute ${this.ATTRIBUTE_NAME} ` +
                    `for ${id} - node doesn't have the given attribute!`);
@@ -49,10 +49,10 @@ define([
         };
     };
 
-    /* * * * * * * * Visualizer content update callbacks * * * * * * * */
-    // One major concept here is with managing the territory. The territory
-    // defines the parts of the project that the visualizer is interested in
-    // (this allows the browser to then only load those relevant parts).
+    TextEditorControl.prototype.saveTextFor = function (id, text) {
+        this._client.setAttributes(id, this.ATTRIBUTE_NAME, text);
+    };
+
     TextEditorControl.prototype.TERRITORY_RULE = {children: 0};
     TextEditorControl.prototype.selectedObjectChanged = function (nodeId) {
         var self = this;
@@ -66,8 +66,7 @@ define([
 
         self._currentNodeId = nodeId;
         self._currentNodeParentId = undefined;
-        self._currentNodeHasAttr = (typeof self._client.getNode(self._currentNodeId)
-            .getAttribute(self.ATTRIBUTE_NAME)) === 'string';
+        self._currentNodeHasAttr = self._client.getNode(self._currentNodeId).getValidAttributeNames().indexOf(self.ATTRIBUTE_NAME) > -1;
 
         if (typeof self._currentNodeId === 'string') {
             var parentId = this._getParentId(nodeId);

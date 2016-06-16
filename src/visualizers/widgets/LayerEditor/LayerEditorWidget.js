@@ -14,11 +14,5 @@ define([
         TextEditorWidget.apply(this, arguments);
     };
 
-    LayerEditorWidget.prototype.addNode = function(desc) {
-        // Update the text value of the given node
-        // TODO
-        TextEditorWidget.prototype.addNode.call(this, desc);
-    };
-
     return LayerEditorWidget;
 });

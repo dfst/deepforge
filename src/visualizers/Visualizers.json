@@ -6,21 +6,9 @@
     "DEBUG_ONLY": false
   },
   {
-    "id": "EasyDAG",
-    "title": "EasyDAG",
-    "panel": "panels/EasyDAG/EasyDAGPanel",
-    "DEBUG_ONLY": false
-  },
-  {
     "id": "ArchEditor",
     "title": "ArchEditor",
     "panel": "panels/ArchEditor/ArchEditorPanel",
-    "DEBUG_ONLY": false
-  },
-  {
-    "id": "TextEditor",
-    "title": "TextEditor",
-    "panel": "panels/TextEditor/TextEditorPanel",
     "DEBUG_ONLY": false
   },
   {

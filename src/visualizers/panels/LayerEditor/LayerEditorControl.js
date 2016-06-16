@@ -18,6 +18,10 @@ define([
 
     _.extend(LayerEditorControl.prototype, TextEditorControl.prototype);
 
+    LayerEditorControl.prototype.loadMetaNodes = function () {
+        return this._client.getAllMetaNodes();
+    };
+
     // This next function retrieves the relevant node information for the widget
     LayerEditorControl.prototype._getObjectDescriptor = function (nodeId) {
         var desc = TextEditorControl.prototype._getObjectDescriptor.call(this, nodeId),
@@ -27,6 +31,7 @@ define([
 
         // Get own attribute, if set. Otherwise, set the text to the parent's populated
         // template
+        this.loadMetaNodes();
         if (hasCode) {  // is a custom layer
             if (!node.getOwnAttribute('code')) {
                 // Retrieve the template from the mixin
@@ -42,6 +47,68 @@ define([
             desc.text = _.template(template)(desc);
         }
         return desc;
+    };
+
+    LayerEditorControl.prototype.saveTextFor = function (id, text) {
+        var r = /:__init\((.*)\)/,
+            match = text.match(r),
+            textMatch = match && match[1],
+            node = this._client.getNode(id),
+            currentAttrs = node.getValidAttributeNames(),
+            attributes = [],
+            msg = `Updating layer definition for ${node.getAttribute('name')}`;
+
+        // Parse the attributes and update the node!
+        if (textMatch) {
+            attributes = textMatch.split(',')
+                .map(arg => arg.replace(/\s+/g, ''))  // trim white space
+                .filter(arg => !!arg);  // no empty strings!
+        } else {  // inheriting __init
+            attributes = this.getInheritedAttrs(text);
+        }
+
+        this._client.startTransaction(msg);
+
+        TextEditorControl.prototype.saveTextFor.call(this, id, text);
+
+        // Remove old attributes
+        _.difference(currentAttrs, attributes)
+            .forEach(attr => this._client.removeAttributeSchema(id, attr));
+
+        attributes.forEach((attr, i) =>
+            this._client.setAttributeSchema(id, attr, {type: 'string', argindex: i}));
+
+        this._client.completeTransaction();
+    };
+
+    LayerEditorControl.prototype.getInheritedAttrs = function (code) {
+        // Get the base class
+        var r = /torch.class\((.*)\)/,
+            match = code.match(r),
+            baseType,
+            metanode,
+            textMatch = match && match[1];
+
+        if (textMatch) {
+            baseType = textMatch.split(',')[1]
+                .replace(/^\s*['"]nn\./, '')
+                .replace(/['"]\s*$/, '');
+
+            this._logger.debug(`inheriting the attributes from ${baseType}`);
+
+            // Get the meta node and valid attribute names
+            metanode = this._client.getAllMetaNodes()
+                .find(node => node.getAttribute('name') === baseType);
+
+            if (metanode) {
+                return metanode.getValidAttributeNames()
+                    .filter(attr => attr !== 'name');
+            } else {
+                // Check if the type is known by torch
+                this._logger.warn(`Unknown base type ${baseType}. Assuming attributes are []`);
+            }
+        }
+        return [];
     };
 
     return LayerEditorControl;

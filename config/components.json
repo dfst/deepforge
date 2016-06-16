@@ -61,23 +61,29 @@
                 "description": "Pipelines compose operations together to effectively train, test and/or ensemble models."
             },
             {
-                "nodeName": "MyArtifacts",
-                "icon": "view_quilt",
+                "nodeName": "MyLayers",
+                "icon": "clear_all",
                 "rank": 4,
                 "color": "blue-grey",
+                "description": "Custom torch layers can be created and stored here for use in neural network architectures."
+            },
+            {
+                "nodeName": "MyArtifacts",
+                "icon": "view_quilt",
+                "rank": 5,
                 "description": "Artifacts from pipeline executions are stored here."
             },
             {
                 "nodeName": "MyExecutions",
                 "icon": "list",
-                "rank": 5,
+                "rank": 6,
+                "color": "blue-grey",
                 "description": "Executions are read-only snapshots of pipelines that have been executed. Past and current executing pipelines are stored here."
             },
             {
                 "nodeName": "MyDataTypes",
                 "icon": "settings",
-                "rank": 6,
-                "color": "blue-grey",
+                "rank": 7,
                 "description": "Custom defined data types are stored here."
             }
         ]

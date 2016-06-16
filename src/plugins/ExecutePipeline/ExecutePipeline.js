@@ -591,6 +591,12 @@ define([
 
         // add the given files
         return this.createEntryFile(node, files)
+            // Add the custom layer definitions
+            // (with an init.lua file)
+            // TODO
+            .then(() => this.createInputs(node, files))
+            // Update the main file
+            // TODO
             .then(() => this.createInputs(node, files))
             .then(() => this.createOutputs(node, files))
             .then(() => this.createMainFile(node, files))

@@ -2,13 +2,9 @@
 // These are actions defined for specific meta types. They are evaluated from
 // the context of the ForgeActionButton
 define([
-    'js/RegistryKeys',
-    'js/Panels/MetaEditor/MetaEditorConstants',
-    'js/Constants'
+    'js/RegistryKeys'
 ], function(
-    REGISTRY_KEYS,
-    META_CONSTANTS,
-    CONSTANTS
+    REGISTRY_KEYS
 ) {
     var instances = [
             'Architecture',
@@ -20,87 +16,28 @@ define([
         ],
         create = {};
 
-    var getUniqueName = function(parentId, basename) {
-        var pNode = this.client.getNode(parentId),
-            children = pNode.getChildrenIds().map(id => this.client.getNode(id)),
-            name = basename,
-            exists = {},
-            i = 2;
-
-        children.forEach(child => exists[child.getAttribute('name')] = true);
-
-        while (exists[name]) {
-            name = basename + '_' + i;
-            i++;
-        }
-
-        return name;
-    };
-
     var createNew = function(type, metasheetName) {
-        // Create CNN node in the current dir
-        // Get CNN node type
-        var parentId = this._currentNodeId,
-            newId,
-            baseId;
+        var newId,
+            baseId,
+            msg = `Created new ${type + (metasheetName ? ' prototype' : '')}`;
 
         baseId = this.client.getAllMetaNodes()
                 .find(node => node.getAttribute('name') === type)
                 .getId();
 
-        this.client.startTransaction('Created new operation prototype');
-        newId = this.client.createChild({parentId, baseId});
+        this.client.startTransaction(msg);
+        newId = this.createNamedNode(baseId, !!metasheetName);
 
-        // Name the new node
-        var basename = 'New' + this.client.getNode(baseId).getAttribute('name'),
-            newName = getUniqueName.call(this, parentId, basename);
-
-        // If instance, make the first char lowercase
-        if (!metasheetName) {
-            newName = newName.substring(0, 1).toLowerCase() + newName.substring(1);
+        if (metasheetName) {
+            this.addToMetaSheet(newId, metasheetName);
         }
 
-        this.client.setAttributes(newId, 'name', newName);
-        if (metasheetName) {  // Add to metasheet
-            var root = this.client.getNode(CONSTANTS.PROJECT_ROOT_ID),
-                metatabs = root.getRegistry(REGISTRY_KEYS.META_SHEETS),
-                metatab = metatabs.find(tab => tab.title === metasheetName) || metatabs[0],
-                metatabId = metatab.SetID;
-
-            // Add to the general meta
-            this.client.addMember(
-                CONSTANTS.PROJECT_ROOT_ID,
-                newId,
-                META_CONSTANTS.META_ASPECT_SET_NAME
-            );
-            this.client.setMemberRegistry(
-                CONSTANTS.PROJECT_ROOT_ID,
-                newId,
-                META_CONSTANTS.META_ASPECT_SET_NAME,
-                REGISTRY_KEYS.POSITION,
-                {
-                    x: 100,
-                    y: 100
-                }
-            );
-
-            // Add to the specific sheet
-            this.client.addMember(CONSTANTS.PROJECT_ROOT_ID, newId, metatabId);
-            this.client.setMemberRegistry(
-                CONSTANTS.PROJECT_ROOT_ID,
-                newId,
-                metatabId,
-                REGISTRY_KEYS.POSITION,
-                {
-                    x: 100,
-                    y: 100
-                }
-            );
-        }
         this.client.completeTransaction();
 
         WebGMEGlobal.State.registerActiveObject(newId);
+        return newId;
     };
+
 
     instances.forEach(type => {
         create[type] = function() {
@@ -114,6 +51,37 @@ define([
         };
     });
 
+    var createLayer = function() {
+        // Prompt the base type
+        this.promptLayerType().then(selected => {
+            var baseId = selected.node.id,
+                typeName = this.client.getNode(baseId).getAttribute('name'),
+                metanodes = this.client.getAllMetaNodes(),
+                msg = `Created new custom ${typeName} layer`,
+                newId,
+                customLayerId,
+                name;
+
+            for (var i = metanodes.length; i--;) {
+                name = metanodes[i].getAttribute('name');
+                if (name === 'CustomLayer') {
+                    customLayerId = metanodes[i].getId();
+                    break;
+                }
+            }
+
+            this.client.startTransaction(msg);
+
+            newId = this.createNamedNode(baseId, true);
+            this.addToMetaSheet(newId, 'CustomLayers');
+            this.client.addMixin(newId, customLayerId);
+            this.client.setRegistry(newId, REGISTRY_KEYS.IS_ABSTRACT, false);
+
+            this.client.completeTransaction();
+
+            WebGMEGlobal.State.registerActiveObject(newId);
+        });
+    };
     ////////////// Downloading files //////////////
     var downloadAttrs = [
             'data',
@@ -214,6 +182,13 @@ define([
                 name: 'Create new data type',
                 icon: 'queue',
                 action: create.Data
+            }
+        ],
+        MyLayers_META: [
+            {
+                name: 'Create new layer',
+                icon: 'queue',
+                action: createLayer
             }
         ],
         MyOperations_META: [
