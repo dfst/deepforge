@@ -39,7 +39,6 @@ define([
     };
 
     TextEditorControl.prototype._initWidgetEventHandlers = function () {
-        // TODO: Add a way to navigate out of the current widget...
         this._widget.saveTextFor = (id, text) => {
             if (this._currentNodeHasAttr) {
                 this._client.setAttributes(id, this.ATTRIBUTE_NAME, text);

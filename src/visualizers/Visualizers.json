@@ -94,5 +94,11 @@
     "title": "LogViewer",
     "panel": "panels/LogViewer/LogViewerPanel",
     "DEBUG_ONLY": false
+  },
+  {
+    "id": "LayerEditor",
+    "title": "LayerEditor",
+    "panel": "panels/LayerEditor/LayerEditorPanel",
+    "DEBUG_ONLY": false
   }
 ]
