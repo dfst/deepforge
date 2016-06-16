@@ -88,5 +88,11 @@
     "title": "Footer",
     "panel": "panels/Footer/FooterPanel",
     "DEBUG_ONLY": false
+  },
+  {
+    "id": "LogViewer",
+    "title": "LogViewer",
+    "panel": "panels/LogViewer/LogViewerPanel",
+    "DEBUG_ONLY": false
   }
 ]

@@ -5,7 +5,7 @@
 
 'use strict';
 var testFixture = require('../../globals'),
-    SEED_DIR = testFixture.path.join(testFixture.DF_SEED_DIR, 'devMinimal'),
+    SEED_DIR = testFixture.path.join(testFixture.DF_SEED_DIR, 'nn'),
     assert = require('assert');
 
 describe('CreateTorchMeta', function () {
@@ -20,9 +20,14 @@ describe('CreateTorchMeta', function () {
         project,
         gmeAuth,
         storage,
+        ORIG_META = {},
+        META = {},
+        origRoot,
+        root,
         commitHash;
 
     before(function (done) {
+        this.timeout(5000);
         testFixture.clearDBAndGetGMEAuth(gmeConfig, projectName)
             .then(function (gmeAuth_) {
                 gmeAuth = gmeAuth_;
@@ -32,7 +37,7 @@ describe('CreateTorchMeta', function () {
             })
             .then(function () {
                 var importParam = {
-                    projectSeed: testFixture.path.join(SEED_DIR, 'devMinimal.webgmex'),
+                    projectSeed: testFixture.path.join(SEED_DIR, 'nn.webgmex'),
                     projectName: projectName,
                     branchName: 'master',
                     logger: logger,
@@ -45,7 +50,55 @@ describe('CreateTorchMeta', function () {
                 project = importResult.project;
                 core = importResult.core;
                 commitHash = importResult.commitHash;
+                origRoot = importResult.rootNode;
                 return project.createBranch('test', commitHash);
+            })
+            // Run the plugin
+            .then(() => {
+                var manager = new PluginCliManager(null, logger, gmeConfig),
+                    metaDict = core.getAllMetaNodes(origRoot),
+                    context = {
+                        project: project,
+                        commitHash: commitHash,
+                        branchName: 'test',
+                        activeNode: '/960660211'
+                    };
+
+
+                // Populate the META object
+                Object.keys(metaDict)
+                    .map(id => metaDict[id])
+                    .forEach(node => ORIG_META[core.getAttribute(node, 'name')] = node);
+
+                return Q.ninvoke(
+                    manager,
+                    'executePlugin',
+                    pluginName,
+                    {removeOldLayers: true},
+                    context
+                );
+            })
+            .then(pluginResult => {
+                expect(typeof pluginResult).to.equal('object');
+                expect(pluginResult.success).to.equal(true);
+
+                return project.getBranchHash('test');
+            })
+            .then(function (branchHash) {
+                return Q.ninvoke(project, 'loadObject', branchHash);
+            })
+            .then(function (commitObject) {
+                return Q.ninvoke(core, 'loadRoot', commitObject.root);
+            })
+            .then(function (rootNode) {
+                var metaDict = core.getAllMetaNodes(rootNode);
+                root = rootNode;
+
+                // Populate the META object
+                Object.keys(metaDict)
+                    .map(id => metaDict[id])
+                    .forEach(node => META[core.getAttribute(node, 'name')] = node);
+
             })
             .nodeify(done);
     });
@@ -128,105 +181,42 @@ describe('CreateTorchMeta', function () {
         });
     });
 
-    it('should place the nodes in the Language node', function (done) {
-        var manager = new PluginCliManager(null, logger, gmeConfig),
-            pluginConfig = {
-            },
-            context = {
-                project: project,
-                commitHash: commitHash,
-                branchName: 'test',
-                activeNode: '/960660211'
-            };
-
-        manager.executePlugin(pluginName, pluginConfig, context, function (err, pluginResult) {
-            expect(err).to.equal(null);
-            expect(typeof pluginResult).to.equal('object');
-            expect(pluginResult.success).to.equal(true);
-
-            project.getBranchHash('test')
-                .then(function (branchHash) {
-                    return Q.ninvoke(project, 'loadObject', branchHash);
-                })
-                .then(function (commitObject) {
-                    return Q.ninvoke(core, 'loadRoot', commitObject.root);
-                })
-                .then(function (rootNode) {
-                    var metaDict = core.getAllMetaNodes(rootNode),
-                        metaNodes,
-                        nodes,
-                        langNode;
-
-                    metaNodes = Object.keys(metaDict)
-                        .map(id => metaDict[id]);
-
-                    langNode = metaNodes
-                        .find(node => core.getAttribute(node, 'name') === 'Language' );
-
-                    nodes = metaNodes
-                        .filter(node => core.getAttribute(node, 'name') !== 'FCO' &&
-                            core.getAttribute(node, 'name') !== 'Language' );
-
-                    nodes.forEach(node => assert.equal(core.getParent(node), langNode));
-                })
-                .nodeify(done);
-        });
+    it('should update existing layers', function () {
+        var scGuid = core.getGuid(ORIG_META.SpatialConvolution);
+        // Check the guid of spatial convolution
+        expect(scGuid).to.equal(core.getGuid(META.SpatialConvolution));
     });
 
-    // Attributes
-    describe('attributes', function() {
-        var rootNode,
-            META = {};
+    it('should add attributes', function () {
+        // check that "Linear" has multiple attrs
+        var attrs = core.getAttributeNames(META.Linear);
+        assert.notEqual(attrs.length, 1, `missing attributes! ${attrs}`);
+    });
 
-        before(function(done) {
-            var manager = new PluginCliManager(null, logger, gmeConfig),
-                pluginConfig = {
-                },
-                context = {
-                    project: project,
-                    commitHash: commitHash,
-                    branchName: 'test',
-                    activeNode: '/960660211'
-                };
+    it('should create string attributes', function () {
+        // check that "Linear" has an attribute called "output"
+        var attr = core.getAttributeMeta(META.Add, 'scalar');
+        assert.equal(attr.type, 'string');
+    });
 
-            manager.executePlugin(pluginName, pluginConfig, context, function (err, pluginResult) {
-                expect(err).to.equal(null);
-                expect(typeof pluginResult).to.equal('object');
-                expect(pluginResult.success).to.equal(true);
 
-                project.getBranchHash('test')
-                    .then(function (branchHash) {
-                        return Q.ninvoke(project, 'loadObject', branchHash);
-                    })
-                    .then(function (commitObject) {
-                        return Q.ninvoke(core, 'loadRoot', commitObject.root);
-                    })
-                    .then(function (root) {
-                        rootNode = root;
-                        var metaDict = core.getAllMetaNodes(rootNode);
+    it('should place the nodes in the Language node', function () {
+        var metaDict = core.getAllMetaNodes(root),
+            metaNodes,
+            nodes,
+            langNode;
 
-                        // Populate the META object
-                        Object.keys(metaDict)
-                            .map(id => metaDict[id])
-                            .forEach(node => META[core.getAttribute(node, 'name')] = node);
+        metaNodes = Object.keys(metaDict)
+            .map(id => metaDict[id]);
 
-                    })
-                    .nodeify(done);
-            });
-        });
+        langNode = metaNodes
+            .find(node => core.getAttribute(node, 'name') === 'Language' );
 
-        it('should add attributes', function () {
-            // check that "Linear" has multiple attrs
-            var attrs = core.getAttributeNames(META.Linear);
-            assert.notEqual(attrs.length, 1, `missing attributes! ${attrs}`);
-        });
+        nodes = metaNodes
+            .filter(node => core.getAttribute(node, 'name') !== 'FCO' &&
+                core.getAttribute(node, 'name') !== 'Language' );
 
-        it('should create string type', function () {
-            // check that "Linear" has an attribute called "output"
-            var attr = core.getAttributeMeta(META.Add, 'scalar');
-            assert.equal(attr.type, 'string');
-        });
-
+        nodes.forEach(node => assert.equal(core.getParent(node), langNode));
     });
 
 });

@@ -29,6 +29,12 @@ define([
     //     - unhighlight ports
     //     - report the location of specific ports
     JobDecorator = function (options) {
+        options.skipAttributes = {
+            name: true,
+            status: true,
+            stdout: true,
+            debug: true
+        };
         EllipseDecorator.call(this, options);
     };
 
@@ -42,7 +48,8 @@ define([
 
     JobDecorator.prototype.setAttributes = function() {
         EllipseDecorator.prototype.setAttributes.call(this);
-        var status = this._attributes.status && this._attributes.status.value;
+        var attrs = this._node.attributes,
+            status = attrs.status && attrs.status.value;
 
         // Update the color based on the 'status' attr
         this.color = COLORS[status] || COLORS.fail;

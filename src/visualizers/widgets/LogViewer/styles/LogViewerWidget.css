@@ -6,8 +6,5 @@
  * simply write css if you prefer
  */
 
-.text-editor {
-  outline: none;
-  padding: 0px;
-  text-align: left !important;
-}
+.log-viewer {
+  outline: none; }

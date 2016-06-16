@@ -13,6 +13,7 @@ define([
     'js/RegistryKeys',
     'js/Constants',
     'js/Panels/MetaEditor/MetaEditorConstants',
+    'underscore',
     'text!deepforge/layers.json',
     'text!./metadata.json'
 ], function (
@@ -23,6 +24,7 @@ define([
     REGISTRY_KEYS,
     CONSTANTS,
     META_CONSTANTS,
+    _,
     DEFAULT_LAYERS,
     metadata
 ) {
@@ -79,6 +81,7 @@ define([
             //              - Attributes (if exists)
             var content = {},
                 categories,
+                config = this.getCurrentConfig(),
                 nodes = {},
                 layers;
 
@@ -114,6 +117,33 @@ define([
             categories
                 .forEach(name => this.core.setRegistry(nodes[name], 'isAbstract', true));
 
+            if (config.removeOldLayers) {
+                var isNewLayer = {},
+                    newLayers = layers.map(layer => layer.name),
+                    oldLayers,
+                    oldNames;
+
+                newLayers = newLayers.concat(categories);  // add the category nodes
+                newLayers.forEach(name => isNewLayer[name] = true);
+
+                // Set the newLayer nodes 'base' to 'Layer' so we don't accidentally
+                // delete them
+                newLayers
+                    .map(name => this.META[name])
+                    .filter(layer => !!layer)
+                    .forEach(layer => this.core.setPointer(layer, 'base', this.META.Layer));
+
+                oldLayers = Object.keys(this.META)
+                        .filter(name => name !== 'Layer')
+                        .map(name => this.META[name])
+                        .filter(node => this.isMetaTypeOf(node, this.META.Layer))
+                        .filter(node => !isNewLayer[this.core.getAttribute(node, 'name')]);
+
+                oldNames = oldLayers.map(l => this.core.getAttribute(l, 'name'));
+                // Get the old layer names
+                this.logger.debug(`Removing layers: ${oldNames.join(', ')}`);
+                oldLayers.forEach(layer => this.core.deleteNode(layer));
+            }
 
             // Create the actual nodes
             categories.forEach(cat => {
@@ -138,18 +168,43 @@ define([
         });
     };
 
+    CreateTorchMeta.prototype.removeFromMeta = function (nodeId) {
+        var sheets = this.core.getRegistry(this.rootNode, REGISTRY_KEYS.META_SHEETS),
+            sheet;
+
+        // Remove from meta
+        this.core.delMember(this.rootNode, META_CONSTANTS.META_ASPECT_SET_NAME, nodeId);
+
+        // Remove from the given meta sheet
+        sheet = sheets.find(sheet => {
+            var paths = this.core.getMemberPaths(this.rootNode, sheet.SetID);
+            return paths.indexOf(nodeId) > -1;
+        });
+
+        if (sheet) {
+            this.core.delMember(this.rootNode, sheet.SetID, nodeId);
+        }
+    };
+
     CreateTorchMeta.prototype.createMetaSheetTab = function (name) {
         var sheets = this.core.getRegistry(this.rootNode, REGISTRY_KEYS.META_SHEETS),
             id = META_CONSTANTS.META_ASPECT_SHEET_NAME_PREFIX + generateGuid(),
+            sheet,
             desc = {
                 SetID: id,
                 order: sheets.length,
                 title: name
             };
 
-        sheets.push(desc);
-        this.core.setRegistry(this.rootNode, REGISTRY_KEYS.META_SHEETS, sheets);
-        return id;
+        sheet = sheets.find(sheet => sheet.title === name);
+        if (!sheet) {
+            sheet = desc;
+            this.logger.debug(`creating meta sheet "${name}"`);
+            this.core.createSet(this.rootNode, sheet.SetID);
+            sheets.push(sheet);
+            this.core.setRegistry(this.rootNode, REGISTRY_KEYS.META_SHEETS, sheets);
+        }
+        return sheet.SetID;
     };
 
     CreateTorchMeta.prototype.getJsonLayers = function (callback) {
@@ -169,8 +224,8 @@ define([
     };
 
     CreateTorchMeta.prototype.createMetaNode = function (name, base, tabName, attrs) {
-        var node,
-            nodeId,
+        var node = this.META[name],
+            nodeId = node && this.core.getPath(node),
             tabId = this.metaSheets[tabName],
             position = this.getPositionFor(name, tabName);
 
@@ -178,18 +233,20 @@ define([
             this.logger.error(`No meta sheet for ${tabName}`);
         }
 
-        if (this.META[name]) {
-            this.logger.warn('"' + name + '" already exists. skipping...');
-            return this.META[name];
-        }
+        if (!node) {
+            // Create a node
+            node = this.core.createNode({
+                parent: this.META.Language,
+                base: base
+            });
+            this.core.setAttribute(node, 'name', name);
 
-        // Create a node
-        node = this.core.createNode({
-            parent: this.META.Language,
-            base: base
-        });
-        nodeId = this.core.getPath(node);
-        this.core.setAttribute(node, 'name', name);
+            nodeId = this.core.getPath(node);
+        } else {
+            // Remove from meta
+            this.removeFromMeta(nodeId);
+            this.core.setPointer(node, 'base', base);
+        }
 
         // Add it to the meta sheet
         this.core.addMember(this.rootNode, META_CONSTANTS.META_ASPECT_SET_NAME, node);
@@ -211,9 +268,27 @@ define([
         );
 
         if (attrs) {  // Add the attributes
+            // Remove attributes not in the given list
+            var currentAttrs = this.core.getValidAttributeNames(node),
+                rmAttrs;
+
+            rmAttrs = _.difference(currentAttrs, attrs)  // old attribute names
+                .filter(attr => attr !== 'name');
+
+            if (rmAttrs.length) {
+                this.logger.debug(`Removing ${rmAttrs.join(', ')} from ${name}`);
+            }
+            rmAttrs.forEach(attr => {
+                this.core.delAttributeMeta(node, attr);
+                if (this.core.getOwnAttribute(node, attr) !== undefined) {
+                    this.core.delAttribute(node, attr);
+                }
+            });
+
             attrs.forEach((name, index) => {
                 var desc = {};
                 desc.argindex = index;
+                desc.default = '';
                 this.addAttribute(name, node, desc);
             });
         }
@@ -283,9 +358,7 @@ define([
         if (schema.type === 'boolean') {
             initial = initial !== null ? initial : false;
         }
-        if (initial !== null) {  // optional attribute - set default value
-            this.core.setAttribute(node, name, initial);
-        }
+        this.core.setAttribute(node, name, initial);
     };
 
     return CreateTorchMeta;

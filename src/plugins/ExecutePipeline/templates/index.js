@@ -11,7 +11,9 @@ define([
     DESERIALIZE
 ) {
 
+    var BASH = 'th init.lua  2>&1';
     return {
+        BASH,
         ENTRY,
         MAIN,
         SERIALIZE,
