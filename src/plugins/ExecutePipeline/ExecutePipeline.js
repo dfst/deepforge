@@ -591,12 +591,7 @@ define([
 
         // add the given files
         return this.createEntryFile(node, files)
-            // Add the custom layer definitions
-            // (with an init.lua file)
-            // TODO
-            .then(() => this.createInputs(node, files))
-            // Update the main file
-            // TODO
+            .then(() => this.createCustomLayers(node, files))
             .then(() => this.createInputs(node, files))
             .then(() => this.createOutputs(node, files))
             .then(() => this.createMainFile(node, files))
@@ -604,6 +599,31 @@ define([
                 this.createAttributeFile(node, files);
                 return Q.ninvoke(this, 'createPointers', node, files);
             });
+    };
+
+    ExecutePipeline.prototype.createCustomLayers = function (node, files) {
+        var isCustomLayer = {},
+            metaDict = this.core.getAllMetaNodes(this.rootNode),
+            metanodes,
+            customLayers,
+            code;
+
+        metanodes = Object.keys(metaDict).map(id => metaDict[id]);
+        // Get all the custom layers
+        metanodes.forEach(node => {
+            if (this.core.getAttribute(node, 'name') === 'CustomLayer') {
+                isCustomLayer[this.core.getPath(node)] = true;
+            }
+        });
+        customLayers = metanodes.filter(node =>
+            this.core.getMixinPaths(node).some(id => isCustomLayer[id]));
+
+        // Get the code definitions for each
+        code = 'require \'nn\'\n\n' + customLayers
+            .map(node => this.core.getAttribute(node, 'code')).join('\n');
+
+        // Create the custom layers file
+        files['custom-layers.lua'] = code;
     };
 
     ExecutePipeline.prototype.createInputs = function (node, files) {

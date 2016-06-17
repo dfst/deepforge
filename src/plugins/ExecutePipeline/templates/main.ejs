@@ -1,3 +1,6 @@
+-- load custom layers
+require './custom-layers'
+
 -- input data<% inputs.forEach(function(pair) { var input = pair[0], isNil = pair[1];%>
 <%= isNil ? 'local ' : ''%><%= input %> = <% if (isNil) { %>nil<% } else { %>require './inputs/<%= input %>'<%}}); %>
 
