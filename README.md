@@ -7,18 +7,14 @@
 DeepForge is an open-source visual development environment for deep learning. Currently, it supports Convolutional Neural Networks but we are planning on supporting additional deep learning classifiers such as RNNs and LSTMs. Additional features include real-time collaborative editing and version control.
 
 ## Quick Start
-Install dependencies:  
-+ NodeJS (v6.2.0)
-+ npm (v2.x)
-+ [Torch7](http://torch.ch/docs/getting-started.html#_)
-+ [MongoDB](https://www.mongodb.com/download-center#community)
+Simply run the following command to install deepforge with its dependencies:
 
-First, start mongodb locally.
 ```
-git clone https://github.com/dfst/deepforge.git
-cd deepforge
-npm install && npm run local
+curl -o- https://raw.githubusercontent.com/dfst/deepforge/master/install.sh | bash
 ```
+
+Next, follow the postinstall instructions to start MongoDB and DeepForge!
+
 Finally, navigate to [http://localhost:8888](http://localhost:8888) to start using DeepForge! For more, detailed instructions,check out our [wiki](https://github.com/dfst/deepforge/wiki/Installation-Guide).
 
 ## Caffe Support?
