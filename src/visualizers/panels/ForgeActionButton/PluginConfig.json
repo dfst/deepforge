@@ -10,5 +10,9 @@
     "ImportTorch": {
         "icon": "import_export",
         "priority": -1
+    },
+    "GenerateExecFile": {
+        "icon": "play_for_work",
+        "priority": -1
     }
 }
