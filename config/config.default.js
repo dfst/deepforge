@@ -9,8 +9,7 @@ var config = require('./config.base'),
 // config.mongo.uri = 'mongodb://127.0.0.1:27017/webgme_my_app';
 
 // Seeds for development are prefixed with 'dev'
-config.seedProjects.basePaths = config.seedProjects.basePaths
-    .filter(path => path.indexOf('dev') === -1);
+config.seedProjects.basePaths = ['src/seeds/project'];
 
 validateConfig(config);
 module.exports = config;

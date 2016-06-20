@@ -20,7 +20,6 @@ config.seedProjects.basePaths.push('src/seeds/pipeline');
 config.seedProjects.basePaths.push('src/seeds/devPipelineTests');
 config.seedProjects.basePaths.push('src/seeds/demo');
 config.seedProjects.basePaths.push('src/seeds/project');
-config.seedProjects.basePaths.push('src/seeds/minimal');
 
 
 
