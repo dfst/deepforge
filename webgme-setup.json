@@ -195,6 +195,9 @@
       },
       "project": {
         "src": "src/seeds/project"
+      },
+      "cifar10": {
+        "src": "src/seeds/cifar10"
       }
     }
   },
