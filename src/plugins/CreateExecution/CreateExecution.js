@@ -97,19 +97,35 @@ define([
 
         return this.getExecutionDir()
             .then(execDir => {
+
                 tgtNode = this.core.createNode({
                     base: this.META.Execution,
                     parent: execDir
                 });
-                this.core.setAttribute(tgtNode, 'name', `${name} Execution`);
-                return this.core.loadChildren(node);
+
+                // Get a unique name
+                return this.getUniqueExecName(name + '_execution');
             })
+            .then(execName => {
+                var isSnapshot = this.getCurrentConfig().snapshot;
+
+                this.logger.debug(`Creating execution ${execName}`);
+                this.core.setAttribute(tgtNode, 'name', execName);
+                this.core.setAttribute(tgtNode, 'snapshot', isSnapshot);
+                this.core.setAttribute(tgtNode, 'tagname', execName);
+                return this.project.createTag(execName, this.currentHash);
+            })
+            .then(() => this.core.loadChildren(node))
             .then(children => {
                 if (!children.length) {
-                    this.logger.warn(`No children in pipeline. Will proceed anyway`);
+                    this.logger.warn('No children in pipeline. Will proceed anyway');
                 }
 
-                copies = children.length ? this.core.copyNodes(children, tgtNode) : [];
+                return this.copyOperations(children, tgtNode);
+            })
+            .then(copiedPairs => {
+                var originals = copiedPairs.map(pair => pair[0]);
+                copies = copiedPairs.map(pair => pair[1]);
                 opTuples = copies
                     .map((copy, i) => [copy, i])  // zip w/ index
                     .filter(pair => this.core.isTypeOf(pair[0], this.META.Operation));
@@ -117,20 +133,145 @@ define([
                 // Create a mapping of old names to new names
                 return Q.all(opTuples.map(pair =>
                         // Add the input/output mappings to the dataMapping
-                        this.addDataToMap(children[pair[1]], pair[0], dataMapping)
+                        this.addDataToMap(originals[pair[1]], pair[0], dataMapping)
                     )
                 );
             })
             .then(() => {  // datamapping is set!
                 this.updateReferences(copies, dataMapping);
                 this.boxOperations(opTuples.map(o => o[0]), tgtNode);
-                return this.save(`Created execution of ${name}`);
+                return this.save(`Created execution from ${name}`);
             })
             .then(() => tgtNode);  // return tgtNode
     };
 
-    CreateExecution.prototype.getExecutionsDir = function () {
-        return this.rootNode;
+    CreateExecution.prototype.getUniqueExecName = function (basename) {
+        var name = basename,
+            taken = {},
+            i = 2;
+
+        // Get a unique name wrt the tags and the other executions
+        return this.project.getTags()
+            .then(tags => {
+                Object.keys(tags).forEach(name => taken[name] = true);
+
+                // Get the other executions
+                return this.getExecutionDir();
+            })
+            .then(execDir => {
+                var cIds = this.core.getChildrenPaths(execDir);
+                return Q.all(cIds.map(id => this.core.loadByPath(this.rootNode, id)));
+            })
+            .then(execs => {
+                var names = execs.map(exec => this.core.getAttribute(exec, 'name'));
+                names.forEach(name => taken[name] = true);
+
+                while (taken[name]) {
+                    name = basename + '_' + (i++);
+                }
+                return name;
+            });
+    };
+
+    CreateExecution.prototype.copyOperations = function (nodes, dst) {
+        var snapshot = this.getCurrentConfig().snapshot;
+
+        if (snapshot) {
+            return Q.all(nodes.map(node => {
+                if (this.isMetaTypeOf(node, this.META.Operation)) {
+                    return this.snapshotNode(node, dst);
+                } else if (this.isMetaTypeOf(node, this.META.Transporter)) {
+                    return [[node, this.core.copyNode(node, dst)]];
+                }
+            }))
+            .then(pairs => pairs.filter(pair => !!pair)
+                .reduce((l1, l2) => l1.concat(l2))
+            );
+
+        } else if (nodes.length) {
+            var copies = this.core.copyNodes(nodes, dst);
+            return nodes.map((node, i) => [node, copies[i]]);
+        }
+        return [];
+    };
+
+    CreateExecution.prototype.snapshotNode = function (op, dst) {
+        // If we are making a snapshot, we should copy the base operation
+        // and set the attributes, add the child nodes, etc
+        var base = this.core.getBase(this.core.getBase(op)),
+            names,
+            values,
+            snapshot = this.core.createNode({
+                base: base,
+                parent: dst
+            });
+
+        // Copy over the attributes
+        names = this.core.getValidAttributeNames(op);
+        values = names.map(name => this.core.getAttribute(op, name));
+        names.forEach((name, i) =>
+            this.core.setAttribute(snapshot, name, values[i]));
+
+        // Copy the pointers
+        names = this.core.getValidPointerNames(op);
+        return Q.all(names
+            .map(name => this.core.getPointerPath(op, name))
+            .map(id => this.core.loadByPath(this.rootNode, id)))
+        .then(values => {
+
+            names.forEach((name, i) =>
+                this.core.setPointer(snapshot, name, values[i]));
+
+            // Copy the data I/O
+            var srcCntrs = this.core.getChildrenPaths(op),
+                dstCntrs = this.core.getChildrenPaths(snapshot);
+
+            return Q.all([srcCntrs, dstCntrs].map(ids =>
+                Q.all(ids.map(id => this.core.loadByPath(this.rootNode, id)))));
+        })
+        .then(cntrs => {
+            var srcCntrs,
+                dstCntrs;
+
+            // Sort all containers by metatype id
+            cntrs.map(l => l.sort((a, b) => {
+                var aId = this.core.getPath(this.core.getMetaType(a)),
+                    bId = this.core.getPath(this.core.getMetaType(b));
+
+                return aId < bId ? -1 : 1;
+            }));
+
+            srcCntrs = cntrs[0];
+            dstCntrs = cntrs[1];
+            return Q.all(srcCntrs.map(ctr => Q.all(this.core.getChildrenPaths(ctr)
+                    .map(id => this.core.loadByPath(this.rootNode, id)))))
+                .then(cntrs =>
+                    cntrs.map((nodes, i) =>
+                        nodes.map(n => [n, this.copyDataNode(n, dstCntrs[i])]))
+                );
+        })
+        .then(nodes => {
+            nodes = nodes.reduce((l1, l2) => l1.concat(l2), []);
+            nodes.push([op, snapshot]);
+            return nodes;
+        });
+    };
+
+    CreateExecution.prototype.copyDataNode = function (original, dst) {
+        // Create new node of the given type
+        var attrNames = this.core.getAttributeNames(original),
+            values,
+            copy = this.core.createNode({
+                base: this.core.getMetaType(original),
+                parent: dst
+            });
+
+        // Set the 'name', 'data' attributes
+        values = attrNames.map(name => this.core.getAttribute(original, name));
+        attrNames.forEach((name, i) =>
+            this.core.setAttribute(copy, name, values[i]));
+
+        return copy;
     };
 
     CreateExecution.prototype.addDataToMap = function (srcOp, dstOp, map) {

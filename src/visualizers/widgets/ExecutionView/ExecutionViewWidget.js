@@ -21,11 +21,28 @@ define([
 
     ExecutionViewWidget = function (logger, container) {
         EasyDAGWidget.call(this, logger, container);
+        this.isSnapshot = true;
     };
 
     _.extend(ExecutionViewWidget.prototype, EasyDAGWidget.prototype);
 
     ExecutionViewWidget.prototype.SelectionManager = SelectionManager;
+
+    ExecutionViewWidget.prototype.setSnapshot = function(bool) {
+        this.isSnapshot = bool;
+        this.setTitle();
+    };
+
+    ExecutionViewWidget.prototype.setTitle = function(nodeName) {
+        var title = nodeName === undefined ? this._currentTitle : nodeName;
+
+        this._currentTitle = title;
+        if (this.isSnapshot) {
+            title += ' (SNAPSHOT)';
+        }
+
+        this._setTitle(title);
+    };
 
     return ExecutionViewWidget;
 });

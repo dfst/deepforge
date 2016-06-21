@@ -33,6 +33,17 @@ define([
     ExecutionViewControl.prototype.TERRITORY_RULE = {children: 4};
     ExecutionViewControl.prototype.DEFAULT_DECORATOR = 'JobDecorator';
 
+    ExecutionViewControl.prototype.selectedObjectChanged = function(id) {
+        EasyDAGControl.prototype.selectedObjectChanged.call(this, id);
+
+        if (this._currentNodeId) {
+            var node = this._client.getNode(this._currentNodeId),
+                isSnapshot = node.getAttribute('snapshot');
+
+            this._widget.setSnapshot(isSnapshot);
+        }
+    };
+
     ExecutionViewControl.prototype._onLoad = function(id) {
         var desc = this._getObjectDescriptor(id);
         if (desc.parentId === this._currentNodeId) {

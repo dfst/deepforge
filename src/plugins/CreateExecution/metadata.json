@@ -10,5 +10,14 @@
   "disableServerSideExecution": false,
   "disableBrowserSideExecution": false,
   "writeAccessRequired": false,
-  "configStructure": []
+  "configStructure": [
+      {
+            "name": "snapshot",
+            "displayName": "Snapshot",
+            "description": "Freeze the operation definitions and attributes at current value",
+            "value": true,
+            "valueType": "boolean",
+            "readOnly": false
+      }
+  ]
 }

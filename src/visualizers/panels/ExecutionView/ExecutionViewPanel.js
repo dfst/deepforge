@@ -46,7 +46,7 @@ define(['js/PanelBase/PanelBaseWithHeader',
 
         this.widget = new ExecutionViewWidget(this.logger, this.$el);
 
-        this.widget.setTitle = function (title) {
+        this.widget._setTitle = function (title) {
             self.setTitle(title);
         };
 

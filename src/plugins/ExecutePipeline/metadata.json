@@ -10,14 +10,22 @@
   "disableServerSideExecution": false,
   "disableBrowserSideExecution": false,
   "configStructure": [
-        {
-            "name": "debug",
-            "displayName": "Debug Mode",
-            "description": "Download all files for each operation",
-            "value": false,
-            "valueType": "boolean",
-            "readOnly": false
-        }
+      {
+          "name": "snapshot",
+          "displayName": "Snapshot",
+          "description": "Freeze the operation definitions and attributes at current value",
+          "value": true,
+          "valueType": "boolean",
+          "readOnly": false
+      },
+      {
+          "name": "debug",
+          "displayName": "Debug Mode",
+          "description": "Download all files for each operation",
+          "value": false,
+          "valueType": "boolean",
+          "readOnly": false
+      }
   ]
 
 }
