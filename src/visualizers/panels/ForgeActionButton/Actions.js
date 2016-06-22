@@ -268,7 +268,15 @@ define([
                 icon: 'queue',
                 priority: 2,
                 action: function() {
-                    this.onCreateInitialNode();
+                    this.addOperation();
+                }
+            },
+            {
+                name: 'Create new node',
+                icon: 'queue',
+                priority: 2,
+                action: function() {
+                    this.addOperation();
                 }
             }
         ]

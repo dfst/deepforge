@@ -1,4 +1,4 @@
-/*globals define, _ */
+/*globals $, d3, define, _ */
 /*jshint browser: true*/
 
 define([
@@ -6,6 +6,7 @@ define([
     'js/Constants',
     'panel/FloatingActionButton/FloatingActionButton',
     'deepforge/viz/PipelineControl',
+    'deepforge/viz/NodePrompter',
     './Actions',
     'widgets/EasyDAG/AddNodeDialog',
     'js/RegistryKeys',
@@ -17,6 +18,7 @@ define([
     CONSTANTS,
     PluginButton,
     PipelineControl,
+    NodePrompter,
     ACTIONS,
     AddNodeDialog,
     REGISTRY_KEYS,
@@ -238,6 +240,50 @@ define([
             });
         }
         return deferred.promise;
+    };
+
+    /////////////// Expanding containers ///////////////
+    ForgeActionButton.prototype.addOperation = function() {
+        var ops = this.getValidInitialNodes();
+
+        // Add the 'New op button'
+        // TODO
+
+        this.promptNode(ops, (selected) => {
+            this.createNode(selected.id);
+        });
+    };
+
+    ForgeActionButton.prototype.promptNode = function(nodes, selectFn) {
+        // Get the absolute location of the given button
+        var mainBtn = this.$el[0].children[0],
+            rect = mainBtn.getBoundingClientRect(),
+            panelRect,
+            panelWidth = 400,
+            panelHeight = 400,
+            btns = this.$el.find('.tooltipped'),
+            ids;
+
+        this.$el.closeFAB();
+
+        // Hide the tooltip
+        ids = Array.prototype.map.call(btns, el => el.getAttribute('data-tooltip-id'));
+        ids.map(id => $('#' + id))
+            .filter(matches => matches.length)
+            .forEach(tooltip => tooltip.hide());
+
+        panelRect = {
+            left: rect.right-panelWidth,
+            top: rect.bottom-panelHeight,
+            width: panelWidth,
+            height: panelHeight
+        };
+
+        var cx = panelWidth-rect.width/2,
+            cy = panelHeight-rect.width/2,
+            prompter = new NodePrompter(panelRect, {cx, cy, padding: 5});
+
+        return prompter.prompt(nodes, selectFn);
     };
 
     return ForgeActionButton;
