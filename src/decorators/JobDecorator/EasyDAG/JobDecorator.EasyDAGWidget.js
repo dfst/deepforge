@@ -18,6 +18,7 @@ define([
         DECORATOR_ID = 'JobDecorator',
         COLORS = {
             pending: '#9e9e9e',
+            queued: '#cfd8dc',
             running: '#fff59d',
             success: '#66bb6a',
             fail: '#e57373'

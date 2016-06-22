@@ -409,11 +409,11 @@ define([
 
         this.outputLineCount[jobId] = 0;
         // Set the job status to 'running'
-        this.core.setAttribute(this.nodes[jobId], 'status', 'running');
+        this.core.setAttribute(this.nodes[jobId], 'status', 'queued');
         this.core.setAttribute(this.nodes[jobId], 'stdout', '');
-        this.logger.info(`Setting ${jobId} status to "running" (${this.currentHash})`);
+        this.logger.info(`Setting ${jobId} status to "queued" (${this.currentHash})`);
         this.logger.debug(`Making a commit from ${this.currentHash}`);
-        this.save(`Started "${name}" operation in ${this.pipelineName}`)
+        this.save(`Queued "${name}" operation in ${this.pipelineName}`)
             .then(() => executor.createJob({hash}))
             .then(() => this.watchOperation(executor, hash, opId, jobId))
             .catch(err => this.logger.error(`Could not execute "${name}": ${err}`));
@@ -450,6 +450,14 @@ define([
             })
             .then(() => {
                 if (info.status === 'CREATED' || info.status === 'RUNNING') {
+                    if (info.status === 'RUNNING' &&
+                        this.core.getAttribute(this.nodes[jobId], 'status') !== 'running') {
+
+                        name = this.core.getAttribute(this.nodes[jobId], 'name');
+                        this.core.setAttribute(this.nodes[jobId], 'status', 'running');
+                        this.save(`Started "${name}" operation in ${this.pipelineName}`);
+                    }
+
                     setTimeout(
                         this.watchOperation.bind(this, executor, hash, opId, jobId),
                         ExecutePipeline.UPDATE_INTERVAL
