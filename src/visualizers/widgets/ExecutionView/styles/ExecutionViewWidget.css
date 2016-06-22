@@ -12,6 +12,6 @@
 .footer-caption-container {
     position: absolute;
     left: 5px;
-    bottom: 0px;
+    bottom: 0;
     color: #666666;
 }

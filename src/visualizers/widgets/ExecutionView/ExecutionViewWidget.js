@@ -1,4 +1,4 @@
-/*globals define*/
+/*globals define,$*/
 /*jshint browser: true*/
 
 /**
@@ -32,15 +32,17 @@ define([
 
     ExecutionViewWidget.prototype.setExecutionNode = function(execNode) {
         this.setSnapshot(execNode.isSnapshot);
+        this.isSnapshot = bool;
         this.originTime = execNode.createdAt;
         if (this.originName) {
             this.updateFooter();
         }
+        this.setTitle();
     };
 
-    ExecutionViewWidget.prototype.setSnapshot = function(bool) {
-        this.isSnapshot = bool;
-        this.setTitle();
+    ExecutionViewWidget.prototype.setOriginPipeline = function(name) {
+        this.originName = name;
+        this.updateFooter();
     };
 
     ExecutionViewWidget.prototype.setTitle = function(nodeName) {
@@ -52,11 +54,6 @@ define([
         }
 
         this._setTitle(title);
-    };
-
-    ExecutionViewWidget.prototype.setOriginPipeline = function(name) {
-        this.originName = name;
-        this.updateFooter();
     };
 
     ExecutionViewWidget.prototype.onOriginDeleted = function() {

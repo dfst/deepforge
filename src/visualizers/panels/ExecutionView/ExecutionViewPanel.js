@@ -1,4 +1,4 @@
-/*globals define, _, WebGMEGlobal*/
+/*globals define, $, _, WebGMEGlobal*/
 /*jshint browser: true*/
 
 define([
