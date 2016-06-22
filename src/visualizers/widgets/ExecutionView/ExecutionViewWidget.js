@@ -31,8 +31,7 @@ define([
     ExecutionViewWidget.prototype.SelectionManager = SelectionManager;
 
     ExecutionViewWidget.prototype.setExecutionNode = function(execNode) {
-        this.setSnapshot(execNode.isSnapshot);
-        this.isSnapshot = bool;
+        this.isSnapshot = execNode.isSnapshot;
         this.originTime = execNode.createdAt;
         if (this.originName) {
             this.updateFooter();
