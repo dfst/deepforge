@@ -107,6 +107,7 @@
       "Sigmoid",
       "Tanh",
       "ReLU",
+      "ReLU6",
       "PReLU",
       "RReLU",
       "LeakyReLU"

@@ -88,7 +88,9 @@
   {
     "name": "CMul",
     "baseType": "Module",
-    "params": [],
+    "params": [
+      "params"
+    ],
     "type": "Simple",
     "setters": []
   },
@@ -285,7 +287,9 @@
   {
     "name": "GradientReversal",
     "baseType": "Module",
-    "params": [],
+    "params": [
+      "lambda"
+    ],
     "type": "Misc",
     "setters": []
   },
@@ -303,7 +307,8 @@
     "baseType": "Module",
     "params": [
       "min_value",
-      "max_value"
+      "max_value",
+      "inplace"
     ],
     "type": "Transfer",
     "setters": []
@@ -394,9 +399,7 @@
   {
     "name": "Log",
     "baseType": "Module",
-    "params": [
-      "inputSize"
-    ],
+    "params": [],
     "type": "Misc",
     "setters": []
   },
@@ -699,6 +702,15 @@
     "setters": []
   },
   {
+    "name": "ReLU6",
+    "baseType": "Module",
+    "params": [
+      "inplace"
+    ],
+    "type": "Transfer",
+    "setters": []
+  },
+  {
     "name": "Replicate",
     "baseType": "Module",
     "params": [
@@ -712,7 +724,9 @@
   {
     "name": "Reshape",
     "baseType": "Module",
-    "params": [],
+    "params": [
+      "params"
+    ],
     "type": "Simple",
     "setters": []
   },
@@ -845,6 +859,16 @@
     "setters": []
   },
   {
+    "name": "SpatialClassNLLCriterion",
+    "baseType": "Criterion",
+    "params": [
+      "weights",
+      "sizeAverage"
+    ],
+    "type": "Criterion",
+    "setters": []
+  },
+  {
     "name": "SpatialContrastiveNormalization",
     "baseType": "Module",
     "params": [
@@ -927,6 +951,24 @@
       "alpha",
       "beta",
       "k"
+    ],
+    "type": "Convolution",
+    "setters": []
+  },
+  {
+    "name": "SpatialDilatedConvolution",
+    "baseType": "SpatialConvolution",
+    "params": [
+      "nInputPlane",
+      "nOutputPlane",
+      "kW",
+      "kH",
+      "dW",
+      "dH",
+      "padW",
+      "padH",
+      "dilationH",
+      "dilationW"
     ],
     "type": "Convolution",
     "setters": []
@@ -1217,7 +1259,9 @@
   {
     "name": "Transpose",
     "baseType": "Module",
-    "params": [],
+    "params": [
+      "params"
+    ],
     "type": "Misc",
     "setters": []
   },
@@ -1234,7 +1278,9 @@
   {
     "name": "View",
     "baseType": "Module",
-    "params": [],
+    "params": [
+      "params"
+    ],
     "type": "Simple",
     "setters": []
   },
@@ -1338,6 +1384,20 @@
       "poolingModule"
     ],
     "type": "Convolution",
+    "setters": []
+  },
+  {
+    "name": "VolumetricReplicationPadding",
+    "baseType": "Module",
+    "params": [
+      "pleft",
+      "pright",
+      "ptop",
+      "pbottom",
+      "pfront",
+      "pback"
+    ],
+    "type": "Misc",
     "setters": []
   },
   {

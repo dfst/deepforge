@@ -12,6 +12,9 @@ var findInitParams = function(ast){
     ast.block.stats.forEach(function(block){
         if(block.key && block.key.val == '__init' && block.func){
             params = block.func.args;
+            if(params.length === 0 && block.func.varargs){
+                params[0] = 'params';
+            }
         }
     });
     return params;
