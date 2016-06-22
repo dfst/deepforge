@@ -22,11 +22,21 @@ define([
     ExecutionViewWidget = function (logger, container) {
         EasyDAGWidget.call(this, logger, container);
         this.isSnapshot = true;
+        this.originName = null;
+        this.originTime = null;
     };
 
     _.extend(ExecutionViewWidget.prototype, EasyDAGWidget.prototype);
 
     ExecutionViewWidget.prototype.SelectionManager = SelectionManager;
+
+    ExecutionViewWidget.prototype.setExecutionNode = function(execNode) {
+        this.setSnapshot(execNode.isSnapshot);
+        this.originTime = execNode.createdAt;
+        if (this.originName) {
+            this.updateFooter();
+        }
+    };
 
     ExecutionViewWidget.prototype.setSnapshot = function(bool) {
         this.isSnapshot = bool;
@@ -42,6 +52,33 @@ define([
         }
 
         this._setTitle(title);
+    };
+
+    ExecutionViewWidget.prototype.setOriginPipeline = function(name) {
+        this.originName = name;
+        this.updateFooter();
+    };
+
+    ExecutionViewWidget.prototype.onOriginDeleted = function() {
+        this.originName = null;
+        this.updateFooter();
+    };
+
+    ExecutionViewWidget.prototype.updateFooter = function() {
+        var footer = this.getFooterContainer(),
+            time = new Date(this.originTime).toLocaleString(),
+            em,
+            msg;
+
+        if (this.originName === null) {
+            msg = 'Originating pipeline has been deleted.';
+            em = $('<em>');
+            em.text(msg);
+            footer.append(em);
+        } else {
+            msg = `Created from "${this.originName}"${time ? ' on ' + time : ''}`;
+            footer.text(msg);
+        }
     };
 
     return ExecutionViewWidget;

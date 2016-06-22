@@ -7,4 +7,11 @@
  */
 
 .execution-view {
-  outline: none; }
+  outline: none;
+}
+.footer-caption-container {
+    position: absolute;
+    left: 5px;
+    bottom: 0px;
+    color: #666666;
+}

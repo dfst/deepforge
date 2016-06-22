@@ -110,10 +110,19 @@ define([
                 var isSnapshot = this.getCurrentConfig().snapshot;
 
                 this.logger.debug(`Creating execution ${execName}`);
+
+                // Set all the metadata for the new execution
                 this.core.setAttribute(tgtNode, 'name', execName);
                 this.core.setAttribute(tgtNode, 'snapshot', isSnapshot);
                 this.core.setAttribute(tgtNode, 'tagname', execName);
-                return this.project.createTag(execName, this.currentHash);
+                this.core.setAttribute(tgtNode, 'createdAt', Date.now());
+                this.core.setPointer(tgtNode, 'origin', this.activeNode);
+                this.core.addMember(this.activeNode, 'executions', tgtNode);
+
+                return this.project.createTag(
+                    execName.replace(/ /g, '_'),
+                    this.currentHash
+                );
             })
             .then(() => this.core.loadChildren(node))
             .then(children => {
