@@ -63,7 +63,7 @@ define([
             .attr('width', 1)
             // Get the button color
             // TODO
-            .attr('fill', 'red');
+            .attr('fill', '#f44336');
 
 
         this.panel.transition()
@@ -79,7 +79,6 @@ define([
             .each('end', () => {
                 // Add the given nodes to the panel
                 this.showNodes(nodes, deferred.resolve);
-                //setTimeout(this.destroyIfInactive.bind(this), CLOSING_GRACE);
             });
 
         // Event handling

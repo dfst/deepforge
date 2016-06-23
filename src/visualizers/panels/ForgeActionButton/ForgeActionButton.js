@@ -1,4 +1,4 @@
-/*globals $, d3, define, _ */
+/*globals DeepForge, $, d3, define, _ */
 /*jshint browser: true*/
 
 define([
@@ -7,18 +7,21 @@ define([
     'panel/FloatingActionButton/FloatingActionButton',
     'deepforge/viz/PipelineControl',
     'deepforge/viz/NodePrompter',
+    'deepforge/viz/AddDecorator',
     './Actions',
     'widgets/EasyDAG/AddNodeDialog',
     'js/RegistryKeys',
     'js/Panels/MetaEditor/MetaEditorConstants',
     'q',
-    'text!./PluginConfig.json'
+    'text!./PluginConfig.json',
+    'deepforge/globals'
 ], function (
     BlobClient,
     CONSTANTS,
     PluginButton,
     PipelineControl,
     NodePrompter,
+    AddDecorator,
     ACTIONS,
     AddNodeDialog,
     REGISTRY_KEYS,
@@ -28,6 +31,7 @@ define([
 ) {
     'use strict';
 
+    var NEW_OPERATION_ID = '__NEW_OPERATION__';
     var ForgeActionButton= function (layoutManager, params) {
         PluginButton.call(this, layoutManager, params);
         this._pluginConfig = JSON.parse(PluginConfig);
@@ -90,7 +94,7 @@ define([
         this.update();
     };
 
-    // Helper functions
+    // Helper functions REMOVE! FIXME
     ForgeActionButton.prototype.addToMetaSheet = function(nodeId, metasheetName) {
         var root = this.client.getNode(CONSTANTS.PROJECT_ROOT_ID),
             metatabs = root.getRegistry(REGISTRY_KEYS.META_SHEETS),
@@ -244,13 +248,35 @@ define([
 
     /////////////// Expanding containers ///////////////
     ForgeActionButton.prototype.addOperation = function() {
-        var ops = this.getValidInitialNodes();
+        var ops = this.getValidInitialNodes(),
+            newOperation = {
+                id: NEW_OPERATION_ID,
+                Decorator: AddDecorator
+            };
 
         // Add the 'New op button'
-        // TODO
+        ops.push(newOperation);
 
-        this.promptNode(ops, (selected) => {
-            this.createNode(selected.id);
+        this.promptNode(ops, (selected, prompter) => {
+            if (selected.id === NEW_OPERATION_ID) {
+                prompter.destroy();
+                // TODO
+                // How can I create a new operation in the appropriate directory?
+                // Ideally, I would create a DeepForge namespace object which knows
+                // about the directories and provides basic actions:
+                //
+                //   - Operation Prototype Creation
+                //   - Layer Prototype Creation
+                //   - Uploading Artifacts?
+                //   - Creating New DataTypes/Objects
+                //
+                //  Where can I create this namespace currently?
+                DeepForge.lastPipeline = this._currentNodeId;
+                var newId = DeepForge.create.Operation();
+                //WebGMEGlobal.State.registerActiveObject(newId);
+            } else {
+                this.createNode(selected.id);
+            }
         });
     };
 

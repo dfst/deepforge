@@ -1,58 +1,15 @@
-/*globals define, $, Materialize, WebGMEGlobal*/
+/*globals DeepForge, define, $, Materialize, WebGMEGlobal*/
 // These are actions defined for specific meta types. They are evaluated from
 // the context of the ForgeActionButton
 define([
     'q',
-    'js/RegistryKeys'
+    'js/RegistryKeys',
+    'deepforge/globals'
 ], function(
     Q,
     REGISTRY_KEYS
 ) {
-    var FILE_UPLOAD_INPUT = $('<input type="file" />'),
-        instances = [
-            'Architecture',
-            'Pipeline'
-        ],
-        metaNodes = [
-            'Operation',
-            'Data'
-        ],
-        create = {};
-
-    var createNew = function(type, metasheetName) {
-        var newId,
-            baseId,
-            msg = `Created new ${type + (metasheetName ? ' prototype' : '')}`;
-
-        baseId = this.client.getAllMetaNodes()
-                .find(node => node.getAttribute('name') === type)
-                .getId();
-
-        this.client.startTransaction(msg);
-        newId = this.createNamedNode(baseId, !!metasheetName);
-
-        if (metasheetName) {
-            this.addToMetaSheet(newId, metasheetName);
-        }
-
-        this.client.completeTransaction();
-
-        WebGMEGlobal.State.registerActiveObject(newId);
-        return newId;
-    };
-
-
-    instances.forEach(type => {
-        create[type] = function() {
-            return createNew.call(this, type);
-        };
-    });
-
-    metaNodes.forEach(type => {
-        create[type] = function() {
-            return createNew.call(this, type, type);
-        };
-    });
+    var FILE_UPLOAD_INPUT = $('<input type="file" />');
 
     var createLayer = function() {
         // Prompt the base type
@@ -85,6 +42,7 @@ define([
             WebGMEGlobal.State.registerActiveObject(newId);
         });
     };
+
     ////////////// Downloading files //////////////
     var downloadAttrs = [
             'data',
@@ -186,8 +144,10 @@ define([
         fileInput.click();
     };
 
-    var returnToLastPipeline = () => 
-        WebGMEGlobal.State.registerActiveObject(window.DeepForge.lastPipeline);
+    var returnToLastPipeline = () => {
+        var returnId = DeepForge.lastPipeline || DeepForge.places.MyPipelines;
+        WebGMEGlobal.State.registerActiveObject(returnId);
+    };
 
     return {
         // Meta nodes
@@ -195,14 +155,14 @@ define([
             {
                 name: 'Create new pipeline',
                 icon: 'queue',
-                action: create.Pipeline
+                action: DeepForge.create.Pipeline
             }
         ],
         MyArchitectures_META: [
             {
                 name: 'Create new architecture',
                 icon: 'queue',
-                action: create.Architecture
+                action: DeepForge.create.Architecture
             },
             {
                 name: 'Import Torch Architecture',
@@ -214,7 +174,7 @@ define([
             {
                 name: 'Create new data type',
                 icon: 'queue',
-                action: create.Data
+                action: DeepForge.create.Data
             }
         ],
         MyLayers_META: [
@@ -228,7 +188,7 @@ define([
             {
                 name: 'Create new operation',
                 icon: 'queue',
-                action: create.Operation
+                action: DeepForge.create.Operation
             }
         ],
         MyArtifacts_META: [
@@ -242,7 +202,6 @@ define([
             {
                 name: 'Return to Pipeline',
                 icon: 'input',
-                filter: () => window.DeepForge && window.DeepForge.lastPipeline,
                 action: returnToLastPipeline
             }
         ],
