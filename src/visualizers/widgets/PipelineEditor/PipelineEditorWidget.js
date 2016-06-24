@@ -265,11 +265,7 @@ define([
         this.updateExecutions();
     };
 
-    PipelineEditorWidget.prototype.addExecution = function(desc) {
-        this.executions[desc.id] = desc;
-        this.updateExecutions();
-    };
-
+    PipelineEditorWidget.prototype.addExecution =
     PipelineEditorWidget.prototype.updateExecution = function(desc) {
         this.executions[desc.id] = desc;
         this.updateExecutions();

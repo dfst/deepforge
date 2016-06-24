@@ -474,8 +474,6 @@ define([
     ////////////////////// Execution Support //////////////////////
     PipelineEditorControl.prototype.onActiveNodeUpdate =
     PipelineEditorControl.prototype.onActiveNodeLoad = function (gmeId) {
-        // Get the execution information
-        // TODO
         var node = this._client.getNode(gmeId),
             executionIds = node.getMemberIds('executions'),
             executionRule = {children: 0};
@@ -490,9 +488,6 @@ define([
 
         this.executionUI = this._client.addUI(this, this.executionEvents.bind(this));
         this._client.updateTerritory(this.executionUI, this.executionTerritory);
-    };
-
-    PipelineEditorControl.prototype.onActiveNodeUnload = function (gmeId) {
     };
 
     PipelineEditorControl.prototype.executionEvents = function (events) {
@@ -532,6 +527,13 @@ define([
     PipelineEditorControl.prototype.onExecUpdate = function (id) {
         var desc = this.getExecDesc(id);
         this._widget.updateExecution(desc);
+    };
+
+    PipelineEditorControl.prototype._detachClientEventListeners = function () {
+        if (this.executionUI) {
+            this._client.removeUI(this, this.executionEvents.bind(this));
+        }
+        EasyDAGControl.prototype._detachClientEventListeners.call(this);
     };
 
     return PipelineEditorControl;
