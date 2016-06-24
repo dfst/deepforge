@@ -55,7 +55,8 @@ define([
 
                 this.originTerritory[this.originId] = {children: 0};
                 this.originTerritoryId = this._client.addUI(this, events => {
-                    var event = events.find(event => event.eid === this.originId);
+                    var event = events.find(event => event.eid !== null &&
+                            event.eid === this.originId);
 
                     if (!event) {  // no relevant events
                         return;
@@ -72,6 +73,9 @@ define([
                 this._client.updateTerritory(this.originTerritoryId, this.originTerritory);
             } else {
                 this._widget.onOriginDeleted();
+                if (this.originTerritoryId) {
+                    this._client.removeUI(this.originTerritoryId);
+                }
             }
         }
     };
