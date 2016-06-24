@@ -35,6 +35,11 @@ define([
     PipelineEditorControl = function (options) {
         EasyDAGControl.call(this, options);
         this.addedIds = {};
+        this.executionTerritory = {};
+        this.executionUI = null;
+        this._widget.deleteNode = id => {
+            this._deleteNode(id);
+        };
     };
 
     _.extend(
@@ -464,6 +469,69 @@ define([
                 }
                 return false;
             });
+    };
+
+    ////////////////////// Execution Support //////////////////////
+    PipelineEditorControl.prototype.onActiveNodeUpdate =
+    PipelineEditorControl.prototype.onActiveNodeLoad = function (gmeId) {
+        // Get the execution information
+        // TODO
+        var node = this._client.getNode(gmeId),
+            executionIds = node.getMemberIds('executions'),
+            executionRule = {children: 0};
+
+        if (this.executionUI) {
+            this._client.removeUI(this, this.executionEvents.bind(this));
+        }
+
+        this.executionTerritory = {};
+        // Create a territory for the executions
+        executionIds.forEach(id => this.executionTerritory[id] = executionRule);
+
+        this.executionUI = this._client.addUI(this, this.executionEvents.bind(this));
+        this._client.updateTerritory(this.executionUI, this.executionTerritory);
+    };
+
+    PipelineEditorControl.prototype.onActiveNodeUnload = function (gmeId) {
+    };
+
+    PipelineEditorControl.prototype.executionEvents = function (events) {
+        var event;
+
+        // Handle events related to the associated executions
+        for (var i = events.length; i--;) {
+            event = events[i];
+            if (event.etype === CONSTANTS.TERRITORY_EVENT_LOAD) {
+                this.onExecLoad(event.eid);
+            } else if (event.etype === CONSTANTS.TERRITORY_EVENT_UPDATE) {
+                this.onExecUpdate(event.eid);
+            } else if (event.etype === CONSTANTS.TERRITORY_EVENT_UNLOAD) {
+                this.onExecUnload(event.eid);
+            }
+        }
+    };
+
+    PipelineEditorControl.prototype.getExecDesc = function (id) {
+        var node = this._client.getNode(id);
+        return {
+            id: id,
+            createdAt: node.getAttribute('createdAt'),
+            name: node.getAttribute('name')
+        };
+    };
+
+    PipelineEditorControl.prototype.onExecLoad = function (id) {
+        var desc = this.getExecDesc(id);
+        this._widget.addExecution(desc);
+    };
+
+    PipelineEditorControl.prototype.onExecUnload = function (id) {
+        this._widget.removeExecution(id);
+    };
+
+    PipelineEditorControl.prototype.onExecUpdate = function (id) {
+        var desc = this.getExecDesc(id);
+        this._widget.updateExecution(desc);
     };
 
     return PipelineEditorControl;

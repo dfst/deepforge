@@ -8,3 +8,19 @@
 
 .pipeline-editor {
   outline: none; }
+
+.pipeline-editor .execution-container {
+  bottom: 0;
+  left: 0.75em;
+  position: absolute;
+  min-width: 25em;
+  margin-bottom: 0;
+}
+
+.pipeline-editor .execution-header {
+  font-size: 1.2em;
+  padding-top: 0.25em;
+  padding-bottom: 0.25em;
+  padding-left: 0.75em;
+  padding-right: 0.75em;
+}

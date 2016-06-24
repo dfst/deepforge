@@ -1,4 +1,4 @@
-/*globals define*/
+/*globals WebGMEGlobal, $, define*/
 /*jshint browser: true*/
 
 /**
@@ -23,14 +23,16 @@ define([
 ) {
     'use strict';
 
-    var PipelineEditorWidget,
+    var REMOVE_ICON = '<td><div class="input-group"><i class="glyphicon ' +
+            'glyphicon-remove"></i></div></td>',
+        PipelineEditorWidget,
         WIDGET_CLASS = 'pipeline-editor',
         STATE = {
             DEFAULT: 'default',
             CONNECTING: 'connecting'
         };
 
-    PipelineEditorWidget = function (logger, container) {
+    PipelineEditorWidget = function (logger, container, execCntr) {
         EasyDAGWidget.call(this, logger, container);
         this.$el.addClass(WIDGET_CLASS);
         this.portIdToNode = {};
@@ -38,6 +40,8 @@ define([
         this.srcPortToConnectArgs = null;
         this._connForPort = {};
         this._itemsShowingPorts = [];
+
+        this.initExecs(execCntr);
     };
 
     _.extend(PipelineEditorWidget.prototype, EasyDAGWidget.prototype);
@@ -217,31 +221,119 @@ define([
         }
     };
 
-    // Record the connections connected to input ports on connection creation
-    // TODO
-
-    // Also, render the connections so they connect operations using the ports
-    // (if the ports are rendered)
-    // TODO
-
     //////////////////// Action Overrides ////////////////////
 
     PipelineEditorWidget.prototype.onAddItemSelected = function(item, selected) {
         this.createConnectedNode(item.id, selected.node.id);
     };
 
-    //PipelineEditorWidget.prototype.createNodeAfter = function(srcId, type) {
-        //// Figure out the valid input and output port pairing(s)
-        //// TODO
+    //////////////////// Execution Support ////////////////////
 
-        //// If none, error!
-        //// TODO
+    PipelineEditorWidget.prototype.initExecs = function(execCntr) {
+        this.execTabOpen = false;
+        this.executions = {};
+        // Add the container for the execution info
+        this.$execCntr = execCntr;
+        this.$execCntr.addClass('panel panel-success');
 
-        //// If one, continue
-        //// TODO
+        // Add click to expand
+        this.$execHeader = $('<div>', {class: 'execution-header panel-header'});
+        this.$execCntr.append(this.$execHeader);
 
-        //// If many, prompt the user about the input/output
-        //// TODO
-    //};
+        this.$execBody = $('<table>', {class: 'table'});
+        var thead = $('<thead>'),
+            tr = $('<tr>'),
+            td = $('<td>');
+
+        // Create the table header
+        td.text('Name');
+        tr.append(td);
+        td = td.clone();
+        td.text('Creation Date');
+        tr.append(td);
+        tr.append($('<td>'));
+        thead.append(tr);
+        this.$execBody.append(thead);
+
+        // Create the table header
+        this.$execContent = $('<tbody>');
+        this.$execBody.append(this.$execContent);
+
+        this.$execCntr.append(this.$execBody);
+
+        this.$execHeader.on('click', this.toggleExecutionTab.bind(this));
+        this.updateExecutions();
+    };
+
+    PipelineEditorWidget.prototype.addExecution = function(desc) {
+        this.executions[desc.id] = desc;
+        this.updateExecutions();
+    };
+
+    PipelineEditorWidget.prototype.updateExecution = function(desc) {
+        this.executions[desc.id] = desc;
+        this.updateExecutions();
+    };
+
+    PipelineEditorWidget.prototype.removeExecution = function(id) {
+        delete this.executions[id];
+        this.updateExecutions();
+    };
+
+    PipelineEditorWidget.prototype.updateExecutions = function() {
+        var keys = Object.keys(this.executions),
+            hasExecutions = !!keys.length,
+            msg = `${keys.length || 'No'} Associated Execution` +
+                (keys.length === 1 ? '' : 's');
+
+        // Update the appearance
+        if (this.execTabOpen && hasExecutions) {
+            var execs = keys.map(id => this.executions[id])
+                    .sort((a, b) => a.createdAt < b.createdAt ? -1 : 1)
+                    .map(exec => this.createExecutionRow(exec));
+
+            // Create the body of the tab
+            this.$execContent.empty();
+            execs.forEach(html => this.$execContent.append(html));
+
+            this.$execContent.height(200);
+            this.$execBody.show();
+        } else {
+            // Set the height to 0
+            this.$execBody.hide();
+            this.$execContent.height(0);
+            this.execTabOpen = false;
+        }
+        this.$execHeader.text(msg);
+    };
+
+    PipelineEditorWidget.prototype.createExecutionRow = function(exec) {
+        var div = $('<tr>'),
+            title = $('<td>', {class: 'execution-name'}),
+            timestamp = $('<td>'),
+            today = new Date().toLocaleDateString(),
+            date = new Date(exec.createdAt).toLocaleDateString(),
+            rmIcon = $(REMOVE_ICON);
+
+        if (date === today) {
+            date = `Today (${new Date(exec.createdAt).toLocaleTimeString()})`;
+        }
+        timestamp.text(date);
+
+        title.append($('<a>').text(exec.name));
+        title.on('click',
+            () => WebGMEGlobal.State.registerActiveObject(exec.id));
+
+        // Add the remove icon
+        rmIcon.on('click', () => this.deleteNode(exec.id));
+        div.append(title, timestamp, rmIcon);
+        return div;
+    };
+
+    PipelineEditorWidget.prototype.toggleExecutionTab = function() {
+        this.execTabOpen = !this.execTabOpen;
+        this.updateExecutions();
+    };
+
     return PipelineEditorWidget;
 });
