@@ -70,6 +70,16 @@ define([
         this.completedCount = 0;
         this.totalCount = 0;
         this.outputLineCount = {};
+
+        // When a pipeline fails, it will let all running jobs finish and record
+        // the results of each job
+        //
+        // The following variables are used to...
+        //   - keep track of the number of jobs currently running
+        //   - keep track if the pipeline has errored
+        //     - if so, don't start any more jobs
+        this.pipelineError = null;
+        this.runningJobs = 0;
     };
 
     /**
@@ -243,15 +253,28 @@ define([
 
     ExecutePipeline.prototype.onPipelineComplete = function(err) {
         var name = this.core.getAttribute(this.activeNode, 'name');
+
+        if (err) {
+            this.runningJobs--;
+        }
+
+        this.pipelineError = this.pipelineError || err;
+
+        if (this.pipelineError && this.runningJobs > 0) {
+            this.logger.info('Pipeline errored but is waiting for the running ' +
+                'jobs to finish');
+            return;
+        }
+
         this.logger.debug(`Pipeline "${name}" complete!`);
-
         this.core.setAttribute(this.activeNode, 'status',
-            (!err ? 'success' : 'failed'));
+            (!this.pipelineError ? 'success' : 'failed'));
 
+        this._finished = true;
         this.save('Pipeline execution finished')
             .then(() => {
-                this.result.setSuccess(!err);
-                this._callback(err || null, this.result);
+                this.result.setSuccess(!this.pipelineError);
+                this._callback(this.pipelineError || null, this.result);
             })
             .fail(e => this.logger.error(e));
     };
@@ -262,6 +285,15 @@ define([
             readyOps = operations.filter(name => this.incomingCounts[name] === 0);
 
         this.logger.info(`About to execute ${readyOps.length} operations`);
+
+        // If the pipeline has errored don't start any more jobs
+        if (this.pipelineError) {
+            if (this.runningJobs === 0) {
+                this.onPipelineComplete();
+            }
+            return 0;
+        }
+
         // Execute all ready operations
         readyOps.forEach(jobId => {
             delete this.incomingCounts[jobId];
@@ -269,6 +301,9 @@ define([
         readyOps.reduce((prev, jobId) => {
             return prev.then(() => this.executeOperation(jobId));
         }, Q());
+        this.runningJobs += readyOps.length;
+        this.logger.info(`There are now ${this.runningJobs} running jobs`);
+
         return readyOps.length;
     };
 
@@ -541,8 +576,10 @@ define([
             hasReadyOps;
 
         // Set the operation to 'success'!
+        this.runningJobs--;
         this.core.setAttribute(jNode, 'status', 'success');
         this.logger.info(`Setting ${jobId} status to "success"`);
+        this.logger.info(`There are now ${this.runningJobs} running jobs`);
         this.logger.debug(`Making a commit from ${this.currentHash}`);
         this.save(`Operation "${name}" in ${this.pipelineName} completed successfully`)
             .then(() => {
