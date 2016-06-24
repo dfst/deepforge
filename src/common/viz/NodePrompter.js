@@ -4,7 +4,8 @@
 // adding a "plus" button for creating new objects in line
 
 define([
-    'q'
+    'q',
+    'css!./NodePrompter.css'
 ], function(
     Q
 ) {
@@ -21,13 +22,17 @@ define([
         this.left = rect.left-opts.padding;
         this.top = rect.top-opts.padding;
         this.width = rect.width + 2*opts.padding;
-        this.height = rect.height + 2*opts.padding;
+        this.actualHeight = rect.height + 2*opts.padding;
+        this.height = this.actualHeight;  // scroll height
         this.cx = opts.cx || rect.left + rect.width/2;
         this.cy = opts.cy || rect.top + rect.height/2;
         this.active = true;
         this.onNode = false;
+        this.scrollbar = null;
+        this.scrollPosition = 0;
 
         var container = document.createElement('div');
+        container.setAttribute('class', 'node-prompter');
         this.container = container;
         container.style.width = this.width + 'px';
         container.style.height = this.height+'px';
@@ -50,6 +55,7 @@ define([
 
         // Expand the panel
         this.panel = this.svg.append('rect');
+        this.nodeContainer = this.svg.append('g');
         size = this.initNodes(nodes);
         this.resize(size.width, size.height);
 
@@ -73,12 +79,16 @@ define([
             .attr('y', 0)
             .attr('rx', cornerRadius)
             .attr('ry', cornerRadius)
-            .attr('height', this.height)
+            .attr('height', this.actualHeight)
             .attr('width', this.width)
             .attr('fill', '#e0e0e0')
             .each('end', () => {
                 // Add the given nodes to the panel
                 this.showNodes(nodes, deferred.resolve);
+                // Add scrollbar if height is too large
+                if (this.height > this.actualHeight) {
+                    this.createScrollbar();
+                }
             });
 
         // Event handling
@@ -94,8 +104,11 @@ define([
 
     NodePrompter.prototype.resize = function(width, height) {
         var dx = this.width - width,
-            dy = this.height - height,
-            maxHeight = this.height;
+            maxHeight = this.height,
+            dy;
+
+        this.actualHeight = Math.min(maxHeight, height);
+        dy = this.height - this.actualHeight;
 
         this.nodes.forEach(node => node.moveBy(-dx/2, 0));
         this.left += dx;
@@ -109,8 +122,53 @@ define([
         this.width = width;
         this.height = height;
 
-        // Add scrollbar if height is too large
-        // TODO
+    };
+
+    NodePrompter.prototype.createScrollbar = function() {
+        var width = 4,
+            yMargin = 10,  // set to  cornerRadius TODO
+            actualHeight = this.actualHeight-2*yMargin,
+            updateScroll = this.updateScroll.bind(this);
+
+        // Create the scrollbar 
+        this.scrollBarHeight = actualHeight/this.height*actualHeight;
+        this.scrollHeight = actualHeight;
+        this.scrollbar = this.svg.append('rect')
+            .attr('class', 'scrollbar')
+            .attr('x', this.width - width)
+            .attr('y', yMargin)
+            .attr('rx', 2)
+            .attr('ry', 2)
+            .attr('height', this.scrollBarHeight)
+            .attr('width', width);
+
+        // Attach scroll handler to the 'panel' rect
+        this.svg
+          .on('zoom', updateScroll)
+          .on('wheel.zoom', updateScroll) 
+          .on('mousewheel.zoom',  updateScroll)
+          .on('DOMMouseScroll.zoom',  updateScroll);
+    };
+
+    NodePrompter.prototype.updateScroll = function() {
+        var delta = d3.event.deltaY,
+            sensitivity = 1,
+            maxScroll = this.scrollHeight - this.scrollBarHeight,
+            containerY,
+            relView;
+
+        this.scrollPosition += delta*sensitivity;
+        this.scrollPosition = Math.max(this.scrollPosition, 0);
+        this.scrollPosition = Math.min(this.scrollPosition, maxScroll);
+
+        this.scrollbar
+            .attr('transform', `translate(0, ${this.scrollPosition})`);
+
+        // Update the translation on the nodeContainer
+        relView = this.scrollPosition/maxScroll;
+        containerY = relView * (this.height-this.actualHeight);
+        this.nodeContainer
+            .attr('transform', `translate(0, -${containerY})`);
     };
 
     NodePrompter.prototype.destroyIfInactive = function() {
@@ -122,6 +180,9 @@ define([
 
     NodePrompter.prototype.destroy = function() {
         this.hideNodes();
+        if (this.scrollbar) {
+            this.scrollbar.remove();
+        }
         this.panel.transition()
             .duration(TRANSITION_DURATION)
             .attr('x', this.cx)
@@ -148,7 +209,7 @@ define([
 
     NodePrompter.prototype.initNodes = function(nodes) {
         // For each node, create the containers and position them
-        var decorators = nodes.map(node => new Container(this.svg, node)),
+        var decorators = nodes.map(node => new Container(this.nodeContainer, node)),
             lineGroup,
             maxLineWidth = this.width - 2*MARGIN,
             totalWidth = 0,
