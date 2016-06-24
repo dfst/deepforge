@@ -1,4 +1,4 @@
-/*globals $, d3, define, _ */
+/*globals $, define, _ */
 /*jshint browser: true*/
 
 define([
@@ -245,9 +245,6 @@ define([
     /////////////// Expanding containers ///////////////
     ForgeActionButton.prototype.addOperation = function() {
         var ops = this.getValidInitialNodes();
-
-        // Add the 'New op button'
-        // TODO
 
         this.promptNode(ops, (selected) => {
             this.createNode(selected.id);
