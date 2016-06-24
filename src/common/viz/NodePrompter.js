@@ -86,7 +86,7 @@ define([
                 this.showNodes(nodes, deferred.resolve);
                 // Add scrollbar if height is too large
                 if (this.height > this.actualHeight) {
-                    this.createScrollbar();
+                    this.createScrollbar(cornerRadius);
                 }
             });
 
@@ -122,9 +122,8 @@ define([
         this.height = height;
     };
 
-    NodePrompter.prototype.createScrollbar = function() {
+    NodePrompter.prototype.createScrollbar = function(yMargin) {
         var width = 4,
-            yMargin = 10,  // set to  cornerRadius TODO
             actualHeight = this.actualHeight-2*yMargin,
             updateScroll = this.updateScroll.bind(this);
 
