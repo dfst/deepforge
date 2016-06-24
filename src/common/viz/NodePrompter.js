@@ -56,6 +56,7 @@ define([
         // Expand the panel
         this.panel = this.svg.append('rect');
         this.nodeContainer = this.svg.append('g');
+
         size = this.initNodes(nodes);
         this.resize(size.width, size.height);
 
@@ -67,8 +68,6 @@ define([
             .attr('ry', 1)
             .attr('height', 1)
             .attr('width', 1)
-            // Get the button color
-            // TODO
             .attr('fill', '#f44336');
 
 
@@ -121,7 +120,6 @@ define([
 
         this.width = width;
         this.height = height;
-
     };
 
     NodePrompter.prototype.createScrollbar = function() {

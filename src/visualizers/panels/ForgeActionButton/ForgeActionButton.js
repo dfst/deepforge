@@ -1,4 +1,4 @@
-/*globals DeepForge, $, d3, define, _ */
+/*globals DeepForge, $, define, _ */
 /*jshint browser: true*/
 
 define([
@@ -260,19 +260,8 @@ define([
         this.promptNode(ops, (selected, prompter) => {
             if (selected.id === NEW_OPERATION_ID) {
                 prompter.destroy();
-                // TODO
-                // How can I create a new operation in the appropriate directory?
-                // Ideally, I would create a DeepForge namespace object which knows
-                // about the directories and provides basic actions:
-                //
-                //   - Operation Prototype Creation
-                //   - Layer Prototype Creation
-                //   - Uploading Artifacts?
-                //   - Creating New DataTypes/Objects
-                //
-                //  Where can I create this namespace currently?
                 DeepForge.lastPipeline = this._currentNodeId;
-                var newId = DeepForge.create.Operation();
+                DeepForge.create.Operation();
                 //WebGMEGlobal.State.registerActiveObject(newId);
             } else {
                 this.createNode(selected.id);
