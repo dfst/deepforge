@@ -102,6 +102,10 @@ define([
         DeepForge.places = {};
 
         // Create a territory
+        if (placesTerritoryId) {
+            client.removeUI(placesTerritoryId);
+        }
+
         territory[CONSTANTS.PROJECT_ROOT_ID] = {children: 1};
         placesTerritoryId = client.addUI(null, updateDeepForgePlaces);
 
@@ -126,6 +130,7 @@ define([
         
         // Remove the territory
         client.removeUI(placesTerritoryId);
+        placesTerritoryId = null;
     };
 
     // Add DeepForge action primitives
