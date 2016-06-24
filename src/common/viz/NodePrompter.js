@@ -61,8 +61,6 @@ define([
             .attr('ry', 1)
             .attr('height', 1)
             .attr('width', 1)
-            // Get the button color
-            // TODO
             .attr('fill', '#f44336');
 
 
@@ -94,8 +92,7 @@ define([
 
     NodePrompter.prototype.resize = function(width, height) {
         var dx = this.width - width,
-            dy = this.height - height,
-            maxHeight = this.height;
+            dy = this.height - height;
 
         this.nodes.forEach(node => node.moveBy(-dx/2, 0));
         this.left += dx;
@@ -108,9 +105,6 @@ define([
 
         this.width = width;
         this.height = height;
-
-        // Add scrollbar if height is too large
-        // TODO
     };
 
     NodePrompter.prototype.destroyIfInactive = function() {
