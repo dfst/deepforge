@@ -76,6 +76,13 @@ define([
     };
 
     OpIntDecorator.prototype.onNameChanged = function(oldVal, newValue) {
+        var whitespace = /^\s*$/;
+        if (newValue !== oldVal && !whitespace.test(newValue)) {
+            this.onValidNameChange(newValue);
+        }
+    };
+
+    OpIntDecorator.prototype.onValidNameChange = function(newValue) {
         this.saveAttribute('name', newValue);
     };
 

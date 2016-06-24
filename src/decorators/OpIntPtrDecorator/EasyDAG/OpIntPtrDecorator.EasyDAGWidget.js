@@ -31,7 +31,7 @@ define([
 
     OpIntPtrDecorator.prototype.DECORATOR_ID = DECORATOR_ID;
 
-    OpIntPtrDecorator.prototype.onNameChanged  = function(old, newValue) {
+    OpIntPtrDecorator.prototype.onValidNameChange  = function(newValue) {
         return this.changePtrName(this.name, newValue);
     };
 
