@@ -511,6 +511,7 @@ define([
         return {
             id: id,
             createdAt: node.getAttribute('createdAt'),
+            status: node.getAttribute('status'),
             name: node.getAttribute('name')
         };
     };

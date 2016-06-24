@@ -87,7 +87,6 @@ define([
         // been generated
 
         this.initRun();
-        this.pipelineName = this.core.getAttribute(this.activeNode, 'name');
         var startPromise;
         if (this.core.isTypeOf(this.activeNode, this.META.Pipeline)) {
             // If starting with a pipeline, we will create an Execution first
@@ -110,6 +109,7 @@ define([
             var children = subtree
                 .filter(n => this.core.getParent(n) === this.activeNode);
 
+            this.pipelineName = this.core.getAttribute(this.activeNode, 'name');
             this.buildCache(subtree);
             this.parsePipeline(children);  // record deps, etc
 
@@ -148,6 +148,8 @@ define([
         nodes.filter(node => this.core.isTypeOf(node, this.META.Job))
             .forEach(node => this.core.setAttribute(node, 'status', 'pending'));
 
+        // Set the status of the execution to 'running'
+        this.core.setAttribute(this.activeNode, 'status', 'running');
         this.logger.info('Setting all jobs status to "pending"');
         this.logger.debug(`Making a commit from ${this.currentHash}`);
         return this.save(`Initializing ${this.pipelineName} for execution`);
@@ -242,6 +244,9 @@ define([
     ExecutePipeline.prototype.onPipelineComplete = function(err) {
         var name = this.core.getAttribute(this.activeNode, 'name');
         this.logger.debug(`Pipeline "${name}" complete!`);
+
+        this.core.setAttribute(this.activeNode, 'status',
+            (!err ? 'success' : 'failed'));
 
         this.save('Pipeline execution finished')
             .then(() => {

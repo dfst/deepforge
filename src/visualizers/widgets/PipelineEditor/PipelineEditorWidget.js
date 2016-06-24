@@ -30,6 +30,11 @@ define([
         STATE = {
             DEFAULT: 'default',
             CONNECTING: 'connecting'
+        },
+        STATUS_TO_CLASS = {
+            running: 'warning',
+            success: 'success',
+            failed: 'danger'
         };
 
     PipelineEditorWidget = function (logger, container, execCntr) {
@@ -304,9 +309,10 @@ define([
     };
 
     PipelineEditorWidget.prototype.createExecutionRow = function(exec) {
-        var div = $('<tr>'),
+        var row = $('<tr>'),
             title = $('<td>', {class: 'execution-name'}),
             timestamp = $('<td>'),
+            className = STATUS_TO_CLASS[exec.status] || '',
             today = new Date().toLocaleDateString(),
             date = new Date(exec.createdAt).toLocaleDateString(),
             rmIcon = $(REMOVE_ICON);
@@ -322,8 +328,9 @@ define([
 
         // Add the remove icon
         rmIcon.on('click', () => this.deleteNode(exec.id));
-        div.append(title, timestamp, rmIcon);
-        return div;
+        row.append(title, timestamp, rmIcon);
+        row[0].className = className;
+        return row;
     };
 
     PipelineEditorWidget.prototype.toggleExecutionTab = function() {
