@@ -31,9 +31,17 @@ define([
         this.editor.setOptions(this.getEditorOptions());
         this.editor.$blockScrolling = Infinity;
         this.DELAY = 750;
+        this.silent = false;
+
         // this.editor.setTheme('ace/theme/monokai');
 
-        this.editor.on('input', _.debounce(this.saveText.bind(this), this.DELAY));
+        this.editor.on('change', () => {
+            if (!this.silent) {
+                this.onChange();
+            }
+        });
+        this.onChange = _.debounce(this.saveText.bind(this), this.DELAY);
+
         this.setReadOnly(this.readOnly);
         this.currentHeader = '';
         this.activeNode = null;
@@ -76,7 +84,9 @@ define([
         var header = this.getHeader(desc);
 
         this.activeNode = desc.id;
+        this.silent = true;
         this.editor.setValue(header + '\n' + desc.text, 2);
+        this.silent = false;
         this.currentHeader = header;
     };
 

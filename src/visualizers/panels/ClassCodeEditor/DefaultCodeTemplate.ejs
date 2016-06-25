@@ -1,0 +1,16 @@
+torch.class('<%= name %>')
+
+function <%= name %>:__init()
+   -- TODO: Set constructor behavior
+end
+
+function <%= name %>:serialize(filename)
+   torch.save(filename, self)
+end
+
+function <%= name %>.deserialize(filename)
+   -- TODO: Load (and return) a '<%= name %>' instance saved to the given file
+   return torch.load(filename)
+end
+
+return <%= name %>

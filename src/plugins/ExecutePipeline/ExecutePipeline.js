@@ -332,6 +332,7 @@ define([
         } else {
             // Generate all execution files
             return this.createOperationFiles(node).then(results => {
+                this.logger.info('Created operation files!');
                 files = results;
                 artifactName = `${name}_${jobId.replace(/\//g, '_')}-execution-files`;
                 artifact = this.blobClient.createArtifact(artifactName);
@@ -647,7 +648,9 @@ define([
         //   <name>.lua (entry point -> calls main operation code)
 
         // add the given files
+        this.logger.info('About to create dist execution files');
         return this.createEntryFile(node, files)
+            .then(() => this.createClasses(node, files))
             .then(() => this.createCustomLayers(node, files))
             .then(() => this.createInputs(node, files))
             .then(() => this.createOutputs(node, files))
@@ -658,6 +661,43 @@ define([
             });
     };
 
+    ExecutePipeline.prototype.createClasses = function (node, files) {
+        var isClass = {},
+            metaDict = this.core.getAllMetaNodes(this.rootNode),
+            metanodes,
+            classNodes,
+            code;
+
+        this.logger.info('Creating custom layer file...');
+        metanodes = Object.keys(metaDict).map(id => metaDict[id]);
+        // Get all the custom layers
+        metanodes.forEach(node => {
+            if (this.core.getAttribute(node, 'name') === 'Complex') {
+                isClass[this.core.getPath(node)] = true;
+            }
+        });
+        classNodes = metanodes.filter(node => {
+            var base = this.core.getBase(node),
+                baseId = this.core.getPath(base);
+
+            return isClass[baseId];
+        });
+
+        // Get the code definitions for each
+        code = classNodes.map(node =>
+            `require './${this.core.getAttribute(node, 'name')}.lua'`
+        ).join('\n');
+
+        // Create the class files
+        classNodes.forEach(node => {
+            var name = this.core.getAttribute(node, 'name');
+            files[`classes/${name}.lua`] = this.core.getAttribute(node, 'code');
+        });
+
+        // Create the custom layers file
+        files['classes/init.lua'] = code;
+    };
+
     ExecutePipeline.prototype.createCustomLayers = function (node, files) {
         var isCustomLayer = {},
             metaDict = this.core.getAllMetaNodes(this.rootNode),
@@ -665,6 +705,7 @@ define([
             customLayers,
             code;
 
+        this.logger.info('Creating custom layer file...');
         metanodes = Object.keys(metaDict).map(id => metaDict[id]);
         // Get all the custom layers
         metanodes.forEach(node => {
@@ -685,6 +726,7 @@ define([
 
     ExecutePipeline.prototype.createInputs = function (node, files) {
         var tplContents;
+        this.logger.info('Retrieving inputs and deserialize fns...');
         return this.getInputs(node)
             .then(inputs => {
                 // For each input, match the connection with the input name
@@ -700,11 +742,22 @@ define([
                 files.inputAssets = {};  // data assets
                 tplContents = inputs.map(pair => {
                     var name = pair[0],
-                        node = pair[2];
+                        node = pair[2],
+                        deserFn = this.core.getAttribute(node, 'deserialize'),
+                        base,
+                        className;
+
+                    if (this.isMetaTypeOf(node, this.META.Complex)) {
+                        // Complex objects are expected to define their own
+                        // (static) deserialize factory method
+                        base = this.core.getBase(node);
+                        className = this.core.getAttribute(base, 'name');
+                        deserFn = `return ${className}.deserialize(path)`;
+                    }
 
                     return {
                         name: name,
-                        code: this.core.getAttribute(node, 'deserialize')
+                        code: deserFn
                     };
                 });
                 var hashes = inputs
@@ -729,6 +782,7 @@ define([
         var pointers,
             nIds;
 
+        this.logger.info('Creating pointers file...');
         pointers = this.core.getPointerNames(node)
             .filter(name => name !== 'base')
             .filter(id => this.core.getPointerPath(node, id) !== null);
@@ -755,14 +809,23 @@ define([
     ExecutePipeline.prototype.createOutputs = function (node, files) {
         // For each of the output types, grab their serialization functions and
         // create the `outputs/init.lua` file
+        this.logger.info('Creating outputs/init.lua...');
         return this.getOutputs(node)
             .then(outputs => {
                 var outputTypes = outputs
                 // Get the serialize functions for each
-                    .map(tuple => [tuple[1], this.core.getAttribute(tuple[2], 'serialize')]);
+                    .map(tuple => {
+                        var node = tuple[2],
+                            serFn = this.core.getAttribute(node, 'serialize');
 
-                // Remove duplicates
-                // TODO
+                        if (this.isMetaTypeOf(node, this.META.Complex)) {
+                            // Complex objects are expected to define their own
+                            // serialize methods
+                            serFn = 'data:serialize(path)';
+                        }
+
+                        return [tuple[1], serFn];
+                    });
 
                 files['outputs/init.lua'] = _.template(Templates.SERIALIZE)({types: outputTypes});
             });
@@ -795,6 +858,7 @@ define([
     };
 
     ExecutePipeline.prototype.createEntryFile = function (node, files) {
+        this.logger.info('Creating entry files...');
         return this.getOutputs(node)
             .then(outputs => {
                 var name = this.core.getAttribute(node, 'name'),
@@ -814,6 +878,7 @@ define([
     };
 
     ExecutePipeline.prototype.createMainFile = function (node, files) {
+        this.logger.info('Creating main file...');
         return this.getInputs(node)
             .then(inputs => {
                 var name = this.core.getAttribute(node, 'name'),
@@ -842,6 +907,7 @@ define([
         var skip = ['outputs', 'inputs'],
             table;
 
+        this.logger.info('Creating attributes file...');
         table = '{\n\t' + this.core.getAttributeNames(node)
             .filter(attr => skip.indexOf(attr) === -1)
             .map(name => [name, JSON.stringify(this.core.getAttribute(node, name))])

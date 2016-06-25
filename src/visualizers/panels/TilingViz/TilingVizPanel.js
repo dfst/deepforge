@@ -58,7 +58,7 @@ define([
             );
         }
 
-        if (panels.length !== 2) {
+        if (panels.length > 2) {
             this.logger.error(`Unsupported number of panels (${panels.length})`);
         }
 
@@ -92,7 +92,7 @@ define([
     };
 
     TilingVizPanel.prototype.onResize = function (width, height) {
-        var pwidth = width/2;
+        var pwidth = width/this.getPanels().length;
 
         this._containers.forEach((c, i) => c.css({
             width: pwidth,

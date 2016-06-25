@@ -172,9 +172,14 @@ define([
         ],
         MyDataTypes_META: [
             {
-                name: 'Create new data type',
+                name: 'Create new primitive data type',
                 icon: 'queue',
-                action: DeepForge.create.Data
+                action: DeepForge.create.Primitive
+            },
+            {
+                name: 'Create new class',
+                icon: 'queue',
+                action: DeepForge.create.Complex
             }
         ],
         MyLayers_META: [

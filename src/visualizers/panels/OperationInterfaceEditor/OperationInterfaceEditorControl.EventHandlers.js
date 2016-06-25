@@ -40,7 +40,8 @@ define([
 
     OperationInterfaceEditorEvents.prototype.allDataTypes = function() {
         return this._client.getAllMetaNodes()
-            .filter(node => this.hasMetaName(node.getId(), 'Data'));
+            .filter(node => this.hasMetaName(node.getId(), 'Data'))
+            .filter(node => !node.isAbstract());
     };
 
     OperationInterfaceEditorEvents.prototype._getValidSuccessorNodes = function(nodeId) {

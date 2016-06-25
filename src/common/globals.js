@@ -54,13 +54,20 @@ define([
 
     var createNamedNode = function(baseId, parentId, isMeta) {
         var newId = client.createChild({parentId, baseId}),
-            basename = 'New' + client.getNode(baseId).getAttribute('name'),
+            baseNode = client.getNode(baseId),
+            basename = 'New' + baseNode.getAttribute('name'),
             newName = getUniqueName(parentId, basename);
 
         // If instance, make the first char lowercase
         if (!isMeta) {
             newName = newName.substring(0, 1).toLowerCase() + newName.substring(1);
         }
+
+        // Set isAbstract false, if needed
+        if (baseNode.getRegistry('isAbstract')) {
+            client.setRegistry(newId, 'isAbstract', false);
+        }
+
         client.setAttributes(newId, 'name', newName);
         return newId;
     };
@@ -90,7 +97,8 @@ define([
         Execution: 'MyExecutions',
         Layer: 'MyLayers',
         Operation: 'MyOperations',
-        DataType: 'MyDataTypes'
+        Primitive: 'MyDataTypes',
+        Complex: 'MyDataTypes'
     };
 
     PLACE_NAMES = Object.keys(TYPE_TO_CONTAINER).map(key => TYPE_TO_CONTAINER[key]);
@@ -141,7 +149,8 @@ define([
         ],
         metaNodes = [
             'Operation',
-            'Data'
+            'Primitive',
+            'Complex'
         ];
 
     var createNew = function(type, metasheetName) {
