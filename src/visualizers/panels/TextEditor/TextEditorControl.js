@@ -66,13 +66,15 @@ define([
 
         self._currentNodeId = nodeId;
         self._currentNodeParentId = undefined;
-        self._currentNodeHasAttr = self._client.getNode(self._currentNodeId).getValidAttributeNames().indexOf(self.ATTRIBUTE_NAME) > -1;
+        self._currentNodeHasAttr = false;
 
         if (typeof self._currentNodeId === 'string') {
             var parentId = this._getParentId(nodeId);
             // Put new node's info into territory rules
             self._selfPatterns = {};
-            //self._widget.setTitle(desc.name.toUpperCase());
+
+            self._currentNodeHasAttr = self._client.getNode(self._currentNodeId)
+                .getValidAttributeNames().indexOf(self.ATTRIBUTE_NAME) > -1;
 
             if (typeof parentId === 'string') {
                 self.$btnModelHierarchyUp.show();

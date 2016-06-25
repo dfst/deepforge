@@ -88,7 +88,7 @@ define([
         }
 
         text = this.editor.getValue().replace(this.currentHeader + '\n', '');
-        if (this.activeNode) {
+        if (typeof this.activeNode === 'string') {
             this.saveTextFor(this.activeNode, text);
         } else {
             this._logger.error(`Active node is invalid! (${this.activeNode})`);
