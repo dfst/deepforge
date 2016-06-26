@@ -6,11 +6,10 @@ define([
 
     var prepAttribute = function(core, node, attr) {
         var result = {name: attr},
-            schema = core.getAttributeMeta(node, attr);
+            schema = core.getAttributeMeta(node, attr),
+            keys = Object.keys(schema);
 
-        for (var key in schema) {
-            result[key] = schema[key];
-        }
+        keys.forEach(key => result[key] = schema[key]);
 
         return result;
     };
