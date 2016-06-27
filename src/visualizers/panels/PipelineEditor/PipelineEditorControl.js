@@ -37,6 +37,7 @@ define([
         this.addedIds = {};
         this.executionTerritory = {};
         this.executionUI = null;
+        this.invalidated = {};
         this._widget.deleteNode = id => {
             this._deleteNode(id);
         };
@@ -132,7 +133,10 @@ define([
         var desc = this._getObjectDescriptor(gmeId);
         if (desc.parentId === this._currentNodeId) {
             this.addedIds[desc.id] = true;
-            return EasyDAGControl.prototype._onLoad.call(this, gmeId);
+            // Validate any connections
+            if (this.isValid(desc)) {
+                return EasyDAGControl.prototype._onLoad.call(this, gmeId);
+            }
         } else if (desc.parentId !== null &&
             this.isContainedInActive(desc.parentId) && desc.isDataPort) {
             // port added!
@@ -141,8 +145,33 @@ define([
         }
     };
 
+    PipelineEditorControl.prototype.isValid = function (desc) {
+        // If it is a "dangling connection", remove it!
+        if (desc.isConnection) {
+            if (!(desc.src && desc.dst)) {
+                var node = this._client.getNode(this._currentNodeId),
+                    name = node.getAttribute('name'),
+                    msg = `Removing invalid connection ${desc.id} in "${name}"`;
+
+                this.invalidated[desc.id] = true;
+                this._client.startTransaction(msg);
+                this._client.delMoreNodes([desc.id]);
+                this._client.completeTransaction();
+                return false;
+            }
+        }
+        return true;
+    };
+
     PipelineEditorControl.prototype._onUnload = function (gmeId) {
         // Check if it has been added
+        if (this.invalidated[gmeId]) {
+            // No need to notify the widget; this was filtered bc it was
+            // an invalid connection
+            delete this.invalidated[gmeId];
+            return;
+        }
+
         if(this.addedIds[gmeId]) {
             delete this.addedIds[gmeId];
             return EasyDAGControl.prototype._onUnload.call(this, gmeId);
