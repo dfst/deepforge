@@ -43,45 +43,37 @@
         "nodes": [
             {
                 "nodeName": "MyArchitectures",
+                "title": "Architectures",
                 "icon": "shuffle",
                 "rank": 1,
                 "description": "Neural network architectures are stored here and can be used in pipelines."
             },
             {
-                "nodeName": "MyOperations",
-                "icon": "mode_edit",
-                "rank": 2,
-                "color": "blue-grey",
-                "description": "Operations are the building blocks of pipelines. Custom operations can be created and stored here."
-            },
-            {
                 "nodeName": "MyPipelines",
+                "title": "Pipelines",
+                "color": "blue-grey",
                 "icon": "input",
                 "rank": 3,
                 "description": "Pipelines compose operations together to effectively train, test and/or ensemble models."
             },
             {
                 "nodeName": "MyLayers",
+                "title": "Layers",
                 "icon": "clear_all",
                 "rank": 4,
-                "color": "blue-grey",
                 "description": "Custom torch layers can be created and stored here for use in neural network architectures."
             },
             {
                 "nodeName": "MyArtifacts",
+                "title": "Artifacts",
                 "icon": "view_quilt",
+                "color": "blue-grey",
                 "rank": 5,
                 "description": "Artifacts from pipeline executions are stored here."
             },
             {
-                "nodeName": "MyExecutions",
-                "icon": "list",
-                "rank": 6,
-                "color": "blue-grey",
-                "description": "Executions are read-only snapshots of pipelines that have been executed. Past and current executing pipelines are stored here."
-            },
-            {
                 "nodeName": "MyDataTypes",
+                "title": "DataTypes",
                 "icon": "settings",
                 "rank": 7,
                 "description": "Custom defined data types are stored here."
