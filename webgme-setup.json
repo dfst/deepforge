@@ -204,9 +204,6 @@
       "devPipelineTests": {
         "src": "src/seeds/devPipelineTests"
       },
-      "demo": {
-        "src": "src/seeds/demo"
-      },
       "project": {
         "src": "src/seeds/project"
       },
