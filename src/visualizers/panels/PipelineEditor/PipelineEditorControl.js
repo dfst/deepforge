@@ -65,7 +65,7 @@ define([
 
         if (typeof this._currentNodeId === 'string') {
             var desc = this._getObjectDescriptor(nodeId);
-            this._widget.setTitle(desc.name.toUpperCase());
+            this._widget.setTitle(desc.name);
 
             if (typeof desc.parentId === 'string') {
                 this.$btnModelHierarchyUp.show();
@@ -77,6 +77,19 @@ define([
 
             // Put new node's info into territory rules
             this.updateTerritory();
+        }
+    };
+
+    PipelineEditorControl.prototype.hasCurrentNode = function () {
+        return typeof this._currentNodeId === 'string';
+    };
+
+    PipelineEditorControl.prototype.onNodeNameChanged = function (from, to) {
+        var msg = `Renaming pipeline "${from}" -> "${to}"`;
+        if (from !== to && !/^\s*$/.test(to)) {
+            this._client.startTransaction(msg);
+            this._client.setAttributes(this._currentNodeId, 'name', to);
+            this._client.completeTransaction();
         }
     };
 

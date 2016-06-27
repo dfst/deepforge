@@ -61,7 +61,23 @@ define(['js/PanelBase/PanelBaseWithHeader',
             widget: this.widget
         });
 
+        // Editable pipeline name
+        this.$panelHeaderTitle.on('dblclick', () => this.editTitle());
+
         this.onActivate();
+    };
+
+    PipelineEditorPanel.prototype.editTitle = function () {
+        if (this.control.hasCurrentNode()) {
+            this.$panelHeaderTitle.editInPlace({
+                css: {
+                    'z-index': 1000
+                },
+                onChange: (oldValue, newValue) => {
+                    this.control.onNodeNameChanged(oldValue, newValue);
+                }
+            });
+        }
     };
 
     /* OVERRIDE FROM WIDGET-WITH-HEADER */
