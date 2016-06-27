@@ -30,11 +30,11 @@ define([
             refs = desc.references.map(name => `-- ${name}`).join('\n'),
             outputs,
             header = [
-                `-- Editing "${desc.name}"`,
-                '-- '
+                `-- Editing "${desc.name}" Implementation`
             ];
 
         if (inputs.length) {
+            header.push('--');
             header.push('-- Defined variables:');
             header.push(inputs);
         }
@@ -42,6 +42,7 @@ define([
             header.push(refs);
         }
         header.push('--');
+        header.push('-- The following will be executed when the operation is run:');
 
         // Add info about outputs
         outputs = desc.outputs.map(pair => `--   ${pair[0]} = <some ${pair[1]}>`)
