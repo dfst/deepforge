@@ -1,11 +1,11 @@
 {
   "id": "GenerateArchitecture",
-  "name": "Generate Architecture",
+  "name": "Generate Torch Code",
   "version": "0.1.0",
   "description": "Generate torch architecture code",
   "icon": {
     "src": "",
-    "class": "glyphicon glyphicon-ok-circle"
+    "class": "glyphicon glyphicon-file"
   },
   "disableServerSideExecution": false,
   "disableBrowserSideExecution": false,

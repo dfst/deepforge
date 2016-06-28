@@ -1,10 +1,10 @@
 {
   "id": "ExecutePipeline",
-  "name": "ExecutePipeline",
+  "name": "Execute Pipeline",
   "version": "0.1.0",
   "description": "",
   "icon": {
-    "class": "glyphicon glyphicon-cog",
+    "class": "glyphicon glyphicon-random",
     "src": ""
   },
   "disableServerSideExecution": false,

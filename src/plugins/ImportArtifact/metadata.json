@@ -1,10 +1,10 @@
 {
   "id": "ImportArtifact",
-  "name": "ImportArtifact",
+  "name": "Import Artifact",
   "version": "0.1.0",
   "description": "",
   "icon": {
-    "class": "glyphicon glyphicon-cog",
+    "class": "glyphicon glyphicon-cloud-upload",
     "src": ""
   },
   "disableServerSideExecution": false,
