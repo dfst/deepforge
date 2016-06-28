@@ -57,13 +57,6 @@
                 "description": "Pipelines compose operations together to effectively train, test and/or ensemble models."
             },
             {
-                "nodeName": "MyLayers",
-                "title": "Layers",
-                "icon": "clear_all",
-                "rank": 4,
-                "description": "Custom torch layers can be created and stored here for use in neural network architectures."
-            },
-            {
                 "nodeName": "MyArtifacts",
                 "title": "Artifacts",
                 "icon": "view_quilt",
