@@ -33,7 +33,7 @@ define([
     OpIntDecorator.prototype.initialize = function() {
         if (this._node.baseName === 'Operation') {
             this.color = '#2196f3';
-        } else {
+        } else if (this._node.baseName) {
             // On hover, show the type
             this.enableTooltip(this._node.baseName, 'dark');
         }

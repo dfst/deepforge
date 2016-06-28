@@ -6,6 +6,7 @@
  */
 
 define([
+    'deepforge/globals',
     'widgets/EasyDAG/EasyDAGWidget',
     'widgets/EasyDAG/AddNodeDialog',
     './SelectionManager',
@@ -13,6 +14,7 @@ define([
     'underscore',
     'css!./styles/OperationInterfaceEditorWidget.css'
 ], function (
+    DeepForge,
     EasyDAG,
     AddNodeDialog,
     SelectionManager,
@@ -22,7 +24,8 @@ define([
     'use strict';
 
     var OperationInterfaceEditorWidget,
-        WIDGET_CLASS = 'operation-interface-editor';
+        WIDGET_CLASS = 'operation-interface-editor',
+        NEW_CLASS_ID = '__NEW_CLASS__';
 
     OperationInterfaceEditorWidget = function (logger, container) {
         EasyDAG.call(this, logger, container);
@@ -45,22 +48,19 @@ define([
 
     OperationInterfaceEditorWidget.prototype.onAddButtonClicked = function(item, isInput) {
         var successorPairs = this.getValidSuccessorNodes(item.id),
-            successor = successorPairs[0];
+            newClass = this.getNewClassNode(NEW_CLASS_ID);
 
-        if (successorPairs.length > 1) {
-            // Create the modal view with all possible subsequent nodes
-            var dialog = new AddNodeDialog(),
-                title = this._getAddSuccessorTitle(item);
+        // Add the 'Create Class' node
+        successorPairs.push(newClass);
 
-            dialog.show(title, successorPairs);
-            dialog.onSelect = pair => {
-                if (pair) {
-                    this.onAddItemSelected(pair, isInput);
+        AddNodeDialog.prompt(successorPairs)
+            .then(selected => {
+                if (selected.node.id === NEW_CLASS_ID) {
+                    DeepForge.create.Complex();
+                } else {
+                    this.onAddItemSelected(selected, isInput);
                 }
-            };
-        } else if (successor) {
-            this.onAddItemSelected(successor, isInput);
-        }
+            });
     };
 
     OperationInterfaceEditorWidget.prototype.onDeactivate = function() {

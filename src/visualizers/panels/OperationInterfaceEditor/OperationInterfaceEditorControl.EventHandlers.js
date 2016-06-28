@@ -9,6 +9,22 @@ define([
         this._widget.addRefTo = this.addRefTo.bind(this);
         this._widget.changePtrName = this.changePtrName.bind(this);
         this._widget.removePtr = this.removePtr.bind(this);
+        this._widget.getNewClassNode = this.getNewClassNode.bind(this);
+    };
+
+    OperationInterfaceEditorEvents.prototype.getNewClassNode = function(id) {
+        var Decorator = this._client.decoratorManager.getDecoratorForWidget(
+            this.DEFAULT_DECORATOR, 'EasyDAG');
+
+        return {
+            node: {
+                id: id,
+                class: 'create-node',
+                name: 'New Class...',
+                Decorator: Decorator,
+                attributes: {}
+            }
+        };
     };
 
     OperationInterfaceEditorEvents.prototype.allValidReferences = function() {
