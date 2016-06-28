@@ -5,6 +5,7 @@ define([
     'js/Constants',
     'panels/EasyDAG/EasyDAGControl',
     'deepforge/viz/PipelineControl',
+    'deepforge/globals',
     'common/core/coreQ',
     'common/storage/constants',
     'q',
@@ -13,6 +14,7 @@ define([
     CONSTANTS,
     EasyDAGControl,
     PipelineControl,
+    DeepForge,
     Core,
     STORAGE_CONSTANTS,
     Q,
@@ -54,6 +56,7 @@ define([
 
     PipelineEditorControl.prototype.TERRITORY_RULE = {children: 3};
     PipelineEditorControl.prototype.selectedObjectChanged = function (nodeId) {
+        DeepForge.last.Pipeline = nodeId;
         this._logger.debug('activeObject nodeId \'' + nodeId + '\'');
 
         // Remove current territory patterns

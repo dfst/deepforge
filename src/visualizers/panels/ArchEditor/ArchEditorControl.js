@@ -5,11 +5,13 @@
  */
 
 define([
+    'deepforge/globals',
     'panels/EasyDAG/EasyDAGControl',
     'js/NodePropertyNames',
     'js/Utils/ComponentSettings',
     'underscore'
 ], function (
+    DeepForge,
     EasyDAGControl,
     nodePropertyNames,
     ComponentSettings,
@@ -41,6 +43,11 @@ define([
     ArchEditorControl.prototype.TERRITORY_RULE = {children: 1};
     ArchEditorControl.prototype.getComponentId = function() {
         return 'ArchEditor';
+    };
+
+    ArchEditorControl.prototype.selectedObjectChanged = function(id) {
+        DeepForge.last.Architecture = id;
+        EasyDAGControl.prototype.selectedObjectChanged.call(this, id);
     };
 
     ArchEditorControl.prototype._getObjectDescriptor = function(id) {

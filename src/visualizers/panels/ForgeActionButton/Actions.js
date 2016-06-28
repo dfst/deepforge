@@ -144,8 +144,8 @@ define([
         fileInput.click();
     };
 
-    var returnToLastPipeline = () => {
-        var returnId = DeepForge.lastPipeline || DeepForge.places.MyPipelines;
+    var returnToLast = (place) => {
+        var returnId = DeepForge.last[place];
         WebGMEGlobal.State.registerActiveObject(returnId);
     };
 
@@ -207,7 +207,14 @@ define([
             {
                 name: 'Return to Pipeline',
                 icon: 'input',
-                action: returnToLastPipeline
+                action: returnToLast.bind(null, 'Pipeline')
+            }
+        ],
+        Layer_META: [
+            {
+                name: 'Return to Architecture',
+                icon: 'input',
+                action: returnToLast.bind(null, 'Architecture')
             }
         ],
 

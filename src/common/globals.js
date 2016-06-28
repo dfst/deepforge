@@ -89,7 +89,7 @@ define([
         return name;
     };
 
-    /////////// Initializing DeepForge ///////////
+    //////////////////// DeepForge places detection ////////////////////
     var TYPE_TO_CONTAINER = {
         
         Architecture: 'MyArchitectures',
@@ -139,10 +139,10 @@ define([
         // Remove the territory
         client.removeUI(placesTerritoryId);
         placesTerritoryId = null;
+        initializePrevLocations();
     };
 
-    // Add DeepForge action primitives
-    // Creating custom operations
+    //////////////////// DeepForge creation actions ////////////////////
     var instances = [
             'Architecture',
             'Pipeline'
@@ -225,8 +225,17 @@ define([
 
     DeepForge.create.Layer = createCustomLayer;
 
+    //////////////////// DeepForge prev locations ////////////////////
+    var initializePrevLocations = function() {
+        DeepForge.last = {};
+        Object.keys(TYPE_TO_CONTAINER).forEach(type =>
+            DeepForge.last[type] = DeepForge.places[TYPE_TO_CONTAINER[type]]
+        );
+    };
+    
     // Update DeepForge on project changed
-    WebGMEGlobal.State.on('change:' + CONSTANTS.STATE_ACTIVE_PROJECT_NAME, updateDeepForgeNamespace, null);
+    WebGMEGlobal.State.on('change:' + CONSTANTS.STATE_ACTIVE_PROJECT_NAME,
+        updateDeepForgeNamespace, null);
 
     // define DeepForge globally
     window.DeepForge = DeepForge;

@@ -64,9 +64,6 @@ define([
         var node = client.getNode(item.id),
             baseId = node.getBaseId();
 
-        window.DeepForge = window.DeepForge || {};
-        window.DeepForge.lastPipeline = item.desc.parentId;
-
         WebGMEGlobal.State.registerActiveObject(baseId);
     };
 

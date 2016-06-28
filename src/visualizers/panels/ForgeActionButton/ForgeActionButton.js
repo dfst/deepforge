@@ -258,9 +258,7 @@ define([
         this.promptNode(ops, (selected, prompter) => {
             if (selected.id === NEW_OPERATION_ID) {
                 prompter.destroy();
-                DeepForge.lastPipeline = this._currentNodeId;
                 DeepForge.create.Operation();
-                //WebGMEGlobal.State.registerActiveObject(newId);
             } else {
                 this.createNode(selected.id);
             }
