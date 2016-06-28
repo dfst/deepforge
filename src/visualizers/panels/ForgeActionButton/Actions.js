@@ -208,8 +208,8 @@ define([
         Operation_META: [
             {
                 name: 'Return to Pipeline',
-                icon: 'input',
                 priority: 2,
+                icon: 'input',
                 action: returnToLast.bind(null, 'Pipeline')
             },
             {
@@ -232,7 +232,23 @@ define([
             {
                 name: 'Return to Architecture',
                 icon: 'input',
+                priority: 2,
                 action: returnToLast.bind(null, 'Architecture')
+            },
+            {
+                name: 'Delete Layer Definition',
+                icon: 'delete',
+                priority: 1,
+                action: function() {
+                    // Delete and go to the last pipeline?
+                    var node = this.client.getNode(this._currentNodeId),
+                        name = node.getAttribute('name'),
+                        msg = `Deleted Layer Definition for "${name}"`;
+
+                    this.deleteCurrentNode(msg);
+                    setTimeout(() => Materialize.toast(msg, 2000), 10);
+                    returnToLast('Architecture');
+                }
             }
         ],
 
