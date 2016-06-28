@@ -203,11 +203,29 @@ define([
                 action: uploadArtifact
             }
         ],
+
+        // Creating prototypes
         Operation_META: [
             {
                 name: 'Return to Pipeline',
                 icon: 'input',
+                priority: 2,
                 action: returnToLast.bind(null, 'Pipeline')
+            },
+            {
+                name: 'Delete Operation Definition',
+                icon: 'delete',
+                priority: 1,
+                action: function() {
+                    // Delete and go to the last pipeline?
+                    var node = this.client.getNode(this._currentNodeId),
+                        name = node.getAttribute('name'),
+                        msg = `Deleted Operation Definition for "${name}"`;
+
+                    this.deleteCurrentNode(msg);
+                    setTimeout(() => Materialize.toast(msg, 2000), 10);
+                    returnToLast('Pipeline');
+                }
             }
         ],
         Layer_META: [
@@ -234,14 +252,6 @@ define([
             }
         ],
         Pipeline: [
-            {
-                name: 'Create new node',
-                icon: 'queue',
-                priority: 2,
-                action: function() {
-                    this.addOperation();
-                }
-            },
             {
                 name: 'Create new node',
                 icon: 'queue',

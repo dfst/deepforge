@@ -297,5 +297,14 @@ define([
         return prompter.prompt(nodes, selectFn);
     };
 
+    ForgeActionButton.prototype.deleteCurrentNode = function(msg) {
+        var nodeId = this._currentNodeId;
+        if (nodeId) {
+            this.client.startTransaction(msg);
+            this.client.delMoreNodes([nodeId]);
+            this.client.completeTransaction(msg);
+        }
+    };
+
     return ForgeActionButton;
 });
