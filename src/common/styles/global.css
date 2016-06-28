@@ -18,3 +18,7 @@
 .deepforge-logo .item-label {
   font-family: 'Audiowide', cursive;
 }
+
+.create-node text {
+    font-style: italic;
+}

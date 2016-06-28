@@ -7,7 +7,6 @@ define([
     'panel/FloatingActionButton/FloatingActionButton',
     'deepforge/viz/PipelineControl',
     'deepforge/viz/NodePrompter',
-    'deepforge/viz/AddDecorator',
     './Actions',
     'widgets/EasyDAG/AddNodeDialog',
     'js/RegistryKeys',
@@ -21,7 +20,6 @@ define([
     PluginButton,
     PipelineControl,
     NodePrompter,
-    AddDecorator,
     ACTIONS,
     AddNodeDialog,
     REGISTRY_KEYS,
@@ -247,10 +245,7 @@ define([
     /////////////// Expanding containers ///////////////
     ForgeActionButton.prototype.addOperation = function() {
         var ops = this.getValidInitialNodes(),
-            newOperation = {
-                id: NEW_OPERATION_ID,
-                Decorator: AddDecorator
-            };
+            newOperation = this.getNewOpNode();
 
         // Add the 'New op button'
         ops.push(newOperation);
@@ -263,6 +258,19 @@ define([
                 this.createNode(selected.id);
             }
         });
+    };
+
+    ForgeActionButton.prototype.getNewOpNode = function() {
+        var Decorator = this.client.decoratorManager.getDecoratorForWidget(
+            'OperationDecorator', 'EasyDAG');
+
+        return {
+            id: NEW_OPERATION_ID,
+            class: 'create-node',
+            name: 'New Operation...',
+            Decorator: Decorator,
+            attributes: {}
+        };
     };
 
     ForgeActionButton.prototype.promptNode = function(nodes, selectFn) {
