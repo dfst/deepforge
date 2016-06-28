@@ -69,6 +69,8 @@ command -v node >/dev/null 2>&1 || {
     echo >&2 "MongoDB is not found. Installing...";
     if [[ `uname` == "Darwin" ]]; then
         brew install mongodb
+    else
+        NEEDS_MONGO=true
     fi
 }
 
@@ -80,7 +82,17 @@ cd ~/deepforge
 npm install
 
 mkdir ~/deepforge/data 2> /dev/null
-echo "DeepForge is installed! To run it:"
-echo "  1) make sure MongoDB is running locally"
-echo "     (start mongo w/ \"mongod --dbpath ~/deepforge/data\")"
-echo "  2) Run \"npm run local\" from ~/deepforge"
+
+if [[ $NEEDS_MONGO ]]; then
+    echo "DeepForge is installed! To run it:"
+    echo "  1) Install MongoDB for your OS"
+    echo "     (available at https://www.mongodb.com/download-center)"
+    echo "  2) make sure MongoDB is running locally"
+    echo "     (start mongo w/ \"mongod --dbpath ~/deepforge/data\")"
+    echo "  3) Run \"npm run local\" from ~/deepforge"
+else
+    echo "DeepForge is installed! To run it:"
+    echo "  1) make sure MongoDB is running locally"
+    echo "     (start mongo w/ \"mongod --dbpath ~/deepforge/data\")"
+    echo "  2) Run \"npm run local\" from ~/deepforge"
+fi
