@@ -183,8 +183,7 @@ define([
 
     ForgeActionButton.prototype.promptLayerType = function() {
         // Prompt for the new custom layer's base type
-        var deferred = Q.defer(),
-            metanodes = this.client.getAllMetaNodes(),
+        var metanodes = this.client.getAllMetaNodes(),
             baseLayerId = metanodes.find(n => n.getAttribute('name') === 'Layer').getId(),
             layerType,
             types;
@@ -206,8 +205,7 @@ define([
             };
         });
 
-        AddNodeDialog.prompt(types, deferred.resolve);
-        return deferred.promise;
+        return AddNodeDialog.prompt(types);
     };
 
     ForgeActionButton.prototype.uploadFile = function(event) {

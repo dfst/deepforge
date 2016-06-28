@@ -8,3 +8,8 @@
 
 .arch-editor {
   outline: none; }
+
+.create-node text {
+    font-style: italic;
+
+}

@@ -6,27 +6,79 @@
  */
 
 define([
+    'deepforge/globals',
     'widgets/EasyDAG/EasyDAGWidget',
+    'widgets/EasyDAG/AddNodeDialog',
     './Layer',
     'underscore',
     'css!./styles/ArchEditorWidget.css'
 ], function (
+    DeepForge,
     EasyDAGWidget,
+    AddNodeDialog,
     Layer,
     _
 ) {
     'use strict';
 
-    var ArchEditorWidget;
-        // WIDGET_CLASS = 'arch-editor',
+    var CREATE_ID = '__NEW_LAYER__',
+        ArchEditorWidget,
+        WIDGET_CLASS = 'arch-editor';
 
     ArchEditorWidget = function (logger, container) {
         EasyDAGWidget.call(this, logger, container);
+        this.$el.addClass(WIDGET_CLASS);
     };
 
     _.extend(ArchEditorWidget.prototype, EasyDAGWidget.prototype);
 
     ArchEditorWidget.prototype.ItemClass = Layer;
+
+    ArchEditorWidget.prototype.onAddButtonClicked = function(item) {
+        var nodes = this.getValidSuccessorNodes(item.id),
+            types = {},
+            Decorator = this.getCreateNewDecorator(),
+            createNews,
+            opts = {};  // 'create new' nodes
+
+        nodes.map(pair => pair.node)
+            .forEach(node => types[node.layerType] = node.color);
+
+        createNews = Object.keys(types).map(type =>
+            this._creationNode(type, types[type], Decorator));
+
+        nodes = nodes.concat(createNews);
+
+        // Sort by layer type
+        opts.tabs = Object.keys(types);
+        opts.tabFilter = (tab, pair) => {
+            return pair.node.layerType === tab;
+        };
+
+        AddNodeDialog.prompt(nodes, opts)
+            .then(selected => {
+                if (selected.node.id === CREATE_ID) {
+                    DeepForge.create.Layer(selected.node.layerType);
+                } else {
+                    this.onAddItemSelected(item, selected);
+                }
+            });
+    };
+
+    ArchEditorWidget.prototype._creationNode = function(type, color, Decorator) {
+        return {
+            node: {
+                id: CREATE_ID,
+                class: 'create-node',
+                attributes: {},
+                name: `New ${type} Layer...`,
+                baseName: `New ${type} Layer...`,
+                layerType: type,
+                color: color,
+                Decorator: Decorator
+            }
+        };
+    };
 
     return ArchEditorWidget;
 });

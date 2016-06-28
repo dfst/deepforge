@@ -1,0 +1,34 @@
+---
+engines:
+  csslint:
+    enabled: true
+  duplication:
+    enabled: true
+    exclude_fingerprints:
+      - 1e004cf4e49528a58a0ac3858112601c
+    config:
+      languages:
+      - ruby
+      - javascript
+      - python
+      - php
+  eslint:
+    enabled: true
+  fixme:
+    enabled: true
+ratings:
+  paths:
+  - "**.css"
+  - "**.inc"
+  - "**.js"
+  - "**.jsx"
+  - "**.module"
+  - "**.php"
+  - "**.py"
+  - "**.rb"
+exclude_paths:
+- config/
+- test/
+- src/common/lua.js
+- src/common/js-yaml.min.js
+- src/visualizers/widgets/TextEditor/lib/

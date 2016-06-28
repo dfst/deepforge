@@ -180,6 +180,36 @@ define([
         return newId;
     };
 
+    var createCustomLayer = function(typeName) {
+        var metanodes = client.getAllMetaNodes(),
+            msg = `Created new custom ${typeName} layer`,
+            newId,
+            customLayerId,
+            baseId,
+            name,
+            i = metanodes.length;
+
+        while (i-- && !(baseId && customLayerId)) {
+            name = metanodes[i].getAttribute('name');
+            if (name === 'CustomLayer') {
+                customLayerId = metanodes[i].getId();
+            } else if (name === typeName) {
+                baseId = metanodes[i].getId();
+            }
+        }
+
+        client.startTransaction(msg);
+
+        newId = createNamedNode(baseId, DeepForge.places.MyLayers, true);
+        addToMetaSheet(newId, 'CustomLayers');
+        client.addMixin(newId, customLayerId);
+        client.setRegistry(newId, REGISTRY_KEYS.IS_ABSTRACT, false);
+
+        client.completeTransaction();
+
+        WebGMEGlobal.State.registerActiveObject(newId);
+    };
+
     DeepForge.create  = {};
     instances.forEach(type => {
         DeepForge.create[type] = function() {
@@ -193,10 +223,13 @@ define([
         };
     });
 
+    DeepForge.create.Layer = createCustomLayer;
+
     // Update DeepForge on project changed
     WebGMEGlobal.State.on('change:' + CONSTANTS.STATE_ACTIVE_PROJECT_NAME, updateDeepForgeNamespace, null);
 
     // define DeepForge globally
     window.DeepForge = DeepForge;
 
+    return DeepForge;
 });

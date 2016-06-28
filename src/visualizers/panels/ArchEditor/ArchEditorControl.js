@@ -98,5 +98,18 @@ define([
             .filter(obj => !obj.isConnection && obj.name !== 'Connection');
     };
 
+    // Widget extensions
+    ArchEditorControl.prototype._initWidgetEventHandlers = function() {
+        EasyDAGControl.prototype._initWidgetEventHandlers.call(this);
+        this._widget.getCreateNewDecorator = this.getCreateNewDecorator.bind(this);
+    };
+
+    ArchEditorControl.prototype.getCreateNewDecorator = function() {
+        return this._client.decoratorManager.getDecoratorForWidget(
+            'EllipseDecorator',
+            'EasyDAG'
+        );
+    };
+
     return ArchEditorControl;
 });
