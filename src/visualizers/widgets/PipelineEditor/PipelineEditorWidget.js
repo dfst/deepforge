@@ -90,6 +90,7 @@ define([
             // Update the given port...
             dstItem.refreshPorts();
         }
+        this.refreshThumbnail();
     };
 
     PipelineEditorWidget.prototype.addNode = function(desc) {
@@ -109,6 +110,7 @@ define([
             this.PORT_STATE = STATE.DEFAULT;
             this.connectPort.apply(this, this.srcPortToConnectArgs);
         }
+        this.refreshThumbnail();
     };
 
     PipelineEditorWidget.prototype._removeConnection = function(id) {
@@ -123,6 +125,7 @@ define([
             dst.refreshPorts();
         }
         EasyDAGWidget.prototype._removeConnection.call(this, id);
+        this.refreshThumbnail();
     };
 
     // May not actually need these port methods
@@ -142,6 +145,7 @@ define([
             this.removePort(gmeId);
         } else {
             EasyDAGWidget.prototype.removeNode.call(this, gmeId);
+            this.refreshThumbnail();
         }
     };
 
@@ -385,6 +389,49 @@ define([
                 }
             });
     };
+
+    ////////////////////////// Action Overrides END //////////////////////////
+
+    ////////////////////////// Thumbnail updates //////////////////////////
+    PipelineEditorWidget.prototype.getSvgDistanceDim = function(dim) {
+        var maxValue = this._getMaxAlongAxis(dim),
+            nodes,
+            minValue;
+
+        nodes = this.graph.nodes().map(id => this.graph.node(id));
+        minValue = Math.min.apply(null, nodes.map(node => node[dim]));
+        return maxValue-minValue;
+    };
+
+    PipelineEditorWidget.prototype.getSvgWidth = function() {
+        return this.getSvgDistanceDim('x');
+    };
+
+    PipelineEditorWidget.prototype.getSvgHeight = function() {
+        return this.getSvgDistanceDim('y');
+    };
+
+    PipelineEditorWidget.prototype.getViewBox = function() {
+        var maxX = this.getSvgWidth('x'),
+            maxY = this.getSvgHeight('y');
+
+        return `0 0 ${maxX} ${maxY}`;
+    };
+
+    PipelineEditorWidget.prototype.refreshThumbnail = _.debounce(function() {
+        // Get the svg...
+        var svg = document.createElement('svg'),
+            group = this.$svg.node(),
+            child;
+
+        svg.setAttribute('viewBox', this.getViewBox());
+        for (var i = 0; i < group.children.length; i++) {
+            child = $(group.children[i]);
+            svg.appendChild(child.clone()[0]);
+        }
+
+        this.updateThumbnail(svg.outerHTML);
+    }, 1000);
 
     return PipelineEditorWidget;
 });

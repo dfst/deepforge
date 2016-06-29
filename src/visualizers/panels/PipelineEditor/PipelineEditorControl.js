@@ -137,6 +137,7 @@ define([
         this._widget.createConnection = this.createConnection.bind(this);
         this._widget.removeConnection = this.removeConnection.bind(this);
         this._widget.getDecorator = this.getDecorator.bind(this);
+        this._widget.updateThumbnail = this.updateThumbnail.bind(this);
     };
 
     PipelineEditorControl.prototype.isContainedInActive = function (gmeId) {
@@ -591,6 +592,28 @@ define([
         } else {
             return this._client.decoratorManager.getDecoratorForWidget(
                 this.DEFAULT_DECORATOR, WIDGET_NAME);
+        }
+    };
+
+    PipelineEditorControl.prototype.updateThumbnail = function (svg) {
+        var node = this._client.getNode(this._currentNodeId),
+            name,
+            attrs,
+            currentThumbnail,
+            attrName = 'thumbnail',
+            msg;
+
+        if (node) {  // may have been deleted
+            name = node.getAttribute('name');
+            attrs = node.getValidAttributeNames();
+            currentThumbnail = node.getAttribute(attrName);
+            msg = `Updating pipeline thumbnail for "${name}"`;
+
+            if (attrs.indexOf(attrName) > -1 && currentThumbnail !== svg) {
+                this._client.startTransaction(msg);
+                this._client.setAttributes(this._currentNodeId, attrName, svg);
+                this._client.completeTransaction();
+            }
         }
     };
 

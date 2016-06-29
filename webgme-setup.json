@@ -165,6 +165,13 @@
         "panel": "src/visualizers/panels/ClassEditor",
         "secondary": false,
         "widget": "src/visualizers/widgets/ClassEditor"
+      },
+      "PipelineIndex": {
+        "src": "panels/PipelineIndex/PipelineIndexPanel",
+        "title": "PipelineIndex",
+        "panel": "src/visualizers/panels/PipelineIndex",
+        "secondary": false,
+        "widget": "src/visualizers/widgets/PipelineIndex"
       }
     },
     "addons": {},

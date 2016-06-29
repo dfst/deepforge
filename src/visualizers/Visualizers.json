@@ -100,5 +100,11 @@
     "title": "ClassEditor",
     "panel": "panels/ClassEditor/ClassEditorPanel",
     "DEBUG_ONLY": false
+  },
+  {
+    "id": "PipelineIndex",
+    "title": "PipelineIndex",
+    "panel": "panels/PipelineIndex/PipelineIndexPanel",
+    "DEBUG_ONLY": false
   }
 ]
