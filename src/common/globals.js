@@ -1,4 +1,4 @@
-/* globals WebGMEGlobal, define*/
+/* globals Materialize, WebGMEGlobal, define*/
 // This file creates the DeepForge namespace and defines basic actions
 define([
     'js/RegistryKeys',
@@ -96,6 +96,7 @@ define([
         Pipeline: 'MyPipelines',
         Execution: 'MyExecutions',
         Layer: 'MyLayers',
+        Artifact: 'MyArtifacts',
         Operation: 'MyOperations',
         Primitive: 'MyDataTypes',
         Complex: 'MyDataTypes'
@@ -210,6 +211,59 @@ define([
         WebGMEGlobal.State.registerActiveObject(newId);
     };
 
+    // Creating Artifacts
+    var UPLOAD_PLUGIN = 'ImportArtifact',
+        DATA_TYPE_CONFIG = {
+            name: 'dataTypeId',
+            displayName: 'Data Type Id',
+            valueType: 'string',
+            valueItems: []
+        };
+
+    var uploadArtifact = function() {
+        // Get the data types
+        var dataBase,
+            dataBaseId,
+            metanodes = client.getAllMetaNodes(),
+            dataTypes = [];
+
+        dataBase = metanodes.find(n => n.getAttribute('name') === 'Data');
+
+        if (!dataBase) {
+            this.logger.error('Could not find the base Data node!');
+            return;
+        }
+
+        dataBaseId = dataBase.getId();
+        dataTypes = metanodes.filter(n => client.isTypeOf(n.getId(), dataBaseId))
+            .filter(n => !n.getRegistry('isAbstract'))
+            .map(node => node.getAttribute('name'));
+
+        //this.logger.info(`Found ${dataTypes.length} data types`);
+
+        // Add the target type to the pluginMetadata... hacky :/
+        var metadata = WebGMEGlobal.allPluginsMetadata[UPLOAD_PLUGIN], 
+            config = metadata.configStructure
+                .find(opt => opt.name === DATA_TYPE_CONFIG.name);
+
+        if (!config) {
+            config = DATA_TYPE_CONFIG;
+            WebGMEGlobal.allPluginsMetadata[UPLOAD_PLUGIN].configStructure.push(config);
+        }
+
+        config.valueItems = dataTypes;
+        config.value = dataTypes[0];
+
+        WebGMEGlobal.InterpreterManager.configureAndRun(metadata, (result) => {
+            if (!result) {
+                Materialize.toast('Artifact upload failed!', 2000);
+                return;
+            }
+            //this.logger.info('Finished uploading ' + UPLOAD_PLUGIN);
+            Materialize.toast('Artifact upload complete!', 2000);
+        });
+    };
+
     DeepForge.create  = {};
     instances.forEach(type => {
         DeepForge.create[type] = function() {
@@ -224,6 +278,7 @@ define([
     });
 
     DeepForge.create.Layer = createCustomLayer;
+    DeepForge.create.Artifact = uploadArtifact;
 
     //////////////////// DeepForge prev locations ////////////////////
     var initializePrevLocations = function() {

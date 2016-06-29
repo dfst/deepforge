@@ -136,6 +136,7 @@ define([
         this._widget.getExistingPortMatches = this.getExistingPortMatches.bind(this);
         this._widget.createConnection = this.createConnection.bind(this);
         this._widget.removeConnection = this.removeConnection.bind(this);
+        this._widget.getDecorator = this.getDecorator.bind(this);
     };
 
     PipelineEditorControl.prototype.isContainedInActive = function (gmeId) {
@@ -580,6 +581,17 @@ define([
             this._client.removeUI(this, this.executionEvents.bind(this));
         }
         EasyDAGControl.prototype._detachClientEventListeners.call(this);
+    };
+
+    ////////////////////// Execution Support END //////////////////////
+    PipelineEditorControl.prototype.getDecorator = function (nodeId) {
+        var node = this._client.getNode(nodeId);
+        if (node) {
+            return this._getNodeDecorator(node);
+        } else {
+            return this._client.decoratorManager.getDecoratorForWidget(
+                this.DEFAULT_DECORATOR, WIDGET_NAME);
+        }
     };
 
     return PipelineEditorControl;

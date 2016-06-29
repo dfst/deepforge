@@ -78,29 +78,32 @@ define([
         }
 
         // Get the base node
-        dataNode = this.core.createNode({
-            base: baseType,
-            parent: this.activeNode
-        });
-
-        this.core.setAttribute(dataNode, 'data', hash);
-        baseName = this.core.getAttribute(baseType, 'name');
-
-        var getName;
-        if (config.name) {
-            getName = Q().then(() => config.name);
-        } else {
-            getName = this.blobClient.getMetadata(hash)
-                .then(md => {
-                    name = baseName[0].toLowerCase() + baseName.substring(1);
-                    if (md) {
-                        name = md.name.replace(/\.[^\.]*?$/, '');
-                    }
-                    return name;
+        this.getArtifactsDir()
+            .then(targetDir => {
+                dataNode = this.core.createNode({
+                    base: baseType,
+                    parent: targetDir
                 });
-        }
 
-        getName.then(name => this.core.setAttribute(dataNode, 'name', name))
+                this.core.setAttribute(dataNode, 'data', hash);
+                baseName = this.core.getAttribute(baseType, 'name');
+
+                var getName;
+                if (config.name) {
+                    getName = Q().then(() => config.name);
+                } else {
+                    getName = this.blobClient.getMetadata(hash)
+                        .then(md => {
+                            name = baseName[0].toLowerCase() + baseName.substring(1);
+                            if (md) {
+                                name = md.name.replace(/\.[^\.]*?$/, '');
+                            }
+                            return name;
+                        });
+                }
+                return getName;
+            })
+            .then(name => this.core.setAttribute(dataNode, 'name', name))
             .then(() => this.save(`Uploaded "${name}" data`))
             .then(function () {
                 self.result.setSuccess(true);
@@ -110,6 +113,15 @@ define([
                 callback(err, self.result);
             });
 
+    };
+
+    ImportArtifact.prototype.getArtifactsDir = function() {
+        // Find the artifacts dir
+        return this.core.loadChildren(this.rootNode)
+            .then(children => children
+                .find(child => this.core.getAttribute(child, 'name') === 'MyArtifacts') ||
+                    this.activeNode
+            );
     };
 
     return ImportArtifact;

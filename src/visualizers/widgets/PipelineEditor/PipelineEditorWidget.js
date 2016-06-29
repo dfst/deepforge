@@ -6,16 +6,20 @@
  */
 
 define([
+    'widgets/EasyDAG/AddNodeDialog',
     'widgets/EasyDAG/EasyDAGWidget',
     'deepforge/viz/PipelineControl',
+    'deepforge/globals',
     './OperationNode',
     './Connection',
     './SelectionManager',
     'underscore',
     'css!./styles/PipelineEditorWidget.css'
 ], function (
+    AddNodeDialog,
     EasyDAGWidget,
     PipelineControl,
+    DeepForge,
     OperationNode,
     Connection,
     SelectionManager,
@@ -31,6 +35,7 @@ define([
             DEFAULT: 'default',
             CONNECTING: 'connecting'
         },
+        UPLOAD_ARTIFACT_ID = '__UPLOAD_ARTIFACT__',
         STATUS_TO_CLASS = {
             running: 'warning',
             success: 'success',
@@ -336,6 +341,49 @@ define([
     PipelineEditorWidget.prototype.toggleExecutionTab = function() {
         this.execTabOpen = !this.execTabOpen;
         this.updateExecutions();
+    };
+
+    ////////////////////////// Action Overrides //////////////////////////
+    PipelineEditorWidget.prototype.selectTargetFor = function(itemId) {
+        // If it is an 'ArtifactLoader', then we will need to add 'upload artifact'
+        // options
+        if (this.items[itemId].desc.baseName === 'ArtifactLoader') {
+            this.selectTargetForLoader.apply(this, arguments);
+        } else {
+            return EasyDAGWidget.prototype.selectTargetFor.apply(this, arguments);
+        }
+    };
+
+    PipelineEditorWidget.prototype.selectTargetForLoader = function(itemId, ptr, filter) {
+        var validTargets = this.getValidTargetsFor(itemId, ptr, filter),
+            nodeId = validTargets.length ? validTargets[0].node.id : null,
+            uploadNode;
+
+        // Add the 'Upload Artifact' option
+        uploadNode = {
+            node: {
+                id: UPLOAD_ARTIFACT_ID,
+                name: 'Upload Artifact',
+                class: 'create-node',
+                attributes: {},
+                Decorator: this.getDecorator(nodeId)
+            }
+        };
+        validTargets.push(uploadNode);
+
+        AddNodeDialog.prompt(validTargets)
+            .then(selected => {
+                if (selected.node.id === UPLOAD_ARTIFACT_ID) {
+                    DeepForge.create.Artifact();
+                } else {
+                    var item = this.items[itemId];
+                    if (item.decorator.savePointer) {
+                        return item.decorator.savePointer(ptr, selected.node.id);
+                    } else {
+                        this.setPointerForNode(itemId, ptr, selected.node.id);
+                    }
+                }
+            });
     };
 
     return PipelineEditorWidget;
