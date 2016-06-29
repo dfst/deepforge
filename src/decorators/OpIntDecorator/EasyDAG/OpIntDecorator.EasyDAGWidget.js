@@ -23,7 +23,6 @@ define([
     //     - unhighlight ports
     //     - report the location of specific ports
     OpIntDecorator = function (options) {
-        this.color = this.color || '#78909c';
         DecoratorBase.call(this, options);
     };
 

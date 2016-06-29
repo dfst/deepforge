@@ -11,12 +11,14 @@ define([
     'js/Constants',
     'deepforge/viz/OperationControl',
     './OperationInterfaceEditorControl.EventHandlers',
+    './Colors',
     'underscore'
 ], function (
     EasyDAGControl,
     CONSTANTS,
     OperationControl,
     OperationInterfaceEditorControlEvents,
+    COLORS,
     _
 ) {
 
@@ -139,10 +141,22 @@ define([
 
             desc.container = cntr.toLowerCase();
             desc.attributes = {};
+
         } else if (desc.id === this._currentNodeId) {
             delete desc.attributes.code;
         }
+
+        // Extra decoration for data
+        if (this.hasMetaName(desc.id, 'Data')) {
+            desc.color = this.getDescColor(gmeId);
+            desc.isPrimitive = this.hasMetaName(gmeId, 'Primitive');
+        }
         return desc;
+    };
+
+    OperationInterfaceEditorControl.prototype.getDescColor = function(gmeId) {
+        return !this.hasMetaName(gmeId, 'Complex') ? COLORS.PRIMITIVE :
+            COLORS.COMPLEX;
     };
 
     OperationInterfaceEditorControl.prototype._onUnload = function(gmeId) {

@@ -1,6 +1,8 @@
 /*globals define*/
 define([
+    './Colors'
 ], function(
+    COLORS
 ) {
     'use strict';
     var OperationInterfaceEditorEvents = function() {
@@ -9,19 +11,22 @@ define([
         this._widget.addRefTo = this.addRefTo.bind(this);
         this._widget.changePtrName = this.changePtrName.bind(this);
         this._widget.removePtr = this.removePtr.bind(this);
-        this._widget.getNewClassNode = this.getNewClassNode.bind(this);
+        this._widget.getCreationNode = this.getCreationNode.bind(this);
     };
 
-    OperationInterfaceEditorEvents.prototype.getNewClassNode = function(id) {
-        var Decorator = this._client.decoratorManager.getDecoratorForWidget(
-            this.DEFAULT_DECORATOR, 'EasyDAG');
+    OperationInterfaceEditorEvents.prototype.getCreationNode = function(type, id) {
+        var typeName = type === 'Complex' ? 'Class' : 'Primitive',
+            Decorator = this._client.decoratorManager.getDecoratorForWidget(
+                this.DEFAULT_DECORATOR, 'EasyDAG');
 
         return {
             node: {
                 id: id,
                 class: 'create-node',
-                name: 'New Class...',
+                name: `New ${typeName}...`,
                 Decorator: Decorator,
+                color: COLORS[type.toUpperCase()],
+                isPrimitive: type === 'Primitive',
                 attributes: {}
             }
         };

@@ -25,10 +25,12 @@ define([
 
     var OperationInterfaceEditorWidget,
         WIDGET_CLASS = 'operation-interface-editor',
-        NEW_CLASS_ID = '__NEW_CLASS__';
+        NEW_CLASS_ID = '__NEW_CLASS__',
+        NEW_PRIM_ID = '__NEW_PRIM__';
 
     OperationInterfaceEditorWidget = function (logger, container) {
         EasyDAG.call(this, logger, container);
+        this.$el.addClass(WIDGET_CLASS);
     };
 
     _.extend(OperationInterfaceEditorWidget.prototype, EasyDAG.prototype);
@@ -48,15 +50,26 @@ define([
 
     OperationInterfaceEditorWidget.prototype.onAddButtonClicked = function(item, isInput) {
         var successorPairs = this.getValidSuccessorNodes(item.id),
-            newClass = this.getNewClassNode(NEW_CLASS_ID);
+            newClass = this.getCreationNode('Complex', NEW_CLASS_ID),
+            newPrim = this.getCreationNode('Primitive', NEW_PRIM_ID),
+            opts = {};
 
         // Add the 'Create Class' node
         successorPairs.push(newClass);
+        successorPairs.push(newPrim);
 
-        AddNodeDialog.prompt(successorPairs)
+        // Add tabs
+        opts.tabs = ['Classes', 'Primitive'];
+        opts.tabFilter = (tab, pair) => {
+            return pair.node.isPrimitive === (tab === 'Primitive');
+        };
+
+        AddNodeDialog.prompt(successorPairs, opts)
             .then(selected => {
                 if (selected.node.id === NEW_CLASS_ID) {
                     DeepForge.create.Complex();
+                } else if (selected.node.id === NEW_PRIM_ID) {
+                    DeepForge.create.Primitive();
                 } else {
                     this.onAddItemSelected(selected, isInput);
                 }
