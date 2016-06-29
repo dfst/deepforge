@@ -149,6 +149,32 @@ define([
         WebGMEGlobal.State.registerActiveObject(returnId);
     };
 
+    var prototypeButtons = function(type, fromType) {
+        return [
+            {
+                name: `Return to ${fromType}`,
+                icon: 'input',
+                priority: 2,
+                action: returnToLast.bind(null, fromType)
+            },
+            {
+                name: `Delete ${type} Definition`,
+                icon: 'delete',
+                priority: 1,
+                action: function() {
+                    // Delete and go to the last pipeline?
+                    var node = this.client.getNode(this._currentNodeId),
+                        name = node.getAttribute('name'),
+                        msg = `Deleted ${type} Definition for "${name}"`;
+
+                    this.deleteCurrentNode(msg);
+                    setTimeout(() => Materialize.toast(msg, 2000), 10);
+                    returnToLast(fromType);
+                }
+            }
+        ];
+    };
+
     return {
         // Meta nodes
         MyPipelines_META: [
@@ -205,52 +231,9 @@ define([
         ],
 
         // Creating prototypes
-        Operation_META: [
-            {
-                name: 'Return to Pipeline',
-                priority: 2,
-                icon: 'input',
-                action: returnToLast.bind(null, 'Pipeline')
-            },
-            {
-                name: 'Delete Operation Definition',
-                icon: 'delete',
-                priority: 1,
-                action: function() {
-                    // Delete and go to the last pipeline?
-                    var node = this.client.getNode(this._currentNodeId),
-                        name = node.getAttribute('name'),
-                        msg = `Deleted Operation Definition for "${name}"`;
-
-                    this.deleteCurrentNode(msg);
-                    setTimeout(() => Materialize.toast(msg, 2000), 10);
-                    returnToLast('Pipeline');
-                }
-            }
-        ],
-        Layer_META: [
-            {
-                name: 'Return to Architecture',
-                icon: 'input',
-                priority: 2,
-                action: returnToLast.bind(null, 'Architecture')
-            },
-            {
-                name: 'Delete Layer Definition',
-                icon: 'delete',
-                priority: 1,
-                action: function() {
-                    // Delete and go to the last pipeline?
-                    var node = this.client.getNode(this._currentNodeId),
-                        name = node.getAttribute('name'),
-                        msg = `Deleted Layer Definition for "${name}"`;
-
-                    this.deleteCurrentNode(msg);
-                    setTimeout(() => Materialize.toast(msg, 2000), 10);
-                    returnToLast('Architecture');
-                }
-            }
-        ],
+        Operation_META: prototypeButtons('Operation', 'Pipeline'),
+        Layer_META: prototypeButtons('Layer', 'Architecture'),
+        Complex_META: prototypeButtons('Class', 'Operation'),
 
         // Instances
         Data: [

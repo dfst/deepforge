@@ -2,12 +2,14 @@
 /*jshint browser: true*/
 
 define([
+    'deepforge/globals',
     'panels/TilingViz/TilingVizPanel',
     'panels/OperationCodeEditor/OperationCodeEditorPanel',
     'panels/OperationInterfaceEditor/OperationInterfaceEditorPanel',
     'js/Constants',
     'underscore'
 ], function (
+    DeepForge,
     TilingViz,
     CodeEditor,
     InterfaceEditor,
@@ -57,6 +59,7 @@ define([
 
     OperationEditorPanel.prototype.selectedObjectChanged = function (id) {
         this._currentNodeId = id;
+        DeepForge.last.Operation = id;
         if (typeof this._currentNodeId === 'string') {
             // Setup the territory
             this.territory = {};
