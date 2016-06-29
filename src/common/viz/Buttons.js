@@ -11,9 +11,11 @@ define([
     var GoToBase = function(params) {
         // Check if it should be disabled
         var baseId = this._getBaseId(params.item),
-            base = client.getNode(baseId);
+            base = baseId && client.getNode(baseId);
 
-        params.disabled = base ? base.isLibraryElement() : params.disabled;
+        if (!params.disabled) {
+            params.disabled = base ? base.isLibraryElement() : true;
+        }
         EasyDAGButtons.ButtonBase.call(this, params);
     };
 
@@ -63,7 +65,7 @@ define([
 
     GoToBase.prototype._getBaseId = function(item) {
         var n = client.getNode(item.id);
-        return n.getBaseId();
+        return n && n.getBaseId();
     };
 
     return {

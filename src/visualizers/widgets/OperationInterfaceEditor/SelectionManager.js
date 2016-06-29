@@ -53,7 +53,7 @@ define([
                 x: 2*width/3,
                 y: 0
             });
-        } else {  // Data...
+        } else {  // Data or pointer...
             new Buttons.Delete({
                 context: this._widget,
                 $pEl: this.$selection,
@@ -62,13 +62,15 @@ define([
                 y: 0
             });
 
-            new Buttons.GoToBase({
-                context: this._widget,
-                $pEl: this.$selection,
-                item: this.selectedItem,
-                x: width,
-                y: 0
-            });
+            if (!this.selectedItem.desc.isPointer) {
+                new Buttons.GoToBase({
+                    context: this._widget,
+                    $pEl: this.$selection,
+                    item: this.selectedItem,
+                    x: width,
+                    y: 0
+                });
+            }
         }
     };
 
