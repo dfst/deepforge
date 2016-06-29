@@ -63,13 +63,6 @@
                 "color": "blue-grey",
                 "rank": 5,
                 "description": "Artifacts from pipeline executions are stored here."
-            },
-            {
-                "nodeName": "MyDataTypes",
-                "title": "DataTypes",
-                "icon": "settings",
-                "rank": 7,
-                "description": "Custom defined data types are stored here."
             }
         ]
     }
