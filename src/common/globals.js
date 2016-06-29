@@ -255,12 +255,14 @@ define([
         config.value = dataTypes[0];
 
         WebGMEGlobal.InterpreterManager.configureAndRun(metadata, (result) => {
+            var msg = 'Artifact upload complete!';
             if (!result) {
-                Materialize.toast('Artifact upload failed!', 2000);
                 return;
             }
-            //this.logger.info('Finished uploading ' + UPLOAD_PLUGIN);
-            Materialize.toast('Artifact upload complete!', 2000);
+            if (!result.success) {
+                msg = `Artifact upload failed: ${result.error}`;
+            }
+            Materialize.toast(msg, 2000);
         });
     };
 
