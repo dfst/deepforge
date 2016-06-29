@@ -6,18 +6,14 @@ define([
 ) {
 
     // Create a GoToBase button
-    var client = WebGMEGlobal.Client,
-        LocalOps = {
-            ArtifactLoader: true,
-            Save: true
-        };
+    var client = WebGMEGlobal.Client;
 
     var GoToBase = function(params) {
         // Check if it should be disabled
         var baseId = this._getBaseId(params.item),
             base = client.getNode(baseId);
 
-        params.disabled = base ? base.isLibraryElement() : false;
+        params.disabled = base ? base.isLibraryElement() : params.disabled;
         EasyDAGButtons.ButtonBase.call(this, params);
     };
 
@@ -43,8 +39,6 @@ define([
 
         this.$el
             .append('circle')
-                //.attr('cx', -)
-                //.attr('cy', 0)
                 .attr('r', GoToBase.SIZE/3)
                 .attr('stroke-width', 3)
                 .attr('stroke', lineColor);
@@ -77,3 +71,4 @@ define([
         GoToBase: GoToBase
     };
 });
+

@@ -61,6 +61,14 @@ define([
                 x: cx,
                 y: 0
             });
+
+            new Buttons.GoToBase({
+                context: this._widget,
+                $pEl: this.$selection,
+                item: this.selectedItem,
+                x: width,
+                y: 0
+            });
         }
     };
 

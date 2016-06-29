@@ -2,7 +2,7 @@
 
 define([
     'widgets/EasyDAG/SelectionManager',
-    './Buttons',
+    'deepforge/viz/Buttons',
     'underscore'
 ], function(
     EasyDAGSelectionManager,

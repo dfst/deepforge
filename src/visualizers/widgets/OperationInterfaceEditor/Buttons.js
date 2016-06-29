@@ -1,8 +1,10 @@
 /*globals define*/
 define([
+    'deepforge/viz/Buttons',
     'widgets/EasyDAG/Buttons',
     'underscore'
 ], function(
+    CommonButtons,
     EasyDAGButtons,
     _
 ) {
@@ -132,6 +134,7 @@ define([
         AddOutput: AddOutput,
         AddInput: AddInput,
         AddRef: AddRef,
+        GoToBase: CommonButtons.GoToBase,
         Delete: Delete
     };
 });
