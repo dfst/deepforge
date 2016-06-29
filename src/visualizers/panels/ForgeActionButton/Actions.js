@@ -234,6 +234,7 @@ define([
         Operation_META: prototypeButtons('Operation', 'Pipeline'),
         Layer_META: prototypeButtons('Layer', 'Architecture'),
         Complex_META: prototypeButtons('Class', 'Operation'),
+        Primitive_META: prototypeButtons('Primitive Type', 'Operation'),
 
         // Instances
         Data: [
