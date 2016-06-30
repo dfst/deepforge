@@ -53,7 +53,17 @@ define([
     ArtifactOpDecorator.prototype.savePointer = function(name, to) {
         // When the 'artifact' pointer is changed, we should change the base
         // of the data output node to the target type
-        if (name === this.castOpts.ptr && (typeof to === 'string')) {
+        if (typeof to !== 'string') {
+            var outputId = this._node.outputs[0] && this._node.outputs[0].id;
+
+            // Clear the data handle of the output
+            this.client.startTransaction(`Removing output of ${this.name}`);
+            this.client.delPointer(this._node.id, name);
+            if (outputId) {
+                this.client.delAttributes(outputId, 'data');
+            }
+            this.client.completeTransaction();
+        } else if (name === this.castOpts.ptr) {  // set the casted value
             this.client.startTransaction(`Setting output of ${this.name} to ${to}`);
             this.castOutputType(to);
             this.client.makePointer(this._node.id, name, to);
