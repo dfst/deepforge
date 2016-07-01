@@ -1,0 +1,33 @@
+<nav class="side-nav fixed closed hide-list">
+    <li class="pull-right side-nav-control">
+        <span class="glyphicon glyphicon-menu-hamburger" aria-hidden="true"></span>
+    </li>
+    <li class="no-padding">
+        <ul class="collapsible" data-collapsible="accordion">
+            <li>
+                <a data-target="#arch-list" data-toggle="collapse">Architectures</a>
+                <div id="arch-list" class="collapse">
+                    <ul class="sublist">
+                        <div id="arch-list-content"></div>
+                        <li><a id="create-arch" class="action" href="#">New...</a></li>
+                    </ul>
+                </div>
+            </li>
+        </ul>
+    </li>
+    <li class="no-padding">
+        <ul class="collapsible collapsible-accordion">
+            <li>
+            <a data-target="#artifact-list" data-toggle="collapse">Artifacts</a>
+            <div id="artifact-list" class="collapse">
+                <ul class="sublist">
+                    <div id="artifact-list-content"></div>
+                    <li>
+                        <a id="create-artifact" class="action" href="#!">Upload...</a>
+                    </li>
+                </ul>
+            </div>
+            </li>
+        </ul>
+    </li>
+</nav>

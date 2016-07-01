@@ -57,6 +57,13 @@ define([
             actions,
             basename;
 
+        if (!base) {  // must be ROOT or FCO
+            basename = node.getAttribute('name') || 'ROOT_NODE';
+            actions = (ACTIONS[basename] || [])
+                .filter(action => !action.filter || action.filter());
+            return actions;
+        }
+
         while (base && !(actions && actions.length)) {
             basename = base.getAttribute('name') + suffix;
             base = this.client.getNode(base.getBaseId());

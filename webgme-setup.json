@@ -172,6 +172,13 @@
         "panel": "src/visualizers/panels/PipelineIndex",
         "secondary": false,
         "widget": "src/visualizers/widgets/PipelineIndex"
+      },
+      "MainView": {
+        "src": "panels/MainView/MainViewPanel",
+        "title": "MainView",
+        "panel": "src/visualizers/panels/MainView",
+        "secondary": false,
+        "widget": "src/visualizers/widgets/MainView"
       }
     },
     "addons": {},

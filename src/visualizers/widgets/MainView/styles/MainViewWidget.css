@@ -1,0 +1,276 @@
+.main-view .side-nav-control {
+  padding-right: 1em;
+  padding-top: 1em;
+  line-height: inherit !important;
+}
+
+.main-view .side-nav-control span {
+  font-size: 16px;
+  color: #757575;
+}
+
+/* closed */
+.main-view .side-nav.closed {
+  width: 40px;
+}
+
+.main-view .hide-list ul {
+    visibility: hidden;
+}
+
+.main-view .side-nav {
+  transform: translateX(0);
+  transition: width 0.3s;
+}
+
+/* closed END */
+
+.main-view .side-nav .action {
+  font-style: italic;
+}
+
+.main-view .side-nav {
+  background-color: #f5f5f5 !important;
+  list-style-type: none;
+}
+
+.main-view .side-nav a {
+  color: #444;
+  display: block;
+  font-size: 1.5rem;
+  height: 64px;
+  line-height: 64px;
+  padding: 0 30px;
+}
+
+.main-view .side-nav li {
+  text-align: left;
+  color: #f5f5f5 !important;
+}
+
+.main-view .side-nav .sublist ul {
+  padding-left: 20px;
+  color: #757575;
+}
+
+.main-view .side-nav .sublist a {
+  font-size: 1.2rem;
+}
+
+.main-view ul {
+  list-style-type: none;
+}
+
+.main-view .valign-wrapper {
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-align-items: center;
+  -ms-flex-align: center;
+  align-items: center;
+}
+
+.main-view .valign-wrapper .valign {
+  display: block;
+}
+
+.main-view ul {
+  padding: 0;
+}
+
+.main-view ul li {
+  list-style-type: none;
+}
+
+.main-view .clearfix {
+  clear: both;
+}
+
+
+.main-view .z-depth-1,
+.main-view nav,
+.main-view .card-panel,
+.main-view .card,
+.main-view .toast,
+.main-view .btn,
+.main-view .btn-large,
+.main-view .btn-floating,
+.main-view .dropdown-content,
+.main-view .collapsible,
+.main-view .side-nav {
+  box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.16), 0 2px 10px 0 rgba(0, 0, 0, 0.12);
+}
+
+.main-view .side-nav .collapsible,
+.main-view .side-nav.fixed .collapsible {
+  border: none;
+  box-shadow: none;
+}
+
+.main-view .side-nav .collapsible li,
+.main-view .side-nav.fixed .collapsible li {
+  padding: 0;
+}
+
+.main-view .side-nav .collapsible-header,
+.main-view .side-nav.fixed .collapsible-header {
+  background-color: transparent;
+  border: none;
+  line-height: inherit;
+  height: inherit;
+  padding: 0 30px;
+}
+
+.main-view .side-nav .collapsible-header:hover,
+.main-view .side-nav.fixed .collapsible-header:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.main-view .side-nav .collapsible-header i,
+.main-view .side-nav.fixed .collapsible-header i {
+  line-height: inherit;
+}
+
+.main-view .side-nav .collapsible-body,
+.main-view .side-nav.fixed .collapsible-body {
+  border: 0;
+  background-color: #fff;
+}
+
+.main-view .side-nav .collapsible-body li a,
+.main-view .side-nav.fixed .collapsible-body li a {
+  padding: 0 37.5px 0 45px;
+}
+
+.main-view .side-nav {
+  position: fixed;
+  width: 200px;
+  left: 0;
+  top: 0;
+  margin: 0;
+  -o-transform: translateX(-100%);
+  -ms-transform: translateX(-100%);
+  -webkit-transform: translateX(-100%);
+  -moz-transform: translateX(-100%);
+  transform: translateX(-100%);
+  height: 100%;
+  height: calc(100% + 60px);
+  height: -moz-calc(100%);
+  padding-bottom: 60px;
+  background-color: #fff;
+  z-index: 999;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  overflow-y: auto;
+}
+
+.main-view .side-nav .collapsible {
+  margin: 0;
+}
+
+.main-view .side-nav li {
+  float: none;
+  line-height: 64px;
+}
+
+.main-view .side-nav li.active {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.main-view .side-nav a:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.main-view .side-nav a.btn,
+.main-view .side-nav a.btn-large,
+.main-view .side-nav a.btn-large,
+.main-view .side-nav a.btn-flat,
+.main-view .side-nav a.btn-floating {
+  margin: 10px 15px;
+}
+
+.main-view .side-nav a.btn,
+.main-view .side-nav a.btn-large,
+.main-view .side-nav a.btn-large,
+.main-view .side-nav a.btn-floating {
+  color: #fff;
+}
+
+.main-view .side-nav a.btn-flat {
+  color: #343434;
+}
+
+.main-view .side-nav a.btn:hover,
+.main-view .side-nav a.btn-large:hover,
+.main-view .side-nav a.btn-large:hover {
+  background-color: #2bbbad;
+}
+
+.main-view .side-nav a.btn-floating:hover {
+  background-color: #26a69a;
+}
+
+.main-view .drag-target {
+  height: 100%;
+  width: 10px;
+  position: fixed;
+  top: 0;
+  z-index: 998;
+}
+
+.main-view .side-nav.fixed a {
+  display: block;
+  padding: 0 30px;
+  color: #444;
+}
+
+.main-view .side-nav.fixed {
+  left: 0;
+  -webkit-transform: translateX(0);
+  transform: translateX(0);
+  position: fixed;
+}
+
+.main-view .side-nav .collapsible-body li.active,
+.main-view .side-nav.fixed .collapsible-body li.active {
+  background-color: #ee6e73;
+}
+
+.main-view .side-nav .collapsible-body li.active a,
+.main-view .side-nav.fixed .collapsible-body li.active a {
+  color: #fff;
+}
+
+/* Links
+   ========================================================================== */
+
+/**
+ * Remove the gray background color from active links in IE 10.
+ */
+
+/**
+ * Improve readability of focused elements when they are also in an
+ * active/hover state.
+ */
+
+.main-view a:active,
+.main-view a:hover {
+  outline: 0;
+}
+
+.main-view a {
+  background-color: transparent;
+  color: #039be5;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.main-view .collapsible.popout {
+  border: none;
+  box-shadow: none;
+}
+
+.main-view .action a {
+    font-style: italic;
+}
+

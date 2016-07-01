@@ -123,15 +123,17 @@ define([
         ];
     };
 
+    var MyPipelinesButtons = [
+        {
+            name: 'Create new pipeline',
+            icon: 'queue',
+            action: DeepForge.create.Pipeline
+        }
+    ];
+
     return {
-        // Meta nodes
-        MyPipelines_META: [
-            {
-                name: 'Create new pipeline',
-                icon: 'queue',
-                action: DeepForge.create.Pipeline
-            }
-        ],
+        HOME: MyPipelinesButtons,
+        MyPipelines_META: MyPipelinesButtons,
         MyArchitectures_META: [
             {
                 name: 'Create new architecture',
