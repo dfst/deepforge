@@ -11,12 +11,23 @@ define([
 ) {
     'use strict';
 
-    var createSearcher = function(plugin) {
+    var createSearcher = function(plugin, context) {
         var core = plugin.core,
             META = plugin.META,
             logger = plugin.logger.fork('nn'),
             parent = plugin.tgtNode,
-            LayerDict = createLayerDict(core, META);
+            LayerDict = createLayerDict(core, META),
+            helpers = context.__helpers,
+            oldSet = helpers.__set,
+            isSetting = false;
+
+        // Override the helper's '__set' method to detect
+        // if the code is in the middle of a "set".
+        helpers.__set = function() {
+            isSetting = true;
+            oldSet.apply(this, arguments);
+            isSetting = false;
+        };
 
         var connect = function(src, dst) {
             var conn = core.createNode({
@@ -145,6 +156,7 @@ define([
         var CreateLayer = function(type) {
             var res = luajs.newContext()._G,
                 attrs = [].slice.call(arguments, 1),
+                ltGet = luajs.types.LuaTable.prototype.get,
                 node;
 
             if (LAYERS[type]) {
@@ -165,6 +177,16 @@ define([
                     }
                 }
             }
+
+            // Override get
+            res.get = function noNilGet(value) {
+                var result = ltGet.call(this, value);
+                if (!result && !isSetting) {
+                    throw Error(`"${value}" is not supported for ${type}`);
+                }
+                return result;
+            };
+
             return res;
         };
 

@@ -2687,6 +2687,7 @@ function LuaContext(){
         }
         exports.stdlib(_G, helpers)();
     }
+    this.__helpers = helpers;
 }
 
 LuaContext.prototype = {}

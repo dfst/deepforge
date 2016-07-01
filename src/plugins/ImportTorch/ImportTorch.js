@@ -96,7 +96,7 @@ define([
     ImportTorch.prototype.loadNNMock = function () {
         // This needs a refactor...
         //   createNN(this)
-        var lib = createNNSearcher(this).bind(this.context);
+        var lib = createNNSearcher(this, this.context).bind(this.context);
 
         // Create a "searcher" to allow this 'nn' to be in the lib path
         this.context._G.get('package').set('searchers', [function(name) {
