@@ -36,6 +36,10 @@
       "ImportArtifact": {
         "src": "src/plugins/ImportArtifact",
         "test": "test/plugins/ImportArtifact"
+      },
+      "GenerateCriterion": {
+        "src": "src/plugins/GenerateCriterion",
+        "test": "test/plugins/GenerateCriterion"
       }
     },
     "layouts": {},

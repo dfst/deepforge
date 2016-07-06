@@ -40,7 +40,7 @@ define([
         var notTypes = ['Data', 'Operation', 'Pipeline'];
         return this._client.getAllMetaNodes()
             .filter(node => {
-                var plugins = node.getRegistry('validPlugins');
+                var plugins = node.getOwnRegistry('validPlugins');
                 // Convention is enforced; if the plugin generates lua artifacts,
                 // it should be called `Generate`.. (something)
                 return plugins && plugins.indexOf('Generate') !== -1;

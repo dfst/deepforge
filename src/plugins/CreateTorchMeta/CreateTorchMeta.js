@@ -86,8 +86,7 @@ define([
                 layers;
 
             try {
-                layers = JSON.parse(text)
-                    .filter(layer => layer.type !== 'Criterion');
+                layers = JSON.parse(text);
             } catch (e) {
                 return callback('JSON parse error: ' + e, this.result);
             }

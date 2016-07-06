@@ -617,5 +617,32 @@ define([
         }
     };
 
+    ////////////////////// Criterion Support //////////////////////
+    PipelineEditorControl.prototype._getValidTargetsFor = function (id, ptr) {
+        // Check if the pointer is a Criterion pointer -> if so, only show the meta types
+        // and the ones in the custom layer dir
+        var typeIds = this._client.getPointerMeta(id, ptr).items.map(item => item.id),
+            types = typeIds.map(id => this._client.getNode(id)),
+            criterion = types.find(node => node.getAttribute('name') === 'Criterion'),
+            items,
+            criterionId;
+
+        if (criterion) {
+            // Get all criterion types
+            criterionId = criterion.getId();
+            items = this._client.getAllMetaNodes().map(node => node.getId())
+                .filter(id => this._client.isTypeOf(id, criterionId));
+
+            return items.map(id => {
+                return {
+                    node: this._getObjectDescriptor(id)
+                };
+            });
+        } else {
+            return EasyDAGControl.prototype._getValidTargetsFor.apply(this, arguments);
+        }
+
+    };
+
     return PipelineEditorControl;
 });
