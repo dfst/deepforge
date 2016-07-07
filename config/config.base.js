@@ -16,6 +16,7 @@ config.plugin.allowBrowserExecution = true;
 config.plugin.allowServerExecution = true;
 
 config.executor.enable = true;
+config.executor.clearOldDataAtStartUp = true;
 
 config.visualization.extraCss.push('deepforge/styles/global.css');
 
