@@ -143,6 +143,7 @@ define([
             desc.attributes = {};
 
         } else if (desc.id === this._currentNodeId) {
+            desc.pointers = {};
             delete desc.attributes.code;
         }
 
