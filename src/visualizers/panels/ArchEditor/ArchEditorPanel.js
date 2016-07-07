@@ -5,13 +5,11 @@
  */
 
 define([
-    'js/PanelBase/PanelBaseWithHeader',
-    'js/PanelManager/IActivePanel',
+    'deepforge/viz/RenameablePanel',
     'widgets/ArchEditor/ArchEditorWidget',
     './ArchEditorControl'
 ], function (
-    PanelBaseWithHeader,
-    IActivePanel,
+    RenameablePanel,
     ArchEditorWidget,
     ArchEditorControl
 ) {
@@ -22,11 +20,11 @@ define([
     ArchEditorPanel = function (layoutManager, params) {
         var options = {};
         //set properties from options
-        options[PanelBaseWithHeader.OPTIONS.LOGGER_INSTANCE_NAME] = 'ArchEditorPanel';
-        options[PanelBaseWithHeader.OPTIONS.FLOATING_TITLE] = true;
+        options[RenameablePanel.OPTIONS.LOGGER_INSTANCE_NAME] = 'ArchEditorPanel';
+        options[RenameablePanel.OPTIONS.FLOATING_TITLE] = true;
 
         //call parent's constructor
-        PanelBaseWithHeader.apply(this, [options, layoutManager]);
+        RenameablePanel.apply(this, [options, layoutManager]);
 
         this._client = params.client;
         this._embedded = params.embedded;
@@ -37,9 +35,7 @@ define([
         this.logger.debug('ctor finished');
     };
 
-    //inherit from PanelBaseWithHeader
-    _.extend(ArchEditorPanel.prototype, PanelBaseWithHeader.prototype);
-    _.extend(ArchEditorPanel.prototype, IActivePanel.prototype);
+    _.extend(ArchEditorPanel.prototype, RenameablePanel.prototype);
 
     ArchEditorPanel.prototype._initialize = function () {
         var self = this;
@@ -60,6 +56,7 @@ define([
             widget: this.widget
         });
 
+        this.initializeRenameable();
         this.onActivate();
     };
 
@@ -67,7 +64,7 @@ define([
     /* METHOD CALLED WHEN THE WIDGET'S READ-ONLY PROPERTY CHANGES */
     ArchEditorPanel.prototype.onReadOnlyChanged = function (isReadOnly) {
         //apply parent's onReadOnlyChanged
-        PanelBaseWithHeader.prototype.onReadOnlyChanged.call(this, isReadOnly);
+        RenameablePanel.prototype.onReadOnlyChanged.call(this, isReadOnly);
 
     };
 
@@ -81,7 +78,7 @@ define([
         this.control.destroy();
         this.widget.destroy();
 
-        PanelBaseWithHeader.prototype.destroy.call(this);
+        RenameablePanel.prototype.destroy.call(this);
         WebGMEGlobal.KeyboardManager.setListener(undefined);
         WebGMEGlobal.Toolbar.refresh();
     };

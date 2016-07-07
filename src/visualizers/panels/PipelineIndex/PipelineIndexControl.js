@@ -43,7 +43,7 @@ define([
 
         this._widget.setName = (id, name) => {
             var oldName = this._client.getNode(id).getAttribute('name'),
-                msg = `Renaming pipeline: "${oldName}" -> "${name}"`;
+                msg = `Renaming Pipeline: "${oldName}" -> "${name}"`;
 
             if (oldName !== name && !/^\s*$/.test(name)) {
                 this._client.startTransaction(msg);

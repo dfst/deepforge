@@ -3,6 +3,7 @@
 
 define([
     'deepforge/globals',
+    'deepforge/viz/RenameablePanel',
     'panels/TilingViz/TilingVizPanel',
     'panels/OperationCodeEditor/OperationCodeEditorPanel',
     'panels/OperationInterfaceEditor/OperationInterfaceEditorPanel',
@@ -10,6 +11,7 @@ define([
     'underscore'
 ], function (
     DeepForge,
+    RenameablePanel,
     TilingViz,
     CodeEditor,
     InterfaceEditor,
@@ -33,29 +35,15 @@ define([
         this.control = this;
 
         // Set the editable title on node change
-        //var titleCntr = $();
-        this.$panelHeaderTitle.on('dblclick', this.editTitle.bind(this));
+        this.initializeRenameable();
     };
 
     //inherit from TilingViz
-    _.extend(OperationEditorPanel.prototype, TilingViz.prototype);
-
-    OperationEditorPanel.prototype.editTitle = function () {
-        this.$panelHeaderTitle.editInPlace({
-            css: {
-                'z-index': 1000
-            },
-            onChange: (oldValue, newValue) => {
-                var msg = `Renamed operation: ${oldValue} -> ${newValue}`;
-                if (!/^\s*$/.test(newValue)) {
-                    this._client.startTransaction(msg);
-                    this._client.setAttributes(this._currentNodeId, 'name',
-                        newValue);
-                    this._client.completeTransaction();
-                }
-            }
-        });
-    };
+    _.extend(
+        OperationEditorPanel.prototype,
+        RenameablePanel.prototype,
+        TilingViz.prototype
+    );
 
     OperationEditorPanel.prototype.selectedObjectChanged = function (id) {
         this._currentNodeId = id;
