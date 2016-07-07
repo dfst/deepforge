@@ -114,7 +114,7 @@ define([
                 this.onLoad(type, event.eid);
                 break;
             case CONSTANTS.TERRITORY_EVENT_UPDATE:
-                this._onUpdate(event.eid);
+                this._onUpdate(type, event.eid);
                 break;
             case CONSTANTS.TERRITORY_EVENT_UNLOAD:
                 this._onUnload(event.eid);
@@ -164,8 +164,8 @@ define([
     };
 
     /* * * * * * * * Node Event Handling * * * * * * * */
-    MainViewControl.prototype._onUpdate = function (gmeId) {
-        var description = this._getObjectDescriptor(gmeId);
+    MainViewControl.prototype._onUpdate = function (type, gmeId) {
+        var description = this._getObjectDescriptor(type, gmeId);
         this._widget.updateNode(description);
     };
 

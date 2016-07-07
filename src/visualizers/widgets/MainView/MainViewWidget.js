@@ -156,8 +156,13 @@ define([
     };
 
     MainViewWidget.prototype.updateNode = function (desc) {
-        if (this.htmlFor[desc.id]) {
-            this.htmlFor[desc.id].text(desc.name);
+        var oldHtml = this.htmlFor[desc.id],
+            node;
+
+        if (oldHtml) {
+            node = this.createNode(desc);
+            node.insertAfter(oldHtml);
+            oldHtml.remove();
         }
     };
 
