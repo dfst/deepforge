@@ -7,9 +7,9 @@ define([
     var OperationControl = function() {
     };
 
-    OperationControl.prototype.hasMetaName = function(id, name) {
+    OperationControl.prototype.hasMetaName = function(id, name, inclusive) {
         var node = this._client.getNode(id),
-            bId = node.getBaseId(),
+            bId = inclusive ? id : node.getBaseId(),
             baseName;
 
         while (bId) {

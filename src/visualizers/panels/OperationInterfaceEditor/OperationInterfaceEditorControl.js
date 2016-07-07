@@ -147,7 +147,7 @@ define([
         }
 
         // Extra decoration for data
-        if (this.hasMetaName(desc.id, 'Data')) {
+        if (this.hasMetaName(desc.id, 'Data', true)) {
             desc.color = this.getDescColor(gmeId);
             desc.isPrimitive = this.hasMetaName(gmeId, 'Primitive');
         }
@@ -155,8 +155,8 @@ define([
     };
 
     OperationInterfaceEditorControl.prototype.getDescColor = function(gmeId) {
-        return !this.hasMetaName(gmeId, 'Complex') ? COLORS.PRIMITIVE :
-            COLORS.COMPLEX;
+        return !this.hasMetaName(gmeId, 'Primitive', true) ? COLORS.COMPLEX :
+            COLORS.PRIMITIVE;
     };
 
     OperationInterfaceEditorControl.prototype._onUnload = function(gmeId) {

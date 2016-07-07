@@ -55,23 +55,28 @@ define([
             });
     };
 
-    OperationInterfaceEditorEvents.prototype.allDataTypeIds = function() {
-        return this.allDataTypes().map(node => node.getId());
+    OperationInterfaceEditorEvents.prototype.allDataTypeIds = function(incAbstract) {
+        return this.allDataTypes(incAbstract).map(node => node.getId());
     };
 
-    OperationInterfaceEditorEvents.prototype.allDataTypes = function() {
+    OperationInterfaceEditorEvents.prototype.allDataTypes = function(incAbstract) {
         return this._client.getAllMetaNodes()
-            .filter(node => this.hasMetaName(node.getId(), 'Data'))
+            .filter(node => this.hasMetaName(node.getId(), 'Data', incAbstract))
             .filter(node => !node.isAbstract());
     };
 
-    OperationInterfaceEditorEvents.prototype._getValidSuccessorNodes = function(nodeId) {
-        // Return all data types in the meta
+    OperationInterfaceEditorEvents.prototype._getValidSuccessorNodes = function(nodeId, isInput) {
+        var dataTypeIds;
+
         if (nodeId !== this._currentNodeId) {
             return [];
         }
 
-        return this.allDataTypeIds().map(id => {
+        // Return all data types in the meta
+        // If input, include abstract types
+        dataTypeIds = this.allDataTypeIds(isInput);
+
+        return dataTypeIds.map(id => {
             return {
                 node: this._getObjectDescriptor(id)
             };
