@@ -57,12 +57,17 @@ define([
 
         this.blobClient.getMetadata(srcHash)
             .then(mdata => {  // Create the new model
-                var name = mdata.name.replace('.lua', '');
-                this.tgtNode = this.core.createNode({
-                    base: this.META.Architecture,
-                    parent: this.activeNode
-                });
-                this.core.setAttribute(this.tgtNode, 'name', name);
+                // If the current node is an architecture, assume we are just extending it
+                this.importedName = mdata.name.replace('.lua', '');
+                if (this.isMetaTypeOf(this.activeNode, this.META.Architecture)) {
+                    this.tgtNode = this.activeNode;
+                } else {  // Create a new architecture
+                    this.tgtNode = this.core.createNode({
+                        base: this.META.Architecture,
+                        parent: this.activeNode
+                    });
+                    this.core.setAttribute(this.tgtNode, 'name', this.importedName);
+                }
                 return this.blobClient.getObjectAsString(srcHash);
             })
             .then(src => {  // Retrieved the source code
@@ -81,7 +86,7 @@ define([
                 return this.save('ImportTorch updated model.');
             })
             .then(() => {  // changes saved successfully
-                var name = this.core.getAttribute(this.tgtNode, 'name');
+                var name = this.importedName;
                 this.result.setSuccess(true);
                 this.createMessage(this.tgtNode,
                     `Successfully imported ${name} architecture`);

@@ -208,6 +208,13 @@ define([
                     this.addOperation();
                 }
             }
+        ],
+        Architecture: [
+            {
+                name: 'Import Torch Architecture',
+                icon: 'swap_vert',
+                action: importTorch
+            }
         ]
     };
 });
