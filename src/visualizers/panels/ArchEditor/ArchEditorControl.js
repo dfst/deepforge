@@ -104,10 +104,50 @@ define([
             .filter(layer => layer.layerType !== 'Criterion');
     };
 
-    ArchEditorControl.prototype._getValidSuccessorNodes = function(id) {
-        return EasyDAGControl.prototype._getValidSuccessorNodes.call(this, id)
-            // Remove the Criterion layers
-            .filter(pair => pair.node.layerType !== 'Criterion');
+    ArchEditorControl.prototype._getValidSuccessorNodes =
+    ArchEditorControl.prototype._getValidInitialNodes =
+    ArchEditorControl.prototype.getNonCriterionLayers = function() {
+        // Return all (non-criterion) layer types
+        var metanodes = this._client.getAllMetaNodes(),
+            layerId,
+            criterionId,
+            allLayerIds = [],
+            layers = [],
+            i;
+
+        for (i = metanodes.length; i--;) {
+            if (metanodes[i].getAttribute('name') === 'Layer') {
+                layerId = metanodes[i].getId();
+                break;
+            }
+        }
+
+        for (i = metanodes.length; i--;) {
+            if (layerId) {
+                if (!metanodes[i].isAbstract() &&
+                    this._client.isTypeOf(metanodes[i].getId(), layerId)) {
+
+                    if (metanodes[i].getAttribute('name') === 'Criterion') {
+                        criterionId = metanodes[i].getId();
+                    } else {
+                        allLayerIds.push(metanodes[i].getId());
+                    }
+                }
+            }
+        }
+
+        // Remove all criterion layers and abstract layers
+        for (i = allLayerIds.length; i--;) {
+            if (!this._client.isTypeOf(allLayerIds[i], criterionId)) {
+                layers.push({node: this._getObjectDescriptor(allLayerIds[i])});
+            }
+        }
+
+        return layers;
+    };
+
+    ArchEditorControl.prototype._isValidTerminalNode = function() {
+        return true;
     };
 
     // Widget extensions
