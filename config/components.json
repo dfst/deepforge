@@ -3,6 +3,9 @@
         "hotkeys": "none",
         "LayerColors": {}
     },
+    "BreadcrumbHeader": {
+        "pathRule": "history"
+    },
     "FloatingActionButton": {
         "hideOnEmpty": true
     },

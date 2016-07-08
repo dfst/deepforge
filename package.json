@@ -16,7 +16,7 @@
     "nodemon": "^1.9.2",
     "webgme": "^2.0.0",
     "webgme-autoviz": "^2.0.3",
-    "webgme-breadcrumbheader": "^2.0.0",
+    "webgme-breadcrumbheader": "^2.1.0",
     "webgme-chflayout": "^2.0.0",
     "webgme-easydag": "dfst/webgme-easydag",
     "webgme-fab": "dfst/webgme-fab",
