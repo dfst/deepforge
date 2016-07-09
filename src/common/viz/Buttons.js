@@ -1,8 +1,10 @@
 /*globals define, WebGMEGlobal*/
 define([
-    'widgets/EasyDAG/Buttons'
+    'widgets/EasyDAG/Buttons',
+    'widgets/EasyDAG/Icons'
 ], function(
-    EasyDAGButtons
+    EasyDAGButtons,
+    Icons
 ) {
 
     // Create a GoToBase button
@@ -20,18 +22,16 @@ define([
     };
 
     GoToBase.SIZE = 10;
-    GoToBase.BORDER = 5;
-    GoToBase.prototype.BTN_CLASS = 'add';
+    GoToBase.BORDER = 1;
+    GoToBase.prototype.BTN_CLASS = 'go-to-base';
     GoToBase.prototype = new EasyDAGButtons.ButtonBase();
 
     GoToBase.prototype._render = function() {
         var lineRadius = GoToBase.SIZE - GoToBase.BORDER,
-            btnColor = '#90caf9',
-            lineColor = '#7986cb';
+            btnColor = '#90caf9';
 
         if (this.disabled) {
             btnColor = '#e0e0e0';
-            lineColor = '#9e9e9e';
         }
 
         this.$el
@@ -39,21 +39,10 @@ define([
             .attr('r', GoToBase.SIZE)
             .attr('fill', btnColor);
 
-        this.$el
-            .append('circle')
-                .attr('r', GoToBase.SIZE/3)
-                .attr('stroke-width', 3)
-                .attr('stroke', lineColor);
-
-        this.$el
-            .append('line')
-                .attr('y1', 0)
-                .attr('y2', 0)
-                .attr('x1', -lineRadius)
-                .attr('x2', lineRadius)
-                .attr('stroke-width', 3)
-                .attr('stroke', lineColor);
-
+        // Show the 'code' icon
+        Icons.addIcon('code', this.$el, {
+            radius: lineRadius
+        });
     };
 
     GoToBase.prototype._onClick = function(item) {

@@ -24,6 +24,7 @@ define([
             context: this._widget,
             $pEl: this.$selection,
             item: this.selectedItem,
+            icon: 'monitor',
             x: width,
             y: 0
         });

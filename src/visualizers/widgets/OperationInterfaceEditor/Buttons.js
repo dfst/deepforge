@@ -2,10 +2,12 @@
 define([
     'deepforge/viz/Buttons',
     'widgets/EasyDAG/Buttons',
+    'widgets/EasyDAG/Icons',
     'underscore'
 ], function(
     CommonButtons,
     EasyDAGButtons,
+    Icons,
     _
 ) {
 
@@ -15,14 +17,13 @@ define([
 
     _.extend(AddOutput.prototype, EasyDAGButtons.Add.prototype);
 
+    AddOutput.BORDER = 2;
     AddOutput.prototype._render = function() {
-        var lineRadius = EasyDAGButtons.Add.SIZE - EasyDAGButtons.Add.BORDER,
-            btnColor = '#90caf9',
-            lineColor = '#7986cb';
+        var lineRadius = EasyDAGButtons.Add.SIZE - AddOutput.BORDER,
+            btnColor = '#90caf9';
 
         if (this.disabled) {
             btnColor = '#e0e0e0';
-            lineColor = '#9e9e9e';
         }
 
         this.$el
@@ -30,34 +31,7 @@ define([
             .attr('r', EasyDAGButtons.Add.SIZE)
             .attr('fill', btnColor);
 
-        this.$el
-            .append('line')
-                .attr('x1', 0)
-                .attr('x2', 0)
-                .attr('y1', -lineRadius)
-                .attr('y2', lineRadius)
-                .attr('stroke-width', 2)
-                .attr('stroke', lineColor);
-
-        // Arrow
-        this.$el
-            .append('line')
-                .attr('y1', lineRadius)
-                .attr('y2', 0)
-                .attr('x1', 0)
-                .attr('x2', -lineRadius)
-                .attr('stroke-width', 2)
-                .attr('stroke', lineColor);
-
-        this.$el
-            .append('line')
-                .attr('y1', lineRadius)
-                .attr('y2', 0)
-                .attr('x1', 0)
-                .attr('x2', lineRadius)
-                .attr('stroke-width', 2)
-                .attr('stroke', lineColor);
-
+        Icons.addIcon('chevron-bottom', this.$el, {radius: lineRadius});
     };
 
     var AddInput = function(params) {
@@ -82,12 +56,10 @@ define([
 
     AddRef.prototype._render = function() {
         var lineRadius = EasyDAGButtons.Add.SIZE - EasyDAGButtons.Add.BORDER,
-            btnColor = '#81c784',
-            lineColor = '#7986cb';
+            btnColor = '#80deea';
 
         if (this.disabled) {
             btnColor = '#e0e0e0';
-            lineColor = '#9e9e9e';
         }
 
         this.$el
@@ -95,24 +67,7 @@ define([
             .attr('r', EasyDAGButtons.Add.SIZE)
             .attr('fill', btnColor);
 
-        this.$el
-            .append('line')
-                .attr('x1', 0)
-                .attr('x2', 0)
-                .attr('y1', -lineRadius)
-                .attr('y2', lineRadius)
-                .attr('stroke-width', 2.5)
-                .attr('stroke', lineColor);
-
-        this.$el
-            .append('line')
-                .attr('y1', 0)
-                .attr('y2', 0)
-                .attr('x1', -lineRadius)
-                .attr('x2', lineRadius)
-                .attr('stroke-width', 2.5)
-                .attr('stroke', lineColor);
-
+        Icons.addIcon('plus', this.$el, {radius: lineRadius});
     };
 
     var Delete = function(params) {
