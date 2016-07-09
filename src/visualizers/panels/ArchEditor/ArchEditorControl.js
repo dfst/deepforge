@@ -43,8 +43,13 @@ define([
     };
 
     ArchEditorControl.prototype.selectedObjectChanged = function(id) {
-        DeepForge.last.Architecture = id;
         EasyDAGControl.prototype.selectedObjectChanged.call(this, id);
+
+        DeepForge.last.Architecture = id;
+        if (typeof id === 'string') {
+            var name = this._client.getNode(id).getAttribute('name');
+            this._widget.setTitle(name);
+        }
     };
 
     ArchEditorControl.prototype._getObjectDescriptor = function(id) {
