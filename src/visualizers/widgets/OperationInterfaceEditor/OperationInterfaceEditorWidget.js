@@ -49,7 +49,7 @@ define([
     };
 
     OperationInterfaceEditorWidget.prototype.onAddButtonClicked = function(item, isInput) {
-        var successorPairs = this.getValidSuccessorNodes(item.id, isInput),
+        var successorPairs = this.getValidSuccessors(item.id, isInput),
             newClass = this.getCreationNode('Complex', NEW_CLASS_ID),
             newPrim = this.getCreationNode('Primitive', NEW_PRIM_ID),
             opts = {};

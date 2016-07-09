@@ -65,7 +65,7 @@ define([
             .filter(node => !node.isAbstract());
     };
 
-    OperationInterfaceEditorEvents.prototype._getValidSuccessorNodes = function(nodeId, isInput) {
+    OperationInterfaceEditorEvents.prototype.getValidSuccessors = function(nodeId, isInput) {
         var dataTypeIds;
 
         if (nodeId !== this._currentNodeId) {

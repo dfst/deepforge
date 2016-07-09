@@ -33,19 +33,16 @@ define([
     ArchEditorWidget.prototype.ItemClass = Layer;
 
     ArchEditorWidget.prototype.onCreateInitialNode = function() {
-        var nodes = this.getValidInitialNodes().map(node => {
-            return {
-                node: node
-            };
-        });
+        var nodes = this.getValidInitialNodes();
         return this.promptLayer(nodes)
             .then(selected => this.createNode(selected.node.id));
     };
 
-    ArchEditorWidget.prototype.onAddButtonClicked = function(item) {
-        var nodes = this.getValidSuccessorNodes(item.id);
+    ArchEditorWidget.prototype.onAddButtonClicked = function(item, reverse) {
+        var nodes = this.getValidSuccessors(item.id);
+
         return this.promptLayer(nodes)
-            .then(selected => this.onAddItemSelected(item, selected));
+            .then(selected => this.onAddItemSelected(item, selected, reverse));
     };
 
     ArchEditorWidget.prototype.promptLayer = function(nodes) {

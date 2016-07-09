@@ -26,15 +26,18 @@ define([
             x: 0,
             y: 0
         });
-        // If the operation has a user-defined base type,
-        // show a button for jumping to the base def
-        new Buttons.GoToBase({
-            context: this._widget,
-            $pEl: this.$selection,
-            item: this.selectedItem,
-            x: width,
-            y: 0
-        });
+
+        if (!this.selectedItem.isConnection) {
+            // If the operation has a user-defined base type,
+            // show a button for jumping to the base def
+            new Buttons.GoToBase({
+                $pEl: this.$selection,
+                context: this._widget,
+                item: this.selectedItem,
+                x: width,
+                y: 0
+            });
+        }
     };
 
     SelectionManager.prototype.deselect = function() {
