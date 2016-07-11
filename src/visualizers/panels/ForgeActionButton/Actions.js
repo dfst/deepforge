@@ -103,6 +103,9 @@ define([
                 name: `Return to ${fromType}`,
                 icon: 'input',
                 priority: 2,
+                filter: () => {
+                    return DeepForge.last[fromType];
+                },
                 action: returnToLast.bind(null, fromType)
             },
             {

@@ -140,7 +140,6 @@ define([
         // Remove the territory
         client.removeUI(placesTerritoryId);
         placesTerritoryId = null;
-        initializePrevLocations();
     };
 
     //////////////////// DeepForge creation actions ////////////////////
@@ -266,6 +265,7 @@ define([
         });
     };
 
+    DeepForge.last = {};
     DeepForge.create  = {};
     instances.forEach(type => {
         DeepForge.create[type] = function() {
@@ -283,13 +283,6 @@ define([
     DeepForge.create.Artifact = uploadArtifact;
 
     //////////////////// DeepForge prev locations ////////////////////
-    var initializePrevLocations = function() {
-        DeepForge.last = {};
-        Object.keys(TYPE_TO_CONTAINER).forEach(type =>
-            DeepForge.last[type] = DeepForge.places[TYPE_TO_CONTAINER[type]]
-        );
-    };
-    
     // Update DeepForge on project changed
     WebGMEGlobal.State.on('change:' + CONSTANTS.STATE_ACTIVE_PROJECT_NAME,
         updateDeepForgeNamespace, null);
