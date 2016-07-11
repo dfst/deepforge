@@ -743,9 +743,19 @@ define([
                 tplContents = inputs.map(pair => {
                     var name = pair[0],
                         node = pair[2],
-                        deserFn = this.core.getAttribute(node, 'deserialize'),
+                        nodeId = this.core.getPath(node),
+                        fromNodeId,
+                        fromNode,
+                        deserFn,
                         base,
                         className;
+
+                    // Get the deserialize function. First, try to get it from
+                    // the source method (this guarantees that the correct
+                    // deserialize method is used despite any auto-upcasting
+                    fromNodeId = this.inputPortsFor[nodeId][0] || nodeId;
+                    fromNode = this.nodes[fromNodeId];
+                    deserFn = this.core.getAttribute(fromNode, 'deserialize');
 
                     if (this.isMetaTypeOf(node, this.META.Complex)) {
                         // Complex objects are expected to define their own
