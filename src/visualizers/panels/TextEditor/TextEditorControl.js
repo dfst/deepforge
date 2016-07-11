@@ -178,6 +178,10 @@ define([
     TextEditorControl.prototype.destroy = function () {
         this._detachClientEventListeners();
         this._removeToolbarItems();
+
+        if (this._territoryId) {
+            this._client.removeUI(this._territoryId);
+        }
     };
 
     TextEditorControl.prototype._attachClientEventListeners = function () {
