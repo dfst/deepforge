@@ -29,7 +29,7 @@ define([
     // input/output updates are actually activeNode updates
     ClassCodeEditorControl.prototype._onUpdate = function (id) {
         if (id === this._currentNodeId) {
-            TextEditorControl.prototype._onUpdate.call(this, this._currentNodeId);
+            TextEditorControl.prototype._onUpdate.call(this, id);
         }
     };
 

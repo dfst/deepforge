@@ -2,10 +2,10 @@
 /*jshint browser: true*/
 
 define([
-    'panels/TextEditor/TextEditorControl',
+    'panels/SerializeEditor/SerializeEditorControl',
     'underscore'
 ], function (
-    TextEditorControl,
+    SerializeEditorControl,
     _
 ) {
 
@@ -15,20 +15,13 @@ define([
 
     DeserializeEditorControl = function (options) {
         options.attributeName = 'deserialize';
-        TextEditorControl.call(this, options);
+        SerializeEditorControl.call(this, options);
     };
 
     _.extend(
         DeserializeEditorControl.prototype,
-        TextEditorControl.prototype
+        SerializeEditorControl.prototype
     );
-
-    // input/output updates are actually activeNode updates
-    DeserializeEditorControl.prototype._onUpdate = function (id) {
-        if (id === this._currentNodeId) {
-            TextEditorControl.prototype._onUpdate.call(this, this._currentNodeId);
-        }
-    };
 
     return DeserializeEditorControl;
 });

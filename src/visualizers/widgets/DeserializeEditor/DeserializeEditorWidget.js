@@ -6,11 +6,11 @@
  */
 
 define([
-    'widgets/TextEditor/TextEditorWidget',
+    'widgets/SerializeEditor/SerializeEditorWidget',
     'underscore',
     'css!./styles/DeserializeEditorWidget.css'
 ], function (
-    TextEditorWidget,
+    SerializeEditorWidget,
     _
 ) {
     'use strict';
@@ -19,10 +19,10 @@ define([
         //WIDGET_CLASS = 'deserialize-editor';
 
     DeserializeEditorWidget = function (logger, container) {
-        TextEditorWidget.call(this, logger, container);
+        SerializeEditorWidget.call(this, logger, container);
     };
 
-    _.extend(DeserializeEditorWidget.prototype, TextEditorWidget.prototype);
+    _.extend(DeserializeEditorWidget.prototype, SerializeEditorWidget.prototype);
 
     DeserializeEditorWidget.prototype.getHeader = function(desc) {
         return [
@@ -34,8 +34,8 @@ define([
         ].join('\n');
     };
 
-    DeserializeEditorWidget.prototype.updateNode = function() {
-        // nop
+    DeserializeEditorWidget.prototype.getNameRegex = function() {
+        return /The deserialization function for (.*)/;
     };
 
     return DeserializeEditorWidget;

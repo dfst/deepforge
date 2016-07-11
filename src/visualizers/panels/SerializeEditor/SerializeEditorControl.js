@@ -16,6 +16,7 @@ define([
     SerializeEditorControl = function (options) {
         options.attributeName = 'serialize';
         TextEditorControl.call(this, options);
+        this._widget.setName = this.setName.bind(this);
     };
 
     _.extend(
