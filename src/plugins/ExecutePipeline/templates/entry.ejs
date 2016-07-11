@@ -1,7 +1,7 @@
 -- run the <%= name %> and serialize the results
-print('\n############### Running "<%= name %>" Operation ############### ')
+print('\n############### Running "<%= name.replace(/'/g, '\\\'') %>" Operation ############### ')
 results = require './main'
-print('############### "<%= name %>" Operation Complete! ###############')
+print('############### "<%= name.replace(/'/g, '\\\'') %>" Operation Complete! ###############')
 
 -- serialize by type
 outputs = require './outputs'
