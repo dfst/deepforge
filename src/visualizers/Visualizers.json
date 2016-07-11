@@ -36,45 +36,9 @@
     "DEBUG_ONLY": false
   },
   {
-    "id": "TilingViz",
-    "title": "TilingViz",
-    "panel": "panels/TilingViz/TilingVizPanel",
-    "DEBUG_ONLY": false
-  },
-  {
-    "id": "OperationCodeEditor",
-    "title": "OperationCodeEditor",
-    "panel": "panels/OperationCodeEditor/OperationCodeEditorPanel",
-    "DEBUG_ONLY": false
-  },
-  {
-    "id": "OperationInterfaceEditor",
-    "title": "OperationInterfaceEditor",
-    "panel": "panels/OperationInterfaceEditor/OperationInterfaceEditorPanel",
-    "DEBUG_ONLY": false
-  },
-  {
     "id": "DataTypeEditor",
     "title": "DataTypeEditor",
     "panel": "panels/DataTypeEditor/DataTypeEditorPanel",
-    "DEBUG_ONLY": false
-  },
-  {
-    "id": "SerializeEditor",
-    "title": "SerializeEditor",
-    "panel": "panels/SerializeEditor/SerializeEditorPanel",
-    "DEBUG_ONLY": false
-  },
-  {
-    "id": "DeserializeEditor",
-    "title": "DeserializeEditor",
-    "panel": "panels/DeserializeEditor/DeserializeEditorPanel",
-    "DEBUG_ONLY": false
-  },
-  {
-    "id": "Footer",
-    "title": "Footer",
-    "panel": "panels/Footer/FooterPanel",
     "DEBUG_ONLY": false
   },
   {

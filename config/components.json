@@ -1,4 +1,12 @@
 {
+    "AutoViz": {
+        "preloadIds": [
+            "ArchEditor",
+            "PipelineEditor",
+            "OperationEditor",
+            "ExecutionView"
+        ]
+    },
     "ArchEditor": {
         "hotkeys": "none",
         "LayerColors": {}
