@@ -72,6 +72,8 @@ define([
         var desc = EasyDAGControl.prototype._getObjectDescriptor.call(this, id),
             node = this._client.getNode(id);
 
+        desc.inputs = [];
+        desc.outputs = [];
         if (this.hasMetaName(id, 'Operation')) {
             // Only decorate operations in the currently active node
             if (this._currentNodeId !== desc.parentId) {
