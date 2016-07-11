@@ -557,10 +557,13 @@ define([
                 // Create new metadata for each
                 artifacts.forEach((artifact, i) => {
                     var name = outputs[i][0],
-                        hash = artifact.descriptor.content[`outputs/${name}`].content;
+                        outputData = artifact.descriptor.content[`outputs/${name}`],
+                        hash = outputData && outputData.content;
 
-                    this.core.setAttribute(outputMap[name], 'data', hash);
-                    this.logger.info(`Setting ${nodeId} data to ${hash}`);
+                    if (hash) {
+                        this.core.setAttribute(outputMap[name], 'data', hash);
+                        this.logger.info(`Setting ${nodeId} data to ${hash}`);
+                    }
                 });
 
                 return this.onOperationComplete(node);
@@ -831,7 +834,7 @@ define([
                         if (this.isMetaTypeOf(node, this.META.Complex)) {
                             // Complex objects are expected to define their own
                             // serialize methods
-                            serFn = 'data:serialize(path)';
+                            serFn = 'if data ~= nil then data:serialize(path) end';
                         }
 
                         return [tuple[1], serFn];
@@ -873,11 +876,6 @@ define([
             .then(outputs => {
                 var name = this.core.getAttribute(node, 'name'),
                     content = {};
-
-                // sort the outputs by the return values?
-                if (outputs.length > 1) {
-                    this.logger.error('Multiple outputs not yet supported!');
-                }
 
                 // inputs and outputs
                 content.name = name;
