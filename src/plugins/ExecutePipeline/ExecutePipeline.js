@@ -912,13 +912,20 @@ define([
     };
 
     ExecutePipeline.prototype.createAttributeFile = function (node, files) {
-        var skip = ['outputs', 'inputs'],
+        var skip = ['code'],
+            numRegex = /^\d+\.?\d*((e|e-)\d+)?$/,
             table;
 
         this.logger.info('Creating attributes file...');
         table = '{\n\t' + this.core.getAttributeNames(node)
             .filter(attr => skip.indexOf(attr) === -1)
-            .map(name => [name, JSON.stringify(this.core.getAttribute(node, name))])
+            .map(name => {
+                var value = this.core.getAttribute(node, name);
+                if (!numRegex.test(value)) {
+                    value = `"${value}"`;
+                }
+                return [name, value];
+            })
             .map(pair => pair.join(' = '))
             .join(',\n\t') + '\n}';
 
