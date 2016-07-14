@@ -53,6 +53,7 @@ command -v node >/dev/null 2>&1 || {
     echo >&2 "NodeJS is not found. Installing (using nvm)...";
     curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.31.1/install.sh | bash;
     source $DETECTED_PROFILE
+    . $NVM_DIR/nvm.sh
 
     # Install nodejs v6.2.0
     echo "Installing nodejs v6.2.0"
@@ -61,7 +62,6 @@ command -v node >/dev/null 2>&1 || {
 
     # Install npm@2
     npm install npm@2 -g
-
 }
 
 command -v node >/dev/null 2>&1 || {
@@ -69,8 +69,35 @@ command -v node >/dev/null 2>&1 || {
     echo >&2 "MongoDB is not found. Installing...";
     if [[ `uname` == "Darwin" ]]; then
         brew install mongodb
-    else
-        NEEDS_MONGO=true
+    elif [[ "$(uname)" == 'Linux' ]]; then
+
+        if [[ -r /etc/os-release ]]; then
+            # this will get the required information without dirtying any env state
+            DIST_VERS="$( ( . /etc/os-release &>/dev/null
+                            echo "$ID $VERSION_ID") )"
+            DISTRO="${DIST_VERS%% *}" # get our distro name
+            VERSION="${DIST_VERS##* }" # get our version number
+        elif [[ -r /etc/lsb-release ]]; then
+            DIST_VERS="$( ( . /etc/lsb-release &>/dev/null
+                            echo "${DISTRIB_ID,,} $DISTRIB_RELEASE") )"
+            DISTRO="${DIST_VERS%% *}" # get our distro name
+            VERSION="${DIST_VERS##* }" # get our version number
+        else # well, I'm out of ideas for now
+            echo '==> Failed to determine distro and version.'
+            exit 1
+        fi
+
+        # Detect archlinux
+        if [[ "$DISTRO" = "arch" ]]; then
+            distribution="archlinux"
+            sudo pacman -S mongodb
+        # Detect Ubuntu
+        elif [[ "$DISTRO" = "ubuntu" ]]; then
+            export DEBIAN_FRONTEND=noninteractive
+            sudo apt-get install mongodb
+        else
+            NEEDS_MONGO=true
+        fi
     fi
 }
 
@@ -83,16 +110,17 @@ npm install
 
 mkdir ~/deepforge/data 2> /dev/null
 
+echo "Final Installation steps:"
+echo "  1) Close and re-open your terminal"
+echo "     (or run \"source $DETECTED_PROFILE\")"
+
 if [[ $NEEDS_MONGO ]]; then
-    echo "DeepForge is installed! To run it:"
-    echo "  1) Install MongoDB for your OS"
+    echo "  2) Install MongoDB for your OS"
     echo "     (available at https://www.mongodb.com/download-center)"
-    echo "  2) make sure MongoDB is running locally"
-    echo "     (start mongo w/ \"mongod --dbpath ~/deepforge/data\")"
-    echo "  3) Run \"npm run local\" from ~/deepforge"
-else
-    echo "DeepForge is installed! To run it:"
-    echo "  1) make sure MongoDB is running locally"
-    echo "     (start mongo w/ \"mongod --dbpath ~/deepforge/data\")"
-    echo "  2) Run \"npm run local\" from ~/deepforge"
 fi
+
+echo ""
+echo "Then run DeepForge!"
+echo "  1) make sure MongoDB is running locally"
+echo "     (start mongo w/ \"mongod --dbpath ~/deepforge/data\")"
+echo "  2) Run \"npm run local\" from ~/deepforge"
