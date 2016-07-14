@@ -47,24 +47,14 @@ define([
     };
 
     OperationDecorator.prototype.condense = function() {
-        var path,
-            width,
-            rx;
-
-        width = Math.max(this.nameWidth + 2 * NAME_MARGIN, this.dense.width);
-        rx = width/2;
-
-        path = [
-            `M${-rx},0`,
-            `l ${width} 0`,
-            `l 0 ${this.dense.height}`,
-            `l -${width} 0`,
-            `l 0 -${this.dense.height}`
-        ].join(' ');
-
+        var width = Math.max(this.nameWidth + 2 * NAME_MARGIN, this.dense.width);
 
         this.$body
-            .attr('d', path);
+            .transition()
+            .attr('x', -width/2)
+            .attr('y', 0)
+            .attr('width', width)
+            .attr('height', this.dense.height);
 
         // Clear the attributes
         this.$attributes.remove();
