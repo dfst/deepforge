@@ -1,10 +1,6 @@
 /*globals define, _, Opentip*/
 /*jshint browser: true, camelcase: false*/
 
-/**
- * @author brollb / https://github.com/brollb
- */
-
 define([
     'decorators/EllipseDecorator/EasyDAG/EllipseDecorator.EasyDAGWidget',
     'css!./OperationDecorator.EasyDAGWidget.css'
@@ -57,9 +53,12 @@ define([
             .attr('height', this.dense.height);
 
         // Clear the attributes
-        this.$attributes.remove();
+        this.clearFields();
         this.$attributes = this.$el.append('g')
-            .attr('fill', '#222222');
+            .attr('fill', 'none');
+
+        this.createAttributeFields(0, width);
+        this.createPointerFields(0, width, true);
 
         this.height = this.dense.height;
         this.width = width;
