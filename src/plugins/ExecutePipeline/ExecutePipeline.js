@@ -4,6 +4,7 @@
 define([
     'plugin/CreateExecution/CreateExecution/CreateExecution',
     'deepforge/plugin/PtrCodeGen',
+    'common/storage/constants',
     'common/core/constants',
     'q',
     'text!./metadata.json',
@@ -14,6 +15,7 @@ define([
 ], function (
     CreateExecution,
     PtrCodeGen,
+    STORAGE_CONSTANTS,
     CONSTANTS,
     Q,
     pluginMetadata,
@@ -134,7 +136,14 @@ define([
         // When 'save'  is called, it should still finish any current save op
         // before continuing
         this._currentSave = this._currentSave
-            .then(() => CreateExecution.prototype.save.call(this, msg));
+            .then(() => CreateExecution.prototype.save.call(this, msg))
+            .then(result => {
+                var msg;
+                if (result.status === STORAGE_CONSTANTS.FORKED) {
+                    msg = `"${this.pipelineName}" execution has forked to "${result.forkName}"`;
+                    this.sendNotification(msg);
+                }
+            });
 
         return this._currentSave;
     };
