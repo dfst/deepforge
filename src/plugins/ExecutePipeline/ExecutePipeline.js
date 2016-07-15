@@ -105,10 +105,9 @@ define([
             startPromise = this.createExecution(this.activeNode)
                 .then(execNode => {
                     this.activeNode = execNode;
-                    return this.core.loadSubTree(this.activeNode);
                 });
         } else if (this.core.isTypeOf(this.activeNode, this.META.Execution)) {
-            startPromise = this.core.loadSubTree(this.activeNode);
+            startPromise = Q();
         } else {
             return callback('Current node is not a Pipeline or Execution!', this.result);
         }
@@ -117,7 +116,9 @@ define([
         this.debug = true;  // this.getCurrentConfig().debug;
         this._callback = callback;
 
-        startPromise.then(subtree => {
+        startPromise
+        .then(() => this.core.loadSubTree(this.activeNode))
+        .then(subtree => {
             var children = subtree
                 .filter(n => this.core.getParent(n) === this.activeNode);
 
@@ -131,11 +132,28 @@ define([
         .fail(e => this.logger.error(e));
     };
 
+    ExecutePipeline.prototype.updateForkName = function () {
+        var basename = this.pipelineName + '_fork';
+        return this.project.getBranches().then(branches => {
+            var names = Object.keys(branches),
+                name = basename,
+                i = 2;
+
+            while (names.indexOf(name) !== -1) {
+                name = basename + '_' + i;
+                i++;
+            }
+
+            this.forkName = name;
+        });
+    };
+
     // Override 'save' to prevent race conditions while saving
     ExecutePipeline.prototype.save = function (msg) {
         // When 'save'  is called, it should still finish any current save op
         // before continuing
         this._currentSave = this._currentSave
+            .then(() => this.updateForkName())
             .then(() => CreateExecution.prototype.save.call(this, msg))
             .then(result => {
                 var msg;
