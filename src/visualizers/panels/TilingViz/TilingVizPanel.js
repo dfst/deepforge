@@ -57,6 +57,7 @@ define([
                 (model, nodeId) => this.selectedObjectChanged(nodeId)
             );
         }
+        this.$el.css({padding: 0});
 
         if (panels.length > 2) {
             this.logger.error(`Unsupported number of panels (${panels.length})`);
