@@ -9,6 +9,7 @@
 define([
     'panels/EasyDAG/EasyDAGControl',
     'js/Constants',
+    'deepforge/lua',
     'deepforge/viz/OperationControl',
     './OperationInterfaceEditorControl.EventHandlers',
     './Colors',
@@ -16,6 +17,7 @@ define([
 ], function (
     EasyDAGControl,
     CONSTANTS,
+    luajs,
     OperationControl,
     OperationInterfaceEditorControlEvents,
     COLORS,
@@ -32,6 +34,8 @@ define([
         OperationInterfaceEditorControlEvents.call(this);
         this._connections = {};
         this._pointers = {};
+
+        this._usage = {};  // info about input usage
     };
 
     _.extend(
@@ -151,6 +155,13 @@ define([
         if (this.hasMetaName(desc.id, 'Data', true)) {
             desc.color = this.getDescColor(gmeId);
             desc.isPrimitive = this.hasMetaName(gmeId, 'Primitive');
+
+            if (desc.container === 'inputs') {
+                desc.used = this.isUsedInCode(desc.name);
+                this._usage[desc.id] = desc.used;
+            } else {
+                desc.used = true;
+            }
         }
         return desc;
     };
@@ -166,6 +177,7 @@ define([
         if (conn) {
             this._widget.removeNode(conn.id);
         }
+        delete this._usage[gmeId];
     };
 
     OperationInterfaceEditorControl.prototype._onLoad = function(gmeId) {
@@ -185,11 +197,32 @@ define([
     };
 
     OperationInterfaceEditorControl.prototype._onUpdate = function(gmeId) {
+        var inputIds,
+            wasUsed,
+            isUsed,
+            name,
+            ast,
+            code;
+
         if (gmeId === this._currentNodeId) {
             EasyDAGControl.prototype._onUpdate.call(this, gmeId);
 
             // Update the valid pointers
             this.updatePtrs();
+
+            // Update the remaining usage info
+            inputIds = Object.keys(this._usage);
+            code = this._client.getNode(this._currentNodeId).getAttribute('code');
+            ast = luajs.parser.parse(code);
+            for (var i = inputIds.length; i--;) {
+                wasUsed = this._usage[inputIds[i]];
+                name = this._client.getNode(inputIds[i]).getAttribute('name');
+
+                isUsed = this.isUsedInCode(name, ast);
+                if (isUsed !== wasUsed) {
+                    this._onUpdate(inputIds[i]);
+                }
+            }
 
         } else if (this.containedInCurrent(gmeId) && this.hasMetaName(gmeId, 'Data')) {
             EasyDAGControl.prototype._onUpdate.call(this, gmeId);
@@ -214,6 +247,7 @@ define([
             isPointer: true,
             baseName: target.getAttribute('name'),
             Decorator: Decorator,
+            used: this.isUsedInCode(name),
             attributes: {},
             name: name,
             parentId: this._currentNodeId
@@ -295,6 +329,40 @@ define([
         this._connections[desc.id] = conn;
 
         return conn;
+    };
+
+    ////////////////////// Unused input checking //////////////////////
+    OperationInterfaceEditorControl.prototype.isUsedInCode = function(name, ast) {
+        var code = this._client.getNode(this._currentNodeId).getAttribute('code'),
+            r = new RegExp('\\b' + name + '\\b'),
+            hasText = code.match(r) !== null;
+
+        // verify that it is not used only in the left side of an assignment
+        if (hasText) {
+            ast = ast || luajs.parser.parse(code);
+            return this.isUsedInNode(name, ast);
+        }
+
+        return false;
+    };
+
+    // Check if it is used in the given ast node
+    OperationInterfaceEditorControl.prototype.isUsedInNode = function(name, node) {
+        var isUsed = false,
+            checker;
+
+        checker = luajs.codegen.traverse((curr, parent) => {
+            if (curr.type === 'variable' && curr.val === name) {
+                // Ignore if it is being assigned...
+                if (parent.type === 'stat.assignment') {
+                    return parent.right.indexOf(curr) !== -1;
+                }
+                return true;
+            }
+        }, found => isUsed = isUsed || (found === true));
+
+        checker(node);
+        return isUsed;
     };
 
     return OperationInterfaceEditorControl;
