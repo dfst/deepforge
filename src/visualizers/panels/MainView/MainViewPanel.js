@@ -66,7 +66,12 @@ define([
             widget: this.widget
         });
 
-        this.embeddedPanel.control.selectedObjectChanged(DeepForge.places.MyPipelines);
+        var controlObjectChanged = this.control.selectedObjectChanged;
+        this.control.selectedObjectChanged = () => {
+            this.embeddedPanel.control.selectedObjectChanged(DeepForge.places.MyPipelines);
+            return controlObjectChanged.apply(this.control, arguments);
+        };
+
         this.onActivate();
     };
 
