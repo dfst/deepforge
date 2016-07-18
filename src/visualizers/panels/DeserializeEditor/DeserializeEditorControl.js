@@ -3,9 +3,11 @@
 
 define([
     'panels/SerializeEditor/SerializeEditorControl',
+    'panels/TextEditor/TextEditorControl',
     'underscore'
 ], function (
     SerializeEditorControl,
+    TextEditorControl,
     _
 ) {
 
@@ -15,7 +17,7 @@ define([
 
     DeserializeEditorControl = function (options) {
         options.attributeName = 'deserialize';
-        SerializeEditorControl.call(this, options);
+        TextEditorControl.call(this, options);
     };
 
     _.extend(
