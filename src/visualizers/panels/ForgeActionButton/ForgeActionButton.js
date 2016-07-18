@@ -1,4 +1,4 @@
-/*globals DeepForge, $, define, _ */
+/*globals DeepForge, $, Materialize, define, _ */
 /*jshint browser: true*/
 
 define([
@@ -319,6 +319,23 @@ define([
             this.client.delMoreNodes([nodeId]);
             this.client.completeTransaction(msg);
         }
+    };
+
+    // Running Execution Plugins (in the browser for now)
+    // Shift click for running in browser?
+    // TODO
+    ForgeActionButton.prototype.runExecutionPlugin = function(pluginId) {
+        var context = this.client.getCurrentPluginContext(pluginId),
+            name = this.client.getNode(this._currentNodeId).getAttribute('name');
+
+        context.managerConfig.namespace = 'pipeline';
+        this.client.runBrowserPlugin(pluginId, context, err => {
+            if (err) {
+                return Materialize.toast(err, 4000);
+            }
+
+            Materialize.toast(`${name} executed successfully!`, 2000);
+        });
     };
 
     return ForgeActionButton;

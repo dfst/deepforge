@@ -70,5 +70,11 @@
     "title": "PipelineIndex",
     "panel": "panels/PipelineIndex/PipelineIndexPanel",
     "DEBUG_ONLY": false
+  },
+  {
+    "id": "JobEditor",
+    "title": "JobEditor",
+    "panel": "panels/JobEditor/JobEditorPanel",
+    "DEBUG_ONLY": false
   }
 ]

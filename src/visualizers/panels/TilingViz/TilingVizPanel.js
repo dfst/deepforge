@@ -33,6 +33,7 @@ define([
         this._params = params;
         this._client = params.client;
         this._embedded = params.embedded;
+        this._resizeArgs = null;
 
         //initialize UI
         this._initialize();
@@ -49,8 +50,6 @@ define([
     };
 
     TilingVizPanel.prototype._initialize = function () {
-        var panels = this.getPanels();
-
         // Trigger active object
         if (!this._embedded) {
             WebGMEGlobal.State.on('change:' + CONSTANTS.STATE_ACTIVE_OBJECT,
@@ -58,9 +57,20 @@ define([
             );
         }
         this.$el.css({padding: 0});
+        this.updatePanels();
+    };
 
+    TilingVizPanel.prototype.updatePanels = function () {
+        var panels = this.getPanels();
+
+        this.logger.info(`updating panels (${panels.length})`);
         if (panels.length > 2) {
             this.logger.error(`Unsupported number of panels (${panels.length})`);
+        }
+
+        if (this._panels) {
+            this._panels.forEach(panel => panel.destroy());
+            this.$el.empty();
         }
 
         // Create the panels and containers
@@ -74,10 +84,11 @@ define([
             this._containers[i].append(panel.$el) && panel.onDeactivate()
         );
 
-        this.control = {  // For use in dev mode
-            selectedObjectChanged: this.selectedObjectChanged.bind(this)
-        };
+        this.control = this;
         this.onActivate();
+        if (this._resizeArgs) {
+            this.onResize.apply(this, this._resizeArgs);
+        }
     };
 
     TilingVizPanel.prototype.selectedObjectChanged = function (nodeId) {
@@ -104,6 +115,7 @@ define([
         // Call onResize for each of the tiles
         this.logger.debug('onResize --> width: ' + width + ', height: ' + height);
         this._panels.forEach(p => p.onResize(pwidth, height));
+        this._resizeArgs = [width, height];
     };
 
     /* * * * * * * * Visualizer life cycle callbacks * * * * * * * */

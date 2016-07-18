@@ -40,6 +40,10 @@
       "GenerateCriterion": {
         "src": "src/plugins/GenerateCriterion",
         "test": "test/plugins/GenerateCriterion"
+      },
+      "ExecuteJob": {
+        "src": "src/plugins/ExecuteJob",
+        "test": "test/plugins/ExecuteJob"
       }
     },
     "layouts": {},
@@ -183,6 +187,13 @@
         "panel": "src/visualizers/panels/MainView",
         "secondary": false,
         "widget": "src/visualizers/widgets/MainView"
+      },
+      "JobEditor": {
+        "src": "panels/JobEditor/JobEditorPanel",
+        "title": "JobEditor",
+        "panel": "src/visualizers/panels/JobEditor",
+        "secondary": false,
+        "widget": "src/visualizers/widgets/JobEditor"
       }
     },
     "addons": {},

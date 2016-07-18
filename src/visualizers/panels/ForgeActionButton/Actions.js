@@ -199,8 +199,17 @@ define([
         ],
         Job: [
             {
+                name: 'Restart Job',
+                icon: 'replay',
+                priority: 1000,
+                action: function() {
+                    this.runExecutionPlugin('ExecuteJob');
+                }
+            },
+            {
                 name: 'Download Execution Files',
                 icon: 'play_for_work',
+                priority: 1,
                 href: download.execFiles
             }
         ],

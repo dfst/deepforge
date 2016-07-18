@@ -1,0 +1,748 @@
+/*globals define*/
+/*jshint node:true, browser:true*/
+
+define([
+    'text!./metadata.json',
+    'executor/ExecutorClient',
+    'plugin/PluginBase',
+    'deepforge/plugin/LocalExecutor',
+    'deepforge/plugin/PtrCodeGen',
+    './templates/index',
+    'q',
+    'underscore'
+], function (
+    pluginMetadata,
+    ExecutorClient,
+    PluginBase,
+    LocalExecutor,  // DeepForge operation primitives
+    PtrCodeGen,
+    Templates,
+    Q,
+    _
+) {
+    'use strict';
+
+    pluginMetadata = JSON.parse(pluginMetadata);
+
+    var OUTPUT_INTERVAL = 1500,
+        STDOUT_FILE = 'job_stdout.txt';
+
+    /**
+     * Initializes a new instance of ExecuteJob.
+     * @class
+     * @augments {PluginBase}
+     * @classdesc This class represents the plugin ExecuteJob.
+     * @constructor
+     */
+    var ExecuteJob = function () {
+        // Call base class' constructor.
+        PluginBase.call(this);
+        this.pluginMetadata = pluginMetadata;
+    };
+
+    /**
+     * Metadata associated with the plugin. Contains id, name, version, description, icon, configStructue etc.
+     * This is also available at the instance at this.pluginMetadata.
+     * @type {object}
+     */
+    ExecuteJob.metadata = pluginMetadata;
+    ExecuteJob.UPDATE_INTERVAL = 1500;
+
+    // Prototypical inheritance from PluginBase.
+    ExecuteJob.prototype = Object.create(PluginBase.prototype);
+    ExecuteJob.prototype.constructor = ExecuteJob;
+
+    /**
+     * Main function for the plugin to execute. This will perform the execution.
+     * Notes:
+     * - Always log with the provided logger.[error,warning,info,debug].
+     * - Do NOT put any user interaction logic UI, etc. inside this method.
+     * - callback always has to be called even if error happened.
+     *
+     * @param {function(string, plugin.PluginResult)} callback - the result callback
+     */
+    ExecuteJob.prototype.main = function (callback) {
+        // Check the activeNode to make sure it is a valid node
+        var type = this.core.getMetaType(this.activeNode),
+            typeName = type && this.core.getAttribute(type, 'name');
+
+        if (typeName !== 'Job') {
+            return callback(`Cannot execute ${typeName} (expected Job)`, this.result);
+        }
+
+        this._callback = callback;
+        this.prepareRecords()
+            .then(() => this.executeJob(this.activeNode));
+    };
+
+    ExecuteJob.prototype.getConnections = function (nodes) {
+        var conns = [];
+        for (var i = nodes.length; i--;) {
+            if (this.core.getPointerPath(nodes[i], 'src') &&
+                this.core.getPointerPath(nodes[i], 'dst')) {
+
+                conns.push(nodes[i]);
+            }
+        }
+        return conns;
+    };
+
+    ExecuteJob.prototype.prepareRecords = function () {
+        var dstPortId,
+            srcPortId,
+            conns,
+            executionNode = this.core.getParent(this.activeNode);
+
+        this.pipelineName = this.core.getAttribute(executionNode, 'name');
+        return this.core.loadSubTree(executionNode).then(nodes => {
+            this.inputPortsFor = {};
+            this.outputLineCount = {};
+
+            conns = this.getConnections(nodes);
+
+            // Create inputPortsFor for the given input ports
+            for (var i = conns.length; i--;) {
+                dstPortId = this.core.getPointerPath(conns[i], 'dst');
+                srcPortId = this.core.getPointerPath(conns[i], 'src');
+
+                if (!this.inputPortsFor[dstPortId]) {
+                    this.inputPortsFor[dstPortId] = [srcPortId];
+                } else {
+                    this.inputPortsFor[dstPortId].push(srcPortId);
+                }
+            }
+        });
+    };
+
+    ExecuteJob.prototype.onOperationFail =
+    ExecuteJob.prototype.onOperationComplete =
+    ExecuteJob.prototype.onComplete = function (opNode, err) {
+        var job = this.core.getParent(opNode),
+            exec = this.core.getParent(job),
+            name = this.core.getAttribute(job, 'name'),
+            jobId = this.core.getPath(job),
+            status = err ? 'fail' : 'success',
+            msg = err ? `${name} execution failed: ${err}` :
+                `${name} executed successfully!`,
+            promise = Q();
+
+        this.core.setAttribute(job, 'status', status);
+        this.logger.info(`Setting ${name} (${jobId}) status to ${status}`);
+
+        if (err) {
+            this.core.setAttribute(exec, 'status', 'failed');
+        } else {
+            // Check if all the other jobs are successful. If so, set the
+            // execution status to 'success'
+            promise = this.core.loadChildren(exec)
+                .then(nodes => {
+                    var execSuccess = true,
+                        type,
+                        typeName;
+
+                    for (var i = nodes.length; i--;) {
+                        type = this.core.getMetaType(nodes[i]);
+                        typeName = this.core.getAttribute(type, 'name');
+
+                        if (typeName === 'Job' &&
+                            this.core.getAttribute(nodes[i], 'status') !== 'success') {
+                            execSuccess = false;
+                        }
+                    }
+
+                    if (execSuccess) {
+                        this.core.setAttribute(exec, 'status', 'success');
+                    }
+                });
+        }
+
+        promise
+            .then(() => this.save(msg))
+            .then(() => {
+                this.result.setSuccess(!err);
+                this._callback(err, this.result);
+            })
+            .catch(err => {
+                // Result success is false at invocation.
+                this._callback(err, this.result);
+            });
+    };
+
+    ExecuteJob.prototype.getOperation = function (job) {
+        return this.core.loadChildren(job).then(children =>
+            children.find(child => this.isMetaTypeOf(child, this.META.Operation)));
+    };
+
+    ExecuteJob.prototype.executeJob = function (job) {
+        return this.getOperation(job).then(node => {
+            var jobId = this.core.getPath(job),
+                name = this.core.getAttribute(node, 'name'),
+                localTypeId = this.getLocalOperationType(node),
+                artifact,
+                artifactName,
+                files,
+                data = {},
+                inputs;
+
+            // Execute any special operation types here - not on an executor
+            this.logger.debug(`Executing operation "${name}"`);
+            if (localTypeId !== null) {
+                return this.executeLocalOperation(localTypeId, node);
+            } else {
+                // Generate all execution files
+                return this.createOperationFiles(node).then(results => {
+                    this.logger.info('Created operation files!');
+                    files = results;
+                    artifactName = `${name}_${jobId.replace(/\//g, '_')}-execution-files`;
+                    artifact = this.blobClient.createArtifact(artifactName);
+
+                    // Add the input assets
+                    //   - get the metadata (name)
+                    //   - add the given inputs
+                    inputs = Object.keys(files.inputAssets);
+
+                    return Q.all(
+                        inputs.map(input => {  // Get the metadata for each input
+                            var hash = files.inputAssets[input];
+
+                            // data asset for "input"
+                            return this.blobClient.getMetadata(hash);
+                        })
+                    );
+                })
+                .then(mds => {
+                    // get (input, filename) tuples
+                    mds.forEach((metadata, i) => {
+                        // add the hashes for each input
+                        var input = inputs[i], 
+                            name = metadata.name,
+                            hash = files.inputAssets[input];
+
+                        data['inputs/' + input + '/' + name] = hash;
+                    });
+
+                    delete files.inputAssets;
+
+                    // Add pointer assets
+                    Object.keys(files.ptrAssets)
+                        .forEach(path => data[path] = files.ptrAssets[path]);
+
+                    delete files.ptrAssets;
+
+                    // Add the executor config
+                    return this.getOutputs(node);
+                })
+                .then(outputArgs => {
+                    var config,
+                        outputs,
+                        file;
+
+                    outputs = outputArgs.map(pair => pair[0])
+                        .map(name => {
+                            return {
+                                name: name,
+                                resultPatterns: [`outputs/${name}`]
+                            };
+                        });
+
+                    outputs.push(
+                        {
+                            name: 'stdout',
+                            resultPatterns: [STDOUT_FILE]
+                        },
+                        {
+                            name: name + '-all-files',
+                            resultPatterns: []
+                        }
+                    );
+
+                    config = {
+                        cmd: 'bash',
+                        args: ['run.sh'],
+                        outputInterval: OUTPUT_INTERVAL,
+                        resultArtifacts: outputs
+                    };
+                    files['executor_config.json'] = JSON.stringify(config, null, 4);
+                    files['run.sh'] = Templates.BASH;
+
+                    // Save the artifact
+                    // Remove empty hashes
+                    for (file in data) {
+                        if (!data[file]) {
+                            this.logger.warn(`Empty data hash has been found for file "${file}". Removing it...`);
+                            delete data[file];
+                        }
+                    }
+                    return artifact.addObjectHashes(data);
+                })
+                .then(() => {
+                    this.logger.info(`Added ptr/input data hashes for "${artifactName}"`);
+                    return artifact.addFiles(files);
+                })
+                .then(() => {
+                    this.logger.info(`Added execution files for "${artifactName}"`);
+                    return artifact.save();
+                })
+                .then(hash => {
+                    this.logger.info(`Saved execution files "${artifactName}"`);
+                    this.result.addArtifact(hash);  // Probably only need this for debugging...
+                    this.executeDistOperation(job, node, hash);
+                })
+                .fail(e => {
+                    this.onOperationFail(node, `Distributed operation "${name}" failed ${e}`);
+                });
+            }
+        });
+    };
+
+    ExecuteJob.prototype.executeDistOperation = function (job, opNode, hash) {
+        var name = this.core.getAttribute(opNode, 'name'),
+            jobId = this.core.getPath(job),
+            executor = new ExecutorClient({
+                logger: this.logger,
+                serverPort: this.gmeConfig.server.port
+            });
+
+        this.logger.info(`Executing operation "${name}"`);
+
+        this.outputLineCount[jobId] = 0;
+        // Set the job status to 'running'
+        this.core.setAttribute(job, 'status', 'queued');
+        this.core.setAttribute(job, 'stdout', '');
+        this.logger.info(`Setting ${jobId} status to "queued" (${this.currentHash})`);
+        this.logger.debug(`Making a commit from ${this.currentHash}`);
+        this.save(`Queued "${name}" operation in ${this.pipelineName}`)
+            .then(() => executor.createJob({hash}))
+            .then(() => this.watchOperation(executor, hash, opNode, job))
+            .catch(err => this.logger.error(`Could not execute "${name}": ${err}`));
+
+    };
+
+    ExecuteJob.prototype.createOperationFiles = function (node) {
+        var files = {};
+        // For each operation, generate the output files:
+        //   inputs/<arg-name>/init.lua  (respective data deserializer)
+        //   pointers/<name>/init.lua  (result of running the main plugin on pointer target - may need a rename)
+        //   outputs/<name>/  (make dirs for each of the outputs)
+        //   outputs/init.lua  (serializers for data outputs)
+        //
+        //   attributes.lua (returns lua table of operation attributes)
+        //   init.lua (main file -> calls main and serializes outputs)
+        //   <name>.lua (entry point -> calls main operation code)
+
+        // add the given files
+        this.logger.info('About to create dist execution files');
+        return this.createEntryFile(node, files)
+            .then(() => this.createClasses(node, files))
+            .then(() => this.createCustomLayers(node, files))
+            .then(() => this.createInputs(node, files))
+            .then(() => this.createOutputs(node, files))
+            .then(() => this.createMainFile(node, files))
+            .then(() => {
+                this.createAttributeFile(node, files);
+                return Q.ninvoke(this, 'createPointers', node, files);
+            });
+    };
+
+    ExecuteJob.prototype.createEntryFile = function (node, files) {
+        this.logger.info('Creating entry files...');
+        return this.getOutputs(node)
+            .then(outputs => {
+                var name = this.core.getAttribute(node, 'name'),
+                    content = {};
+
+                // inputs and outputs
+                content.name = name;
+                content.outputs = outputs;
+
+                files['init.lua'] = _.template(Templates.ENTRY)(content);
+            });
+    };
+
+    ExecuteJob.prototype.createClasses = function (node, files) {
+        var metaDict = this.core.getAllMetaNodes(this.rootNode),
+            isClass,
+            metanodes,
+            classNodes,
+            code;
+
+        this.logger.info('Creating custom layer file...');
+        metanodes = Object.keys(metaDict).map(id => metaDict[id]);
+        isClass = this.getTypeDictFor('Complex', metanodes);
+
+        classNodes = metanodes.filter(node => {
+            var base = this.core.getBase(node),
+                baseId = this.core.getPath(base);
+
+            return isClass[baseId];
+        });
+
+        // Get the code definitions for each
+        code = classNodes.map(node =>
+            `require './${this.core.getAttribute(node, 'name')}.lua'`
+        ).join('\n');
+
+        // Create the class files
+        classNodes.forEach(node => {
+            var name = this.core.getAttribute(node, 'name');
+            files[`classes/${name}.lua`] = this.core.getAttribute(node, 'code');
+        });
+
+        // Create the custom layers file
+        files['classes/init.lua'] = code;
+    };
+
+    ExecuteJob.prototype.getTypeDictFor = function (name, metanodes) {
+        var isType = {};
+        // Get all the custom layers
+        for (var i = metanodes.length; i--;) {
+            if (this.core.getAttribute(metanodes[i], 'name') === name) {
+                isType[this.core.getPath(metanodes[i])] = true;
+            }
+        }
+        return isType;
+    };
+
+    ExecuteJob.prototype.createCustomLayers = function (node, files) {
+        var metaDict = this.core.getAllMetaNodes(this.rootNode),
+            isCustomLayer,
+            metanodes,
+            customLayers,
+            code;
+
+        this.logger.info('Creating custom layer file...');
+        metanodes = Object.keys(metaDict).map(id => metaDict[id]);
+        isCustomLayer = this.getTypeDictFor('CustomLayer', metanodes);
+
+        customLayers = metanodes.filter(node =>
+            this.core.getMixinPaths(node).some(id => isCustomLayer[id]));
+
+        // Get the code definitions for each
+        code = 'require \'nn\'\n\n' + customLayers
+            .map(node => this.core.getAttribute(node, 'code')).join('\n');
+
+        // Create the custom layers file
+        files['custom-layers.lua'] = code;
+    };
+
+    ExecuteJob.prototype.createInputs = function (node, files) {
+        var tplContents,
+            inputs;
+
+        this.logger.info('Retrieving inputs and deserialize fns...');
+        return this.getInputs(node)
+            .then(allInputs => {
+                // For each input, match the connection with the input name
+                //   [ name, type ] => [ name, type, node ]
+                //
+                // For each input,
+                //  - create the deserializer
+                //  - put it in inputs/<name>/init.lua
+                //  - copy the data asset to /inputs/<name>/init.lua
+                inputs = allInputs
+                    .filter(pair => !!this.core.getAttribute(pair[2], 'data'));  // remove empty inputs
+
+                files.inputAssets = {};  // data assets
+                return Q.all(inputs.map(pair => {
+                    var name = pair[0],
+                        node = pair[2],
+                        nodeId = this.core.getPath(node),
+                        fromNodeId;
+
+                    // Get the deserialize function. First, try to get it from
+                    // the source method (this guarantees that the correct
+                    // deserialize method is used despite any auto-upcasting
+                    fromNodeId = this.inputPortsFor[nodeId][0] || nodeId;
+
+                    return this.core.loadByPath(this.rootNode, fromNodeId)
+                        .then(fromNode => {
+                            var deserFn,
+                                base,
+                                className;
+
+                            deserFn = this.core.getAttribute(fromNode, 'deserialize');
+
+                            if (this.isMetaTypeOf(node, this.META.Complex)) {
+                                // Complex objects are expected to define their own
+                                // (static) deserialize factory method
+                                base = this.core.getMetaType(node);
+                                className = this.core.getAttribute(base, 'name');
+                                deserFn = `return ${className}.deserialize(path)`;
+                            }
+
+                            return {
+                                name: name,
+                                code: deserFn
+                            };
+                        });
+                }));
+            })
+            .then(_tplContents => {
+                tplContents = _tplContents;
+                var hashes = inputs
+                    // storing the hash for now...
+                    .map(pair =>
+                        files.inputAssets[pair[0]] = this.core.getAttribute(pair[2], 'data')
+                    );
+                return Q.all(hashes.map(h => this.blobClient.getMetadata(h)));
+            })
+            .then(metadatas => {
+                // Create the deserializer
+                tplContents.forEach((ctnt, i) => {
+                    // Get the name of the given asset
+                    ctnt.filename = metadatas[i].name;
+                    files['inputs/' + ctnt.name + '/init.lua'] = _.template(Templates.DESERIALIZE)(ctnt);
+                });
+                return files;
+            });
+    };
+
+    ExecuteJob.prototype.createOutputs = function (node, files) {
+        // For each of the output types, grab their serialization functions and
+        // create the `outputs/init.lua` file
+        this.logger.info('Creating outputs/init.lua...');
+        return this.getOutputs(node)
+            .then(outputs => {
+                var outputTypes = outputs
+                // Get the serialize functions for each
+                    .map(tuple => {
+                        var node = tuple[2],
+                            serFn = this.core.getAttribute(node, 'serialize');
+
+                        if (this.isMetaTypeOf(node, this.META.Complex)) {
+                            // Complex objects are expected to define their own
+                            // serialize methods
+                            serFn = 'if data ~= nil then data:serialize(path) end';
+                        }
+
+                        return [tuple[1], serFn];
+                    });
+
+                files['outputs/init.lua'] = _.template(Templates.SERIALIZE)({types: outputTypes});
+            });
+    };
+
+    ExecuteJob.prototype.createMainFile = function (node, files) {
+        this.logger.info('Creating main file...');
+        return this.getInputs(node)
+            .then(inputs => {
+                var name = this.core.getAttribute(node, 'name'),
+                    code = this.core.getAttribute(node, 'code'),
+                    pointers = this.core.getPointerNames(node).filter(ptr => ptr !== 'base'),
+                    content = {
+                        name: name
+                    };
+
+                // Get input data arguments
+                content.inputs = inputs
+                    .map(pair => [pair[0], !this.core.getAttribute(pair[2], 'data')]);  // remove empty inputs
+
+                // Defined variables for each pointers
+                content.pointers = pointers
+                    .map(id => [id, this.core.getPointerPath(node, id) === null]);
+
+                // Add remaining code
+                content.code = code;
+
+                files['main.lua'] = _.template(Templates.MAIN)(content);
+            });
+    };
+
+    ExecuteJob.prototype.createAttributeFile = function (node, files) {
+        var skip = ['code'],
+            numRegex = /^\d+\.?\d*((e|e-)\d+)?$/,
+            table;
+
+        this.logger.info('Creating attributes file...');
+        table = '{\n\t' + this.core.getAttributeNames(node)
+            .filter(attr => skip.indexOf(attr) === -1)
+            .map(name => {
+                var value = this.core.getAttribute(node, name);
+                if (!numRegex.test(value)) {
+                    value = `"${value}"`;
+                }
+                return [name, value];
+            })
+            .map(pair => pair.join(' = '))
+            .join(',\n\t') + '\n}';
+
+        files['attributes.lua'] = `-- attributes of ${this.core.getAttribute(node, 'name')}\nreturn ${table}`;
+    };
+
+    ExecuteJob.prototype.createPointers = function (node, files, cb) {
+        var pointers,
+            nIds;
+
+        this.logger.info('Creating pointers file...');
+        pointers = this.core.getPointerNames(node)
+            .filter(name => name !== 'base')
+            .filter(id => this.core.getPointerPath(node, id) !== null);
+
+        nIds = pointers.map(p => this.core.getPointerPath(node, p));
+        files.ptrAssets = {};
+        Q.all(
+            nIds.map(nId => this.getPtrCodeHash(nId))
+        )
+        .then(resultHashes => {
+            var name = this.core.getAttribute(node, 'name');
+            this.logger.info(`Pointer generation for ${name} FINISHED!`);
+            resultHashes.forEach((hash, index) => {
+                files.ptrAssets[`pointers/${pointers[index]}/init.lua`] = hash;
+            });
+            return cb(null, files);
+        })
+        .fail(e => {
+            this.logger.error(`Could not generate pointer files for ${this.core.getAttribute(node, 'name')}: ${JSON.stringify(e)}`);
+            return cb(e);
+        });
+    };
+
+    ExecuteJob.prototype.watchOperation = function (executor, hash, op, job) {
+        var jobId = this.core.getPath(job),
+            opId = this.core.getPath(op),
+            info,
+            name;
+
+        return executor.getInfo(hash)
+            .then(_info => {  // Update the job's stdout
+                var actualLine,  // on executing job
+                    currentLine = this.outputLineCount[jobId];
+
+                info = _info;
+                actualLine = info.outputNumber;
+                if (actualLine !== null && actualLine >= currentLine) {
+                    this.outputLineCount[jobId] = actualLine + 1;
+                    return executor.getOutput(hash, currentLine, actualLine+1)
+                        .then(outputLines => {
+                            var stdout = this.core.getAttribute(job, 'stdout'),
+                                output = outputLines.map(o => o.output).join(''),
+                                jobName = this.core.getAttribute(job, 'name');
+
+                            stdout += output;
+                            this.core.setAttribute(job, 'stdout', stdout);
+                            return this.save(`Received stdout for ${jobName}`);
+                        });
+                }
+            })
+            .then(() => {
+                if (info.status === 'CREATED' || info.status === 'RUNNING') {
+                    if (info.status === 'RUNNING' &&
+                        this.core.getAttribute(job, 'status') !== 'running') {
+
+                        name = this.core.getAttribute(job, 'name');
+                        this.core.setAttribute(job, 'status', 'running');
+                        this.save(`Started "${name}" operation in ${this.pipelineName}`);
+                    }
+
+                    setTimeout(
+                        this.watchOperation.bind(this, executor, hash, op, job),
+                        ExecuteJob.UPDATE_INTERVAL
+                    );
+                    return;
+                }
+
+                name = this.core.getAttribute(job, 'name');
+                this.core.setAttribute(job, 'execFiles', info.resultHashes[name + '-all-files']);
+                return this.blobClient.getArtifact(info.resultHashes.stdout)
+                    .then(artifact => {
+                        var stdoutHash = artifact.descriptor.content[STDOUT_FILE].content;
+                        return this.blobClient.getObjectAsString(stdoutHash);
+                    })
+                    .then(stdout => {
+                        this.core.setAttribute(job, 'stdout', stdout);
+                        if (info.status !== 'SUCCESS') {
+                            // Download all files
+                            this.result.addArtifact(info.resultHashes[name + '-all-files']);
+                            // Set the job to failed! Store the error
+                            this.onOperationFail(op, `Operation "${opId}" failed! ${JSON.stringify(info)}`); 
+                        } else {
+                            this.onDistOperationComplete(op, info);
+                        }
+                    });
+            })
+            .catch(err => this.logger.error(`Could not get op info for ${opId}: ${err}`));
+    };
+
+    ExecuteJob.prototype.onDistOperationComplete = function (node, result) {
+        var nodeId = this.core.getPath(node),
+            outputMap = {},
+            outputs;
+
+        // Match the output names to the actual nodes
+        // Create an array of [name, node]
+        // For now, just match by type. Later we may use ports for input/outputs
+        // Store the results in the outgoing ports
+        this.getOutputs(node)
+            .then(outputPorts => {
+                outputs = outputPorts.map(tuple => [tuple[0], tuple[2]]);
+                outputs.forEach(output => outputMap[output[0]] = output[1]);
+
+                // this should not be in directories -> flatten the data!
+                return Q.all(outputs.map(tuple =>  // [ name, node ]
+                    this.blobClient.getArtifact(result.resultHashes[tuple[0]])
+                ));
+            })
+            .then(artifacts => {
+                this.logger.info(`preparing outputs -> retrieved ${artifacts.length} objects`);
+                // Create new metadata for each
+                artifacts.forEach((artifact, i) => {
+                    var name = outputs[i][0],
+                        outputData = artifact.descriptor.content[`outputs/${name}`],
+                        hash = outputData && outputData.content;
+
+                    if (hash) {
+                        this.core.setAttribute(outputMap[name], 'data', hash);
+                        this.logger.info(`Setting ${nodeId} data to ${hash}`);
+                    }
+                });
+
+                return this.onOperationComplete(node);
+            })
+            .fail(e => this.onOperationFail(node, `Operation ${nodeId} failed: ${e}`));
+    };
+
+    ExecuteJob.prototype.getOutputs = function (node) {
+        return this.getOperationData(node, this.META.Outputs);
+    };
+
+    ExecuteJob.prototype.getInputs = function (node) {
+        return this.getOperationData(node, this.META.Inputs);
+    };
+
+    ExecuteJob.prototype.getOperationData = function (node, metaType) {
+        // Load the children and the output's children
+        return this.core.loadChildren(node)
+            .then(containers => {
+                var outputs = containers.find(c => this.core.isTypeOf(c, metaType));
+                return outputs ? this.core.loadChildren(outputs) : [];
+            })
+            .then(outputs => {
+                var bases = outputs.map(node => this.core.getMetaType(node));
+                // return [[arg1, Type1, node1], [arg2, Type2, node2]]
+                return outputs.map((node, i) => [
+                    this.core.getAttribute(node, 'name'),
+                    this.core.getAttribute(bases[i], 'name'),
+                    node
+                ]);
+            });
+    };
+
+    //////////////////////////// Special Operations ////////////////////////////
+    ExecuteJob.prototype.executeLocalOperation = function (type, node) {
+        // Retrieve the given LOCAL_OP type
+        if (!this[type]) {
+            this.logger.error(`No local operation handler for ${type}`);
+        }
+        this.logger.info(`Running local operation ${type}`);
+
+        return this[type](node);
+    };
+
+    _.extend(
+        ExecuteJob.prototype,
+        PtrCodeGen.prototype,
+        LocalExecutor.prototype
+    );
+
+    return ExecuteJob;
+});
