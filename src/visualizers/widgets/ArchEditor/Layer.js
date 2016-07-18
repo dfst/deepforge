@@ -29,6 +29,7 @@ define([
         this.width = this.decorator.width;
         this.height = this.decorator.height;
 
+        this.initializeTooltips();
         // Set up decorator callbacks
         this.setupDecoratorCallbacks();
     };
