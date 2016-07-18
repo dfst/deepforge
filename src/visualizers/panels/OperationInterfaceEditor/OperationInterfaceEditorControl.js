@@ -157,8 +157,14 @@ define([
             desc.isPrimitive = this.hasMetaName(gmeId, 'Primitive');
 
             if (desc.container === 'inputs') {
-                desc.used = this.isUsedInCode(desc.name);
-                this._usage[desc.id] = desc.used;
+                var used = this.isUsedInCode(desc.name);
+                if (used !== null) {
+                    desc.used = used;
+                    this._usage[desc.id] = desc.used;
+                } else {
+                    desc.used = this._usage[desc.id] !== undefined ?
+                        this._usage[desc.id] : true;
+                }
             } else {
                 desc.used = true;
             }
@@ -213,15 +219,19 @@ define([
             // Update the remaining usage info
             inputIds = Object.keys(this._usage);
             code = this._client.getNode(this._currentNodeId).getAttribute('code');
-            ast = luajs.parser.parse(code);
-            for (var i = inputIds.length; i--;) {
-                wasUsed = this._usage[inputIds[i]];
-                name = this._client.getNode(inputIds[i]).getAttribute('name');
+            try {
+                ast = luajs.parser.parse(code);
+                for (var i = inputIds.length; i--;) {
+                    wasUsed = this._usage[inputIds[i]];
+                    name = this._client.getNode(inputIds[i]).getAttribute('name');
 
-                isUsed = this.isUsedInCode(name, ast);
-                if (isUsed !== wasUsed) {
-                    this._onUpdate(inputIds[i]);
+                    isUsed = this.isUsedInCode(name, ast);
+                    if (isUsed !== wasUsed) {
+                        this._onUpdate(inputIds[i]);
+                    }
                 }
+            } catch (e) {
+                this._logger.debug(`failed parsing lua: ${e}`);
             }
 
         } else if (this.containedInCurrent(gmeId) && this.hasMetaName(gmeId, 'Data')) {
@@ -240,14 +250,20 @@ define([
                 .items[0].id,
             target = this._client.getNode(targetId),
             decManager = this._client.decoratorManager,
-            Decorator = decManager.getDecoratorForWidget('OpIntPtrDecorator', 'EasyDAG');
+            Decorator = decManager.getDecoratorForWidget('OpIntPtrDecorator', 'EasyDAG'),
+            id = 'ptr_'+name,
+            used = this.isUsedInCode(name);
+
+        if (used === null) {
+            used = this._usage[id] !== undefined ? this._usage[id] : true;
+        }
 
         return {
-            id: 'ptr_'+name,
+            id: id,
             isPointer: true,
             baseName: target.getAttribute('name'),
             Decorator: Decorator,
-            used: this.isUsedInCode(name),
+            used: used,
             attributes: {},
             name: name,
             parentId: this._currentNodeId
@@ -304,9 +320,13 @@ define([
     OperationInterfaceEditorControl.prototype.rmPtr = function(id) {
         // Remove the pointer's node
         this._widget.removeNode(id);
+
         // and connection
         var conn = this._connections[id];
         this._widget.removeNode(conn.id);
+
+        // and usage info
+        delete this._usage[id];
     };
 
     OperationInterfaceEditorControl.prototype.containedInCurrent = function(id) {
@@ -339,8 +359,13 @@ define([
 
         // verify that it is not used only in the left side of an assignment
         if (hasText) {
-            ast = ast || luajs.parser.parse(code);
-            return this.isUsedInNode(name, ast);
+            try {
+                ast = ast || luajs.parser.parse(code);
+                return this.isUsedInNode(name, ast);
+            } catch(e) {
+                this._logger.debug(`failed parsing lua: ${e}`);
+                return null;
+            }
         }
 
         return false;
