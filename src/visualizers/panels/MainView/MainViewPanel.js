@@ -67,9 +67,9 @@ define([
         });
 
         var controlObjectChanged = this.control.selectedObjectChanged;
-        this.control.selectedObjectChanged = () => {
+        this.control.selectedObjectChanged = nodeId => {
             this.embeddedPanel.control.selectedObjectChanged(DeepForge.places.MyPipelines);
-            return controlObjectChanged.apply(this.control, arguments);
+            return controlObjectChanged.call(this.control, nodeId);
         };
 
         this.onActivate();
