@@ -321,17 +321,16 @@ define([
         }
     };
 
-    // Running Execution Plugins (in the browser for now)
-    // Shift click for running in browser?
-    // TODO
-    ForgeActionButton.prototype.runExecutionPlugin = function(pluginId) {
+    ForgeActionButton.prototype.runExecutionPlugin = function(pluginId, useSecondary) {
         var context = this.client.getCurrentPluginContext(pluginId),
-            name = this.client.getNode(this._currentNodeId).getAttribute('name');
+            name = this.client.getNode(this._currentNodeId).getAttribute('name'),
+            method;
 
         context.managerConfig.namespace = 'pipeline';
-        this.client.runBrowserPlugin(pluginId, context, err => {
+        method = useSecondary ? 'runServerPlugin' : 'runBrowserPlugin';
+        this.client[method](pluginId, context, err => {
             if (err) {
-                return Materialize.toast(err, 4000);
+                return Materialize.toast(`${name} failed!`, 4000);
             }
 
             Materialize.toast(`${name} executed successfully!`, 2000);
