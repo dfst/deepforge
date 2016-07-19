@@ -99,8 +99,11 @@ define([
         });
 
         if (event && !this.readOnly) {
-            var opDefId = this._client.getNode(event.eid).getMetaTypeId();
+            var opNode = this._client.getNode(event.eid),
+                opDefId = opNode.getMetaTypeId();
+
             this._panels[0].control.selectedObjectChanged(opDefId);
+            this._panels[0].control.offsetNodeChanged(event.eid);
         }
     };
 

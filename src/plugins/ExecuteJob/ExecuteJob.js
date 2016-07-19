@@ -545,7 +545,18 @@ define([
                 content.code = code;
 
                 files['main.lua'] = _.template(Templates.MAIN)(content);
+
+                // Set the line offset
+                var lineOffset = this.getLineOffset(files['main.lua'], code);
+                this.core.setAttribute(node, 'lineOffset', lineOffset);
             });
+    };
+
+    ExecuteJob.prototype.getLineOffset = function (main, snippet) {
+        var i = main.indexOf(snippet),
+            lines = main.substring(0, i).match(/\n/g);
+
+        return lines ? lines.length : 0;
     };
 
     ExecuteJob.prototype.createAttributeFile = function (node, files) {

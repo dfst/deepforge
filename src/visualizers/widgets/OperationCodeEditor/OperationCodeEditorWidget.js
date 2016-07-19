@@ -20,6 +20,7 @@ define([
 
     OperationCodeEditorWidget = function (logger, container) {
         TextEditorWidget.call(this, logger, container);
+        this.lineOffset = 0;
     };
 
     _.extend(OperationCodeEditorWidget.prototype, TextEditorWidget.prototype);
@@ -56,6 +57,27 @@ define([
         }
 
         return header.join('\n');
+    };
+
+    OperationCodeEditorWidget.prototype.addNode = function () {
+        TextEditorWidget.prototype.addNode.apply(this, arguments);
+        this.updateOffset();
+    };
+
+    OperationCodeEditorWidget.prototype.setLineOffset = function (offset) {
+        if (this.lineOffset !== offset) {
+            this.lineOffset = offset;
+            this.updateOffset();
+        }
+    };
+
+    OperationCodeEditorWidget.prototype.updateOffset = function () {
+        var lines,
+            actualOffset;
+
+        lines = this.currentHeader.match(/\n/g);
+        actualOffset = this.lineOffset - (lines ? lines.length : 0);
+        this.editor.setOption('firstLineNumber', actualOffset);
     };
 
     return OperationCodeEditorWidget;
