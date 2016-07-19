@@ -36,6 +36,7 @@ define([
         this._pointers = {};
 
         this._usage = {};  // info about input usage
+        this._inputs = {};
     };
 
     _.extend(
@@ -156,18 +157,17 @@ define([
             desc.color = this.getDescColor(gmeId);
             desc.isPrimitive = this.hasMetaName(gmeId, 'Primitive');
 
-            if (desc.container === 'inputs') {
-                var used = this.isUsedInCode(desc.name);
-                if (used !== null) {
-                    desc.used = used;
-                    this._usage[desc.id] = desc.used;
-                } else {
-                    desc.used = this._usage[desc.id] !== undefined ?
-                        this._usage[desc.id] : true;
-                }
+            var used = desc.container === 'inputs' ?
+                this.isUsedInput(desc.name) : this.isUsedOutput(desc.name);
+            if (used !== null) {
+                desc.used = used;
+                this._usage[desc.id] = desc.used;
             } else {
-                desc.used = true;
+                desc.used = this._usage[desc.id] !== undefined ?
+                    this._usage[desc.id] : true;
             }
+
+            this._inputs[desc.id] = desc.container === 'inputs';
         }
         return desc;
     };
@@ -184,6 +184,7 @@ define([
             this._widget.removeNode(conn.id);
         }
         delete this._usage[gmeId];
+        delete this._inputs[gmeId];
     };
 
     OperationInterfaceEditorControl.prototype._onLoad = function(gmeId) {
@@ -203,7 +204,7 @@ define([
     };
 
     OperationInterfaceEditorControl.prototype._onUpdate = function(gmeId) {
-        var inputIds,
+        var variableIds,
             wasUsed,
             isUsed,
             name,
@@ -217,17 +218,20 @@ define([
             this.updatePtrs();
 
             // Update the remaining usage info
-            inputIds = Object.keys(this._usage);
+            variableIds = Object.keys(this._usage);
+
             code = this._client.getNode(this._currentNodeId).getAttribute('code');
             try {
                 ast = luajs.parser.parse(code);
-                for (var i = inputIds.length; i--;) {
-                    wasUsed = this._usage[inputIds[i]];
-                    name = this._client.getNode(inputIds[i]).getAttribute('name');
+                for (var i = variableIds.length; i--;) {
+                    wasUsed = this._usage[variableIds[i]];
+                    name = this._client.getNode(variableIds[i]).getAttribute('name');
 
-                    isUsed = this.isUsedInCode(name, ast);
+                    isUsed = this._inputs[variableIds[i]] ?
+                        this.isUsedInput(name, ast) :
+                        this.isUsedOutput(name, ast);
                     if (isUsed !== wasUsed) {
-                        this._onUpdate(inputIds[i]);
+                        this._onUpdate(variableIds[i]);
                     }
                 }
             } catch (e) {
@@ -252,7 +256,7 @@ define([
             decManager = this._client.decoratorManager,
             Decorator = decManager.getDecoratorForWidget('OpIntPtrDecorator', 'EasyDAG'),
             id = 'ptr_'+name,
-            used = this.isUsedInCode(name);
+            used = this.isUsedInput(name);
 
         if (used === null) {
             used = this._usage[id] !== undefined ? this._usage[id] : true;
@@ -352,7 +356,15 @@ define([
     };
 
     ////////////////////// Unused input checking //////////////////////
-    OperationInterfaceEditorControl.prototype.isUsedInCode = function(name, ast) {
+    OperationInterfaceEditorControl.prototype.isUsedInput = function(name, ast) {
+        return this._isUsed(name, true, ast);
+    };
+
+    OperationInterfaceEditorControl.prototype.isUsedOutput = function(name, ast) {
+        return this._isUsed(name, false, ast);
+    };
+
+    OperationInterfaceEditorControl.prototype._isUsed = function(name, isInput, ast) {
         var code = this._client.getNode(this._currentNodeId).getAttribute('code'),
             r = new RegExp('\\b' + name + '\\b'),
             hasText = code.match(r) !== null;
@@ -361,7 +373,7 @@ define([
         if (hasText) {
             try {
                 ast = ast || luajs.parser.parse(code);
-                return this.isUsedInNode(name, ast);
+                return isInput ? this.isUsedVariable(name, ast) : this.isReturnValue(name, ast);
             } catch(e) {
                 this._logger.debug(`failed parsing lua: ${e}`);
                 return null;
@@ -372,7 +384,7 @@ define([
     };
 
     // Check if it is used in the given ast node
-    OperationInterfaceEditorControl.prototype.isUsedInNode = function(name, node) {
+    OperationInterfaceEditorControl.prototype.isUsedVariable = function(name, node) {
         var isUsed = false,
             checker;
 
@@ -388,6 +400,31 @@ define([
 
         checker(node);
         return isUsed;
+    };
+
+    OperationInterfaceEditorControl.prototype.isReturnValue = function(name, ast) {
+        var firstReturn,
+            fields,
+            key,
+            node;
+
+        for (var i = ast.block.stats.length; i--;) {
+            node = ast.block.stats[i];
+            if (node.type === 'stat.return') {
+                // Check that it returns an object w/ a key of the given name
+                firstReturn = node.nret[0];
+                if (firstReturn && firstReturn.type === 'expr.constructor') {
+                    fields = firstReturn.fields;
+                    for (var j = fields.length; j--;) {
+                        key = fields[j].key;
+                        if (key.type === 'const.string' && key.val === name) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        return false;
     };
 
     return OperationInterfaceEditorControl;

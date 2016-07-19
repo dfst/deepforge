@@ -23,14 +23,17 @@ define([
     };
 
     Item.prototype.updateWarnings = function() {
+        var isInput = this.desc.container === 'inputs',
+            msg = 'Unused ' + (isInput ? 'Input' : 'Output') + '!';
+
         if (this.desc.used === false) {
-            this.warn('Unused Input!');
+            this.warn(msg, isInput ? 'bottom' : 'top');
         } else {
             this.clearWarning();
         }
     };
 
-    Item.prototype.warn = function(message) {
+    Item.prototype.warn = function(message, tipJoint) {
         // Create a temporary div over the given svg element
         if (this.$warning) {
             this.clearWarning();
@@ -39,7 +42,7 @@ define([
         this.decorator.highlight('#ffeb3b');
         this.$warning = this.createTooltip(message, {
             showIf: () => !this.isSelected(),
-            tipJoint: 'bottom',
+            tipJoint: tipJoint,
             style: 'standard'
         });
     };
