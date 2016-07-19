@@ -270,10 +270,12 @@ define([
     };
 
     ExecutePipeline.prototype.onOperationFail = function(node, err) {
-        var id = this.core.getPath(node),
+        var job = this.core.getParent(node),
+            id = this.core.getPath(node),
             name = this.core.getAttribute(node, 'name');
 
         this.logger.debug(`Operation ${name} (${id}) failed: ${err}`);
+        this.core.setAttribute(job, 'status', 'fail');
         this.onPipelineComplete(err);
     };
 

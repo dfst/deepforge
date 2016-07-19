@@ -213,6 +213,16 @@ define([
                 href: download.execFiles
             }
         ],
+        Execution: [
+            {
+                name: 'Restart Execution',
+                icon: 'replay',
+                priority: 1000,
+                action: function() {
+                    this.runExecutionPlugin('ExecutePipeline');
+                }
+            }
+        ],
         Pipeline: [
             {
                 name: 'Create new node',
