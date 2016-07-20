@@ -9,6 +9,7 @@
 define([
     'panels/EasyDAG/EasyDAGControl',
     'js/Constants',
+    'deepforge/Constants',
     'deepforge/lua',
     'deepforge/viz/OperationControl',
     './OperationInterfaceEditorControl.EventHandlers',
@@ -16,6 +17,7 @@ define([
     'underscore'
 ], function (
     EasyDAGControl,
+    GME_CONSTANTS,
     CONSTANTS,
     luajs,
     OperationControl,
@@ -88,13 +90,13 @@ define([
         for (var i = 0; i < events.length; i++) {
             event = events[i];
             switch (event.etype) {
-            case CONSTANTS.TERRITORY_EVENT_LOAD:
+            case GME_CONSTANTS.TERRITORY_EVENT_LOAD:
                 this._onLoad(event.eid);
                 break;
-            case CONSTANTS.TERRITORY_EVENT_UPDATE:
+            case GME_CONSTANTS.TERRITORY_EVENT_UPDATE:
                 this._onUpdate(event.eid);
                 break;
-            case CONSTANTS.TERRITORY_EVENT_UNLOAD:
+            case GME_CONSTANTS.TERRITORY_EVENT_UNLOAD:
                 this._onUnload(event.eid);
                 break;
             default:
@@ -149,7 +151,10 @@ define([
 
         } else if (desc.id === this._currentNodeId) {
             desc.pointers = {};
+
+            // Remove DeepForge hidden attributes
             delete desc.attributes.code;
+            delete desc.attributes[CONSTANTS.LINE_OFFSET];
         }
 
         // Extra decoration for data
@@ -286,7 +291,7 @@ define([
         // Get the pointers that should exist [name, target]
         this.loadMeta();
         newPtrs = node.getPointerNames()
-            .filter(name => name !== CONSTANTS.POINTER_BASE)
+            .filter(name => name !== GME_CONSTANTS.POINTER_BASE)
             .map(name => this.getPtrDescriptor(name));
 
         // Compare them to the existing...

@@ -55,7 +55,7 @@ define([
         successorPairs.push(newPrim);
 
         // Add tabs
-        opts.tabs = ['Classes', 'Primitive'];
+        opts.tabs = ['Primitive', 'Classes'];
         opts.tabFilter = (tab, pair) => {
             return pair.node.isPrimitive === (tab === 'Primitive');
         };

@@ -4,10 +4,12 @@
 define([
     'panels/TextEditor/TextEditorControl',
     'deepforge/viz/OperationControl',
+    'deepforge/Constants',
     'underscore'
 ], function (
     TextEditorControl,
     OperationControl,
+    CONSTANTS,
     _
 ) {
 
@@ -72,7 +74,7 @@ define([
     OperationCodeEditorControl.prototype.onOffsetNodeEvents = function () {
         var node = this._client.getNode(this._offsetNodeId);
         if (node) {  // wasn't a 'delete' event
-            this._widget.setLineOffset(node.getAttribute('lineOffset') || 0);
+            this._widget.setLineOffset(node.getAttribute(CONSTANTS.LINE_OFFSET) || 0);
         }
     };
 
