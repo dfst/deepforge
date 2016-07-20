@@ -327,7 +327,7 @@ define([
             method;
 
         context.managerConfig.namespace = 'pipeline';
-        method = useSecondary ? 'runServerPlugin' : 'runBrowserPlugin';
+        method = useSecondary ? 'runBrowserPlugin' : 'runServerPlugin';
         this.client[method](pluginId, context, err => {
             if (err) {
                 return Materialize.toast(`${name} failed!`, 4000);

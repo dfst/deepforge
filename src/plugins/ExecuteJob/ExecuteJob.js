@@ -300,9 +300,12 @@ define([
     ExecuteJob.prototype.executeDistOperation = function (job, opNode, hash) {
         var name = this.core.getAttribute(opNode, 'name'),
             jobId = this.core.getPath(job),
+            isHttps = typeof window === 'undefined' ? false :
+                window.location.protocol !== 'http:',
             executor = new ExecutorClient({
                 logger: this.logger,
-                serverPort: this.gmeConfig.server.port
+                serverPort: this.gmeConfig.server.port,
+                httpsecure: isHttps
             });
 
         this.logger.info(`Executing operation "${name}"`);
