@@ -3,11 +3,13 @@
 define([
     'panels/EasyDAG/EasyDAGControl',
     'deepforge/viz/OperationControl',
+    'deepforge/Constants',
     'widgets/EasyDAG/AddNodeDialog',
     'underscore'
 ], function(
     EasyDAGControl,
     OperationControl,
+    CONSTANTS,
     AddNodeDialog,
     _
 ) {
@@ -97,6 +99,7 @@ define([
 
             // Remove the 'code' attribute
             if (desc.attributes.code) {
+                delete desc.attributes[CONSTANTS.LINE_OFFSET];
                 delete desc.attributes.code;
             }
 
