@@ -77,7 +77,8 @@ define([
 
     OpIntDecorator.prototype.editAttributeMeta = function(name, defSchema) {
         var dialog = new AttributeDetailsDialog(),
-            attrNames = Object.keys(this._node.attributes),
+            node = this.client.getNode(this._node.id),
+            attrNames = node.getValidAttributeNames(),
             attrInfo = this._node.attributes[name] || defSchema,
             schema,
             i;
