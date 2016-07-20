@@ -397,11 +397,13 @@ define([
             if (curr.type === 'variable' && curr.val === name) {
                 // Ignore if it is being assigned...
                 if (parent.type === 'stat.assignment') {
-                    return parent.right.indexOf(curr) !== -1;
+                    isUsed = isUsed || parent.right.indexOf(curr) !== -1;
+                } else {
+                    isUsed = true;
                 }
-                return true;
             }
-        }, found => isUsed = isUsed || (found === true));
+            return curr;
+        });
 
         checker(node);
         return isUsed;
