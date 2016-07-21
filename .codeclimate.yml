@@ -33,3 +33,4 @@ exclude_paths:
 - src/common/js-yaml.min.js
 - src/visualizers/widgets/TextEditor/lib/
 - src/visualizers/widgets/PipelineIndex/styles/PipelineIndex.css
+- src/visualizers/widgets/LineGraph/lib/

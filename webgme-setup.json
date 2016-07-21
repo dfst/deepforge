@@ -194,6 +194,20 @@
         "panel": "src/visualizers/panels/JobEditor",
         "secondary": false,
         "widget": "src/visualizers/widgets/JobEditor"
+      },
+      "OutputViewer": {
+        "src": "panels/OutputViewer/OutputViewerPanel",
+        "title": "OutputViewer",
+        "panel": "src/visualizers/panels/OutputViewer",
+        "secondary": false,
+        "widget": "src/visualizers/widgets/OutputViewer"
+      },
+      "LineGraph": {
+        "src": "panels/LineGraph/LineGraphPanel",
+        "title": "LineGraph",
+        "panel": "src/visualizers/panels/LineGraph",
+        "secondary": false,
+        "widget": "src/visualizers/widgets/LineGraph"
       }
     },
     "addons": {},

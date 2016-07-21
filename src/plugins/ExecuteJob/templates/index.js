@@ -2,11 +2,13 @@
 define([
     'text!./entry.ejs',
     'text!./main.ejs',
+    'text!./deepforge.ejs',
     'text!./serialize.ejs',
     'text!./deserialize.ejs'
 ], function(
     ENTRY,
     MAIN,
+    DEEPFORGE,
     SERIALIZE,
     DESERIALIZE
 ) {
@@ -17,6 +19,7 @@ define([
         ENTRY,
         MAIN,
         SERIALIZE,
+        DEEPFORGE,
         DESERIALIZE
     };
 });

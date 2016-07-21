@@ -40,6 +40,12 @@ define([
         // Call base class' constructor.
         PluginBase.call(this);
         this.pluginMetadata = pluginMetadata;
+        this._metadata = {};
+
+        // Metadata updating
+        this._markForDeletion = {};  // id -> node
+        this._oldMetadataByName = {};  // name -> id
+        this.lastAppliedCmd = {};
     };
 
     /**
@@ -73,7 +79,7 @@ define([
         }
 
         this._callback = callback;
-        this.prepareRecords()
+        this.prepare()
             .then(() => this.executeJob(this.activeNode));
     };
 
@@ -89,31 +95,79 @@ define([
         return conns;
     };
 
-    ExecuteJob.prototype.prepareRecords = function () {
+    ExecuteJob.prototype.prepare = function () {
         var dstPortId,
             srcPortId,
             conns,
             executionNode = this.core.getParent(this.activeNode);
 
         this.pipelineName = this.core.getAttribute(executionNode, 'name');
-        return this.core.loadSubTree(executionNode).then(nodes => {
-            this.inputPortsFor = {};
-            this.outputLineCount = {};
+        return this.core.loadSubTree(executionNode)
+            .then(nodes => {
+                this.inputPortsFor = {};
+                this.outputLineCount = {};
 
-            conns = this.getConnections(nodes);
+                conns = this.getConnections(nodes);
 
-            // Create inputPortsFor for the given input ports
-            for (var i = conns.length; i--;) {
-                dstPortId = this.core.getPointerPath(conns[i], 'dst');
-                srcPortId = this.core.getPointerPath(conns[i], 'src');
+                // Create inputPortsFor for the given input ports
+                for (var i = conns.length; i--;) {
+                    dstPortId = this.core.getPointerPath(conns[i], 'dst');
+                    srcPortId = this.core.getPointerPath(conns[i], 'src');
 
-                if (!this.inputPortsFor[dstPortId]) {
-                    this.inputPortsFor[dstPortId] = [srcPortId];
-                } else {
-                    this.inputPortsFor[dstPortId].push(srcPortId);
+                    if (!this.inputPortsFor[dstPortId]) {
+                        this.inputPortsFor[dstPortId] = [srcPortId];
+                    } else {
+                        this.inputPortsFor[dstPortId].push(srcPortId);
+                    }
                 }
-            }
-        });
+            })
+            .then(() => this.recordOldMetadata(this.activeNode));
+    };
+
+    ExecuteJob.prototype.recordOldMetadata = function (job) {
+        var nodeId = this.core.getPath(job),
+            name,
+            id,
+            idsToDelete = [],
+            child;
+
+        this.lastAppliedCmd[nodeId] = 0;
+        this._oldMetadataByName[nodeId] = {};
+        this._markForDeletion[nodeId] = {};
+        return this.core.loadChildren(job)
+            .then(jobChildren => {
+                // Remove any metadata nodes
+                for (var i = jobChildren.length; i--;) {
+                    child = jobChildren[i];
+                    if (this.isMetaTypeOf(child, this.META.Metadata)) {
+                        id = this.core.getPath(child);
+                        name = this.core.getAttribute(child, 'name');
+
+                        this._markForDeletion[nodeId][id] = child;
+                        this._oldMetadataByName[nodeId][name] = id;
+
+                        // children of metadata nodes get deleted
+                        idsToDelete = idsToDelete
+                            .concat(this.core.getChildrenPaths(child));
+                    }
+                }
+
+                // make the deletion ids relative to the job node
+                idsToDelete = idsToDelete.map(id => id.replace(nodeId, ''));
+                return Q.all(idsToDelete.map(id => this.core.loadByPath(job, id)));
+            })
+            .then(nodes => nodes.forEach(node => this.core.deleteNode(node)));
+    };
+
+    ExecuteJob.prototype.clearOldMetadata = function (job) {
+        var nodeId = this.core.getPath(job),
+            nodeIds = Object.keys(this._markForDeletion[nodeId]);
+
+        for (var i = nodeIds.length; i--;) {
+            this.core.deleteNode(this._markForDeletion[nodeId][nodeIds[i]]);
+        }
+        delete this.lastAppliedCmd[nodeId];
+        delete this._markForDeletion[nodeId];
     };
 
     ExecuteJob.prototype.onOperationFail =
@@ -130,6 +184,7 @@ define([
 
         this.core.setAttribute(job, 'status', status);
         this.logger.info(`Setting ${name} (${jobId}) status to ${status}`);
+        this.clearOldMetadata(job);
 
         if (err) {
             this.core.setAttribute(exec, 'status', 'failed');
@@ -361,6 +416,9 @@ define([
                 content.outputs = outputs;
 
                 files['init.lua'] = _.template(Templates.ENTRY)(content);
+
+                // Create the deepforge file
+                files['deepforge.lua'] = _.template(Templates.DEEPFORGE)(CONSTANTS);
             });
     };
 
@@ -634,9 +692,14 @@ define([
                                 output = outputLines.map(o => o.output).join(''),
                                 jobName = this.core.getAttribute(job, 'name');
 
-                            stdout += output;
-                            this.core.setAttribute(job, 'stdout', stdout);
-                            return this.save(`Received stdout for ${jobName}`);
+                            // parse deepforge commands
+                            output = this.parseForMetadataCmds(job, output);
+
+                            if (output) {
+                                stdout += output;
+                                this.core.setAttribute(job, 'stdout', stdout);
+                                return this.save(`Received stdout for ${jobName}`);
+                            }
                         });
                 }
             })
@@ -665,6 +728,8 @@ define([
                         return this.blobClient.getObjectAsString(stdoutHash);
                     })
                     .then(stdout => {
+                        // Parse the remaining code
+                        stdout = this.parseForMetadataCmds(job, stdout, true);
                         this.core.setAttribute(job, 'stdout', stdout);
                         if (info.status !== 'SUCCESS') {
                             // Download all files
@@ -759,6 +824,104 @@ define([
         PtrCodeGen.prototype,
         LocalExecutor.prototype
     );
+
+    //////////////////////////// Metadata ////////////////////////////
+    ExecuteJob.prototype.parseForMetadataCmds = function (job, text, skip) {
+        var jobId = this.core.getPath(job),
+            lines = text.split('\n'),
+            args,
+            result = [],
+            cmdCnt = 0,
+            cmd;
+
+        for (var i = 0; i < lines.length; i++) {
+            // Check for a deepforge command
+            if (lines[i].indexOf(CONSTANTS.START_CMD) === 0) {
+                cmdCnt++;
+                args = lines[i].split(/\s+/);
+                args.shift();
+                cmd = args[0];
+                args[0] = job;
+                if (this[cmd] && (!skip || cmdCnt >= this.lastAppliedCmd[jobId])) {
+                    this[cmd].apply(this, args);
+                    this.lastAppliedCmd[jobId]++;
+                } else if (!this[cmd]) {
+                    this.logger.error(`Invoked unimplemented metadata method "${cmd}"`);
+                }
+            } else {
+                result.push(lines[i]);
+            }
+        }
+        return result.join('\n');
+    };
+
+    ExecuteJob.prototype[CONSTANTS.GRAPH_CREATE] = function (job, id) {
+        var graph,
+            name = Array.prototype.slice.call(arguments, 2).join(' '),
+            jobId = this.core.getPath(job),
+            oldMetadata = this._oldMetadataByName[jobId],
+            oldId;
+
+        id = jobId + '/' + id;
+        this.logger.info(`Creating graph ${id} named ${name}`);
+
+        // Check if the graph already exists
+        if (oldMetadata && oldMetadata[name]) {
+            oldId = oldMetadata[name];
+            graph = this._markForDeletion[jobId][oldId];
+
+            // Reset points
+            this.core.setAttribute(graph, 'points', '');
+
+            delete this._markForDeletion[jobId][oldId];
+        } else {  // create new graph
+            graph = this.core.createNode({
+                base: this.META.Graph,
+                parent: job
+            });
+
+            if (name) {
+                this.core.setAttribute(graph, 'name', name);
+            }
+        }
+
+        this._metadata[id] = graph;
+    };
+
+    ExecuteJob.prototype[CONSTANTS.GRAPH_PLOT] = function (job, id, x, y) {
+        var jobId = this.core.getPath(job),
+            graph,
+            points;
+            
+
+        id = jobId + '/' + id;
+        this.logger.info(`Adding point ${x}, ${y} to ${id}`);
+        graph = this._metadata[id];
+        if (!graph) {
+            this.logger.warn(`Can't add point to non-existent graph: ${id}`);
+            return;
+        }
+
+        points = this.core.getAttribute(graph, 'points');
+        points += `${x},${y};`;
+        this.core.setAttribute(graph, 'points', points);
+    };
+
+    ExecuteJob.prototype[CONSTANTS.GRAPH_CREATE_LINE] = function (job, graphId, id) {
+        var jobId = this.core.getPath(job),
+            graph = this._metadata[jobId + '/' + graphId],
+            name = Array.prototype.slice.call(arguments, 3).join(' '),
+            line;
+
+        // Create a 'line' node in the given Graph metadata node
+        name = name.replace(/\s+$/, '');
+        line = this.core.createNode({
+            base: this.META.Line,
+            parent: graph
+        });
+        this.core.setAttribute(line, 'name', name);
+        this._metadata[jobId + '/' + id] = line;
+    };
 
     return ExecuteJob;
 });

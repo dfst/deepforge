@@ -1,6 +1,6 @@
 -- thanks to https://github.com/soumith/imagenet-multiGPU.torch for this example
 require 'nn'
-nClasses = 4
+nClasses = 1000
 
 local function inception(input_size, config)
 local concat = nn.Concat(2)

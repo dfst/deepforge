@@ -1,0 +1,46 @@
+-- Instantiate the deepforge object
+deepforge = {}
+
+function deepforge.id()
+    if __deepforge_id == nil then
+        __deepforge_id = 0
+    end
+    __deepforge_id = __deepforge_id + 1
+    return __deepforge_id
+end
+
+function deepforge._cmd(...)
+    local cmd = '<%= START_CMD %>'
+    local arg = {...}
+    local n = #arg
+    for i=1,n do
+        cmd = cmd .. ' ' .. tostring(arg[i])
+    end
+    print(cmd)
+end
+
+Graph = torch.class('deepforge.Graph')
+
+function Graph:__init(name)
+    self.id = deepforge.id()
+    self.name = name
+    deepforge._cmd('<%= GRAPH_CREATE %>', self.id, name)
+end
+
+_Line = torch.class('deepforge._Line')
+
+function _Line:__init(graphId, name, opts)
+    self.id = deepforge.id()
+    self.name = name
+    deepforge._cmd('<%= GRAPH_CREATE_LINE %>', graphId, self.id, name)
+end
+
+function _Line:add(x, y)
+    deepforge._cmd('<%= GRAPH_PLOT %>', self.id, x, y)
+end
+
+function Graph:line(name, opts)
+    return deepforge._Line(self.id, name, opts)
+end
+
+return deepforge

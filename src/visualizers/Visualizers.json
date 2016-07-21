@@ -76,5 +76,17 @@
     "title": "JobEditor",
     "panel": "panels/JobEditor/JobEditorPanel",
     "DEBUG_ONLY": false
+  },
+  {
+    "id": "OutputViewer",
+    "title": "OutputViewer",
+    "panel": "panels/OutputViewer/OutputViewerPanel",
+    "DEBUG_ONLY": false
+  },
+  {
+    "id": "LineGraph",
+    "title": "LineGraph",
+    "panel": "panels/LineGraph/LineGraphPanel",
+    "DEBUG_ONLY": false
   }
 ]

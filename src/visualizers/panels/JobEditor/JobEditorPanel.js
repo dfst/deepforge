@@ -8,12 +8,12 @@
 // be considered read only and only show the terminal output
 define([
     'panels/TilingViz/TilingVizPanel',
-    'panels/LogViewer/LogViewerPanel',
+    'panels/OutputViewer/OutputViewerPanel',
     'panels/OperationCodeEditor/OperationCodeEditorPanel',
     'js/Constants'
 ], function (
     TilingViz,
-    LogViewer,
+    OutputViewer,
     OperationCodeEditor,
     CONSTANTS
 ) {
@@ -31,55 +31,61 @@ define([
 
     JobEditorPanel.prototype.getPanels = function () {
         if (this.readOnly) {
-            return [LogViewer];
+            return [OutputViewer];
         } else {
-            return [OperationCodeEditor, LogViewer];
+            return [OperationCodeEditor, OutputViewer];
         }
     };
 
     JobEditorPanel.prototype.selectedObjectChanged = function (nodeId) {
         var node = this._client.getNode(nodeId),
-            typeId = node.getMetaTypeId(),
-            type = this._client.getNode(typeId),
-            typeName = type.getAttribute('name'),
+            typeId,
+            type,
+            typeName,
             executionId,
             execution;
 
-        if (typeName !== 'Job') {
-            this._logger.error(`Invalid node type for JobEditor: ${typeName}`);
-            return;
-        }
+        if (typeof nodeId === 'string') {
+            typeId = node.getMetaTypeId();
+            type = this._client.getNode(typeId);
+            typeName = type.getAttribute('name');
 
-        executionId = node.getParentId();
-        execution = this._client.getNode(executionId);
-
-        // If the current node is in a snapshotted execution, only show the log
-        // viewer
-        if (this.readOnly !== execution.getAttribute('snapshot')) {
-            this.readOnly = execution.getAttribute('snapshot');
-            this.logger.info(`readonly set to ${this.readOnly}`);
-            this.updatePanels();
-        }
-
-        // The OperationCodeEditor should receive the
-        if (!this.readOnly) {
-            // Get the operation base node id and pass it to OpCodeEditor selObjChanged
-            if (this._territoryId) {
-                this._client.removeUI(this._territoryId);
+            if (typeName !== 'Job') {
+                this.logger.error(`Invalid node type for JobEditor: ${typeName}`);
+                return;
             }
-            this._territoryId = this._client.addUI(this,
-                this.onOperationEvents.bind(this));
 
-            // Update the territory
-            this._territory = {};
-            this._territory[nodeId] = {children: 1};
+            executionId = node.getParentId();
+            execution = this._client.getNode(executionId);
 
-            this._client.updateTerritory(this._territoryId, this._territory);
+            // If the current node is in a snapshotted execution, only show the log
+            // viewer
+            if (this.readOnly !== execution.getAttribute('snapshot')) {
+                this.readOnly = execution.getAttribute('snapshot');
+                this.logger.info(`readonly set to ${this.readOnly}`);
+                this.updatePanels();
+            }
+
+            // The OperationCodeEditor should receive the
+            if (!this.readOnly) {
+                // Get the operation base node id and pass it to OpCodeEditor selObjChanged
+                if (this._territoryId) {
+                    this._client.removeUI(this._territoryId);
+                }
+                this._territoryId = this._client.addUI(this,
+                    this.onOperationEvents.bind(this));
+
+                // Update the territory
+                this._territory = {};
+                this._territory[nodeId] = {children: 1};
+
+                this._client.updateTerritory(this._territoryId, this._territory);
+            }
+
+            // update the OutputViewer controller
+            var i = this._panels.length;
+            this._panels[i-1].control.selectedObjectChanged(nodeId);
         }
-
-        // update the LogViewer controller
-        var i = this._panels.length;
-        this._panels[i-1].control.selectedObjectChanged(nodeId);
     };
 
     JobEditorPanel.prototype.onOperationEvents = function (events) {
@@ -87,7 +93,8 @@ define([
             if (event.etype === CONSTANTS.TERRITORY_EVENT_LOAD) {
                 // Check if the eid is an Operation
                 var typeId = this._client.getNode(event.eid).getMetaTypeId(),
-                    metaBaseId = this._client.getNode(typeId).getBaseId(),
+                    type = this._client.getNode(typeId),
+                    metaBaseId = type && type.getBaseId(),
                     typeName;
 
                 if (metaBaseId) {

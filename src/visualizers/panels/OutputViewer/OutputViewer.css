@@ -1,0 +1,13 @@
+
+.output-viewer .output-pager {
+    position: absolute;
+    left: 0.75em;
+    bottom: 0;
+    z-index: 100;
+}
+.output-viewer .empty {
+    visibility: hidden;
+}
+.output-viewer .pagination {
+    margin-bottom: 0.5em;
+}

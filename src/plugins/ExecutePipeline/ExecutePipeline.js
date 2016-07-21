@@ -75,6 +75,12 @@ define([
         //     - if so, don't start any more jobs
         this.pipelineError = null;
         this.runningJobs = 0;
+
+        // metadata records
+        this._metadata = {};
+        this._markForDeletion = {};  // id -> node
+        this._oldMetadataByName = {};  // name -> id
+        this.lastAppliedCmd = {};
     };
 
     /**
@@ -176,7 +182,10 @@ define([
 
         // Set the status for each job to 'pending'
         nodes.filter(node => this.core.isTypeOf(node, this.META.Job))
-            .forEach(node => this.core.setAttribute(node, 'status', 'pending'));
+            .forEach(node => {
+                this.recordOldMetadata(node);
+                this.core.setAttribute(node, 'status', 'pending');
+            });
 
         // Set the status of the execution to 'running'
         this.core.setAttribute(this.activeNode, 'status', 'running');
@@ -276,6 +285,7 @@ define([
 
         this.logger.debug(`Operation ${name} (${id}) failed: ${err}`);
         this.core.setAttribute(job, 'status', 'fail');
+        this.clearOldMetadata(job);
         this.onPipelineComplete(err);
     };
 
@@ -345,6 +355,7 @@ define([
             hasReadyOps;
 
         // Set the operation to 'success'!
+        this.clearOldMetadata(jNode);
         this.runningJobs--;
         this.core.setAttribute(jNode, 'status', 'success');
         this.logger.info(`Setting ${jobId} status to "success"`);
