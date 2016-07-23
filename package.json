@@ -1,5 +1,8 @@
 {
   "name": "deepforge",
+  "bin": {
+    "deepforge": "./bin/deepforge"
+  },
   "scripts": {
     "start": "node app.js",
     "start-dev": "NODE_ENV=dev node app.js",
@@ -11,7 +14,11 @@
   },
   "version": "0.9.0",
   "dependencies": {
+    "commander": "^2.9.0",
     "dotenv": "^2.0.0",
+    "exists-file": "^2.1.0",
+    "forever-monitor": "^1.7.0",
+    "lodash.assign": "^4.0.9",
     "lodash.difference": "^4.1.2",
     "nodemon": "^1.9.2",
     "webgme": "^2.0.0",
@@ -23,9 +30,10 @@
     "webgme-simple-nodes": "^2.0.0"
   },
   "devDependencies": {
+    "chai": "^3.0.0",
     "jszip": "^2.5.0",
     "mocha": "^2.2.5",
-    "rimraf": "^2.4.0",
-    "chai": "^3.0.0"
+    "mockery": "^1.7.0",
+    "rimraf": "^2.4.0"
   }
 }

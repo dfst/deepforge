@@ -1,0 +1,393 @@
+#!/usr/bin/env node
+
+var Command = require('commander').Command,
+    program = new Command(),
+    childProcess = require('child_process'),
+    spawn = childProcess.spawn,
+    execSync = childProcess.execSync,
+    path = require('path'),
+    fs = require('fs'),
+    version = require('../package.json').version,
+    exists = require('exists-file'),
+    forever = require('forever-monitor'),
+    DEFAULT_CONFIG = require('./config.json'),
+    assign = require('lodash.assign'),
+    config,
+
+    configDir = path.join(process.env.HOME, '.deepforge'),
+    configPath = path.join(configDir, 'config.json'),
+    dataPath = path.join(configDir, 'data'),
+
+    localConfig,
+    p = dir => dir.replace(/^~/, process.env.HOME);  // resolve '~' to '$HOME'
+
+// Check for any commands
+if (process.argv.length === 2) {
+    process.argv.push('--help');
+}
+
+// Create the config if it doesn't exist
+if (!exists.sync(configDir)) {
+    fs.mkdirSync(configDir);
+}
+if (!exists.sync(dataPath)) {
+    fs.mkdirSync(dataPath);
+}
+if (!exists.sync(configPath)) {
+    fs.writeFileSync(configPath, '{\n}');
+}
+
+localConfig = require(configPath);
+config = assign(DEFAULT_CONFIG, require(configPath));
+
+var getConfigValue = function(id) {
+    var keys = id.split('.'),
+        value = config;
+
+    for (var i = 0; i < keys.length; i++) {
+        value = value[keys[i]];
+        if (!value) {
+            return null;
+        }
+    }
+    return value;
+};
+
+var storeConfig = function(id, value) {
+    // load the config
+    var keys = id.split('.').filter(k => k),
+        lastKey = keys.pop(),
+        currentObj = localConfig,
+        current = getConfigValue(id);
+
+    // Check if it is a valid key
+    if (current === null) {
+        return false;
+    }
+
+    for (var i = 0; i < keys.length; i++) {
+        if (!currentObj[keys[i]]) {
+            currentObj[keys[i]] = {};
+        }
+        currentObj = currentObj[keys[i]];
+    }
+
+    currentObj[lastKey] = value;
+    fs.writeFileSync(configPath, JSON.stringify(localConfig, null, 2));
+    return true;
+};
+
+program
+    .version('v' + version)
+    .description('Command line interface for managing deepforge');
+
+// start
+var start = function(main, opts) {
+    var child = new forever.Monitor(main, opts);
+    child.on('exit', function () {
+        console.log('Exited after 3 failed restarts');
+    });
+
+    child.start();
+};
+
+var isLocalUri = function(protocol, uri) {
+    return uri.indexOf(protocol + '://localhost') === 0 ||
+        uri.indexOf(protocol + '://127.0.0.1') === 0;
+};
+
+var checkMongo = function(args) {
+    // check the webgme config
+    var gmeConfig = require('../config'),
+        mongoUri = gmeConfig.mongo.uri;
+
+    if (isLocalUri('mongodb', mongoUri)) {
+        // Make sure mongo is running locally (using pgrep)
+        try {
+            execSync('pgrep mongod').toString();
+            console.log('MongoDB is already running!');
+        } catch (e) {  // no pIds
+            console.log('Starting MongoDB...');
+            startMongo(args, true);
+        }
+    }
+};
+
+var startMongo = function(args, silent) {
+    var job = spawn('mongod', ['--dbpath', p(config.mongo.dir)], {
+        cwd: process.env.HOME
+    });
+    if (!silent) {
+        job.stdout.on('data',
+            data => process.stdout.write(data.toString()));
+    }
+    job.on('error', err => {
+        if (err.code === 'ENOENT') {
+            console.log('Could not find MongoDB. Is it installed?');
+            if (!args.mongo) {
+                console.log('Otherwise, set MONGO_URI to the desired mongo uri and try again:');
+                console.log('');
+                console.log('    MONGO_URI=mongodb://some.other.ip:27017' +
+                    `/deepforge deepforge ${process.argv.slice(2).join(' ')}`);
+                console.log('');
+            }
+        } else {
+            console.log('Error encountered while starting MongoDB');
+            throw err;
+        }
+    });
+    job.stderr.on('data', data => {
+        var msg = 'mongodb: ' + data;
+        process.stdout.write(msg);
+    });
+    job.on('exit', code => {
+        if (code) {
+            console.log('MongoDB closed w/ error code: ' + code);
+        }
+    });
+};
+var checkTorch = function() {
+    return new Promise(_checkTorch)
+        .catch(() => 'Torch installation failed');
+};
+
+var _checkTorch = function(resolve, reject) {
+    var result = childProcess.spawnSync('th', ['--help']),
+        tgtDir = p(config.torch.dir),
+        cmds;
+
+    if (result.error) {
+        // Try to install torch
+        console.log(`Torch7 not found. Installing to ${tgtDir}...`);
+
+        cmds = [
+            `git clone https://github.com/torch/distro.git ${tgtDir} --recursive`,
+            `cd ${tgtDir}`,
+            'bash install-deps',
+            './install.sh'
+        ];
+
+        spawnMany(cmds,
+            () => {
+                storeConfig('torch.dir', tgtDir);
+                resolve(true);
+            },
+            reject
+        );
+    } else {
+        resolve(false);
+    }
+};
+
+var spawnMany = function(cmds, succ, err) {
+    var rawCmd,
+        cmd,
+        args,
+        job;
+
+    if (cmds.length === 0) {
+        return succ();
+    }
+
+    rawCmd = cmds.shift();
+    args = rawCmd.split(' ');
+    cmd = args.shift();
+    job = spawn(cmd, args);
+    job.stdout.on('data', data => process.stdout.write(data));
+    job.stderr.on('data', data => process.stderr.write(data));
+    job.on('close', code => {
+        if (code) {
+            console.log(`${rawCmd} failed w/ error code ${code}`);
+            err(code, rawCmd);
+        } else {
+            spawnMany(cmds, succ, err);
+        }
+    });
+
+};
+
+program.command('start')
+    .description('start deepforge locally (default) or specific components')
+    .option('-p, --port <port>', 'specify the port to use')
+    .option('-s, --server', 'start the server')
+    .option('-w, --worker [url]', 'start a worker and connect to given url. Defaults to local deepforge')
+    .option('-m, --mongo', 'start MongoDB')
+    .action(args => {
+        var main = path.join(__dirname, 'start-local.js'),
+            opts;
+
+        opts = {
+            max: 3,
+            args: []
+        };
+
+        if (args.port) {
+            opts.env = {
+                PORT: args.port
+            };
+        }
+
+        if (args.server) {
+            checkMongo(args);
+            main = path.join(__dirname, '..', 'app.js');
+            start(main, opts);
+        }
+
+        if (args.worker) {
+            checkTorch().then(() => {
+                main = path.join(__dirname, 'start-worker.js');
+                if (args.worker !== true) {
+                    opts.args.push(args.worker);
+                }
+                start(main, opts);
+            });
+        }
+
+        if (args.mongo) {
+            startMongo(args);
+        }
+
+        if (!args.server && !args.worker && !args.mongo) {
+            // Starting everything
+            checkMongo(args);
+            checkTorch().then(() => start(main, opts));
+        }
+
+    });
+
+// update
+program
+    .command('update')
+    .description('upgrade deepforge to latest version')
+    .option('-g, --git', 'update tracking the git repo')
+    .option('-t, --torch', 'update torch installation')
+    .option('-s, --server', 'update deepforge')
+    .action(args => {
+        var pkg = 'deepforge',
+            job,
+            latestVersion;
+
+        // Install the project
+        if (!args.torch || args.server) {
+
+            if (args.git) {
+                pkg = 'dfst/deepforge';
+            } else {
+                // Check the version
+                try {
+                    latestVersion = execSync('npm show deepforge version')
+                        .toString().replace(/\s+$/, '');
+
+                    if (latestVersion === version) {
+                        console.log('Already up-to-date');
+                        return;
+                    }
+                } catch (e) {
+                    console.log('Could not retrieve the latest deepforge version');
+                }
+            }
+
+            job = spawn('npm', ['install', '-g', pkg]);
+            job.stdout.on('data', data => process.stdout.write(data.toString()));
+            job.stderr.on('data', data => process.stderr.write(data.toString()));
+            job.on('close', code => {
+                if (!code) {
+                    console.log('Upgrade successful!');
+                } else {
+                    console.log('Upgrade failed w/ error code: ' + code);
+                }
+            });
+        }
+
+        if (args.torch || !args.server) {
+            // Update torch
+            checkTorch().then(justInstalled => {
+                if (!justInstalled) {
+                    // Upgrade torch
+                    console.log('Upgrading torch...');
+                    job = spawn('bash', ['./update.sh'], {
+                        cwd: p(config.torch.dir)
+                    });
+                    job.stdout.on('data', data => process.stdout.write(data.toString()));
+                    job.stderr.on('data', data => process.stderr.write(data.toString()));
+                    job.on('close', code => {
+                        if (!code) {
+                            console.log('Upgrade successful!');
+                        } else {
+                            console.log('Upgrade failed w/ error code: ' + code);
+                        }
+                    });
+                }
+            });
+        }
+    });
+
+// uninstall command
+program
+    .command('uninstall')
+    .description('uninstall deepforge from the system')
+    .option('-t, --torch', 'uninstall torch')
+    .option('-c, --clean', 'uninstall deepforge, torch and all associated data/config')
+    .action(opts => {
+        if (opts.torch || opts.clean) {
+            if (opts.torch) {
+                console.log(`uninstalling torch at ${p(config.torch.dir)}`);
+            }
+            fs.unlinkSync(p(config.torch.dir));
+        }
+
+        if (opts.clean) {  // remove the .deepforge directory
+            console.log('removing config and data files...');
+            fs.unlinkSync(p(config.mongo.dir));
+            fs.unlinkSync(p(configDir));
+        }
+
+        if (!opts.torch || opts.clean) {  // uninstall deepforge
+            spawnMany(
+                ['npm uninstall -g deepforge'],
+                () => console.log('deepforge has been uninstalled!'),
+                () => console.log('uninstall failed')
+            );
+        }
+    });
+
+// config
+program
+    .command('config [key] [value]')
+    .description('read or edit config options (omit "value" to see current value)')
+    .action(key => {
+        var value = program.args[1],
+            success;
+
+        if (value) {  // write a value
+            success = storeConfig(key, value);
+            if (success) {
+                console.log('Config has been updated!');
+            }
+        } else if (key) {  // read a single value
+            value = getConfigValue(key);
+            if (value === null) {
+                console.log(`Invalid config value: "${key}"`);
+                return;
+            } 
+
+            if (typeof value === 'object') {
+                value = JSON.stringify(value, null, 2);
+            }
+
+            console.log(value);
+        } else {  // print entire config
+            console.log(`Current config:\n${JSON.stringify(config, null, 2)}`);
+        }
+    });
+
+module.exports = function(cmd) {
+    var cmds = cmd.split(/\s+/).filter(w => !!w);
+    cmds.unshift('node');
+    cmds.unshift('./bin/deepforge');
+    program.parse(cmds);
+};
+
+if (require.main === module) {
+    program.parse(process.argv);
+}
