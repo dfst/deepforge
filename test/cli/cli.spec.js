@@ -1,5 +1,4 @@
 var mockery = require('mockery'),
-    fs = require('fs'),
     assert = require('assert'),
     path = require('path'),
     nop = () => {},
@@ -13,6 +12,7 @@ var callRegister = {
 
 var mocks = {
     childProcess: {},
+    rimraf: {},
     forever: {}
 };
 
@@ -23,7 +23,7 @@ var childProcess = {
             return mocks.childProcess.execSync.apply(this, arguments);
         }
     },
-    spawn: function(cmd) {
+    spawn: function() {
         if (mocks.childProcess.spawn) {
             mocks.childProcess.spawn.apply(this, arguments);
         }
@@ -48,6 +48,12 @@ forever.Monitor = function() {
     }
     return res;
 };
+var rimraf = {};
+rimraf.sync = function() {
+    if (mocks.rimraf.sync) {
+        mocks.rimraf.sync.apply(this, arguments);
+    }
+};
 
 describe('cli', function() {
     before(function() {
@@ -58,6 +64,7 @@ describe('cli', function() {
         });
         mockery.registerMock('child_process', childProcess);
         mockery.registerMock('forever-monitor', forever);
+        mockery.registerMock('rimraf', rimraf);
         cli = require('../../bin/deepforge');
     });
 
@@ -71,6 +78,7 @@ describe('cli', function() {
             mocks.childProcess.execSync = nop;
             mocks.childProcess.spawn = nop;
             mocks.forever.Monitor = nop;
+            mocks.rimraf.sync = nop;
         });
 
         it('should check for running mongo', function() {
@@ -129,10 +137,8 @@ describe('cli', function() {
 
     describe('uninstall', function() {
         it('should only remove \'torch\' if --torch option set', function() {
-            var oldUnlink = fs.unlinkSync;
-            fs.unlinkSync = path => assert.notEqual(path.indexOf('torch'), -1);
+            mocks.rimraf.sync = path => assert.notEqual(path.indexOf('torch'), -1);
             cli('uninstall --torch');
-            fs.unlinkSync = oldUnlink;
         });
 
         it('should uninstall deepforge w/ npm', function() {
@@ -141,21 +147,16 @@ describe('cli', function() {
                 assert.equal(args[0], 'uninstall');
                 assert.notEqual(args.indexOf('deepforge'), -1);
             };
-            var oldUnlink = fs.unlinkSync;
-            fs.unlinkSync = nop;
             cli('uninstall');
-            fs.unlinkSync = oldUnlink;
         });
 
         it('should remove ~/.deepforge if --clean option set', function(done) {
-            var oldUnlink = fs.unlinkSync;
-            fs.unlinkSync = dir => {
+            mocks.rimraf.sync = dir => {
                 if (dir === path.join(process.env.HOME, '.deepforge')) {
                     done();
                 }
             };
             cli('uninstall --clean');
-            fs.unlinkSync = oldUnlink;
         });
     });
 

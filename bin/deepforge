@@ -19,6 +19,7 @@ var Command = require('commander').Command,
     dataPath = path.join(configDir, 'data'),
 
     localConfig,
+    rm_rf = require('rimraf'),
     p = dir => dir.replace(/^~/, process.env.HOME);  // resolve '~' to '$HOME'
 
 // Check for any commands
@@ -333,13 +334,13 @@ program
             if (opts.torch) {
                 console.log(`uninstalling torch at ${p(config.torch.dir)}`);
             }
-            fs.unlinkSync(p(config.torch.dir));
+            rm_rf.sync(p(config.torch.dir));
         }
 
         if (opts.clean) {  // remove the .deepforge directory
             console.log('removing config and data files...');
-            fs.unlinkSync(p(config.mongo.dir));
-            fs.unlinkSync(p(configDir));
+            rm_rf.sync(p(config.mongo.dir));
+            rm_rf.sync(p(configDir));
         }
 
         if (!opts.torch || opts.clean) {  // uninstall deepforge

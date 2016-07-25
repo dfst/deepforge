@@ -27,13 +27,13 @@
     "webgme-chflayout": "^2.0.0",
     "webgme-easydag": "dfst/webgme-easydag",
     "webgme-fab": "dfst/webgme-fab",
-    "webgme-simple-nodes": "^2.0.0"
+    "webgme-simple-nodes": "^2.0.0",
+    "rimraf": "^2.4.0"
   },
   "devDependencies": {
     "chai": "^3.0.0",
     "jszip": "^2.5.0",
     "mocha": "^2.2.5",
-    "mockery": "^1.7.0",
-    "rimraf": "^2.4.0"
+    "mockery": "^1.7.0"
   }
 }
