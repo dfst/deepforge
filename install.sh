@@ -5,13 +5,6 @@
 command -v git >/dev/null 2>&1 || { echo >&2 "I require git but it's not installed.  Aborting."; exit 1; }
 
 echo >&2 "Checking DeepForge dependencies...";
-command -v th >/dev/null 2>&1 || {
-    # No torch!
-    echo >&2 "Torch is not found. Installing...";
-    git clone https://github.com/torch/distro.git ~/torch --recursive;
-    cd ~/torch; bash install-deps;
-    ./install.sh;
-}
 
 # profile (bash, zsh, profile, etc) borrowed from nvm's installer
 detect_profile() {
@@ -104,23 +97,20 @@ command -v node >/dev/null 2>&1 || {
 echo >&2 "Installing DeepForge...";
 
 # Clone deepforge into ~/deepforge
-git clone https://github.com/dfst/deepforge ~/deepforge
-cd ~/deepforge
-npm install
+npm install -g deepforge
 
-mkdir ~/deepforge/data 2> /dev/null
-
-echo "Final Installation steps:"
+echo "Final Installation Steps:"
 echo "  1) Close and re-open your terminal"
 echo "     (or run \"source $DETECTED_PROFILE\")"
 
 if [[ $NEEDS_MONGO ]]; then
     echo "  2) Install MongoDB for your OS"
     echo "     (available at https://www.mongodb.com/download-center)"
+    echo "     Note: for custom installs, this may not be required"
 fi
 
 echo ""
 echo "Then run DeepForge!"
-echo "  1) make sure MongoDB is running locally"
-echo "     (start mongo w/ \"mongod --dbpath ~/deepforge/data\")"
-echo "  2) Run \"npm run local\" from ~/deepforge"
+echo "  1) run \"deepforge start\""
+echo "  2) open a browser to http://localhost:8888"
+echo "  3) start building neural nets!"

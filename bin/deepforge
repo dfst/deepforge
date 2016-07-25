@@ -155,23 +155,22 @@ var checkTorch = function() {
 var _checkTorch = function(resolve, reject) {
     var result = childProcess.spawnSync('th', ['--help']),
         tgtDir = p(config.torch.dir),
-        cmds;
+        gcl = `git clone https://github.com/torch/distro.git ${tgtDir} --recursive`;
 
     if (result.error) {
         // Try to install torch
         console.log(`Torch7 not found. Installing to ${tgtDir}...`);
 
-        cmds = [
-            `git clone https://github.com/torch/distro.git ${tgtDir} --recursive`,
-            `cd ${tgtDir}`,
-            'bash install-deps',
-            './install.sh'
-        ];
-
-        spawnMany(cmds,
+        spawnMany([gcl],
             () => {
-                storeConfig('torch.dir', tgtDir);
-                resolve(true);
+                process.chdir(tgtDir);
+                spawnMany([
+                    'bash install-deps',
+                    './install.sh'
+                ], () => {
+                    storeConfig('torch.dir', tgtDir);
+                    resolve(true);
+                }, reject);
             },
             reject
         );
