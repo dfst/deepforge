@@ -2,12 +2,14 @@
 var spawn = require('child_process').spawn,
     stdout = '',
     execJob,
+    path = require('path'),
+    env = {cwd: path.join(__dirname, '..')},
     workerJob = null;
 
 process.env.NODE_ENV = 'local';
 execJob = spawn('npm', [
     'start'
-]);
+], env);
 execJob.stdout.pipe(process.stdout);
 execJob.stderr.pipe(process.stderr);
 
@@ -15,7 +17,7 @@ execJob.stdout.on('data', function(chunk) {
     if (!workerJob) {
         stdout += chunk;
         if (stdout.indexOf('DeepForge') > -1) {
-            workerJob = spawn('npm', ['run', 'worker']);
+            workerJob = spawn('npm', ['run', 'worker'], env);
             workerJob.stdout.pipe(process.stdout);
             workerJob.stderr.pipe(process.stderr);
             workerJob.on('close', code => code && process.exit(code));
