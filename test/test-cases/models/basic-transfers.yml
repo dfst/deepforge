@@ -1,60 +1,76 @@
 - type: Reshape
-  id: 0
+  id: /J/1
   next:
-    - 2
+    - /J/5
   attributes:
-    dimensions: 100
+    params: 100
+- type: Linear
+  id: /J/5
+  next:
+    - /J/x
+  attributes:
+    bias: ''
+    outputSize: 300
+    inputSize: 100
+- type: Sigmoid
+  id: /J/F
+  next:
+    - /J/z
+  attributes: {}
+- type: ReLU
+  id: /J/G
+  next:
+    - /J/q
+  attributes:
+    p: ''
 - type: SoftMax
-  id: 1
+  id: /J/Y
   next: []
   attributes: {}
-- type: Linear
-  id: 2
-  next:
-    - 5
-  attributes:
-    output: 300
-- type: ReLU
-  id: 3
-  next:
-    - 6
-  attributes: {}
-- type: Sigmoid
-  id: 4
-  next:
-    - 7
-  attributes: {}
-- type: RReLU
-  id: 5
-  next:
-    - 10
-  attributes: {}
-- type: Linear
-  id: 6
-  next:
-    - 4
-  attributes:
-    output: 100
-- type: Linear
-  id: 7
-  next:
-    - 8
-  attributes:
-    output: 120
 - type: LeakyReLU
-  id: 8
+  id: /J/c
   next:
-    - 9
-  attributes: {}
-- type: Linear
-  id: 9
-  next:
-    - 1
+    - /J/m
   attributes:
-    output: 5
+    negval: ''
+    ip: false
 - type: Linear
-  id: 10
+  id: /J/d
   next:
-    - 3
+    - /J/G
   attributes:
-    output: 100
+    bias: ''
+    outputSize: 100
+    inputSize: 300
+- type: Linear
+  id: /J/m
+  next:
+    - /J/Y
+  attributes:
+    bias: ''
+    outputSize: 5
+    inputSize: 120
+- type: Linear
+  id: /J/q
+  next:
+    - /J/F
+  attributes:
+    bias: ''
+    outputSize: 100
+    inputSize: 100
+- type: RReLU
+  id: /J/x
+  next:
+    - /J/d
+  attributes:
+    l: ''
+    u: ''
+    ip: false
+- type: Linear
+  id: /J/z
+  next:
+    - /J/c
+  attributes:
+    bias: ''
+    outputSize: 120
+    inputSize: 100

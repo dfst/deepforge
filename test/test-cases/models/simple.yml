@@ -1,11 +1,13 @@
 - type: Linear
-  id: 11
+  id: /3/O
   next: []
   attributes:
-    output: 10
+    bias: ''
+    outputSize: 10
+    inputSize: 100
 - type: Reshape
-  id: 12
+  id: /3/g
   next:
-    - 11
+    - /3/O
   attributes:
-    dimensions: 100
+    params: 100

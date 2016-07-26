@@ -1,22 +1,26 @@
-- type: Linear
-  id: 4
-  next:
-    - 7
-  attributes:
-    output: 300
 - type: Reshape
-  id: 5
+  id: /Y/0
   next:
-    - 4
+    - /Y/y
   attributes:
-    dimensions: 100
+    params: 100
 - type: Linear
-  id: 6
+  id: /Y/Z
   next: []
   attributes:
-    output: 10
+    bias: ''
+    outputSize: 10
+    inputSize: 300
 - type: Tanh
-  id: 7
+  id: /Y/p
   next:
-    - 6
+    - /Y/Z
   attributes: {}
+- type: Linear
+  id: /Y/y
+  next:
+    - /Y/p
+  attributes:
+    bias: ''
+    outputSize: 300
+    inputSize: 100

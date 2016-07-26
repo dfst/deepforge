@@ -1,65 +1,67 @@
+- type: Linear
+  id: /p/H
+  next:
+    - /p/V
+  attributes:
+    bias: ''
+    outputSize: 150
+    inputSize: 100
 - type: Reshape
-  id: 1
-  attributes:
-      dimensions: 100
+  id: /p/L
   next:
-      - 2
-      - 3
-
-# Left side
+    - /p/M
+    - /p/H
+  attributes:
+    params: 100
 - type: Linear
-  id: 2
-  attributes:
-      output: 150
+  id: /p/M
   next:
-      - 4
-
+    - /p/P
+  attributes:
+    bias: ''
+    outputSize: 150
+    inputSize: 100
 - type: Tanh
-  id: 4
+  id: /p/P
   next:
-      - 6
-
+    - /p/W
+  attributes: {}
 - type: Linear
-  id: 6
-  attributes:
-      output: 50
+  id: /p/R
   next:
-      - 8
-
-# Right side
-- type: Linear
-  id: 3
+    - /p/n
   attributes:
-      output: 150
-  next:
-      - 5
-
+    bias: ''
+    outputSize: 30
+    inputSize: 150
 - type: Tanh
-  id: 5
+  id: /p/V
   next:
-      - 7
-
+    - /p/R
+  attributes: {}
 - type: Linear
-  id: 7
-  attributes:
-      output: 30
+  id: /p/W
   next:
-      - 8
-
-# Center
+    - /p/n
+  attributes:
+    bias: ''
+    outputSize: 50
+    inputSize: 150
+- type: Linear
+  id: /p/Zj
+  next: []
+  attributes:
+    bias: ''
+    outputSize: 7
+    inputSize: 80
 - type: Concat
-  id: 8
-  attributes:
-      dim: 1
+  id: /p/n
   next:
-      - 9
-
+    - /p/w
+  attributes:
+    dimension: 1
 - type: Tanh
-  id: 9
+  id: /p/w
   next:
-      - 10
-
-- type: Linear
-  id: 10
-  attributes:
-      output: 7
+    - /p/Zj
+  attributes: {}

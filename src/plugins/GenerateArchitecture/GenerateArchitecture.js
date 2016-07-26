@@ -178,10 +178,35 @@ define([
     };
 
     GenerateArchitecture.prototype.createArgString = function (layer) {
-        return '(' + this.LayerDict[layer.name]
+        var setters = this.LayerDict[layer.name].setters,
+            setterNames = Object.keys(this.LayerDict[layer.name].setters),
+            base = layer[Constants.BASE],
+            desc,
+            fn,
+            layerCode;
+
+        layerCode = '(' + this.LayerDict[layer.name].args
             .map(arg => layer[arg.name])
             .filter(GenerateArchitecture.isSet)
-        .join(', ') + ')';
+            .join(', ') + ')';
+
+        // Add any setters
+        // For each setter, check if it has been changed (and needs to be set)
+        for (var i = setterNames.length; i--;) {
+            desc = setters[setterNames[i]];
+            if (desc.setterType === 'const') {
+                // if the value is not the default, add the given fn
+                if (layer[setterNames[i]] !== base[setterNames[i]]) {
+                    fn = desc.setterFn[layer[setterNames[i]]];
+                    layerCode += `:${fn}()`;
+                }
+            } else if (layer[setterNames[i]] !== null) {
+                fn = desc.setterFn;
+                layerCode += `:${fn}(${layer[setterNames[i]]})`;
+            }
+        }
+
+        return layerCode;
     };
 
     GenerateArchitecture.isSet = function (value) {

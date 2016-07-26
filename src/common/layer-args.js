@@ -19,6 +19,10 @@ define([
         return arg.hasOwnProperty('argindex');
     };
 
+    var isSetter = function(arg) {
+        return arg.hasOwnProperty('setterType');
+    };
+
     var sortByIndex = function(a, b) {
         return a.argindex > b.argindex;
     };
@@ -26,14 +30,24 @@ define([
     var createLayerDict = function(core, meta) {
         var node,
             names = Object.keys(meta),
-            layers = {};
+            layers = {},
+            setters,
+            attrs;
 
         for (var i = names.length; i--;) {
             node = meta[names[i]];
-            layers[names[i]] = core.getValidAttributeNames(node)
-                .map(attr => prepAttribute(core, node, attr))
+            attrs = core.getValidAttributeNames(node)
+                .map(attr => prepAttribute(core, node, attr));
+            layers[names[i]] = {};
+            layers[names[i]].args = attrs
                 .filter(isArgument)
                 .sort(sortByIndex);
+
+            layers[names[i]].setters = {};
+            setters = attrs.filter(isSetter);
+            for (var j = setters.length; j--;) {
+                layers[names[i]].setters[setters[j].name] = setters[j];
+            }
         }
 
         return layers;

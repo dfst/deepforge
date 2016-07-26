@@ -1,0 +1,198 @@
+- type: Linear
+  id: /9/2
+  next:
+    - /9/U
+  attributes:
+    bias: ''
+    outputSize: 4096
+    inputSize: 3072
+- type: SpatialMaxPooling
+  id: /9/3
+  next:
+    - /9/Ae
+  attributes:
+    padW: 0
+    padH: 0
+    ceil_mode: false
+    dH: 2
+    dW: 2
+    kH: 2
+    kW: 2
+- type: SpatialConvolution
+  id: /9/6
+  next:
+    - /9/p
+  attributes:
+    padW: 0
+    padH: ''
+    dH: 4
+    dW: 4
+    kH: 11
+    kW: 11
+    nOutputPlane: 96
+    nInputPlane: 3
+- type: SpatialConvolution
+  id: /9/A
+  next:
+    - /9/P
+  attributes:
+    padW: 0
+    padH: ''
+    dH: 1
+    dW: 1
+    kH: 5
+    kW: 5
+    nOutputPlane: 256
+    nInputPlane: 96
+- type: Linear
+  id: /9/AQ
+  next:
+    - /9/m
+  attributes:
+    bias: ''
+    outputSize: 7
+    inputSize: 4096
+- type: View
+  id: /9/Ae
+  next:
+    - /9/V
+  attributes:
+    numInputDims: null
+    params: 25600
+- type: ReLU
+  id: /9/F
+  next:
+    - /9/3
+  attributes:
+    p: true
+- type: SpatialMaxPooling
+  id: /9/I
+  next:
+    - /9/A
+  attributes:
+    padW: 0
+    padH: 0
+    ceil_mode: false
+    dH: 2
+    dW: 2
+    kH: 2
+    kW: 2
+- type: SpatialMaxPooling
+  id: /9/J
+  next:
+    - /9/a
+  attributes:
+    padW: 0
+    padH: 0
+    ceil_mode: false
+    dH: 2
+    dW: 2
+    kH: 2
+    kW: 2
+- type: SpatialConvolution
+  id: /9/L
+  next:
+    - /9/z
+  attributes:
+    padH: 1
+    padW: 1
+    dH: 1
+    dW: 1
+    kH: 3
+    kW: 3
+    nOutputPlane: 1024
+    nInputPlane: 512
+- type: ReLU
+  id: /9/P
+  next:
+    - /9/J
+  attributes:
+    p: true
+- type: ReLU
+  id: /9/Q
+  next:
+    - /9/L
+  attributes:
+    p: true
+- type: Linear
+  id: /9/T
+  next:
+    - /9/UZ
+  attributes:
+    bias: ''
+    outputSize: 3072
+    inputSize: 25600
+- type: Threshold
+  id: /9/U
+  next:
+    - /9/AQ
+  attributes:
+    ip: ''
+    v: 0.000001
+    th: 0
+- type: Threshold
+  id: /9/UZ
+  next:
+    - /9/zp
+  attributes:
+    ip: ''
+    v: 0.000001
+    th: 0
+- type: Dropout
+  id: /9/V
+  next:
+    - /9/T
+  attributes:
+    v1: ''
+    inplace: ''
+    p: 0.5
+- type: SpatialConvolution
+  id: /9/a
+  next:
+    - /9/Q
+  attributes:
+    padH: 1
+    padW: 1
+    dH: 1
+    dW: 1
+    kH: 3
+    kW: 3
+    nOutputPlane: 512
+    nInputPlane: 256
+- type: SpatialConvolution
+  id: /9/l
+  next:
+    - /9/F
+  attributes:
+    padH: 1
+    padW: 1
+    dH: 1
+    dW: 1
+    kH: 3
+    kW: 3
+    nOutputPlane: 1024
+    nInputPlane: 1024
+- type: LogSoftMax
+  id: /9/m
+  next: []
+  attributes: {}
+- type: ReLU
+  id: /9/p
+  next:
+    - /9/I
+  attributes:
+    p: true
+- type: ReLU
+  id: /9/z
+  next:
+    - /9/l
+  attributes:
+    p: true
+- type: Dropout
+  id: /9/zp
+  next:
+    - /9/2
+  attributes:
+    v1: ''
+    inplace: ''
+    p: 0.5

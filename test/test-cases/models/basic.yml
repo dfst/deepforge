@@ -1,22 +1,29 @@
+- type: Reshape
+  id: /x/3
+  next:
+    - /x/K
+  attributes:
+    params: 100
 - type: Linear
-  id: 0
+  id: /x/K
+  next:
+    - /x/e
+  attributes:
+    bias: ''
+    outputSize: 300
+    inputSize: 100
+- type: Linear
+  id: /x/N
   next: []
   attributes:
-    output: 10
-- type: Linear
-  id: 1
-  next:
-    - 2
-  attributes:
-    output: 300
+    bias: ''
+    outputSize: 10
+    inputSize: 300
 - type: HardTanh
-  id: 2
+  id: /x/e
   next:
-    - 0
-  attributes: {}
-- type: Reshape
-  id: 3
-  next:
-    - 1
+    - /x/N
   attributes:
-    dimensions: 100
+    min_value: ''
+    max_value: 1
+    inplace: ''

@@ -1,6 +1,7 @@
 -- Copy of googlenet.lua which uses setters (the other googlenet has them removed)
 require 'nn'
 nGPU = 10
+nClasses = 1000
 local function inception(input_size, config)
    local concat = nn.Concat(2)
    if config[1][1] ~= 0 then

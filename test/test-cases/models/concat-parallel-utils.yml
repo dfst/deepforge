@@ -1,0 +1,77 @@
+- type: Linear
+  id: /l/1
+  next:
+    - /l/s
+  attributes:
+    calculateDimensionality: function calcDims(layer) return layer.output; end
+    dimensionalityTransform: custom
+    output: 50
+- type: Reshape
+  id: /l/8
+  next:
+    - /l/i
+    - /l/D
+  attributes:
+    calculateDimensionality: 'function calcDims(layer) return 1; --[[ return output dimensions --]] end'
+    dimensionalityTransform: same
+    dimensions: 100
+- type: Tanh
+  id: /l/9
+  next:
+    - /l/k
+  attributes:
+    calculateDimensionality: 'function calcDims(layer) return 1; --[[ return output dimensions --]] end'
+    dimensionalityTransform: same
+- type: Linear
+  id: /l/D
+  next:
+    - /l/9
+  attributes:
+    calculateDimensionality: function calcDims(layer) return layer.output; end
+    dimensionalityTransform: custom
+    output: 150
+- type: Tanh
+  id: /l/X
+  next:
+    - /l/a
+  attributes:
+    calculateDimensionality: 'function calcDims(layer) return 1; --[[ return output dimensions --]] end'
+    dimensionalityTransform: same
+- type: Linear
+  id: /l/a
+  next: []
+  attributes:
+    calculateDimensionality: function calcDims(layer) return layer.output; end
+    dimensionalityTransform: custom
+    output: 7
+- type: Tanh
+  id: /l/f
+  next:
+    - /l/1
+  attributes:
+    calculateDimensionality: 'function calcDims(layer) return 1; --[[ return output dimensions --]] end'
+    dimensionalityTransform: same
+- type: Linear
+  id: /l/i
+  next:
+    - /l/f
+  attributes:
+    calculateDimensionality: function calcDims(layer) return layer.output; end
+    dimensionalityTransform: custom
+    output: 150
+- type: Linear
+  id: /l/k
+  next:
+    - /l/s
+  attributes:
+    calculateDimensionality: function calcDims(layer) return layer.output; end
+    dimensionalityTransform: custom
+    output: 30
+- type: Concat
+  id: /l/s
+  next:
+    - /l/X
+  attributes:
+    calculateDimensionality: 'function calcDims(layer) return 1; --[[ return output dimensions --]] end'
+    dimensionalityTransform: same
+    dim: 1

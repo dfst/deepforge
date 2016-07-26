@@ -1,0 +1,68 @@
+- type: Linear
+  id: /Z/1
+  next:
+    - /Z/E
+  attributes:
+    calculateDimensionality: function calcDims(layer) return layer.output; end
+    dimensionalityTransform: custom
+    output: 30
+- type: Tanh
+  id: /Z/3
+  next:
+    - /Z/a
+  attributes:
+    calculateDimensionality: 'function calcDims(layer) return 1; --[[ return output dimensions --]] end'
+    dimensionalityTransform: same
+- type: Linear
+  id: /Z/7
+  next:
+    - /Z/o
+  attributes:
+    calculateDimensionality: function calcDims(layer) return layer.output; end
+    dimensionalityTransform: custom
+    output: 150
+- type: Concat
+  id: /Z/E
+  next:
+    - /Z/M
+  attributes:
+    calculateDimensionality: 'function calcDims(layer) return 1; --[[ return output dimensions --]] end'
+    dimensionalityTransform: same
+    dim: 1
+- type: Tanh
+  id: /Z/M
+  next:
+    - /Z/n
+  attributes:
+    calculateDimensionality: 'function calcDims(layer) return 1; --[[ return output dimensions --]] end'
+    dimensionalityTransform: same
+- type: Linear
+  id: /Z/a
+  next:
+    - /Z/E
+  attributes:
+    calculateDimensionality: function calcDims(layer) return layer.output; end
+    dimensionalityTransform: custom
+    output: 50
+- type: Linear
+  id: /Z/n
+  next: []
+  attributes:
+    calculateDimensionality: function calcDims(layer) return layer.output; end
+    dimensionalityTransform: custom
+    output: 7
+- type: Tanh
+  id: /Z/o
+  next:
+    - /Z/1
+  attributes:
+    calculateDimensionality: 'function calcDims(layer) return 1; --[[ return output dimensions --]] end'
+    dimensionalityTransform: same
+- type: Linear
+  id: /Z/t
+  next:
+    - /Z/3
+  attributes:
+    calculateDimensionality: function calcDims(layer) return layer.output; end
+    dimensionalityTransform: custom
+    output: 150

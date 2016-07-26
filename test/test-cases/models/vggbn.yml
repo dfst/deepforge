@@ -1,0 +1,297 @@
+- type: Linear
+  id: /S/1
+  next:
+    - /S/s
+  attributes:
+    bias: ''
+    outputSize: 4096
+    inputSize: 4096
+- type: SpatialMaxPooling
+  id: /S/4
+  next:
+    - /S/fu
+  attributes:
+    padW: 0
+    padH: 0
+    ceil_mode: false
+    dH: 2
+    dW: 2
+    kH: 2
+    kW: 2
+- type: ReLU
+  id: /S/7
+  next:
+    - /S/f
+  attributes:
+    p: true
+- type: Dropout
+  id: /S/A
+  next:
+    - /S/Pt
+  attributes:
+    v1: ''
+    inplace: ''
+    p: 0.5
+- type: View
+  id: /S/B
+  next:
+    - /S/WQ
+  attributes:
+    numInputDims: null
+    params: 25088
+- type: ReLU
+  id: /S/C
+  next:
+    - /S/w
+  attributes:
+    p: true
+- type: Threshold
+  id: /S/Ee
+  next:
+    - /S/i
+  attributes:
+    ip: ''
+    v: 0.000001
+    th: 0
+- type: SpatialMaxPooling
+  id: /S/H
+  next:
+    - /S/b
+  attributes:
+    padW: 0
+    padH: 0
+    ceil_mode: false
+    dH: 2
+    dW: 2
+    kH: 2
+    kW: 2
+- type: LogSoftMax
+  id: /S/Iz
+  next: []
+  attributes: {}
+- type: SpatialMaxPooling
+  id: /S/M
+  next:
+    - /S/X
+  attributes:
+    padW: 0
+    padH: 0
+    ceil_mode: false
+    dH: 2
+    dW: 2
+    kH: 2
+    kW: 2
+- type: BatchNormalization
+  id: /S/MT
+  next:
+    - /S/A
+  attributes:
+    momentum: ''
+    affine: ''
+    eps: 0.001
+    nOutput: 4096
+- type: ReLU
+  id: /S/P
+  next:
+    - /S/cJ
+  attributes:
+    p: true
+- type: ReLU
+  id: /S/PX
+  next:
+    - /S/Z
+  attributes:
+    p: true
+- type: Linear
+  id: /S/Pt
+  next:
+    - /S/Iz
+  attributes:
+    bias: ''
+    outputSize: 1000
+    inputSize: 4096
+- type: SpatialConvolution
+  id: /S/R
+  next:
+    - /S/T
+  attributes:
+    padH: 1
+    padW: 1
+    dH: 1
+    dW: 1
+    kH: 3
+    kW: 3
+    nOutputPlane: 128
+    nInputPlane: 64
+- type: ReLU
+  id: /S/T
+  next:
+    - /S/M
+  attributes:
+    p: true
+- type: Linear
+  id: /S/WQ
+  next:
+    - /S/Ee
+  attributes:
+    bias: ''
+    outputSize: 4096
+    inputSize: 25088
+- type: SpatialConvolution
+  id: /S/X
+  next:
+    - /S/7
+  attributes:
+    padH: 1
+    padW: 1
+    dH: 1
+    dW: 1
+    kH: 3
+    kW: 3
+    nOutputPlane: 256
+    nInputPlane: 128
+- type: ReLU
+  id: /S/Y
+  next:
+    - /S/t
+  attributes:
+    p: true
+- type: SpatialConvolution
+  id: /S/Z
+  next:
+    - /S/Y
+  attributes:
+    padH: 1
+    padW: 1
+    dH: 1
+    dW: 1
+    kH: 3
+    kW: 3
+    nOutputPlane: 512
+    nInputPlane: 512
+- type: SpatialConvolution
+  id: /S/b
+  next:
+    - /S/P
+  attributes:
+    padH: 1
+    padW: 1
+    dH: 1
+    dW: 1
+    kH: 3
+    kW: 3
+    nOutputPlane: 512
+    nInputPlane: 256
+- type: SpatialConvolution
+  id: /S/cJ
+  next:
+    - /S/e
+  attributes:
+    padH: 1
+    padW: 1
+    dH: 1
+    dW: 1
+    kH: 3
+    kW: 3
+    nOutputPlane: 512
+    nInputPlane: 512
+- type: ReLU
+  id: /S/e
+  next:
+    - /S/4
+  attributes:
+    p: true
+- type: SpatialConvolution
+  id: /S/f
+  next:
+    - /S/y
+  attributes:
+    padH: 1
+    padW: 1
+    dH: 1
+    dW: 1
+    kH: 3
+    kW: 3
+    nOutputPlane: 256
+    nInputPlane: 256
+- type: SpatialConvolution
+  id: /S/fu
+  next:
+    - /S/PX
+  attributes:
+    padH: 1
+    padW: 1
+    dH: 1
+    dW: 1
+    kH: 3
+    kW: 3
+    nOutputPlane: 512
+    nInputPlane: 512
+- type: Dropout
+  id: /S/hr
+  next:
+    - /S/1
+  attributes:
+    v1: ''
+    inplace: ''
+    p: 0.5
+- type: BatchNormalization
+  id: /S/i
+  next:
+    - /S/hr
+  attributes:
+    momentum: ''
+    affine: ''
+    eps: 0.001
+    nOutput: 4096
+- type: Threshold
+  id: /S/s
+  next:
+    - /S/MT
+  attributes:
+    ip: ''
+    v: 0.000001
+    th: 0
+- type: SpatialMaxPooling
+  id: /S/t
+  next:
+    - /S/B
+  attributes:
+    padW: 0
+    padH: 0
+    ceil_mode: false
+    dH: 2
+    dW: 2
+    kH: 2
+    kW: 2
+- type: SpatialMaxPooling
+  id: /S/w
+  next:
+    - /S/R
+  attributes:
+    padW: 0
+    padH: 0
+    ceil_mode: false
+    dH: 2
+    dW: 2
+    kH: 2
+    kW: 2
+- type: SpatialConvolution
+  id: /S/x
+  next:
+    - /S/C
+  attributes:
+    padH: 1
+    padW: 1
+    dH: 1
+    dW: 1
+    kH: 3
+    kW: 3
+    nOutputPlane: 64
+    nInputPlane: 3
+- type: ReLU
+  id: /S/y
+  next:
+    - /S/H
+  attributes:
+    p: true

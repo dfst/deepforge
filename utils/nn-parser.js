@@ -1,60 +1,28 @@
-var fs = require('fs');
-var path = require('path');
-var parser = require('../src/common/lua').parser;
-var torchPath = process.env.HOME + '/torch/extra/nn/';
-var SKIP_LAYERS = {};
-var skipLayerList = require('./skipLayers.json');
+var fs = require('fs'),
+    path = require('path'),
+    torchPath,
+
+    LayerParser = require(__dirname + '/../src/common/LayerParser'),
+    SKIP_LAYERS = {},
+    skipLayerList = require('./skipLayers.json'),
+
+    categories = require('./categories.json'),
+    catNames = Object.keys(categories),
+    exists = require('exists-file'),
+    configDir = process.env.HOME + '/.deepforge/',
+    configPath = configDir + 'config.json',
+    layerToCategory = {},
+    config;
+
+// Check the deepforge config
+torchPath = process.env.HOME + '/torch';
+if (exists.sync(configPath)) {
+    config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    torchPath = (config.torch && config.torch.dir) || (configDir + 'torch');
+}
+torchPath += '/extra/nn/';
+
 skipLayerList.forEach(name => SKIP_LAYERS[name] = true);
-
-var findInitParams = function(ast){
-    // Find '__init' function
-    var params;
-    ast.block.stats.forEach(function(block){
-        if(block.key && block.key.val == '__init' && block.func){
-            params = block.func.args;
-            if(params.length === 0 && block.func.varargs){
-                params[0] = 'params';
-            }
-        }
-    });
-    return params;
-};
-
-var findTorchClass = function(ast){
-    var torchClassArgs,  // args for `torch.class(...)`
-        name = '',
-        baseType,
-        params = [];
-
-    if(ast.type == 'function'){
-        ast.block.stats.forEach(function(func){
-            if(func.type == 'stat.local' && func.right && func.right[0] &&
-              func.right[0].func && func.right[0].func.self &&
-              func.right[0].func.self.val == 'torch' &&
-              func.right[0].func.key.val == 'class'){
-
-                torchClassArgs = func.right[0].args.map(arg => arg.val);
-                name = torchClassArgs[0];
-                if(name !== ''){
-                    name = name.replace('nn.', '');
-                    params = findInitParams(ast);
-                    if (torchClassArgs.length > 1) {
-                        baseType = torchClassArgs[1].replace('nn.', '');
-                    }
-                }
-            }
-        });
-    }
-    return {
-        name,
-        baseType,
-        params
-    };
-};
-
-var categories = require('./categories.json');
-var catNames = Object.keys(categories);
-var layerToCategory = {};
 catNames.forEach(cat =>  // create layer -> category dictionary
    categories[cat].forEach(lname => layerToCategory[lname] = cat)
 );
@@ -72,15 +40,14 @@ fs.readdir(torchPath, function(err,files){
         layerByName = {};
 
     layers = files.filter(filename => path.extname(filename) === '.lua')
+        //.filter(filename => filename === 'SpatialAveragePooling.lua')
         .map(filename => fs.readFileSync(torchPath + filename, 'utf8'))
-        .map(code => parser.parse(code))
-        .map(ast => findTorchClass(ast))  // create initial layers
+        .map(code => LayerParser.parse(code))
         .filter(layer => !!layer && layer.name);
 
     layers.forEach(layer => {
         layer.type = lookupType(layer.name);
         layerByName[layer.name] = layer;
-        layer.setters = [];
     });
 
     // handle inheritance

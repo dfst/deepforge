@@ -87,6 +87,13 @@ define([
             return node;
         };
 
+        Layer.prototype._setAttribute = function(name, self, value) {
+            var node = this._node();
+            logger.info(`Setting ${name} to ${value}`);
+            core.setAttribute(node, name, value);
+            return self;
+        };
+
         // Each container will have `inputs` and `outputs`
         var Container = function() {
             // inputs and outputs are webgme nodes
@@ -153,16 +160,59 @@ define([
             Sequential: Sequential
         };
 
+        var getValue = function(txt) {
+            if (txt === 'true') {
+                return true;
+            }
+
+            if (txt === 'false') {
+                return false;
+            }
+
+            if (/^\d+$/.test(txt)) {
+                return +txt;
+            }
+
+            return txt;
+        };
+
+        var addSetterMethods = function(table, attr, dict) {
+            var desc = dict[attr],
+                layer = table.get('_node'),
+                vals,
+                value,
+                fn;
+
+            if (desc.setterType === 'arg') {
+                fn = desc.setterFn;
+                table.set(fn, layer._setAttribute.bind(layer, attr));
+            } else {
+                vals = Object.keys(desc.setterFn);
+                for (var i = vals.length; i--;) {
+                    fn = desc.setterFn[vals[i]];
+                    value = getValue(vals[i]);
+                    table.set(fn, layer._setAttribute.bind(layer, attr, table, value));
+                }
+            }
+        };
+
         var CreateLayer = function(type) {
             var res = luajs.newContext()._G,
                 attrs = [].slice.call(arguments, 1),
                 ltGet = luajs.types.LuaTable.prototype.get,
+                setters = [],
+                args = [],
                 node;
 
+            if (LayerDict[type]) {
+                args = LayerDict[type].args;
+                setters = Object.keys(LayerDict[type].setters);
+            }
+
             if (LAYERS[type]) {
-                node = new LAYERS[type](LayerDict[type] || [], attrs);
+                node = new LAYERS[type](args, attrs);
             } else {  // Call generic Layer with type name
-                node = new Layer(type, LayerDict[type] || [], attrs);
+                node = new Layer(type, args, attrs);
             }
 
             res.set('_node', node);
@@ -176,6 +226,12 @@ define([
                         res.set(fn, node[fn]);
                     }
                 }
+            }
+
+            // add setters
+            // look up the setters
+            for (var i = setters.length; i--;) {
+                addSetterMethods(res, setters[i], LayerDict[type].setters);
             }
 
             // Override get

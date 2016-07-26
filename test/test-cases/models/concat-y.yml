@@ -1,57 +1,60 @@
-# Left side
-- type: Linear
-  id: 2
-  attributes:
-      output: 150
-  next:
-      - 4
-
 - type: Tanh
-  id: 4
+  id: /t/5
   next:
-      - 6
-
-- type: Linear
-  id: 6
-  attributes:
-      output: 50
-  next:
-      - 8
-
-# Right side
-- type: Linear
-  id: 3
-  attributes:
-      output: 150
-  next:
-      - 5
-
+    - /t/H
+  attributes: {}
 - type: Tanh
-  id: 5
+  id: /t/D
   next:
-      - 7
-
+    - /t/b
+  attributes: {}
 - type: Linear
-  id: 7
+  id: /t/H
+  next: []
   attributes:
-      output: 30
+    bias: ''
+    outputSize: 7
+    inputSize: 80
+- type: Linear
+  id: /t/I
   next:
-      - 8
-
-# Center
+    - /t/O
+  attributes:
+    bias: ''
+    outputSize: 30
+    inputSize: 150
+- type: Linear
+  id: /t/M
+  next:
+    - /t/j
+  attributes:
+    bias: ''
+    outputSize: 150
+    inputSize: 100
 - type: Concat
-  id: 8
+  id: /t/O
+  next:
+    - /t/5
   attributes:
-      dim: 1
-  next:
-      - 9
-
-- type: Tanh
-  id: 9
-  next:
-      - 10
-
+    dimension: 1
 - type: Linear
-  id: 10
+  id: /t/b
+  next:
+    - /t/O
   attributes:
-      output: 7
+    bias: ''
+    outputSize: 50
+    inputSize: 150
+- type: Linear
+  id: /t/e
+  next:
+    - /t/D
+  attributes:
+    bias: ''
+    outputSize: 150
+    inputSize: 100
+- type: Tanh
+  id: /t/j
+  next:
+    - /t/I
+  attributes: {}

@@ -1,204 +1,194 @@
-- type: View
-  id: /a/0
-  next:
-    - /a/y
-  attributes:
-    calculateDimensionality: 'function calcDims(layer) return 1; --[[ return output dimensions --]] end'
-    dimensionalityTransform: same
-    sizes: 9216
-- type: ReLU
-  id: /a/3
-  next:
-    - /a/u
-  attributes:
-    calculateDimensionality: 'function calcDims(layer) return 1; --[[ return output dimensions --]] end'
-    dimensionalityTransform: same
-- type: Linear
-  id: /a/4o
-  next:
-    - /a/L
-  attributes:
-    calculateDimensionality: 'function calcDims(layer) return 1; --[[ return output dimensions --]] end'
-    dimensionalityTransform: same
-    output: 4096
-    input: 9216
 - type: SpatialConvolution
-  id: /a/9
+  id: /P/0
   next:
-    - /a/z
+    - /P/2
   attributes:
-    calculateDimensionality: 'function calcDims(layer) return 1; --[[ return output dimensions --]] end'
-    dimensionalityTransform: same
-    strideHeight: 1
-    strideWidth: 1
-    kernelHeight: 5
-    kernelWidth: 5
+    padH: 1
+    padW: 1
+    dH: 1
+    dW: 1
+    kH: 3
+    kW: 3
+    nOutputPlane: 384
+    nInputPlane: 192
+- type: ReLU
+  id: /P/2
+  next:
+    - /P/fX
+  attributes:
+    p: true
+- type: Dropout
+  id: /P/6
+  next:
+    - /P/C
+  attributes:
+    v1: ''
+    inplace: ''
+    p: 0.5
+- type: Linear
+  id: /P/8p
+  next:
+    - /P/S8
+  attributes:
+    bias: ''
+    outputSize: 5
+    inputSize: 4096
+- type: SpatialConvolution
+  id: /P/A
+  next:
+    - /P/j
+  attributes:
+    padH: 2
+    padW: 2
+    dH: 1
+    dW: 1
+    kH: 5
+    kW: 5
     nOutputPlane: 192
     nInputPlane: 64
-- type: SpatialConvolution
-  id: /a/C
+- type: Linear
+  id: /P/C
   next:
-    - /a/J
+    - /P/mQ
   attributes:
-    calculateDimensionality: 'function calcDims(layer) return 1; --[[ return output dimensions --]] end'
-    dimensionalityTransform: same
-    strideHeight: 4
-    strideWidth: 4
-    kernelHeight: 11
-    kernelWidth: 11
+    bias: ''
+    outputSize: 4096
+    inputSize: 9216
+- type: ReLU
+  id: /P/F
+  next:
+    - /P/R
+  attributes:
+    p: true
+- type: Linear
+  id: /P/H
+  next:
+    - /P/e
+  attributes:
+    bias: ''
+    outputSize: 4096
+    inputSize: 4096
+- type: SpatialMaxPooling
+  id: /P/J
+  next:
+    - /P/A
+  attributes:
+    padW: 0
+    padH: 0
+    ceil_mode: false
+    dH: 2
+    dW: 2
+    kH: 3
+    kW: 3
+- type: Dropout
+  id: /P/L
+  next:
+    - /P/H
+  attributes:
+    v1: ''
+    inplace: ''
+    p: 0.5
+- type: View
+  id: /P/M
+  next:
+    - /P/6
+  attributes:
+    numInputDims: null
+    params: 9216
+- type: SpatialConvolution
+  id: /P/R
+  next:
+    - /P/i
+  attributes:
+    padH: 1
+    padW: 1
+    dH: 1
+    dW: 1
+    kH: 3
+    kW: 3
+    nOutputPlane: 256
+    nInputPlane: 256
+- type: LogSoftMax
+  id: /P/S8
+  next: []
+  attributes: {}
+- type: SpatialMaxPooling
+  id: /P/c
+  next:
+    - /P/0
+  attributes:
+    padW: 0
+    padH: 0
+    ceil_mode: false
+    dH: 2
+    dW: 2
+    kH: 3
+    kW: 3
+- type: SpatialConvolution
+  id: /P/d
+  next:
+    - /P/q
+  attributes:
+    padH: 2
+    padW: 2
+    dH: 4
+    dW: 4
+    kH: 11
+    kW: 11
     nOutputPlane: 64
     nInputPlane: 3
-- type: LogSoftMax
-  id: /a/E0
-  next: []
-  attributes:
-    calculateDimensionality: 'function calcDims(layer) return 1; --[[ return output dimensions --]] end'
-    dimensionalityTransform: same
 - type: ReLU
-  id: /a/J
+  id: /P/e
   next:
-    - /a/j
+    - /P/8p
   attributes:
-    calculateDimensionality: 'function calcDims(layer) return 1; --[[ return output dimensions --]] end'
-    dimensionalityTransform: same
-- type: ReLU
-  id: /a/L
-  next:
-    - /a/l
-  attributes:
-    calculateDimensionality: 'function calcDims(layer) return 1; --[[ return output dimensions --]] end'
-    dimensionalityTransform: same
+    p: ''
 - type: SpatialConvolution
-  id: /a/U
+  id: /P/fX
   next:
-    - /a/e
+    - /P/F
   attributes:
-    calculateDimensionality: 'function calcDims(layer) return 1; --[[ return output dimensions --]] end'
-    dimensionalityTransform: same
-    strideHeight: 1
-    strideWidth: 1
-    kernelHeight: 3
-    kernelWidth: 3
+    padH: 1
+    padW: 1
+    dH: 1
+    dW: 1
+    kH: 3
+    kW: 3
     nOutputPlane: 256
     nInputPlane: 384
 - type: ReLU
-  id: /a/X
+  id: /P/i
   next:
-    - /a/U
+    - /P/n5
   attributes:
-    calculateDimensionality: 'function calcDims(layer) return 1; --[[ return output dimensions --]] end'
-    dimensionalityTransform: same
+    p: true
 - type: ReLU
-  id: /a/e
+  id: /P/j
   next:
-    - /a/q
+    - /P/c
   attributes:
-    calculateDimensionality: 'function calcDims(layer) return 1; --[[ return output dimensions --]] end'
-    dimensionalityTransform: same
-- type: SpatialMaxPooling
-  id: /a/h
-  next:
-    - /a/t
-  attributes:
-    calculateDimensionality: 'function calcDims(layer) return 1; --[[ return output dimensions --]] end'
-    dimensionalityTransform: same
-    strideHeight: 2
-    strideWidth: 2
-    kernelHeight: 3
-    kernelWidth: 3
-- type: SpatialMaxPooling
-  id: /a/j
-  next:
-    - /a/9
-  attributes:
-    calculateDimensionality: 'function calcDims(layer) return 1; --[[ return output dimensions --]] end'
-    dimensionalityTransform: same
-    strideHeight: 2
-    strideWidth: 2
-    kernelHeight: 3
-    kernelWidth: 3
-- type: Dropout
-  id: /a/l
-  next:
-    - /a/o
-  attributes:
-    calculateDimensionality: 'function calcDims(layer) return 1; --[[ return output dimensions --]] end'
-    dimensionalityTransform: same
-    probability: 0.5
-- type: Linear
-  id: /a/o
-  next:
-    - /a/r
-  attributes:
-    calculateDimensionality: 'function calcDims(layer) return 1; --[[ return output dimensions --]] end'
-    dimensionalityTransform: same
-    output: 4096
-    input: 4096
-- type: Linear
-  id: /a/p
-  next:
-    - /a/E0
-  attributes:
-    calculateDimensionality: 'function calcDims(layer) return 1; --[[ return output dimensions --]] end'
-    dimensionalityTransform: same
-    output: 5
-    input: 4096
-- type: SpatialConvolution
-  id: /a/q
-  next:
-    - /a/3
-  attributes:
-    calculateDimensionality: 'function calcDims(layer) return 1; --[[ return output dimensions --]] end'
-    dimensionalityTransform: same
-    strideHeight: 1
-    strideWidth: 1
-    kernelHeight: 3
-    kernelWidth: 3
-    nOutputPlane: 256
-    nInputPlane: 256
+    p: true
 - type: ReLU
-  id: /a/r
+  id: /P/mQ
   next:
-    - /a/p
+    - /P/L
   attributes:
-    calculateDimensionality: 'function calcDims(layer) return 1; --[[ return output dimensions --]] end'
-    dimensionalityTransform: same
-- type: SpatialConvolution
-  id: /a/t
-  next:
-    - /a/X
-  attributes:
-    calculateDimensionality: 'function calcDims(layer) return 1; --[[ return output dimensions --]] end'
-    dimensionalityTransform: same
-    strideHeight: 1
-    strideWidth: 1
-    kernelHeight: 3
-    kernelWidth: 3
-    nOutputPlane: 384
-    nInputPlane: 192
+    p: ''
 - type: SpatialMaxPooling
-  id: /a/u
+  id: /P/n5
   next:
-    - /a/0
+    - /P/M
   attributes:
-    calculateDimensionality: 'function calcDims(layer) return 1; --[[ return output dimensions --]] end'
-    dimensionalityTransform: same
-    strideHeight: 2
-    strideWidth: 2
-    kernelHeight: 3
-    kernelWidth: 3
-- type: Dropout
-  id: /a/y
-  next:
-    - /a/4o
-  attributes:
-    calculateDimensionality: 'function calcDims(layer) return 1; --[[ return output dimensions --]] end'
-    dimensionalityTransform: same
-    probability: 0.5
+    padW: 0
+    padH: 0
+    ceil_mode: false
+    dH: 2
+    dW: 2
+    kH: 3
+    kW: 3
 - type: ReLU
-  id: /a/z
+  id: /P/q
   next:
-    - /a/h
+    - /P/J
   attributes:
-    calculateDimensionality: 'function calcDims(layer) return 1; --[[ return output dimensions --]] end'
-    dimensionalityTransform: same
+    p: true

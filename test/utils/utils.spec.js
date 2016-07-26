@@ -106,8 +106,8 @@ describe('utils', function () {
 
     describe('matching architectures', function() {
         var cases = [
-            ['/l', 'concat-parallel'],
-            ['/Z', 'concat-y'],
+            ['/l', 'concat-parallel-utils'],
+            ['/Z', 'concat-y-utils'],
             ['/y', 'concat-y-bad-conn']  // disconnected graph
         ];
 
@@ -117,9 +117,9 @@ describe('utils', function () {
 
     describe('mismatching architectures', function() {
         var cases = [
-            ['/l', 'concat-y'],
-            ['/y', 'concat-parallel'],
-            ['/s', 'concat-y']
+            ['/l', 'concat-y-utils'],
+            ['/y', 'concat-parallel-utils'],
+            ['/s', 'concat-y-utils']
         ];
 
         cases.forEach(pair => it('should NOT validate ' + pair[1],

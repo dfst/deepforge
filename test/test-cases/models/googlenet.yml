@@ -1,0 +1,1765 @@
+- type: SpatialConvolution
+  id: /y/0A
+  next:
+    - /y/o0
+  attributes:
+    padH: 1
+    padW: 1
+    dH: 1
+    dW: 1
+    kH: 3
+    kW: 3
+    nOutputPlane: 128
+    nInputPlane: 96
+- type: SpatialConvolution
+  id: /y/0J
+  next:
+    - /y/4I
+  attributes:
+    padW: 0
+    padH: ''
+    dH: 1
+    dW: 1
+    kH: 1
+    kW: 1
+    nOutputPlane: 96
+    nInputPlane: 576
+- type: ReLU
+  id: /y/14
+  next:
+    - /y/6l
+  attributes:
+    p: true
+- type: ReLU
+  id: /y/1C
+  next:
+    - /y/s8
+  attributes:
+    p: true
+- type: Concat
+  id: /y/1I
+  next:
+    - /y/Rf
+    - /y/CN
+    - /y/Uf
+    - /y/tV
+  attributes:
+    dimension: 2
+- type: SpatialMaxPooling
+  id: /y/1b
+  next:
+    - /y/1u
+  attributes:
+    padW: 0
+    padH: 0
+    ceil_mode: false
+    dH: 1
+    dW: 1
+    kH: 3
+    kW: 3
+- type: SpatialConvolution
+  id: /y/1u
+  next:
+    - /y/Oz
+  attributes:
+    padW: 0
+    padH: ''
+    dH: 1
+    dW: 1
+    kH: 1
+    kW: 1
+    nOutputPlane: 128
+    nInputPlane: 1024
+- type: SpatialMaxPooling
+  id: /y/2
+  next:
+    - /y/d
+    - /y/g
+    - /y/U
+    - /y/H
+  attributes:
+    padW: 0
+    padH: 0
+    ceil_mode: false
+    dH: 2
+    dW: 2
+    kH: 3
+    kW: 3
+- type: SpatialConvolution
+  id: /y/2b
+  next:
+    - /y/Bf
+  attributes:
+    padW: 0
+    padH: ''
+    dH: 1
+    dW: 1
+    kH: 1
+    kW: 1
+    nOutputPlane: 128
+    nInputPlane: 576
+- type: SpatialConvolution
+  id: /y/2z
+  next:
+    - /y/Uh
+  attributes:
+    padW: 0
+    padH: ''
+    dH: 1
+    dW: 1
+    kH: 1
+    kW: 1
+    nOutputPlane: 192
+    nInputPlane: 576
+- type: SpatialZeroPadding
+  id: /y/3I
+  next:
+    - /y/kr
+  attributes:
+    pad_b: 1
+    pad_t: 1
+    pad_r: 1
+    pad_l: 1
+- type: SpatialAveragePooling
+  id: /y/3M
+  next:
+    - /y/qL
+  attributes:
+    padW: 0
+    padH: 0
+    ceil_mode: false
+    count_include_pad: true
+    dH: 3
+    dW: 3
+    kH: 5
+    kW: 5
+- type: SpatialConvolution
+  id: /y/3h
+  next:
+    - /y/lw
+  attributes:
+    padH: 1
+    padW: 1
+    dH: 1
+    dW: 1
+    kH: 3
+    kW: 3
+    nOutputPlane: 192
+    nInputPlane: 128
+- type: SpatialConvolution
+  id: /y/3o
+  next:
+    - /y/FM
+  attributes:
+    padH: 1
+    padW: 1
+    dH: 1
+    dW: 1
+    kH: 3
+    kW: 3
+    nOutputPlane: 320
+    nInputPlane: 192
+- type: SpatialConvolution
+  id: /y/3s
+  next:
+    - /y/14
+  attributes:
+    padW: 0
+    padH: ''
+    dH: 1
+    dW: 1
+    kH: 1
+    kW: 1
+    nOutputPlane: 96
+    nInputPlane: 576
+- type: SpatialConvolution
+  id: /y/4
+  next:
+    - /y/ST
+  attributes:
+    padH: 1
+    padW: 1
+    dH: 1
+    dW: 1
+    kH: 3
+    kW: 3
+    nOutputPlane: 96
+    nInputPlane: 64
+- type: ReLU
+  id: /y/4I
+  next:
+    - /y/6l
+  attributes:
+    p: true
+- type: Concat
+  id: /y/4L
+  next:
+    - /y/M5
+    - /y/jz
+    - /y/vB
+    - /y/NN
+  attributes:
+    dimension: 2
+- type: SpatialAveragePooling
+  id: /y/4k
+  next:
+    - /y/yH
+  attributes:
+    padW: 0
+    padH: 0
+    ceil_mode: false
+    count_include_pad: true
+    dH: 1
+    dW: 1
+    kH: 7
+    kW: 7
+- type: SpatialConvolution
+  id: /y/4p
+  next:
+    - /y/oL
+  attributes:
+    padW: 0
+    padH: ''
+    dH: 1
+    dW: 1
+    kH: 1
+    kW: 1
+    nOutputPlane: 224
+    nInputPlane: 576
+- type: ReLU
+  id: /y/4u
+  next:
+    - /y/Tg
+  attributes:
+    p: true
+- type: ReLU
+  id: /y/4v
+  next:
+    - /y/sp
+  attributes:
+    p: true
+- type: SpatialConvolution
+  id: /y/5W
+  next:
+    - /y/nj
+  attributes:
+    padH: 1
+    padW: 1
+    dH: 1
+    dW: 1
+    kH: 3
+    kW: 3
+    nOutputPlane: 224
+    nInputPlane: 160
+- type: ReLU
+  id: /y/5e
+  next:
+    - /y/ZM
+  attributes:
+    p: true
+- type: SpatialConvolution
+  id: /y/5h
+  next:
+    - /y/ZD
+  attributes:
+    padH: 1
+    padW: 1
+    dH: 1
+    dW: 1
+    kH: 3
+    kW: 3
+    nOutputPlane: 160
+    nInputPlane: 128
+- type: ReLU
+  id: /y/5i
+  next:
+    - /y/ZM
+  attributes:
+    p: true
+- type: ReLU
+  id: /y/6
+  next:
+    - /y/b
+  attributes:
+    p: true
+- type: ReLU
+  id: /y/60
+  next:
+    - /y/0A
+  attributes:
+    p: true
+- type: Concat
+  id: /y/6l
+  next:
+    - /y/2z
+    - /y/x6
+    - /y/3M
+    - /y/2b
+  attributes:
+    dimension: 2
+- type: SpatialConvolution
+  id: /y/7
+  next:
+    - /y/J
+  attributes:
+    padH: 3
+    padW: 3
+    dH: 2
+    dW: 2
+    kH: 7
+    kW: 7
+    nOutputPlane: 64
+    nInputPlane: 3
+- type: SpatialConvolution
+  id: /y/78
+  next:
+    - /y/4v
+  attributes:
+    padW: 0
+    padH: ''
+    dH: 1
+    dW: 1
+    kH: 1
+    kW: 1
+    nOutputPlane: 96
+    nInputPlane: 576
+- type: SpatialConvolution
+  id: /y/7G
+  next:
+    - /y/qE
+  attributes:
+    padW: 0
+    padH: ''
+    dH: 1
+    dW: 1
+    kH: 1
+    kW: 1
+    nOutputPlane: 160
+    nInputPlane: 576
+- type: SpatialConvolution
+  id: /y/7w
+  next:
+    - /y/ZE
+  attributes:
+    padH: 1
+    padW: 1
+    dH: 1
+    dW: 1
+    kH: 3
+    kW: 3
+    nOutputPlane: 256
+    nInputPlane: 256
+- type: ReLU
+  id: /y/8
+  next:
+    - /y/4
+  attributes:
+    p: true
+- type: SpatialConvolution
+  id: /y/8y
+  next:
+    - /y/Ts
+  attributes:
+    padW: 0
+    padH: ''
+    dH: 1
+    dW: 1
+    kH: 1
+    kW: 1
+    nOutputPlane: 128
+    nInputPlane: 576
+- type: ReLU
+  id: /y/A1
+  next:
+    - /y/Ga
+  attributes:
+    p: true
+- type: ReLU
+  id: /y/A7
+  next:
+    - /y/F1
+  attributes:
+    p: true
+- type: ReLU
+  id: /y/AX
+  next:
+    - /y/3o
+  attributes:
+    p: true
+- type: SpatialConvolution
+  id: /y/Ag
+  next:
+    - /y/Tu
+  attributes:
+    padH: 1
+    padW: 1
+    dH: 1
+    dW: 1
+    kH: 3
+    kW: 3
+    nOutputPlane: 128
+    nInputPlane: 128
+- type: SpatialConvolution
+  id: /y/Ar
+  next:
+    - /y/qo
+  attributes:
+    padH: 1
+    padW: 1
+    dH: 1
+    dW: 1
+    kH: 3
+    kW: 3
+    nOutputPlane: 192
+    nInputPlane: 160
+- type: SpatialConvolution
+  id: /y/B
+  next:
+    - /y/6
+  attributes:
+    padW: 0
+    padH: ''
+    dH: 1
+    dW: 1
+    kH: 1
+    kW: 1
+    nOutputPlane: 32
+    nInputPlane: 192
+- type: ReLU
+  id: /y/BS
+  next:
+    - /y/s8
+  attributes:
+    p: true
+- type: SpatialConvolution
+  id: /y/BY
+  next:
+    - /y/5e
+  attributes:
+    padH: 1
+    padW: 1
+    dH: 1
+    dW: 1
+    kH: 3
+    kW: 3
+    nOutputPlane: 96
+    nInputPlane: 96
+- type: ReLU
+  id: /y/Bf
+  next:
+    - /y/3h
+  attributes:
+    p: true
+- type: ReLU
+  id: /y/C2
+  next:
+    - /y/Tg
+  attributes:
+    p: true
+- type: ReLU
+  id: /y/C9
+  next:
+    - /y/4L
+  attributes:
+    p: true
+- type: ReLU
+  id: /y/CA
+  next:
+    - /y/Tg
+  attributes:
+    p: true
+- type: SpatialConvolution
+  id: /y/CL
+  next:
+    - /y/wp
+  attributes:
+    padW: 0
+    padH: ''
+    dH: 1
+    dW: 1
+    kH: 1
+    kW: 1
+    nOutputPlane: 128
+    nInputPlane: 576
+- type: SpatialZeroPadding
+  id: /y/CN
+  next:
+    - /y/1b
+  attributes:
+    pad_b: 1
+    pad_t: 1
+    pad_r: 1
+    pad_l: 1
+- type: ReLU
+  id: /y/DZ
+  next:
+    - /y/4L
+  attributes:
+    p: true
+- type: SpatialAveragePooling
+  id: /y/Db
+  next:
+    - /y/3s
+  attributes:
+    padW: 0
+    padH: 0
+    ceil_mode: false
+    count_include_pad: true
+    dH: 1
+    dW: 1
+    kH: 3
+    kW: 3
+- type: SpatialMaxPooling
+  id: /y/Dg
+  next:
+    - /y/s8
+  attributes:
+    padW: 0
+    padH: 0
+    ceil_mode: false
+    dH: 1
+    dW: 1
+    kH: 3
+    kW: 3
+- type: SpatialConvolution
+  id: /y/Dj
+  next:
+    - /y/Ni
+  attributes:
+    padH: 1
+    padW: 1
+    dH: 1
+    dW: 1
+    kH: 3
+    kW: 3
+    nOutputPlane: 192
+    nInputPlane: 128
+- type: ReLU
+  id: /y/E
+  next:
+    - /y/ZM
+  attributes:
+    p: true
+- type: SpatialConvolution
+  id: /y/F1
+  next:
+    - /y/Fl
+  attributes:
+    padH: 1
+    padW: 1
+    dH: 1
+    dW: 1
+    kH: 3
+    kW: 3
+    nOutputPlane: 96
+    nInputPlane: 64
+- type: ReLU
+  id: /y/FM
+  next:
+    - /y/1I
+  attributes:
+    p: true
+- type: ReLU
+  id: /y/Fl
+  next:
+    - /y/BY
+  attributes:
+    p: true
+- type: Concat
+  id: /y/Ga
+  next:
+    - /y/0J
+    - /y/Iu
+    - /y/7G
+    - /y/RZ
+  attributes:
+    dimension: 2
+- type: ReLU
+  id: /y/Gh
+  next:
+    - /y/OI
+  attributes:
+    p: true
+- type: SpatialConvolution
+  id: /y/H
+  next:
+    - /y/u
+  attributes:
+    padW: 0
+    padH: ''
+    dH: 1
+    dW: 1
+    kH: 1
+    kW: 1
+    nOutputPlane: 64
+    nInputPlane: 192
+- type: ReLU
+  id: /y/Hi
+  next:
+    - /y/7w
+  attributes:
+    p: true
+- type: View
+  id: /y/Hr
+  next:
+    - /y/q7U
+  attributes:
+    numInputDims: null
+    params: 2048
+- type: ReLU
+  id: /y/IS
+  next:
+    - /y/Ag
+  attributes:
+    p: true
+- type: ReLU
+  id: /y/Id
+  next:
+    - /y/vj
+  attributes:
+    p: true
+- type: SpatialZeroPadding
+  id: /y/Iu
+  next:
+    - /y/Db
+  attributes:
+    pad_b: 1
+    pad_t: 1
+    pad_r: 1
+    pad_l: 1
+- type: ReLU
+  id: /y/J
+  next:
+    - /y/x
+  attributes:
+    p: true
+- type: ReLU
+  id: /y/Jo
+  next:
+    - /y/Rd
+  attributes:
+    p: true
+- type: ReLU
+  id: /y/LV
+  next:
+    - /y/Ga
+  attributes:
+    p: true
+- type: SpatialConvolution
+  id: /y/Lb
+  next:
+    - /y/LV
+  attributes:
+    padH: 1
+    padW: 1
+    dH: 1
+    dW: 1
+    kH: 3
+    kW: 3
+    nOutputPlane: 160
+    nInputPlane: 160
+- type: ReLU
+  id: /y/M
+  next:
+    - /y/Z
+  attributes:
+    p: true
+- type: SpatialZeroPadding
+  id: /y/M5
+  next:
+    - /y/Qj
+  attributes:
+    pad_b: 1
+    pad_t: 1
+    pad_r: 1
+    pad_l: 1
+- type: Linear
+  id: /y/MD
+  next:
+    - /y/ZB
+  attributes:
+    bias: ''
+    outputSize: 1000
+    inputSize: 768
+- type: Concat
+  id: /y/N1
+  next:
+    - /y/f
+    - /y/zT
+    - /y/3I
+    - /y/ic
+  attributes:
+    dimension: 2
+- type: ReLU
+  id: /y/NC
+  next:
+    - /y/Ga
+  attributes:
+    p: true
+- type: SpatialConvolution
+  id: /y/NN
+  next:
+    - /y/Id
+  attributes:
+    padW: 0
+    padH: ''
+    dH: 1
+    dW: 1
+    kH: 1
+    kW: 1
+    nOutputPlane: 128
+    nInputPlane: 576
+- type: ReLU
+  id: /y/Ni
+  next:
+    - /y/6l
+  attributes:
+    p: true
+- type: ReLU
+  id: /y/O
+  next:
+    - /y/W
+  attributes:
+    p: true
+- type: SpatialConvolution
+  id: /y/OI
+  next:
+    - /y/DZ
+  attributes:
+    padH: 1
+    padW: 1
+    dH: 1
+    dW: 1
+    kH: 3
+    kW: 3
+    nOutputPlane: 128
+    nInputPlane: 128
+- type: ReLU
+  id: /y/OV
+  next:
+    - /y/Q5
+  attributes:
+    p: true
+- type: ReLU
+  id: /y/Oz
+  next:
+    - /y/Tg
+  attributes:
+    p: true
+- type: ReLU
+  id: /y/Q
+  next:
+    - /y/2
+  attributes:
+    p: true
+- type: SpatialConvolution
+  id: /y/Q5
+  next:
+    - /y/C2
+  attributes:
+    padH: 1
+    padW: 1
+    dH: 1
+    dW: 1
+    kH: 3
+    kW: 3
+    nOutputPlane: 320
+    nInputPlane: 192
+- type: SpatialAveragePooling
+  id: /y/Qj
+  next:
+    - /y/jN
+  attributes:
+    padW: 0
+    padH: 0
+    ceil_mode: false
+    count_include_pad: true
+    dH: 1
+    dW: 1
+    kH: 3
+    kW: 3
+- type: ReLU
+  id: /y/Ql
+  next:
+    - /y/v9
+  attributes:
+    p: true
+- type: SpatialConvolution
+  id: /y/Qq
+  next:
+    - /y/gN
+  attributes:
+    padW: 0
+    padH: ''
+    dH: 1
+    dW: 1
+    kH: 1
+    kW: 1
+    nOutputPlane: 64
+    nInputPlane: 320
+- type: SpatialConvolution
+  id: /y/RZ
+  next:
+    - /y/oq
+  attributes:
+    padW: 0
+    padH: ''
+    dH: 1
+    dW: 1
+    kH: 1
+    kW: 1
+    nOutputPlane: 128
+    nInputPlane: 576
+- type: SpatialConvolution
+  id: /y/Rd
+  next:
+    - /y/BS
+  attributes:
+    padH: 1
+    padW: 1
+    dH: 1
+    dW: 1
+    kH: 3
+    kW: 3
+    nOutputPlane: 160
+    nInputPlane: 128
+- type: SpatialConvolution
+  id: /y/Rf
+  next:
+    - /y/pF
+  attributes:
+    padW: 0
+    padH: ''
+    dH: 1
+    dW: 1
+    kH: 1
+    kW: 1
+    nOutputPlane: 192
+    nInputPlane: 1024
+- type: SpatialConvolution
+  id: /y/SD
+  next:
+    - /y/y5
+  attributes:
+    padH: 1
+    padW: 1
+    dH: 1
+    dW: 1
+    kH: 3
+    kW: 3
+    nOutputPlane: 96
+    nInputPlane: 64
+- type: ReLU
+  id: /y/ST
+  next:
+    - /y/N1
+  attributes:
+    p: true
+- type: ReLU
+  id: /y/T
+  next:
+    - /y/b
+  attributes:
+    p: true
+- type: SpatialAveragePooling
+  id: /y/T4
+  next:
+    - /y/tA
+  attributes:
+    padW: 0
+    padH: 0
+    ceil_mode: false
+    count_include_pad: true
+    dH: 1
+    dW: 1
+    kH: 3
+    kW: 3
+- type: Concat
+  id: /y/Tg
+  next:
+    - /y/4k
+  attributes:
+    dimension: 2
+- type: ReLU
+  id: /y/Ts
+  next:
+    - /y/N1
+  attributes:
+    p: true
+- type: ReLU
+  id: /y/Tu
+  next:
+    - /y/N1
+  attributes:
+    p: true
+- type: SpatialConvolution
+  id: /y/U
+  next:
+    - /y/i
+  attributes:
+    padW: 0
+    padH: ''
+    dH: 1
+    dW: 1
+    kH: 1
+    kW: 1
+    nOutputPlane: 64
+    nInputPlane: 192
+- type: SpatialConvolution
+  id: /y/UZ
+  next:
+    - /y/AX
+  attributes:
+    padW: 0
+    padH: ''
+    dH: 1
+    dW: 1
+    kH: 1
+    kW: 1
+    nOutputPlane: 192
+    nInputPlane: 1024
+- type: SpatialConvolution
+  id: /y/Uf
+  next:
+    - /y/OV
+  attributes:
+    padW: 0
+    padH: ''
+    dH: 1
+    dW: 1
+    kH: 1
+    kW: 1
+    nOutputPlane: 192
+    nInputPlane: 1024
+- type: ReLU
+  id: /y/Uh
+  next:
+    - /y/nH
+  attributes:
+    p: true
+- type: SpatialConvolution
+  id: /y/VJ
+  next:
+    - /y/5i
+  attributes:
+    padW: 0
+    padH: ''
+    dH: 1
+    dW: 1
+    kH: 1
+    kW: 1
+    nOutputPlane: 64
+    nInputPlane: 256
+- type: SpatialConvolution
+  id: /y/W
+  next:
+    - /y/n
+  attributes:
+    padH: 1
+    padW: 1
+    dH: 1
+    dW: 1
+    kH: 3
+    kW: 3
+    nOutputPlane: 96
+    nInputPlane: 64
+- type: SpatialZeroPadding
+  id: /y/WD
+  next:
+    - /y/Dg
+  attributes:
+    pad_b: 1
+    pad_t: 1
+    pad_r: 1
+    pad_l: 1
+- type: LogSoftMax
+  id: /y/WK
+  next:
+    - /y/aS
+  attributes: {}
+- type: ReLU
+  id: /y/WT
+  next:
+    - /y/6l
+  attributes:
+    p: true
+- type: SpatialConvolution
+  id: /y/Wb
+  next:
+    - /y/WT
+  attributes:
+    padH: 1
+    padW: 1
+    dH: 1
+    dW: 1
+    kH: 3
+    kW: 3
+    nOutputPlane: 192
+    nInputPlane: 192
+- type: SpatialMaxPooling
+  id: /y/Wo
+  next:
+    - /y/Ym
+  attributes:
+    padW: 0
+    padH: 0
+    ceil_mode: false
+    dH: 1
+    dW: 1
+    kH: 3
+    kW: 3
+- type: SpatialConvolution
+  id: /y/YA
+  next:
+    - /y/Ql
+  attributes:
+    padH: 1
+    padW: 1
+    dH: 1
+    dW: 1
+    kH: 3
+    kW: 3
+    nOutputPlane: 224
+    nInputPlane: 192
+- type: SpatialConvolution
+  id: /y/Ya
+  next:
+    - /y/rT
+  attributes:
+    padW: 0
+    padH: ''
+    dH: 1
+    dW: 1
+    kH: 1
+    kW: 1
+    nOutputPlane: 160
+    nInputPlane: 1024
+- type: Concat
+  id: /y/Ym
+  next:
+    - /y/oH
+  attributes:
+    dimension: 2
+- type: SpatialConvolution
+  id: /y/Z
+  next:
+    - /y/u7
+  attributes:
+    padH: 1
+    padW: 1
+    dH: 1
+    dW: 1
+    kH: 3
+    kW: 3
+    nOutputPlane: 96
+    nInputPlane: 64
+- type: LogSoftMax
+  id: /y/ZB
+  next:
+    - /y/aS
+  attributes: {}
+- type: ReLU
+  id: /y/ZD
+  next:
+    - /y/Lb
+  attributes:
+    p: true
+- type: ReLU
+  id: /y/ZE
+  next:
+    - /y/Ym
+  attributes:
+    p: true
+- type: Concat
+  id: /y/ZM
+  next:
+    - /y/Qq
+    - /y/WD
+    - /y/tU
+  attributes:
+    dimension: 2
+- type: ReLU
+  id: /y/a7
+  next:
+    - /y/b
+  attributes:
+    p: true
+- type: Concat
+  id: /y/aS
+  next: []
+  attributes:
+    dimension: 2
+- type: Concat
+  id: /y/b
+  next:
+    - /y/o
+    - /y/p1
+    - /y/ro
+    - /y/wJ
+  attributes:
+    dimension: 2
+- type: SpatialConvolution
+  id: /y/bN
+  next:
+    - /y/1C
+  attributes:
+    padH: 1
+    padW: 1
+    dH: 1
+    dW: 1
+    kH: 3
+    kW: 3
+    nOutputPlane: 96
+    nInputPlane: 96
+- type: SpatialZeroPadding
+  id: /y/d
+  next:
+    - /y/l
+  attributes:
+    pad_b: 1
+    pad_t: 1
+    pad_r: 1
+    pad_l: 1
+- type: SpatialZeroPadding
+  id: /y/d3
+  next:
+    - /y/vN
+  attributes:
+    pad_b: 1
+    pad_t: 1
+    pad_r: 1
+    pad_l: 1
+- type: SpatialConvolution
+  id: /y/e
+  next:
+    - /y/r
+  attributes:
+    dW: ''
+    dH: ''
+    padW: 0
+    padH: ''
+    kH: 1
+    kW: 1
+    nOutputPlane: 64
+    nInputPlane: 64
+- type: SpatialConvolution
+  id: /y/f
+  next:
+    - /y/g1
+  attributes:
+    padW: 0
+    padH: ''
+    dH: 1
+    dW: 1
+    kH: 1
+    kW: 1
+    nOutputPlane: 96
+    nInputPlane: 576
+- type: SpatialConvolution
+  id: /y/fY
+  next:
+    - /y/ty
+  attributes:
+    padH: 1
+    padW: 1
+    dH: 1
+    dW: 1
+    kH: 3
+    kW: 3
+    nOutputPlane: 224
+    nInputPlane: 224
+- type: SpatialConvolution
+  id: /y/fm
+  next:
+    - /y/pZ
+  attributes:
+    padW: 0
+    padH: ''
+    dH: 1
+    dW: 1
+    kH: 1
+    kW: 1
+    nOutputPlane: 352
+    nInputPlane: 1024
+- type: SpatialConvolution
+  id: /y/g
+  next:
+    - /y/O
+  attributes:
+    padW: 0
+    padH: ''
+    dH: 1
+    dW: 1
+    kH: 1
+    kW: 1
+    nOutputPlane: 64
+    nInputPlane: 192
+- type: ReLU
+  id: /y/g1
+  next:
+    - /y/vC
+  attributes:
+    p: true
+- type: SpatialConvolution
+  id: /y/gA
+  next:
+    - /y/8
+  attributes:
+    padW: 0
+    padH: ''
+    dH: 1
+    dW: 1
+    kH: 1
+    kW: 1
+    nOutputPlane: 64
+    nInputPlane: 576
+- type: ReLU
+  id: /y/gN
+  next:
+    - /y/SD
+  attributes:
+    p: true
+- type: SpatialConvolution
+  id: /y/h
+  next:
+    - /y/Q
+  attributes:
+    padH: 1
+    padW: 1
+    dH: 1
+    dW: 1
+    kH: 3
+    kW: 3
+    nOutputPlane: 192
+    nInputPlane: 64
+- type: ReLU
+  id: /y/i
+  next:
+    - /y/t
+  attributes:
+    p: true
+- type: ReLU
+  id: /y/iV
+  next:
+    - /y/MD
+  attributes:
+    p: ''
+- type: SpatialConvolution
+  id: /y/ic
+  next:
+    - /y/60
+  attributes:
+    padW: 0
+    padH: ''
+    dH: 1
+    dW: 1
+    kH: 1
+    kW: 1
+    nOutputPlane: 96
+    nInputPlane: 576
+- type: Linear
+  id: /y/jC
+  next:
+    - /y/WK
+  attributes:
+    bias: ''
+    outputSize: 1000
+    inputSize: 1024
+- type: SpatialConvolution
+  id: /y/jN
+  next:
+    - /y/rb
+  attributes:
+    padW: 0
+    padH: ''
+    dH: 1
+    dW: 1
+    kH: 1
+    kW: 1
+    nOutputPlane: 96
+    nInputPlane: 576
+- type: ReLU
+  id: /y/jV
+  next:
+    - /y/5h
+  attributes:
+    p: true
+- type: SpatialConvolution
+  id: /y/jz
+  next:
+    - /y/jV
+  attributes:
+    padW: 0
+    padH: ''
+    dH: 1
+    dW: 1
+    kH: 1
+    kW: 1
+    nOutputPlane: 128
+    nInputPlane: 576
+- type: SpatialAveragePooling
+  id: /y/kr
+  next:
+    - /y/CL
+  attributes:
+    padW: 0
+    padH: 0
+    ceil_mode: false
+    count_include_pad: true
+    dH: 1
+    dW: 1
+    kH: 3
+    kW: 3
+- type: SpatialAveragePooling
+  id: /y/l
+  next:
+    - /y/B
+  attributes:
+    padW: 0
+    padH: 0
+    ceil_mode: false
+    count_include_pad: true
+    dH: 1
+    dW: 1
+    kH: 3
+    kW: 3
+- type: ReLU
+  id: /y/lw
+  next:
+    - /y/Ym
+  attributes:
+    p: true
+- type: ReLU
+  id: /y/n
+  next:
+    - /y/ui
+  attributes:
+    p: true
+- type: SpatialConvolution
+  id: /y/nH
+  next:
+    - /y/Hi
+  attributes:
+    padH: 1
+    padW: 1
+    dH: 1
+    dW: 1
+    kH: 3
+    kW: 3
+    nOutputPlane: 256
+    nInputPlane: 192
+- type: ReLU
+  id: /y/nj
+  next:
+    - /y/fY
+  attributes:
+    p: true
+- type: SpatialZeroPadding
+  id: /y/o
+  next:
+    - /y/rl
+  attributes:
+    pad_b: 1
+    pad_t: 1
+    pad_r: 1
+    pad_l: 1
+- type: ReLU
+  id: /y/o0
+  next:
+    - /y/4L
+  attributes:
+    p: true
+- type: SpatialConvolution
+  id: /y/oH
+  next:
+    - /y/vP
+    - /y/fm
+    - /y/UZ
+    - /y/Ya
+  attributes:
+    padW: 0
+    padH: ''
+    dH: 2
+    dW: 2
+    kH: 2
+    kW: 2
+    nOutputPlane: 1024
+    nInputPlane: 1024
+- type: ReLU
+  id: /y/oL
+  next:
+    - /y/N1
+  attributes:
+    p: true
+- type: ReLU
+  id: /y/oq
+  next:
+    - /y/Dj
+  attributes:
+    p: true
+- type: SpatialConvolution
+  id: /y/p1
+  next:
+    - /y/A7
+  attributes:
+    padW: 0
+    padH: ''
+    dH: 1
+    dW: 1
+    kH: 1
+    kW: 1
+    nOutputPlane: 64
+    nInputPlane: 256
+- type: ReLU
+  id: /y/pF
+  next:
+    - /y/YA
+  attributes:
+    p: true
+- type: ReLU
+  id: /y/pZ
+  next:
+    - /y/1I
+  attributes:
+    p: true
+- type: Linear
+  id: /y/q7U
+  next:
+    - /y/iV
+  attributes:
+    bias: ''
+    outputSize: 768
+    inputSize: 2048
+- type: ReLU
+  id: /y/qE
+  next:
+    - /y/Ar
+  attributes:
+    p: true
+- type: SpatialConvolution
+  id: /y/qL
+  next:
+    - /y/Hr
+  attributes:
+    padW: 0
+    padH: ''
+    dH: 1
+    dW: 1
+    kH: 1
+    kW: 1
+    nOutputPlane: 128
+    nInputPlane: 576
+- type: ReLU
+  id: /y/qo
+  next:
+    - /y/Wb
+  attributes:
+    p: true
+- type: ReLU
+  id: /y/qz
+  next:
+    - /y/1I
+  attributes:
+    p: true
+- type: ReLU
+  id: /y/r
+  next:
+    - /y/h
+  attributes:
+    p: true
+- type: ReLU
+  id: /y/rT
+  next:
+    - /y/5W
+  attributes:
+    p: true
+- type: ReLU
+  id: /y/rb
+  next:
+    - /y/Ga
+  attributes:
+    p: true
+- type: SpatialAveragePooling
+  id: /y/rl
+  next:
+    - /y/VJ
+  attributes:
+    padW: 0
+    padH: 0
+    ceil_mode: false
+    count_include_pad: true
+    dH: 1
+    dW: 1
+    kH: 3
+    kW: 3
+- type: SpatialConvolution
+  id: /y/ro
+  next:
+    - /y/E
+  attributes:
+    padW: 0
+    padH: ''
+    dH: 1
+    dW: 1
+    kH: 1
+    kW: 1
+    nOutputPlane: 64
+    nInputPlane: 256
+- type: Concat
+  id: /y/s8
+  next:
+    - /y/wP
+  attributes:
+    dimension: 2
+- type: SpatialConvolution
+  id: /y/sp
+  next:
+    - /y/IS
+  attributes:
+    padH: 1
+    padW: 1
+    dH: 1
+    dW: 1
+    kH: 3
+    kW: 3
+    nOutputPlane: 128
+    nInputPlane: 96
+- type: SpatialConvolution
+  id: /y/t
+  next:
+    - /y/T
+  attributes:
+    padH: 1
+    padW: 1
+    dH: 1
+    dW: 1
+    kH: 3
+    kW: 3
+    nOutputPlane: 64
+    nInputPlane: 64
+- type: SpatialConvolution
+  id: /y/tA
+  next:
+    - /y/qz
+  attributes:
+    padW: 0
+    padH: ''
+    dH: 1
+    dW: 1
+    kH: 1
+    kW: 1
+    nOutputPlane: 128
+    nInputPlane: 1024
+- type: SpatialConvolution
+  id: /y/tU
+  next:
+    - /y/Jo
+  attributes:
+    padW: 0
+    padH: ''
+    dH: 1
+    dW: 1
+    kH: 1
+    kW: 1
+    nOutputPlane: 128
+    nInputPlane: 320
+- type: SpatialConvolution
+  id: /y/tV
+  next:
+    - /y/4u
+  attributes:
+    padW: 0
+    padH: ''
+    dH: 1
+    dW: 1
+    kH: 1
+    kW: 1
+    nOutputPlane: 352
+    nInputPlane: 1024
+- type: ReLU
+  id: /y/ty
+  next:
+    - /y/1I
+  attributes:
+    p: true
+- type: ReLU
+  id: /y/u
+  next:
+    - /y/b
+  attributes:
+    p: true
+- type: ReLU
+  id: /y/u7
+  next:
+    - /y/ZM
+  attributes:
+    p: true
+- type: SpatialConvolution
+  id: /y/ui
+  next:
+    - /y/a7
+  attributes:
+    padH: 1
+    padW: 1
+    dH: 1
+    dW: 1
+    kH: 3
+    kW: 3
+    nOutputPlane: 96
+    nInputPlane: 96
+- type: SpatialConvolution
+  id: /y/v9
+  next:
+    - /y/CA
+  attributes:
+    padH: 1
+    padW: 1
+    dH: 1
+    dW: 1
+    kH: 3
+    kW: 3
+    nOutputPlane: 224
+    nInputPlane: 224
+- type: SpatialConvolution
+  id: /y/vB
+  next:
+    - /y/NC
+  attributes:
+    padW: 0
+    padH: ''
+    dH: 1
+    dW: 1
+    kH: 1
+    kW: 1
+    nOutputPlane: 160
+    nInputPlane: 576
+- type: SpatialConvolution
+  id: /y/vC
+  next:
+    - /y/Gh
+  attributes:
+    padH: 1
+    padW: 1
+    dH: 1
+    dW: 1
+    kH: 3
+    kW: 3
+    nOutputPlane: 128
+    nInputPlane: 96
+- type: SpatialAveragePooling
+  id: /y/vN
+  next:
+    - /y/8y
+  attributes:
+    padW: 0
+    padH: 0
+    ceil_mode: false
+    count_include_pad: true
+    dH: 1
+    dW: 1
+    kH: 3
+    kW: 3
+- type: SpatialZeroPadding
+  id: /y/vP
+  next:
+    - /y/T4
+  attributes:
+    pad_b: 1
+    pad_t: 1
+    pad_r: 1
+    pad_l: 1
+- type: SpatialConvolution
+  id: /y/vj
+  next:
+    - /y/A1
+  attributes:
+    padH: 1
+    padW: 1
+    dH: 1
+    dW: 1
+    kH: 3
+    kW: 3
+    nOutputPlane: 160
+    nInputPlane: 128
+- type: SpatialConvolution
+  id: /y/wJ
+  next:
+    - /y/M
+  attributes:
+    padW: 0
+    padH: ''
+    dH: 1
+    dW: 1
+    kH: 1
+    kW: 1
+    nOutputPlane: 64
+    nInputPlane: 256
+- type: SpatialConvolution
+  id: /y/wP
+  next:
+    - /y/d3
+    - /y/78
+    - /y/gA
+    - /y/4p
+  attributes:
+    padW: 0
+    padH: ''
+    dH: 2
+    dW: 2
+    kH: 2
+    kW: 2
+    nOutputPlane: 576
+    nInputPlane: 576
+- type: ReLU
+  id: /y/wp
+  next:
+    - /y/4L
+  attributes:
+    p: true
+- type: SpatialMaxPooling
+  id: /y/x
+  next:
+    - /y/e
+  attributes:
+    padW: 0
+    padH: 0
+    ceil_mode: false
+    dH: 2
+    dW: 2
+    kH: 3
+    kW: 3
+- type: SpatialZeroPadding
+  id: /y/x6
+  next:
+    - /y/Wo
+  attributes:
+    pad_b: 1
+    pad_t: 1
+    pad_r: 1
+    pad_l: 1
+- type: ReLU
+  id: /y/y5
+  next:
+    - /y/bN
+  attributes:
+    p: true
+- type: View
+  id: /y/yH
+  next:
+    - /y/jC
+  attributes:
+    numInputDims: null
+    params: 1024
+- type: SpatialConvolution
+  id: /y/zT
+  next:
+    - /y/C9
+  attributes:
+    padW: 0
+    padH: ''
+    dH: 1
+    dW: 1
+    kH: 1
+    kW: 1
+    nOutputPlane: 192
+    nInputPlane: 576

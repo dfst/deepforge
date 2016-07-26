@@ -64,7 +64,8 @@ define([
             desc.attributes = {};
             for (var i = names.length; i--;) {
                 schema = this._client.getAttributeSchema(id, names[i]);
-                if (names[i] === 'name' || schema.hasOwnProperty('argindex')) {
+                if (names[i] === 'name' || schema.hasOwnProperty('argindex') ||
+                    schema.setterType) {
                     desc.attributes[names[i]] = allAttrs[names[i]];
                 }
             }

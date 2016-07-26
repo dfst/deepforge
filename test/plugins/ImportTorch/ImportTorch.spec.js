@@ -9,17 +9,11 @@ var testFixture = require('../../globals'),
     fs = require('fs'),
     BASE_DIR = testFixture.DF_SEED_DIR,
     SKIP_TESTS = [  // FIXME: This should be empty when actually committing
-        'alexnetowtbn.lua',
         'alexnet.lua',
-        'ninbn.lua',
-        'overfeat.lua',
-        'vggbn.lua',
         'basic3.lua',
-        'googlenet.lua',
         'basic4.lua'
     ],
     ONLY_TESTS = [
-        'vgg.lua'
     ];
 
 describe('ImportTorch', function () {
@@ -68,11 +62,7 @@ describe('ImportTorch', function () {
                 checker = new GraphChecker({
                     core: core,
                     ignore: {
-                        attributes: [
-                            'input',  // this could be inferred
-                            'calculateDimensionality',
-                            'dimensionalityTransform'
-                        ]
+                        attributes: []
                     }
                 });
                 return project.createBranch('test', commitHash);

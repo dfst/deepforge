@@ -1,24 +1,28 @@
-- type: Linear
-  id: 0
-  next:
-    - 1
-  attributes:
-    output: 3
 - type: Concat
-  id: 1
+  id: /T/3
   next: []
   attributes:
-    dim: 1
+    dimension: 1
 - type: Linear
-  id: 2
+  id: /T/G
   next:
-    - 1
+    - /T/3
   attributes:
-    output: 7
+    bias: ''
+    outputSize: 7
+    inputSize: 5
+- type: Linear
+  id: /T/J
+  next:
+    - /T/3
+  attributes:
+    bias: ''
+    outputSize: 3
+    inputSize: 5
 - type: Reshape
-  id: 3
+  id: /T/o
   next:
-    - 2
-    - 0
+    - /T/G
+    - /T/J
   attributes:
-    dimensions: 5
+    params: 5

@@ -1,39 +1,47 @@
-- type: Tanh
-  id: 8
-  next:
-    - 12
-  attributes: {}
-- type: Tanh
-  id: 9
-  next:
-    - 14
-  attributes: {}
 - type: Linear
-  id: 10
+  id: /u/1
   next:
-    - 8
+    - /u/T
   attributes:
-    output: 150
+    bias: ''
+    outputSize: 30
+    inputSize: 150
+- type: Linear
+  id: /u/2
+  next:
+    - /u/M
+  attributes:
+    bias: ''
+    outputSize: 150
+    inputSize: 100
+- type: Tanh
+  id: /u/G
+  next:
+    - /u/1
+  attributes: {}
+- type: Tanh
+  id: /u/M
+  next:
+    - /u/k
+  attributes: {}
 - type: Concat
-  id: 11
+  id: /u/T
   next: []
   attributes:
-    dim: 1
+    dimension: 1
 - type: Linear
-  id: 12
+  id: /u/k
   next:
-    - 11
+    - /u/T
   attributes:
-    output: 50
+    bias: ''
+    outputSize: 50
+    inputSize: 150
 - type: Linear
-  id: 13
+  id: /u/q
   next:
-    - 9
+    - /u/G
   attributes:
-    output: 150
-- type: Linear
-  id: 14
-  next:
-    - 11
-  attributes:
-    output: 30
+    bias: ''
+    outputSize: 150
+    inputSize: 100
