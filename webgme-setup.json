@@ -252,6 +252,9 @@
       },
       "cifar10": {
         "src": "src/seeds/cifar10"
+      },
+      "xor": {
+        "src": "src/seeds/xor"
       }
     }
   },
