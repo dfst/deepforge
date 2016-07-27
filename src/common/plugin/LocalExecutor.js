@@ -106,21 +106,30 @@ define([
     };
 
     LocalExecutor.prototype.Save = function(node) {
-        var nodeId = this.core.getPath(node),
-            parentNode;
+        var parentNode,
+            currNameHashPairs;
         
         // Get the input node
         this.logger.info('Calling save operation!');
         return this._getSaveDir()
             .then(_saveDir => {
                 parentNode = _saveDir;
+                return this.core.loadChildren(_saveDir);
+            })
+            .then(artifacts => {
+                currNameHashPairs = artifacts
+                    .map(node => [
+                        this.core.getAttribute(node, 'name'),
+                        this.core.getAttribute(node, 'data')
+                    ]);
                 return this.getInputs(node);
             })
             .then(inputs => {
                 var ids = inputs.map(i => this.core.getPath(i[2])),
+                    allDataNodes,
                     dataNodes;
 
-                dataNodes = Object.keys(this.nodes)
+                allDataNodes = Object.keys(this.nodes)
                     .map(id => this.nodes[id])
                     .filter(node => this.isMetaTypeOf(node, this.META.Transporter))
                     .filter(node => 
@@ -129,10 +138,18 @@ define([
                     .map(node => this.core.getPointerPath(node, 'src'))
                     .map(id => this.nodes[id]);
 
+                // Remove nodes that already exist
+                dataNodes = allDataNodes.filter(dataNode => {
+                    var hash = this.core.getAttribute(dataNode, 'data'),
+                        name = this.core.getOwnAttribute(node, 'saveName') ||
+                            this.core.getAttribute(dataNode, 'name');
+
+                    return !(currNameHashPairs
+                        .find(pair => pair[0] === name && pair[1] === hash));
+                });
+
                 // get the input node
-                if (dataNodes.length === 0) {
-                    this.logger.error(`Could not find data to save! ${nodeId}`);
-                } else {
+                if (dataNodes.length !== 0) {
                     var newNodes = this.core.copyNodes(dataNodes, parentNode),
                         newName = this.core.getOwnAttribute(node, 'saveName');
                     if (newName) {
@@ -140,9 +157,14 @@ define([
                             this.core.setAttribute(node, 'name', newName)
                         );
                     }
+                    var hashes = dataNodes.map(n => this.core.getAttribute(n, 'data'));
+                    this.logger.info(`saving hashes: ${hashes.map(h => `"${h}"`)}`);
+                } else if (allDataNodes.length === 0) {
+                    this.logger.warn('No data nodes found!');
+                } else {
+                    this.logger.info('Using cached artifact(s)');
                 }
-                var hashes = dataNodes.map(n => this.core.getAttribute(n, 'data'));
-                this.logger.info(`saving hashes: ${hashes.map(h => `"${h}"`)}`);
+
                 this.onOperationComplete(node);
             });
     };
