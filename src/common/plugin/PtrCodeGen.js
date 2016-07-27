@@ -1,7 +1,9 @@
-/*globals define, WebGMEGlobal*/
+/*globals define, requirejs*/
 define([
+    'plugin/util',
     'q'
 ], function(
+    PluginUtils,
     Q
 ) {
     var PtrCodeGen = function() {
@@ -14,34 +16,67 @@ define([
                 var metanode = this.core.getMetaType(ptrNode),
                     pluginId;
 
+                this.logger.debug(`loaded pointer target of ${ptrId}: ${ptrNode}`);
                 pluginId = this.core.getRegistry(ptrNode, 'validPlugins').split(' ').shift();
                 this.logger.info(`generating code for ${this.core.getAttribute(ptrNode, 'name')} using ${pluginId}`);
 
-                var context = WebGMEGlobal.Client.getCurrentPluginContext(pluginId);
-
-                context.managerConfig.namespace = this.core.getNamespace(metanode);
-                context.managerConfig.activeNode = this.core.getPath(ptrNode);
+                var context = {
+                    namespace: this.core.getNamespace(metanode),
+                    activeNode: this.core.getPath(ptrNode)
+                };
 
                 // Load and run the plugin
-                return Q.nfcall(this.executePlugin.bind(this), pluginId, context);
+                return this.executePlugin(pluginId, context);
             })
             .then(hashes => hashes[0]);  // Grab the first asset for now
     };
 
-    PtrCodeGen.prototype.executePlugin = function(pluginId, config, callback) {
-        // Call the Interpreter manager in a Q.ninvoke friendly way
-        // I need to create a custom context for the given plugin:
-        //     - Set the activeNode to the given referenced node
-        //     - If the activeNode is namespaced, set META to the given namespace
-        //
-        // FIXME: Check if it is running in the browser or on the server
-        WebGMEGlobal.Client.runBrowserPlugin(pluginId, config, (err, result) => {
-            if (!result.success) {
-                return callback(result.getError());
-            }
-            this.logger.info('Finished calling ' + pluginId);
-            callback(null, result.artifacts);
+    PtrCodeGen.prototype.createPlugin = function(pluginId) {
+        var deferred = Q.defer(),
+            pluginPath = [
+                'plugin',
+                pluginId,
+                pluginId,
+                pluginId
+            ].join('/');
+
+        requirejs([pluginPath], Plugin => {
+            var plugin = new Plugin();
+            deferred.resolve(plugin);
+        }, err => {
+            this.logger.error(`Could not load ${pluginId}: ${err}`);
+            deferred.reject(err);
         });
+        return deferred.promise;
+    };
+
+    PtrCodeGen.prototype.configurePlugin = function(plugin, opts) {
+        var logger = this.logger.fork(plugin.getName());
+
+        return PluginUtils.loadNodesAtCommitHash(
+            this.project,
+            this.core,
+            this.commitHash,
+            this.logger,
+            opts
+        ).then(config => {
+            plugin.initialize(logger, this.blobClient, this.gmeConfig);
+            config.core = this.core;
+            plugin.configure(config);
+            return plugin;
+        });
+    };
+
+    PtrCodeGen.prototype.executePlugin = function(pluginId, config) {
+        return this.createPlugin(pluginId)
+            .then(plugin => this.configurePlugin(plugin, config))
+            .then(plugin => {
+                return Q.ninvoke(plugin, 'main');
+            })
+            .then(result => {
+                this.logger.info('Finished calling ' + pluginId);
+                return result.artifacts;
+            });
     };
 
     return PtrCodeGen;

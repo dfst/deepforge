@@ -666,7 +666,7 @@ define([
             return cb(null, files);
         })
         .fail(e => {
-            this.logger.error(`Could not generate pointer files for ${this.core.getAttribute(node, 'name')}: ${JSON.stringify(e)}`);
+            this.logger.error(`Could not generate pointer files for ${this.core.getAttribute(node, 'name')}: ${e.toString()}`);
             return cb(e);
         });
     };

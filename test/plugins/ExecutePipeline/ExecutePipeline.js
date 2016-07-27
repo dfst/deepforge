@@ -6,7 +6,9 @@
 
 'use strict';
 var testFixture = require('../../globals'),
+    spawn = require('child_process').spawn,
     path = testFixture.path,
+    projectRoot = path.join(__dirname, '..', '..', '..'),
     SEED_DIR = path.join(testFixture.DF_SEED_DIR, 'devPipelineTests');
 
 describe.skip('ExecutePipeline', function () {
@@ -20,9 +22,17 @@ describe.skip('ExecutePipeline', function () {
         project,
         gmeAuth,
         storage,
+        server,
         commitHash;
 
     before(function (done) {
+        process.env.PORT = gmeConfig.server.port;
+        server = spawn('npm', ['run', 'local'], {
+            cwd: projectRoot
+        });
+        server.stdout.on('data', data => process.stdout.write('server:\t' + data));
+        server.stderr.on('data', data => process.stderr.write('server:\t' + data));
+
         testFixture.clearDBAndGetGMEAuth(gmeConfig, projectName)
             .then(function (gmeAuth_) {
                 gmeAuth = gmeAuth_;
@@ -50,6 +60,7 @@ describe.skip('ExecutePipeline', function () {
     });
 
     after(function (done) {
+        server.kill('SIGINT');  // not killing process...
         storage.closeDatabase()
             .then(function () {
                 return gmeAuth.unload();
@@ -57,9 +68,32 @@ describe.skip('ExecutePipeline', function () {
             .nodeify(done);
     });
 
+    it('should execute single job', function (done) {
+        var manager = new PluginCliManager(null, logger, gmeConfig),
+            context = {
+                project: project,
+                commitHash: commitHash,
+                namespace: 'pipeline',
+                branchName: 'test',
+                activeNode: '/f/5'
+            };
+
+        manager.executePlugin(pluginName, {}, context, function (err, pluginResult) {
+            expect(err).to.equal(null);
+            expect(typeof pluginResult).to.equal('object');
+            expect(pluginResult.success).to.equal(true);
+
+            project.getBranchHash('test')
+                .then(function (branchHash) {
+                    expect(branchHash).to.not.equal(commitHash);
+                })
+                .nodeify(done);
+        });
+    });
+
     // TODO: Add more tests!
     // Also, should find a good way to mock the Executor framework
-    it('should run plugin and update the branch', function (done) {
+    it('should run plugin w/ references', function (done) {
         var manager = new PluginCliManager(null, logger, gmeConfig),
             pluginConfig = {
             },
@@ -68,7 +102,7 @@ describe.skip('ExecutePipeline', function () {
                 commitHash: commitHash,
                 namespace: 'pipeline',
                 branchName: 'test',
-                activeNode: '/s'
+                activeNode: '/f/G'
             };
 
         manager.executePlugin(pluginName, pluginConfig, context, function (err, pluginResult) {
