@@ -100,5 +100,12 @@ define([
         this.addRefTo(target.node.id);
     };
 
+    OperationInterfaceEditorWidget.prototype.addConnection = function(desc) {
+        EasyDAG.prototype.addConnection.call(this, desc);
+        // Remove connection selection
+        var conn = this.connections[desc.id];
+        conn.$el.on('click', null);
+    };
+
     return OperationInterfaceEditorWidget;
 });
