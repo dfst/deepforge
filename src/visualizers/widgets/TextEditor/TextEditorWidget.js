@@ -2,12 +2,14 @@
 /*jshint browser: true*/
 
 define([
-    './lib/ace',
+    'ace/ace',
     'underscore',
+    './completer',
     'css!./styles/TextEditorWidget.css'
 ], function (
     ace,
-    _
+    _,
+    Completer
 ) {
     'use strict';
 
@@ -28,12 +30,10 @@ define([
 
         // Get the config from component settings for themes
         this.editor.getSession().setOptions(this.getSessionOptions());
-        this.editor.setOptions(this.getEditorOptions());
+        this.addExtensions();
         this.editor.$blockScrolling = Infinity;
         this.DELAY = 750;
         this.silent = false;
-
-        // this.editor.setTheme('ace/theme/monokai');
 
         this.editor.on('change', () => {
             if (!this.silent) {
@@ -50,8 +50,18 @@ define([
         this._logger.debug('ctor finished');
     };
 
+    TextEditorWidget.prototype.addExtensions = function () {
+        require(['ace/ext/language_tools'], () => {
+            this.editor.setOptions(this.getEditorOptions());
+            this.completer = new Completer(this.editor.completers);
+            this.editor.completers = [this.completer];
+        });
+    };
+
     TextEditorWidget.prototype.getEditorOptions = function () {
         return {
+            enableBasicAutocompletion: true,
+            enableLiveAutocompletion: true,
             fontSize: '12pt'
         };
     };

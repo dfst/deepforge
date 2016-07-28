@@ -10,6 +10,7 @@ require('dotenv').load({silent: true});
 config.server.port = +process.env.PORT || config.server.port;
 config.mongo.uri = process.env.MONGO_URI || config.mongo.uri;
 config.requirejsPaths.deepforge = './src/common';
+config.requirejsPaths.ace = './src/visualizers/widgets/TextEditor/lib/ace';
 config.seedProjects.defaultProject = 'project';
 
 config.plugin.allowBrowserExecution = true;
