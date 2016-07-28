@@ -86,8 +86,8 @@ define([
                 var points = (node.getAttribute('points') || '').split(';')
                     .map(pair => {
                         var nums = pair.split(','),
-                            x = +nums[0],
-                            y = +nums[1];
+                            x = parseFloat(nums[0]),
+                            y = parseFloat(nums[1]);
 
                         return {
                             x: x,

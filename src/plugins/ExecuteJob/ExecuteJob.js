@@ -832,11 +832,13 @@ define([
             args,
             result = [],
             cmdCnt = 0,
+            ansiRegex = /\[\d+(;\d+)?m/g,
             cmd;
 
         for (var i = 0; i < lines.length; i++) {
             // Check for a deepforge command
-            if (lines[i].indexOf(CONSTANTS.START_CMD) === 0) {
+            if (lines[i].indexOf(CONSTANTS.START_CMD) !== -1) {
+                lines[i] = lines[i].replace(ansiRegex, '');
                 cmdCnt++;
                 args = lines[i].split(/\s+/);
                 args.shift();
@@ -890,6 +892,7 @@ define([
 
     ExecuteJob.prototype[CONSTANTS.GRAPH_PLOT] = function (job, id, x, y) {
         var jobId = this.core.getPath(job),
+            nonNum = /[^\d]*/g,
             graph,
             points;
             
@@ -902,6 +905,9 @@ define([
             return;
         }
 
+        // Clean the points by removing and special characters
+        x = x.replace(nonNum, '');
+        y = y.replace(nonNum, '');
         points = this.core.getAttribute(graph, 'points');
         points += `${x},${y};`;
         this.core.setAttribute(graph, 'points', points);

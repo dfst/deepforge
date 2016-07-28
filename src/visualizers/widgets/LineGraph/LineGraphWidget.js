@@ -16,7 +16,7 @@ define([
 
         this.$el = container;
 
-        this.lineData = [];
+        this.lineData = {};
         this._initialize();
 
         this._logger.debug('ctor finished');
