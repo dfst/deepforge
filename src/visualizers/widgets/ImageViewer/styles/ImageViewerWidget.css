@@ -1,0 +1,5 @@
+
+.image-viewer img {
+  position: absolute;
+  image-rendering: pixelated;
+}

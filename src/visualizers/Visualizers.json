@@ -88,5 +88,11 @@
     "title": "LineGraph",
     "panel": "panels/LineGraph/LineGraphPanel",
     "DEBUG_ONLY": false
+  },
+  {
+    "id": "ImageViewer",
+    "title": "ImageViewer",
+    "panel": "panels/ImageViewer/ImageViewerPanel",
+    "DEBUG_ONLY": false
   }
 ]

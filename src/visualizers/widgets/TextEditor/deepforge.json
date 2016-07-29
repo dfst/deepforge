@@ -1,6 +1,7 @@
 {
     "deepforge": [
-        "Graph"
+        "Graph",
+        "image"
     ],
     "torch": [
         "deserialize",

@@ -19,6 +19,7 @@ function deepforge._cmd(...)
     print(cmd)
 end
 
+-- Graph support
 Graph = torch.class('deepforge.Graph')
 
 function Graph:__init(name)
@@ -41,6 +42,23 @@ end
 
 function Graph:line(name, opts)
     return deepforge._Line(self.id, name, opts)
+end
+
+-- Image support
+function deepforge.image(name, tensor)
+    require 'image'
+    require 'paths'
+
+    -- save it in the tmp directory
+    local filename = name .. '.png'
+    local path = paths.concat('metadata', filename)
+
+    if paths.dir('metadata') == nil then
+       paths.mkdir('metadata')
+    end
+
+    image.save(path, tensor)
+    deepforge._cmd("<%= IMAGE %>", name)
 end
 
 return deepforge

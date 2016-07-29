@@ -208,6 +208,13 @@
         "panel": "src/visualizers/panels/LineGraph",
         "secondary": false,
         "widget": "src/visualizers/widgets/LineGraph"
+      },
+      "ImageViewer": {
+        "src": "panels/ImageViewer/ImageViewerPanel",
+        "title": "ImageViewer",
+        "panel": "src/visualizers/panels/ImageViewer",
+        "secondary": false,
+        "widget": "src/visualizers/widgets/ImageViewer"
       }
     },
     "addons": {},

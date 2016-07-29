@@ -129,6 +129,8 @@ define([
             name,
             id,
             idsToDelete = [],
+            type,
+            base,
             child;
 
         this.lastAppliedCmd[nodeId] = 0;
@@ -142,9 +144,16 @@ define([
                     if (this.isMetaTypeOf(child, this.META.Metadata)) {
                         id = this.core.getPath(child);
                         name = this.core.getAttribute(child, 'name');
+                        base = this.core.getBase(child);
+                        type = this.core.getAttribute(base, 'name');
 
                         this._markForDeletion[nodeId][id] = child;
-                        this._oldMetadataByName[nodeId][name] = id;
+                        // namespace by metadata type
+                        if (!this._oldMetadataByName[nodeId][type]) {
+                            this._oldMetadataByName[nodeId][type] = {};
+                        }
+
+                        this._oldMetadataByName[nodeId][type][name] = id;
 
                         // children of metadata nodes get deleted
                         idsToDelete = idsToDelete
@@ -314,13 +323,13 @@ define([
                     );
 
                     config = {
-                        cmd: 'bash',
-                        args: ['run.sh'],
+                        cmd: 'node',
+                        args: ['start.js'],
                         outputInterval: OUTPUT_INTERVAL,
                         resultArtifacts: outputs
                     };
                     files['executor_config.json'] = JSON.stringify(config, null, 4);
-                    files['run.sh'] = Templates.BASH;
+                    files['start.js'] = _.template(Templates.START)(CONSTANTS);
 
                     // Save the artifact
                     // Remove empty hashes
@@ -879,23 +888,14 @@ define([
     ExecuteJob.prototype[CONSTANTS.GRAPH_CREATE] = function (job, id) {
         var graph,
             name = Array.prototype.slice.call(arguments, 2).join(' '),
-            jobId = this.core.getPath(job),
-            oldMetadata = this._oldMetadataByName[jobId],
-            oldId;
+            jobId = this.core.getPath(job);
 
         id = jobId + '/' + id;
         this.logger.info(`Creating graph ${id} named ${name}`);
 
         // Check if the graph already exists
-        if (oldMetadata && oldMetadata[name]) {
-            oldId = oldMetadata[name];
-            graph = this._markForDeletion[jobId][oldId];
-
-            // Reset points
-            this.core.setAttribute(graph, 'points', '');
-
-            delete this._markForDeletion[jobId][oldId];
-        } else {  // create new graph
+        graph = this._getExistingMetadata(jobId, 'Graph', name);
+        if (!graph) {
             graph = this.core.createNode({
                 base: this.META.Graph,
                 parent: job
@@ -946,6 +946,47 @@ define([
         });
         this.core.setAttribute(line, 'name', name);
         this._metadata[jobId + '/' + id] = line;
+    };
+
+    ExecuteJob.prototype[CONSTANTS.IMAGE] = function (job, hash) {
+        var jobId = this.core.getPath(job),
+            name = Array.prototype.slice.call(arguments, 2).join(' '),
+            id = jobId + '/IMAGE/' + name,
+            imageNode = this._metadata[id];  // Look for the metadata imageNode
+
+        id = jobId + '/' + id;
+        this.logger.info(`Creating graph ${id} named ${name}`);
+
+        if (!imageNode) {
+
+            // Check if the imageNode already exists
+            imageNode = this._getExistingMetadata(jobId, 'Image', name);
+            if (!imageNode) {
+                imageNode = this.core.createNode({
+                    base: this.META.Image,
+                    parent: job
+                });
+                this.core.setAttribute(imageNode, 'name', name);
+            }
+            this._metadata[id] = imageNode;
+        }
+
+        this.core.setAttribute(imageNode, 'data', hash);
+    };
+
+    ExecuteJob.prototype._getExistingMetadata = function (jobId, type, name) {
+        var oldMetadata = this._oldMetadataByName[jobId] &&
+            this._oldMetadataByName[jobId][type],
+            node,
+            id;
+
+        if (oldMetadata && oldMetadata[name]) {
+            id = oldMetadata[name];
+            node = this._markForDeletion[jobId][id];
+            delete this._markForDeletion[jobId][id];
+        }
+
+        return node || null;
     };
 
     return ExecuteJob;
