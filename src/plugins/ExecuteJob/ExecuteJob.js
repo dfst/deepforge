@@ -427,6 +427,7 @@ define([
             isClass,
             metanodes,
             classNodes,
+            inheritanceLvl = {},
             code;
 
         this.logger.info('Creating custom layer file...');
@@ -435,13 +436,31 @@ define([
 
         classNodes = metanodes.filter(node => {
             var base = this.core.getBase(node),
-                baseId = this.core.getPath(base);
+                baseId = this.core.getPath(base),
+                count = 1;
 
-            return isClass[baseId];
+            // Count the sets back to a class node
+            while (base) {
+                if (isClass[baseId]) {
+                    inheritanceLvl[this.core.getPath(node)] = count;
+                    return true;
+                }
+                base = this.core.getBase(base);
+                baseId = this.core.getPath(base);
+                count++;
+            }
+
+            return false;
         });
 
         // Get the code definitions for each
-        code = classNodes.map(node =>
+        // Sort by levels of inheritance...
+        code = classNodes.sort((a, b) => {
+            var aId = this.core.getPath(a),
+                bId = this.core.getPath(b);
+
+            return inheritanceLvl[aId] > inheritanceLvl[bId];
+        }).map(node =>
             `require './${this.core.getAttribute(node, 'name')}.lua'`
         ).join('\n');
 

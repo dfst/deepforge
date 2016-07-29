@@ -17,6 +17,7 @@ var testFixture = require('../../globals'),
     ];
 
 describe('ImportTorch', function () {
+    this.timeout(5000);
     var gmeConfig = testFixture.getGmeConfig(),
         Q = testFixture.Q,
         GraphChecker = testFixture.requirejs('deepforge/GraphChecker'),
