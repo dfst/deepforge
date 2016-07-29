@@ -111,8 +111,6 @@ define([
             return callback('Current node is not a Pipeline or Execution!', this.result);
         }
 
-        // Set debug and the final callback
-        this.debug = true;  // this.getCurrentConfig().debug;
         this._callback = callback;
 
         startPromise

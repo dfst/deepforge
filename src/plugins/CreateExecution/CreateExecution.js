@@ -105,7 +105,7 @@ define([
                 return this.getUniqueExecName(name + '_execution');
             })
             .then(execName => {
-                var isSnapshot = this.getCurrentConfig().snapshot;
+                var isSnapshot = !this.getCurrentConfig().debug;
 
                 this.logger.debug(`Creating execution ${execName}`);
 
@@ -181,7 +181,7 @@ define([
     };
 
     CreateExecution.prototype.copyOperations = function (nodes, dst) {
-        var snapshot = this.getCurrentConfig().snapshot;
+        var snapshot = !this.getCurrentConfig().debug;
 
         if (snapshot) {
             return Q.all(nodes.map(node => {
