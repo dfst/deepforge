@@ -5,6 +5,7 @@
 // metadata, provides a pagination bar in the lower left to page through
 // the metadata results
 define([
+    'text!./icons.json',
     'js/PanelBase/PanelBaseWithHeader',
     'js/PanelManager/IActivePanel',
     'panels/LogViewer/LogViewerPanel',
@@ -13,6 +14,7 @@ define([
     'text!api/visualizers',
     'css!./OutputViewer.css'
 ], function (
+    IconTxt,
     PanelBaseWithHeader,
     IActivePanel,
     LogViewer,
@@ -23,7 +25,8 @@ define([
     'use strict';
 
     var OutputViewerPanel,
-        Visualizers = JSON.parse(VisualizersJSON);
+        Visualizers = JSON.parse(VisualizersJSON),
+        IconFor = JSON.parse(IconTxt);
 
     OutputViewerPanel = function (layoutManager, params) {
         var options = {};
@@ -64,7 +67,7 @@ define([
         this.$pagerList = $('<ul>', {class: 'pagination'});
 
         // Add the console item
-        var logviewer = $('<li class="active"><a>Console</a></li>');
+        var logviewer = $('<li class="active"><a><span class="glyphicon glyphicon-console"></span> Console</a></li>');
         this.$logviewer = logviewer.find('a');
         this.$selected = this.$logviewer;
         this.$pagerList.append(logviewer);
@@ -218,10 +221,8 @@ define([
     };
 
     OutputViewerPanel.prototype.onUpdate = function (nodeId) {
-        var name = this._client.getNode(nodeId).getAttribute('name');
-
         if (this._pages[nodeId]) {
-            this._pages[nodeId].find('a').text(name);
+            this.updatePage(nodeId);
         }
     };
 
@@ -249,14 +250,29 @@ define([
         }
     };
 
+    OutputViewerPanel.prototype.updatePage = function (nodeId) {
+        var node = this._client.getNode(nodeId),
+            baseId = node.getBaseId(),
+            base = this._client.getNode(baseId),
+            type = base.getAttribute('name'),
+            name = node.getAttribute('name'),
+            icon = IconFor[type] || 'info-sign',
+            anchor = this._pages[nodeId].find('a'),
+            span = document.createElement('span');
+
+        span.className = 'glyphicon glyphicon-' + icon;
+        anchor.empty();
+        anchor.html(span.outerHTML + ' ' + name);
+    };
+
     OutputViewerPanel.prototype.addToPager = function (name, nodeId) {
         var $el = $('<li>'),
             $a = $('<a>');
 
-        $a.text(name);
         $a.attr('data-id', nodeId);
         $el.append($a);
         this._pages[nodeId] = $el;
+        this.updatePage(nodeId);
         this.$pager.removeClass('empty');
         this.$pagerList.append($el);
 
