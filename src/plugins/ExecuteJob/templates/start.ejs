@@ -78,4 +78,5 @@ requirejs([
     var job = spawn('th', ['init.lua']);
     job.stdout.on('data', onStdout);
     job.stderr.on('data', data => process.stdout.write(data));
+    job.on('close', code => process.exit(code));
 });
