@@ -28,7 +28,11 @@ define([
         TextEditorControl.prototype
     );
 
-    // Override ObjectDescriptor
+    OperationCodeEditorControl.prototype._initWidgetEventHandlers = function () {
+        TextEditorControl.prototype._initWidgetEventHandlers.call(this);
+        this._widget.getOperationAttributes = this.getOperationAttributes.bind(this);
+    };
+
     OperationCodeEditorControl.prototype.TERRITORY_RULE = {children: 3};
     OperationCodeEditorControl.prototype._getObjectDescriptor = function (id) {
         var desc = TextEditorControl.prototype._getObjectDescriptor.call(this, id),
@@ -56,6 +60,22 @@ define([
         if (id === this._currentNodeId || this.hasMetaName(id, 'Data')) {
             TextEditorControl.prototype._onUpdate.call(this, this._currentNodeId);
         }
+    };
+
+    OperationCodeEditorControl.prototype.getOperationAttributes = function () {
+        var node = this._client.getNode(this._currentNodeId),
+            attrs = node.getValidAttributeNames(),
+            rmAttrs = ['name', 'code', CONSTANTS.LINE_OFFSET],
+            i;
+
+        for (var j = rmAttrs.length; j--;) {
+            i = attrs.indexOf(rmAttrs[j]);
+            if (i > -1) {
+                attrs.splice(i, 1);
+            }
+        }
+
+        return attrs;
     };
 
     // Line offset handling

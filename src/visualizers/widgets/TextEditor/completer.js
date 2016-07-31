@@ -30,18 +30,24 @@ define([
         // completers
         var prevChar = session.getTokenAt(pos.row, pos.column-1),
             prevTextRange,
-            obj;
+            obj,
+            completions;
 
         if (prevChar && (prevChar.value === '.' || prevChar.value === ':')) {
             prevTextRange = session.getAWordRange(pos.row, pos.column - (prefix.length+1));
             obj = session.getTextRange(prevTextRange);
 
-            if (this.completionsByClass[obj]) {
-                return callback(null, this.completionsByClass[obj]);
+            completions = this.getCompletionsFor(obj, session, pos);
+            if (completions) {
+                return callback(null, completions);
             }
         }
 
         return this.getDefaultCompletions.apply(this, arguments);
+    };
+
+    MethodCompleter.prototype.getCompletionsFor = function(obj/*, session, pos*/) {
+        return this.completionsByClass[obj];
     };
 
     MethodCompleter.prototype.getDefaultCompletions = function(editor, session, pos, prefix, callback) {
