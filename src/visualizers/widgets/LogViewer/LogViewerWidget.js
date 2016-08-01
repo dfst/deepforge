@@ -64,7 +64,7 @@ define([
 
     // Get the editor text and update wrt ansi colors
     LogViewerWidget.renderAnsiFromText = function(remaining) {
-        var r = /\[0(;3([0-7]))?m/,
+        var r = /\[[0-6][0-9]?(;[0-9]([0-7]))?m/,
             match,
             ansiCode,
             text,
@@ -77,7 +77,9 @@ define([
             match = remaining.match(r);
             if (match) {
                 ansiCode = match[0];
-                nextColor = ANSI_COLORS[match[2]] || null;
+                if (match[1] && match[1][1] === '3') {  // foreground color
+                    nextColor = ANSI_COLORS[match[2]] || null;
+                }
                 text = remaining.substring(0, match.index);
                 remaining = remaining.substring(match.index+ansiCode.length);
             } else {
