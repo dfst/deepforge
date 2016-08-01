@@ -94,5 +94,11 @@
     "title": "ImageViewer",
     "panel": "panels/ImageViewer/ImageViewerPanel",
     "DEBUG_ONLY": false
+  },
+  {
+    "id": "ExecutionIndex",
+    "title": "ExecutionIndex",
+    "panel": "panels/ExecutionIndex/ExecutionIndexPanel",
+    "DEBUG_ONLY": false
   }
 ]

@@ -1,4 +1,4 @@
-/*globals define, d3, nv */
+/*globals define, d3, nv, _ */
 /*jshint browser: true*/
 
 define([
@@ -35,7 +35,6 @@ define([
         this.$chart = d3.select(this.$el[0]).append('svg');
         nv.addGraph(() => {
             var chart = nv.models.lineChart()
-                //.margin({left: 100})
                 .useInteractiveGuideline(true)
                 .showLegend(true)
                 .showYAxis(true)
@@ -82,20 +81,20 @@ define([
                     values: desc.points
                 };
             }
-            this.updateChartData();
+            this.refreshChart();
         }
     };
 
     LineGraphWidget.prototype.removeNode = function (id) {
         delete this.lineData[id];
-        this.updateChartData();
+        this.refreshChart();
     };
 
     LineGraphWidget.prototype.updateNode = function (desc) {
         if (desc && this.lineData[desc.id]) {
             this.lineData[desc.id].values = desc.points;
             this.lineData[desc.id].key = desc.name;
-            this.updateChartData();
+            this.refreshChart();
         }
     };
 
@@ -114,6 +113,9 @@ define([
                 .call(this.chart);
         }
     };
+
+    LineGraphWidget.prototype.refreshChart = 
+        _.debounce(LineGraphWidget.prototype.updateChartData, 50);
 
     LineGraphWidget.prototype.updateChart = function () {
         if (this.chart) {

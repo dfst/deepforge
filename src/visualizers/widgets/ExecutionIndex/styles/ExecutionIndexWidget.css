@@ -1,0 +1,21 @@
+/**
+ * This file is for any css that you may want for this visualizer.
+ *
+ * Ideally, you would use the scss file also provided in this directory 
+ * and then generate this file automatically from that. However, you can 
+ * simply write css if you prefer
+ */
+
+.execution-index.panel-body {
+    padding: 0;
+}
+
+.execution-index .left {
+  position: absolute;
+  background-color: #eee;
+}
+
+.execution-index .right {
+  position: absolute;
+  background-color: #eee;
+}

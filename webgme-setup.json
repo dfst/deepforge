@@ -215,6 +215,13 @@
         "panel": "src/visualizers/panels/ImageViewer",
         "secondary": false,
         "widget": "src/visualizers/widgets/ImageViewer"
+      },
+      "ExecutionIndex": {
+        "src": "panels/ExecutionIndex/ExecutionIndexPanel",
+        "title": "ExecutionIndex",
+        "panel": "src/visualizers/panels/ExecutionIndex",
+        "secondary": false,
+        "widget": "src/visualizers/widgets/ExecutionIndex"
       }
     },
     "addons": {},

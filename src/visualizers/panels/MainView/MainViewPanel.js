@@ -9,6 +9,7 @@ define([
     'widgets/MainView/MainViewWidget',
     './MainViewControl',
     'panels/PipelineIndex/PipelineIndexPanel',
+    'panels/ExecutionIndex/ExecutionIndexPanel',
     'deepforge/globals'
 ], function (
     PanelBaseWithHeader,
@@ -16,6 +17,7 @@ define([
     MainViewWidget,
     MainViewControl,
     PipelineIndexPanel,
+    ExecutionIndexPanel,
     DeepForge
 ) {
     'use strict';
@@ -38,12 +40,14 @@ define([
         this.$nav = $('<div>', {id: 'nav-container'});
         this.$el.css({padding: 0});
 
-        this.embeddedPanel = new PipelineIndexPanel(layoutManager, params);
-        this.$embedded = this.embeddedPanel.$el;
-        this.$embedded.addClass('embedded');
-
-        this.$el.append(this.$nav, this.$embedded);
-
+        this.embeddedPanels = [
+            PipelineIndexPanel,
+            ExecutionIndexPanel
+        ];
+        this.nextPanelIndex = 0;
+        this._lm = layoutManager;
+        this._params = params;
+        this.$el.append(this.$nav);
         this._initialize();
 
         this.logger.debug('ctor finished');
@@ -66,13 +70,40 @@ define([
             widget: this.widget
         });
 
-        var controlObjectChanged = this.control.selectedObjectChanged;
-        this.control.selectedObjectChanged = nodeId => {
-            this.embeddedPanel.control.selectedObjectChanged(DeepForge.places.MyPipelines);
-            return controlObjectChanged.call(this.control, nodeId);
+        this.control.toggleEmbeddedPanel = this.toggleEmbeddedPanel.bind(this);
+        var selectedObjectChanged = this.control.selectedObjectChanged;
+        this.control.selectedObjectChanged = id => {
+            this.embeddedPanel.control.selectedObjectChanged(this.getEmbeddedNode());
+            selectedObjectChanged.call(this.control, id);
         };
 
+        this.toggleEmbeddedPanel(true);
         this.onActivate();
+    };
+
+    MainViewPanel.prototype.getEmbeddedNode = function() {
+        return this.nextPanelIndex === 1 ? DeepForge.places.MyPipelines : DeepForge.places.MyExecutions;
+    };
+
+    MainViewPanel.prototype.toggleEmbeddedPanel = function (silent) {
+        var Panel = this.embeddedPanels[this.nextPanelIndex];
+        this.nextPanelIndex = (this.nextPanelIndex + 1) % this.embeddedPanels.length;
+
+        if (this.embeddedPanel) {  // Remove current
+            this.embeddedPanel.destroy();
+            this.$embedded.remove();
+        }
+
+        this.embeddedPanel = new Panel(this._lm, this._params);
+        this.$embedded = this.embeddedPanel.$el;
+        this.$embedded.addClass('main-view-embedded');
+        this.$el.append(this.$embedded);
+
+        // Call on Resize and selectedObjectChanged
+        this.onResize(this.width, this.height);
+        if (!silent) {
+            this.embeddedPanel.control.selectedObjectChanged(this.getEmbeddedNode());
+        }
     };
 
     /* OVERRIDE FROM WIDGET-WITH-HEADER */
@@ -98,6 +129,8 @@ define([
             margin: 'inherit'
         });
         this.embeddedPanel.onResize(embeddedWidth, height);
+        this.width = width;
+        this.height = height;
     };
 
     /* * * * * * * * Visualizer life cycle callbacks * * * * * * * */

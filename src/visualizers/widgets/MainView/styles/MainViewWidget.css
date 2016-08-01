@@ -1,3 +1,7 @@
+.main-view-embedded {
+  position: absolute;
+}
+
 .main-view .side-nav-control {
   padding-right: 1em;
   padding-top: 1em;

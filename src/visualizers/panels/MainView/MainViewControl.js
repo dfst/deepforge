@@ -65,6 +65,8 @@ define([
                 return null;
             }
         };
+
+        this._widget.toggleEmbeddedPanel = () => this.toggleEmbeddedPanel();
     };
 
     /* * * * * * * * Visualizer content update callbacks * * * * * * * */

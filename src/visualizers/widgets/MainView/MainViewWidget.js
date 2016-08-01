@@ -17,12 +17,17 @@ define([
 
     var MainViewWidget,
         WIDGET_CLASS = 'main-view',
-        CreateListItem = _.template(ListItem);
+        CreateListItem = _.template(ListItem),
+        ToggleLabels = [
+            'Executions',
+            'Pipelines'
+        ];
 
     MainViewWidget = function (logger, container) {
         this._logger = logger.fork('Widget');
         this.$el = container;
         this.$el.addClass(WIDGET_CLASS);
+        this.toggleIndex = 0;
         this.initialize();
         this._logger.debug('ctor finished');
     };
@@ -31,6 +36,19 @@ define([
         // Create the nav bar
         this.$nav = $(NavBarHTML);
         this.$el.append(this.$nav);
+
+        // Execution support
+        this.$toggle = this.$nav.find('#toggle-main');
+        this.$toggleLabel = this.$nav.find('.toggle-label');
+        this.$toggle.on('click', () => {
+            if (this._closed) {  // shouldn't be clicked when closed (but it is possible)
+                return;
+            }
+            this.toggleEmbeddedPanel();
+            // Update the toggle name
+            this.toggleIndex = (this.toggleIndex + 1) % 2;
+            this.$toggleLabel.text(ToggleLabels[this.toggleIndex]);
+        });
 
         this.$archlist = this.$nav.find('#arch-list-content');
         this.$artifacts = this.$nav.find('#artifact-list-content');
