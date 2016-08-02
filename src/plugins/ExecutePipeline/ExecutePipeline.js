@@ -129,28 +129,12 @@ define([
         .fail(e => this.logger.error(e));
     };
 
-    ExecutePipeline.prototype.updateForkName = function () {
-        var basename = this.pipelineName + '_fork';
-        return this.project.getBranches().then(branches => {
-            var names = Object.keys(branches),
-                name = basename,
-                i = 2;
-
-            while (names.indexOf(name) !== -1) {
-                name = basename + '_' + i;
-                i++;
-            }
-
-            this.forkName = name;
-        });
-    };
-
     // Override 'save' to prevent race conditions while saving
     ExecutePipeline.prototype.save = function (msg) {
         // When 'save'  is called, it should still finish any current save op
         // before continuing
         this._currentSave = this._currentSave
-            .then(() => this.updateForkName())
+            .then(() => this.updateForkName(this.pipelineName))
             .then(() => CreateExecution.prototype.save.call(this, msg))
             .then(result => {
                 var msg;

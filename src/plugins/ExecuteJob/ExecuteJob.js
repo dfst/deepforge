@@ -2,6 +2,7 @@
 /*jshint node:true, browser:true*/
 
 define([
+    'common/storage/constants',
     'text!./metadata.json',
     'executor/ExecutorClient',
     'plugin/PluginBase',
@@ -12,6 +13,7 @@ define([
     'q',
     'underscore'
 ], function (
+    STORAGE_CONSTANTS,
     pluginMetadata,
     ExecutorClient,
     PluginBase,
@@ -81,6 +83,37 @@ define([
         this._callback = callback;
         this.prepare()
             .then(() => this.executeJob(this.activeNode));
+    };
+
+    ExecuteJob.prototype.updateForkName = function (basename) {
+        basename = basename + '_fork';
+        basename = basename.replace(/[- ]/g, '_');
+        return this.project.getBranches().then(branches => {
+            var names = Object.keys(branches),
+                name = basename,
+                i = 2;
+
+            while (names.indexOf(name) !== -1) {
+                name = basename + '_' + i;
+                i++;
+            }
+
+            this.forkName = name;
+        });
+    };
+
+    // Override 'save' to notify the user on fork
+    ExecuteJob.prototype.save = function (msg) {
+        var name = this.core.getAttribute(this.activeNode, 'name');
+        return this.updateForkName(name)
+            .then(() => PluginBase.prototype.save.call(this, msg))
+            .then(result => {
+                var msg;
+                if (result.status === STORAGE_CONSTANTS.FORKED) {
+                    msg = `"${name}" execution has forked to "${result.forkName}"`;
+                    this.sendNotification(msg);
+                }
+            });
     };
 
     ExecuteJob.prototype.getConnections = function (nodes) {
