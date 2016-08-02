@@ -911,7 +911,7 @@ define([
 
     ExecuteJob.prototype[CONSTANTS.GRAPH_PLOT] = function (job, id, x, y) {
         var jobId = this.core.getPath(job),
-            nonNum = /[^\d]*/g,
+            nonNum = /[^\d\.]*/g,
             graph,
             points;
             
