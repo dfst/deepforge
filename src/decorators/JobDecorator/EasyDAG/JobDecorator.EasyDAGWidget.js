@@ -49,7 +49,17 @@ define([
     JobDecorator.prototype.AttributeField = AttributeField;
     JobDecorator.prototype.PointerField = PointerField;
 
+    JobDecorator.prototype.isArtifactLoader = function() {
+        return this._node.name === 'ArtifactLoader';
+    };
+
     JobDecorator.prototype.getDisplayName = function() {
+        if (this.isArtifactLoader()) {
+            var id = this._node.pointers.artifact;
+
+            // Try to look up the pointer name
+            return this.nameFor[id] || this._node.name;
+        }
         return this._node.name;
     };
 
@@ -65,6 +75,16 @@ define([
         // Set _attributes from opAttributes
         for (var i = opAttrs.length; i--;) {
             this._attributes[opAttrs[i]] = this._node.opAttributes[opAttrs[i]];
+        }
+    };
+
+    JobDecorator.prototype.updateTargetName = function() {
+        EllipseDecorator.prototype.updateTargetName.apply(this, arguments);
+        var name = this.getDisplayName();
+
+        if (name !== this.name) {
+            this.name = name;
+            this.onResize();
         }
     };
 
