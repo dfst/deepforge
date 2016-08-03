@@ -305,6 +305,17 @@ program
                 if (!justInstalled) {
                     // Upgrade torch
                     console.log('Upgrading torch...');
+                    console.log(`Checking for torch in ${config.torch.dir}`);
+                    // Verify that torch is installed in the config's location
+                    if (!exists.sync(path.join(config.torch.dir, 'update.sh'))) {
+                        // config is incorrect!
+                        console.log('Could not find torch installation. Please update the deepforge config with:');
+                        console.log('');
+                        console.log('    deepforge config torch.dir ~/path/to/torch/install');
+                        console.log('');
+                        return;
+                    }
+
                     job = spawn('bash', ['./update.sh'], {
                         cwd: p(config.torch.dir)
                     });
