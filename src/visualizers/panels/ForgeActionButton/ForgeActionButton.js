@@ -349,6 +349,20 @@ define([
         });
     };
 
+    ForgeActionButton.prototype.isRunning = function() {
+        var node = this.client.getNode(this._currentNodeId),
+            baseId = node.getBaseId(),
+            base = this.client.getNode(baseId),
+            type = base.getAttribute('name');
+
+        if (type === 'Execution') {
+            return node.getAttribute('status') === 'running';
+        } else {
+            return this.isJobRunning(node);
+        }
+        return false;  // assume any other type is not running
+    };
+
     ForgeActionButton.prototype.isJobRunning = function(job) {
         var status = job.getAttribute('status');
 

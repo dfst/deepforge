@@ -141,7 +141,11 @@ define([
             name: 'Restart ' + name,
             icon: 'replay',
             priority: 1000,
-            color: 'green',
+            color: 'red',
+            filter: function() {
+                // Only show if stopped!
+                return !this.isRunning();
+            },
             action: function(event) {
                 this.runExecutionPlugin(pluginId, event.shiftKey);
             }
@@ -225,8 +229,7 @@ define([
                 icon: 'stop',
                 priority: 1001,
                 filter: function() {
-                    var job = this.client.getNode(this._currentNodeId);
-                    return this.isJobRunning(job);
+                    return this.isRunning();
                 },
                 action: function() {
                     this.stopJob();
@@ -241,8 +244,7 @@ define([
                 icon: 'stop',
                 priority: 1001,
                 filter: function() {
-                    var exec = this.client.getNode(this._currentNodeId);
-                    return exec.getAttribute('status') === 'running';
+                    return this.isRunning();
                 },
                 action: function() {
                     // Stop every running job
