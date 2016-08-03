@@ -1,10 +1,12 @@
-/* globals Materialize, WebGMEGlobal, define*/
+/* globals WebGMEGlobal, define*/
 // This file creates the DeepForge namespace and defines basic actions
 define([
+    'panel/FloatingActionButton/styles/Materialize',
     'js/RegistryKeys',
     'js/Panels/MetaEditor/MetaEditorConstants',
     'js/Constants'
 ], function(
+    Materialize,
     REGISTRY_KEYS,
     META_CONSTANTS,
     CONSTANTS

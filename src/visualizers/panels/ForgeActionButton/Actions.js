@@ -1,11 +1,13 @@
-/*globals DeepForge, define, $, Materialize, WebGMEGlobal*/
+/*globals DeepForge, define, $, WebGMEGlobal*/
 // These are actions defined for specific meta types. They are evaluated from
 // the context of the ForgeActionButton
 define([
+    'panel/FloatingActionButton/styles/Materialize',
     'q',
     'js/RegistryKeys',
     'deepforge/globals'
 ], function(
+    Materialize,
     Q,
     REGISTRY_KEYS
 ) {

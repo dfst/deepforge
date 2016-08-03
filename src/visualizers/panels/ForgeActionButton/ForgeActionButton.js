@@ -1,7 +1,8 @@
-/*globals DeepForge, $, WebGMEGlobal, window, Materialize, define, _ */
+/*globals DeepForge, $, WebGMEGlobal, window, define, _ */
 /*jshint browser: true*/
 
 define([
+    'panel/FloatingActionButton/styles/Materialize',
     'blob/BlobClient',
     'executor/ExecutorClient',
     'js/Constants',
@@ -16,6 +17,7 @@ define([
     'text!./PluginConfig.json',
     'deepforge/globals'
 ], function (
+    Materialize,
     BlobClient,
     ExecutorClient,
     CONSTANTS,
@@ -360,7 +362,6 @@ define([
         } else {
             return this.isJobRunning(node);
         }
-        return false;  // assume any other type is not running
     };
 
     ForgeActionButton.prototype.isJobRunning = function(job) {
