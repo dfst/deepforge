@@ -48,8 +48,8 @@ define([
         var title = nodeName === undefined ? this._currentTitle : nodeName;
 
         this._currentTitle = title;
-        if (this.isSnapshot) {
-            title += ' (SNAPSHOT)';
+        if (!this.isSnapshot) {
+            title += ' (DEBUG)';
         }
 
         this._setTitle(title);
