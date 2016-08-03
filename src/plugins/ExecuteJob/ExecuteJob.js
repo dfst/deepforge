@@ -48,6 +48,7 @@ define([
         this._markForDeletion = {};  // id -> node
         this._oldMetadataByName = {};  // name -> id
         this.lastAppliedCmd = {};
+        this.canceled = false;
     };
 
     /**
@@ -212,6 +213,24 @@ define([
         }
         delete this.lastAppliedCmd[nodeId];
         delete this._markForDeletion[nodeId];
+
+        this.core.delAttribute(job, 'jobId');
+        this.core.delAttribute(job, 'secret');
+    };
+
+    ExecuteJob.prototype.resultMsg = function(msg) {
+        this.sendNotification(msg);
+        this.createMessage(null, msg);
+    };
+
+    ExecuteJob.prototype.onOperationCanceled = function(op) {
+        var job = this.core.getParent(op),
+            name = this.core.getAttribute(op, 'name'),
+            msg = `"${name}" canceled!`;
+
+        this.core.setAttribute(job, 'status', 'canceled');
+        this.resultMsg(msg);
+        this.onComplete(op, null);
     };
 
     ExecuteJob.prototype.onOperationFail =
@@ -221,7 +240,7 @@ define([
             exec = this.core.getParent(job),
             name = this.core.getAttribute(job, 'name'),
             jobId = this.core.getPath(job),
-            status = err ? 'fail' : 'success',
+            status = err ? 'fail' : (this.canceled ? 'canceled' : 'success'),
             msg = err ? `${name} execution failed: ${err}` :
                 `${name} executed successfully!`,
             promise = Q();
@@ -236,6 +255,9 @@ define([
         }
         if (err) {
             this.core.setAttribute(exec, 'status', 'failed');
+        } else if (this.canceled) {
+            // Should I set this to 'canceled'?
+            this.core.setAttribute(exec, 'status', 'canceled');
         } else {
             // Check if all the other jobs are successful. If so, set the
             // execution status to 'success'
@@ -261,6 +283,7 @@ define([
                 });
         }
 
+        this.createMessage(null, msg);
         promise
             .then(() => this.save(msg))
             .then(() => {
@@ -421,7 +444,13 @@ define([
         this.logger.debug(`Making a commit from ${this.currentHash}`);
         this.save(`Queued "${name}" operation in ${this.pipelineName}`)
             .then(() => executor.createJob({hash}))
-            .then(() => this.watchOperation(executor, hash, opNode, job))
+            .then(info => {
+                this.core.setAttribute(job, 'jobId', info.hash);
+                if (info.secret) {  // o.w. it is a cached job!
+                    this.core.setAttribute(job, 'secret', info.secret);
+                }
+                return this.watchOperation(executor, hash, opNode, job);
+            })
             .catch(err => this.logger.error(`Could not execute "${name}": ${err}`));
 
     };
@@ -742,7 +771,19 @@ define([
         var jobId = this.core.getPath(job),
             opId = this.core.getPath(op),
             info,
-            name;
+            secret,
+            name = this.core.getAttribute(job, 'name');
+
+        // If canceled, stop the operation
+        if (this.canceled) {
+            secret = this.core.getAttribute(job, 'secret');
+            if (secret) {
+                executor.cancelJob(hash, secret);
+                this.core.delAttribute(job, 'secret');
+                this.canceled = true;
+                return this.onOperationCanceled(op);
+            }
+        }
 
         return executor.getInfo(hash)
             .then(_info => {  // Update the job's stdout
@@ -756,8 +797,7 @@ define([
                     return executor.getOutput(hash, currentLine, actualLine+1)
                         .then(outputLines => {
                             var stdout = this.core.getAttribute(job, 'stdout'),
-                                output = outputLines.map(o => o.output).join(''),
-                                jobName = this.core.getAttribute(job, 'name');
+                                output = outputLines.map(o => o.output).join('');
 
                             // parse deepforge commands
                             output = this.parseForMetadataCmds(job, output);
@@ -765,7 +805,7 @@ define([
                             if (output) {
                                 stdout += output;
                                 this.core.setAttribute(job, 'stdout', stdout);
-                                return this.save(`Received stdout for ${jobName}`);
+                                return this.save(`Received stdout for ${name}`);
                             }
                         });
                 }
@@ -775,7 +815,6 @@ define([
                     if (info.status === 'RUNNING' &&
                         this.core.getAttribute(job, 'status') !== 'running') {
 
-                        name = this.core.getAttribute(job, 'name');
                         this.core.setAttribute(job, 'status', 'running');
                         this.save(`Started "${name}" operation in ${this.pipelineName}`);
                     }
@@ -787,7 +826,13 @@ define([
                     return;
                 }
 
-                name = this.core.getAttribute(job, 'name');
+                if (info.status === 'CANCELED') {
+                    // If it was cancelled, the pipeline has been stopped
+                    this.logger.debug(`"${name}" has been CANCELED!`);
+                    this.canceled = true;
+                    return this.onOperationCanceled(op);
+                }
+
                 this.core.setAttribute(job, 'execFiles', info.resultHashes[name + '-all-files']);
                 return this.blobClient.getArtifact(info.resultHashes.stdout)
                     .then(artifact => {

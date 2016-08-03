@@ -1,10 +1,6 @@
 /*globals define, _*/
 /*jshint browser: true, camelcase: false*/
 
-/**
- * @author brollb / https://github.com/brollb
- */
-
 define([
     'decorators/EllipseDecorator/EasyDAG/EllipseDecorator.EasyDAGWidget',
     'css!./JobDecorator.EasyDAGWidget.css'
@@ -20,6 +16,7 @@ define([
             pending: '#9e9e9e',
             queued: '#cfd8dc',
             running: '#fff59d',
+            canceled: '#ffcc80',
             success: '#66bb6a',
             fail: '#e57373'
         };
@@ -35,6 +32,8 @@ define([
             status: true,
             execFiles: true,
             stdout: true,
+            secret: true,
+            jobId: true,
             debug: true
         };
         EllipseDecorator.call(this, options);

@@ -218,9 +218,43 @@ define([
                 icon: 'play_for_work',
                 priority: 1,
                 href: download.execFiles
+            },
+            // Stop execution button
+            {
+                name: 'Stop Current Job',
+                icon: 'stop',
+                priority: 1001,
+                filter: function() {
+                    var job = this.client.getNode(this._currentNodeId);
+                    return this.isJobRunning(job);
+                },
+                action: function() {
+                    this.stopJob();
+                }
             }
         ],
-        Execution: [makeRestartButton('Execution', 'ExecutePipeline')],
+        Execution: [
+            makeRestartButton('Execution', 'ExecutePipeline'),
+            // Stop execution button
+            {
+                name: 'Stop Running Execution',
+                icon: 'stop',
+                priority: 1001,
+                filter: function() {
+                    var exec = this.client.getNode(this._currentNodeId);
+                    return exec.getAttribute('status') === 'running';
+                },
+                action: function() {
+                    // Stop every running job
+                    var execNode = this.client.getNode(this._currentNodeId),
+                        jobIds = execNode.getChildrenIds();
+
+                    jobIds.map(id => this.client.getNode(id))
+                        .filter(job => this.isJobRunning(job))  // get running jobs
+                        .forEach(job => this.stopJob(job));  // stop them
+                }
+            }
+        ],
         Pipeline: [
             {
                 name: 'Create new node',

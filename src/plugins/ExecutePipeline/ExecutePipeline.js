@@ -74,6 +74,7 @@ define([
         //   - keep track if the pipeline has errored
         //     - if so, don't start any more jobs
         this.pipelineError = null;
+        this.canceled = false;
         this.runningJobs = 0;
 
         // metadata records
@@ -273,8 +274,17 @@ define([
         this.onPipelineComplete(err);
     };
 
+    ExecutePipeline.prototype.onOperationCanceled = function(op) {
+        var job = this.core.getParent(op);
+        this.core.setAttribute(job, 'status', 'canceled');
+        this.runningJobs--;
+        this.logger.debug(`${this.core.getAttribute(job, 'name')} has been canceled`);
+        this.onPipelineComplete();
+    };
+
     ExecutePipeline.prototype.onPipelineComplete = function(err) {
-        var name = this.core.getAttribute(this.activeNode, 'name');
+        var name = this.core.getAttribute(this.activeNode, 'name'),
+            msg = `"${this.pipelineName}" `;
 
         if (err) {
             this.runningJobs--;
@@ -282,8 +292,10 @@ define([
 
         this.pipelineError = this.pipelineError || err;
 
-        if (this.pipelineError && this.runningJobs > 0) {
-            this.logger.info('Pipeline errored but is waiting for the running ' +
+        this.logger.debug(`${this.runningJobs} remaining jobs`);
+        if ((this.pipelineError || this.canceled) && this.runningJobs > 0) {
+            var action = this.pipelineError ? 'error' : 'cancel';
+            this.logger.info(`Pipeline ${action}ed but is waiting for the running ` +
                 'jobs to finish');
             return;
         }
@@ -293,11 +305,20 @@ define([
             this.sendNotification(`"${this.pipelineName}" execution completed on branch "${this.currentForkName}"`);
         }
 
+        if (this.pipelineError) {
+            msg += 'failed!';
+        } else if (this.canceled) {
+            msg += 'canceled!';
+        } else {
+            msg += 'finished!';
+        }
+
         this.logger.debug(`Pipeline "${name}" complete!`);
         this.core.setAttribute(this.activeNode, 'status',
-            (!this.pipelineError ? 'success' : 'failed'));
+            (this.pipelineError ? 'failed' : (this.canceled ? 'canceled' : 'success')));
 
         this._finished = true;
+        this.resultMsg(msg);
         this.save('Pipeline execution finished')
             .then(() => {
                 this.result.setSuccess(!this.pipelineError);
@@ -314,7 +335,7 @@ define([
         this.logger.info(`About to execute ${readyOps.length} operations`);
 
         // If the pipeline has errored don't start any more jobs
-        if (this.pipelineError) {
+        if (this.pipelineError || this.canceled) {
             if (this.runningJobs === 0) {
                 this.onPipelineComplete();
             }

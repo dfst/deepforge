@@ -33,12 +33,7 @@ define([
             DEFAULT: 'default',
             CONNECTING: 'connecting'
         },
-        UPLOAD_ARTIFACT_ID = '__UPLOAD_ARTIFACT__',
-        STATUS_TO_CLASS = {
-            running: 'warning',
-            success: 'success',
-            failed: 'danger'
-        };
+        UPLOAD_ARTIFACT_ID = '__UPLOAD_ARTIFACT__';
 
     PipelineEditorWidget = function (logger, container, execCntr) {
         EasyDAGWidget.call(this, logger, container);
@@ -319,7 +314,7 @@ define([
         var row = $('<tr>'),
             title = $('<td>', {class: 'execution-name'}),
             timestamp = $('<td>'),
-            className = STATUS_TO_CLASS[exec.status] || '',
+            className = Utils.ClassForJobStatus[exec.status] || '',
             date = Utils.getDisplayTime(exec.createdAt),
             rmIcon = $(REMOVE_ICON);
 

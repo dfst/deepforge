@@ -14,13 +14,7 @@ define([
     'use strict';
 
     var ExecutionIndexWidget,
-        WIDGET_CLASS = 'execution-index',
-        STATUS_TO_CLASS = {
-            success: 'success',
-            failed: 'danger',
-            pending: '',
-            running: 'warning'
-        };
+        WIDGET_CLASS = 'execution-index';
 
     ExecutionIndexWidget = function (logger, container) {
         this._logger = logger.fork('Widget');
@@ -122,7 +116,7 @@ define([
     ExecutionIndexWidget.prototype.addExecLine = function (desc) {
         var row = $('<tr>', {class: 'exec-row', 'data-id': desc.id}),
             checkBox = $('<input>', {type: 'checkbox'}),
-            statusClass = STATUS_TO_CLASS[desc.status],
+            statusClass = Utils.ClassForJobStatus[desc.status],
             fields,
             pipeline,
             name,
@@ -201,16 +195,16 @@ define([
         if (node) {
             node.$name.text(desc.name);
             node.$el.removeClass(node.statusClass);
-            node.$el.addClass(STATUS_TO_CLASS[desc.status]);
+            node.$el.addClass(Utils.ClassForJobStatus[desc.status]);
 
-            if (STATUS_TO_CLASS[desc.status] !== node.statusClass) {
+            if (Utils.ClassForJobStatus[desc.status] !== node.statusClass) {
                 // Only update the selection if the status has changed.
                 // ie, it has started running
                 this.updateSelected(desc);
             }
             this._logger.debug(`setting execution ${desc.id} to ${desc.status}`);
 
-            node.statusClass = STATUS_TO_CLASS[desc.status];
+            node.statusClass = Utils.ClassForJobStatus[desc.status];
         } else if (desc.type === 'line') {
             this.lineGraph.updateNode(desc);
         }

@@ -22,3 +22,7 @@
 .create-node text {
     font-style: italic;
 }
+
+.job-canceled {
+    background-color: #ffe0b2;
+}

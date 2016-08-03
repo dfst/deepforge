@@ -8,5 +8,12 @@ define({
             date = `Today (${new Date(timestamp).toLocaleTimeString()})`;
         }
         return date;
+    },
+    ClassForJobStatus: {
+        success: 'success',
+        canceled: 'job-canceled',
+        failed: 'danger',
+        pending: '',
+        running: 'warning'
     }
 });

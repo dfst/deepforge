@@ -1,8 +1,9 @@
-/*globals DeepForge, $, Materialize, define, _ */
+/*globals DeepForge, $, WebGMEGlobal, window, Materialize, define, _ */
 /*jshint browser: true*/
 
 define([
     'blob/BlobClient',
+    'executor/ExecutorClient',
     'js/Constants',
     'panel/FloatingActionButton/FloatingActionButton',
     'deepforge/viz/PipelineControl',
@@ -16,6 +17,7 @@ define([
     'deepforge/globals'
 ], function (
     BlobClient,
+    ExecutorClient,
     CONSTANTS,
     PluginButton,
     PipelineControl,
@@ -33,6 +35,11 @@ define([
     var ForgeActionButton= function (layoutManager, params) {
         PluginButton.call(this, layoutManager, params);
         this._pluginConfig = JSON.parse(PluginConfig);
+        this._executor = new ExecutorClient({
+            logger: this.logger.fork('ExecutorClient'),
+            serverPort: WebGMEGlobal.gmeConfig.server.port,
+            httpsecure: window.location.protocol === 'https:'
+        });
         this._client = this.client;
         this._actions = [];
         this._blobClient = new BlobClient({
@@ -60,7 +67,7 @@ define([
         if (!base) {  // must be ROOT or FCO
             basename = node.getAttribute('name') || 'ROOT_NODE';
             actions = (ACTIONS[basename] || [])
-                .filter(action => !action.filter || action.filter());
+                .filter(action => !action.filter || action.filter.call(this));
             return actions;
         }
 
@@ -69,7 +76,7 @@ define([
             base = this.client.getNode(base.getBaseId());
             actions = ACTIONS[basename];
             if (actions) {
-                actions = actions.filter(action => !action.filter || action.filter());
+                actions = actions.filter(action => !action.filter || action.filter.call(this));
             }
         }
 
@@ -328,13 +335,41 @@ define([
 
         context.managerConfig.namespace = 'pipeline';
         method = useSecondary ? 'runBrowserPlugin' : 'runServerPlugin';
-        this.client[method](pluginId, context, err => {
-            if (err) {
-                return Materialize.toast(`${name} failed!`, 4000);
+        this.client[method](pluginId, context, (err, result) => {
+            var msg = err ? `${name} failed!` : `${name} executed successfully!`,
+                duration = err ? 4000 : 2000;
+
+            // Check if it was canceled - if so, show that type of message
+            if (result) {
+                msg = result.messages[0].message;
+                duration = 4000;
             }
 
-            Materialize.toast(`${name} executed successfully!`, 2000);
+            Materialize.toast(msg, duration);
         });
+    };
+
+    ForgeActionButton.prototype.isJobRunning = function(job) {
+        var status = job.getAttribute('status');
+
+        return (status === 'running' || status === 'pending') &&
+            job.getAttribute('secret') && job.getAttribute('jobId');
+    };
+
+    ForgeActionButton.prototype.stopJob = function(job) {
+        var jobHash,
+            secret;
+
+        job = job || this.client.getNode(this._currentNodeId);
+        jobHash = job.getAttribute('jobId');
+        secret = job.getAttribute('secret');
+        if (!jobHash || !secret) {
+            this.logger.error('Cannot stop job. Missing jobHash or secret');
+        }
+
+        return this._executor.cancelJob(jobHash, secret)
+            .then(() => this.logger.info(`${jobHash} has been cancelled!`))
+            .fail(err => this.logger.error(`Job cancel failed: ${err}`));
     };
 
     return ForgeActionButton;
