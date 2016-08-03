@@ -241,7 +241,7 @@ define([
             name = this.core.getAttribute(job, 'name'),
             jobId = this.core.getPath(job),
             status = err ? 'fail' : (this.canceled ? 'canceled' : 'success'),
-            msg = err ? `${name} execution failed: ${err}` :
+            msg = err ? `${name} execution failed!` :
                 `${name} executed successfully!`,
             promise = Q();
 
@@ -254,6 +254,7 @@ define([
             this.sendNotification(`"${name}" execution completed on branch "${this.currentForkName}"`);
         }
         if (err) {
+            this.logger.warn(`${name} failed: ${err}`);
             this.core.setAttribute(exec, 'status', 'failed');
         } else if (this.canceled) {
             // Should I set this to 'canceled'?
