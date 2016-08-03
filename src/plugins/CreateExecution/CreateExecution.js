@@ -118,7 +118,7 @@ define([
                 this.core.addMember(this.activeNode, 'executions', tgtNode);
 
                 return this.project.createTag(
-                    execName.replace(/[ -]/g, '_'),
+                    execName,
                     this.currentHash
                 );
             })
@@ -153,9 +153,12 @@ define([
     };
 
     CreateExecution.prototype.getUniqueExecName = function (basename) {
-        var name = basename,
-            taken = {},
+        var taken = {},
+            name,
             i = 2;
+
+        basename = basename.replace(/[^\da-zA-Z_]/g, '_');
+        name = basename;
 
         // Get a unique name wrt the tags and the other executions
         return this.project.getTags()
