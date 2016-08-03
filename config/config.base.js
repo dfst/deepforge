@@ -21,5 +21,7 @@ config.executor.clearOldDataAtStartUp = true;
 
 config.visualization.extraCss.push('deepforge/styles/global.css');
 
+config.storage.autoMerge.enable = true;
+
 validateConfig(config);
 module.exports = config;
