@@ -103,6 +103,7 @@ define([
                 name: `Return to ${fromType}`,
                 icon: 'input',
                 priority: 2,
+                color: 'teal',
                 filter: () => {
                     return DeepForge.last[fromType];
                 },
@@ -112,6 +113,7 @@ define([
                 name: `Delete ${type} Definition`,
                 icon: 'delete',
                 priority: 1,
+                color: 'red',
                 action: function() {
                     // Delete and go to the last pipeline?
                     var node = this.client.getNode(this._currentNodeId),
@@ -139,6 +141,7 @@ define([
             name: 'Restart ' + name,
             icon: 'replay',
             priority: 1000,
+            color: 'green',
             action: function(event) {
                 this.runExecutionPlugin(pluginId, event.shiftKey);
             }

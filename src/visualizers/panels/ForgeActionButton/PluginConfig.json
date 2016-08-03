@@ -5,6 +5,7 @@
     },
     "ExecutePipeline": {
         "icon": "play_arrow",
+        "color": "green",
         "priority": 1
     },
     "ImportTorch": {
