@@ -112,6 +112,7 @@ define([
         }
 
         this._callback = callback;
+        this.currentForkName = null;
 
         startPromise
         .then(() => this.core.loadSubTree(this.activeNode))
@@ -139,6 +140,7 @@ define([
             .then(result => {
                 var msg;
                 if (result.status === STORAGE_CONSTANTS.FORKED) {
+                    this.currentForkName = result.forkName;
                     msg = `"${this.pipelineName}" execution has forked to "${result.forkName}"`;
                     this.sendNotification(msg);
                 }
@@ -284,6 +286,11 @@ define([
             this.logger.info('Pipeline errored but is waiting for the running ' +
                 'jobs to finish');
             return;
+        }
+
+        if (this.currentForkName) {
+            // notify client that the job has completed
+            this.sendNotification(`"${this.pipelineName}" execution completed on branch "${this.currentForkName}"`);
         }
 
         this.logger.debug(`Pipeline "${name}" complete!`);

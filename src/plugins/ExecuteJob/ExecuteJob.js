@@ -81,6 +81,7 @@ define([
         }
 
         this._callback = callback;
+        this.currentForkName = null;
         this.prepare()
             .then(() => this.executeJob(this.activeNode));
     };
@@ -111,6 +112,7 @@ define([
                 var msg;
                 if (result.status === STORAGE_CONSTANTS.FORKED) {
                     msg = `"${name}" execution has forked to "${result.forkName}"`;
+                    this.currentForkName = result.forkName;
                     this.sendNotification(msg);
                 }
             });
@@ -228,6 +230,10 @@ define([
         this.logger.info(`Setting ${name} (${jobId}) status to ${status}`);
         this.clearOldMetadata(job);
 
+        if (this.currentForkName) {
+            // notify client that the job has completed
+            this.sendNotification(`"${name}" execution completed on branch "${this.currentForkName}"`);
+        }
         if (err) {
             this.core.setAttribute(exec, 'status', 'failed');
         } else {
