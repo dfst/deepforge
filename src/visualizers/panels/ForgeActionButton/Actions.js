@@ -251,11 +251,16 @@ define([
                 action: function() {
                     // Stop every running job
                     var execNode = this.client.getNode(this._currentNodeId),
-                        jobIds = execNode.getChildrenIds();
+                        jobIds = execNode.getChildrenIds(),
+                        msg = `Canceling ${execNode.getAttribute('name')} execution`;
 
+                    this.client.startTransaction(msg);
                     jobIds.map(id => this.client.getNode(id))
-                        .filter(job => this.isJobRunning(job))  // get running jobs
+                        .filter(job => this.isRunning(job))  // get running jobs
                         .forEach(job => this.stopJob(job));  // stop them
+
+                    this.client.setAttributes(execNode.getId(), 'status', 'canceled');
+                    this.client.completeTransaction();
                 }
             }
         ],

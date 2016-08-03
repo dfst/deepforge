@@ -351,20 +351,25 @@ define([
         });
     };
 
-    ForgeActionButton.prototype.isRunning = function() {
-        var node = this.client.getNode(this._currentNodeId),
-            baseId = node.getBaseId(),
-            base = this.client.getNode(baseId),
-            type = base.getAttribute('name');
+    ForgeActionButton.prototype.isRunning = function(node) {
+        var baseId,
+            base,
+            type;
+
+        node = node || this.client.getNode(this._currentNodeId);
+        baseId = node.getBaseId();
+        base = this.client.getNode(baseId);
+        type = base.getAttribute('name');
 
         if (type === 'Execution') {
             return node.getAttribute('status') === 'running';
-        } else {
-            return this.isJobRunning(node);
+        } else if (type === 'Job') {
+            return this.isRunningJob(node);
         }
+        return false;
     };
 
-    ForgeActionButton.prototype.isJobRunning = function(job) {
+    ForgeActionButton.prototype.isRunningJob = function(job) {
         var status = job.getAttribute('status');
 
         return (status === 'running' || status === 'pending') &&
@@ -373,14 +378,21 @@ define([
 
     ForgeActionButton.prototype.stopJob = function(job) {
         var jobHash,
+            jobId,
             secret;
 
         job = job || this.client.getNode(this._currentNodeId);
+        jobId = job.getId();
         jobHash = job.getAttribute('jobId');
         secret = job.getAttribute('secret');
         if (!jobHash || !secret) {
             this.logger.error('Cannot stop job. Missing jobHash or secret');
+            return;
         }
+
+        this.client.delAttributes(jobId, 'jobId');
+        this.client.delAttributes(jobId, 'secret');
+        this.client.setAttributes(jobId, 'status', 'canceled');
 
         return this._executor.cancelJob(jobHash, secret)
             .then(() => this.logger.info(`${jobHash} has been cancelled!`))
