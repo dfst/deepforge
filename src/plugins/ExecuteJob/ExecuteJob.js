@@ -834,25 +834,33 @@ define([
                     return this.onOperationCanceled(op);
                 }
 
-                this.core.setAttribute(job, 'execFiles', info.resultHashes[name + '-all-files']);
-                return this.blobClient.getArtifact(info.resultHashes.stdout)
-                    .then(artifact => {
-                        var stdoutHash = artifact.descriptor.content[STDOUT_FILE].content;
-                        return this.blobClient.getObjectAsString(stdoutHash);
-                    })
-                    .then(stdout => {
-                        // Parse the remaining code
-                        stdout = this.parseForMetadataCmds(job, stdout, true);
-                        this.core.setAttribute(job, 'stdout', stdout);
-                        if (info.status !== 'SUCCESS') {
-                            // Download all files
-                            this.result.addArtifact(info.resultHashes[name + '-all-files']);
-                            // Set the job to failed! Store the error
-                            this.onOperationFail(op, `Operation "${opId}" failed! ${JSON.stringify(info)}`); 
-                        } else {
-                            this.onDistOperationComplete(op, info);
-                        }
-                    });
+                if (info.status === 'SUCCESS' || info.status === 'FAILED_TO_EXECUTE') {
+                    this.core.setAttribute(job, 'execFiles', info.resultHashes[name + '-all-files']);
+                    return this.blobClient.getArtifact(info.resultHashes.stdout)
+                        .then(artifact => {
+                            var stdoutHash = artifact.descriptor.content[STDOUT_FILE].content;
+                            return this.blobClient.getObjectAsString(stdoutHash);
+                        })
+                        .then(stdout => {
+                            // Parse the remaining code
+                            stdout = this.parseForMetadataCmds(job, stdout, true);
+                            this.core.setAttribute(job, 'stdout', stdout);
+                            if (info.status !== 'SUCCESS') {
+                                // Download all files
+                                this.result.addArtifact(info.resultHashes[name + '-all-files']);
+                                // Set the job to failed! Store the error
+                                this.onOperationFail(op, `Operation "${opId}" failed! ${JSON.stringify(info)}`); 
+                            } else {
+                                this.onDistOperationComplete(op, info);
+                            }
+                        });
+                } else {  // something bad happened...
+                    var err = `Failed to execute operation "${opId}": ${info.status}`,
+                        consoleErr = `[0;31mFailed to execute operation: ${info.status}[0m`;
+                    this.core.setAttribute(job, 'stdout', consoleErr);
+                    this.logger.error(err);
+                    this.onOperationFail(op, err);
+                }
             })
             .catch(err => this.logger.error(`Could not get op info for ${opId}: ${err}`));
     };
