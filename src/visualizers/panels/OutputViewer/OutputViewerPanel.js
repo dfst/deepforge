@@ -92,12 +92,17 @@ define([
 
     OutputViewerPanel.prototype.selectOutput = function (element) {
         if (this.$selected !== element) {
+            // Update the panel
+            var dataId = element.data('id');
+
+            while (element.prop('tagName').toLowerCase() !== 'a' && element.length) {
+                element = element.parent();
+            }
+
+            dataId = element.data('id');
             this.$selected.parent().removeClass('active');
             element.parent().addClass('active');
             this.$selected = element;
-
-            // Update the panel
-            var dataId = element.data('id');
 
             if (dataId) {
                 this.loadOutputFor(dataId);
