@@ -12,7 +12,9 @@ var spawn = require('child_process').spawn,
 // Get the BlobClient...
 var COMMAND_PREFIX = '<%= START_CMD %>',
     IMAGE = '<%= IMAGE %>',
-    requirejs = require('webgme').requirejs;
+    requirejs = require('webgme').requirejs,
+    remainingImageCount = 0,
+    exitCode = null;
 
 requirejs([
     'blob/BlobClient'
@@ -34,12 +36,20 @@ requirejs([
         logger: logger
     });
 
+    var checkFinished = () => {
+        if (exitCode !== null && remainingImageCount === 0) {
+            log('finished!');
+            process.exit(exitCode);
+        }
+    };
+
     var uploadImage = function(line) {
         var args = line.split(/\s+/),
             name = args.slice(2).join(' ').replace(/\s+$/, ''),
             filename = 'metadata/' + name + '.png';
 
         // Upload the image from metadata/
+        remainingImageCount++;
         fs.readFile(filename, (err, content) => {
             if (err) {
                 console.error(`Could not read ${filename}: ${err}`);
@@ -47,10 +57,15 @@ requirejs([
             }
 
             // Add hash to the image command
+            log('about to putFile', filename);
             blobClient.putFile(filename, content)
                 .then(hash => {
                     args.splice(2, 0, hash);
                     console.log(args.join(' '));
+                    log('printing cmd:', args.join(' '));
+                    --remainingImageCount;
+                    log('finished uploading ' + filename + ' ' + remainingImageCount + ' remain');
+                    checkFinished();
                 })
                 .fail(err => console.error(`${filename} upload failed: ${err}`));
         });
@@ -78,5 +93,9 @@ requirejs([
     var job = spawn('th', ['init.lua']);
     job.stdout.on('data', onStdout);
     job.stderr.on('data', data => process.stdout.write(data));
-    job.on('close', code => process.exit(code));
+    job.on('close', code => {
+        exitCode = code;
+        log('script finished w/ exit code:', code);
+        checkFinished();
+    });
 });
