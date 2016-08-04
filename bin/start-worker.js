@@ -4,11 +4,12 @@ var path = require('path'),
     fs = require('fs'),
     childProcess = require('child_process'),
     spawn = childProcess.spawn,
+    rm_rf = require('rimraf'),
     projectConfig = require(__dirname + '/../config'),
     executorSrc = path.join(__dirname, '..', 'node_modules', 'webgme', 'src',
         'server', 'middleware', 'executor', 'worker'),
     workerPath = path.join(__dirname, '..', 'src', 'worker'),
-    workerConfigPath =  path.join(workerPath, 'config.json'),
+    workerConfigPath =  path.join(workerPath, 'config_' + Date.now() + '.json'),
     workerTmp = path.join(workerPath, 'tmp'),
     address,
     config = {};
@@ -22,7 +23,15 @@ if (result.error) {
     process.exit(1);
 }
 
+var cleanUp = function() {
+    console.log('removing config ', workerConfigPath);
+    rm_rf.sync(workerConfigPath);
+};
+
 var startExecutor = function() {
+    process.on('SIGINT', cleanUp);
+    process.on('uncaughtException', cleanUp);
+
     // Start the executor
     var execJob = spawn('node', [
         'node_worker.js',
@@ -42,7 +51,6 @@ var createConfigJson = function() {
     }
 
     config[address] = {};
-    // TODO: Check if the config already exists
     fs.writeFile(workerConfigPath, JSON.stringify(config), startExecutor);
 };
 
