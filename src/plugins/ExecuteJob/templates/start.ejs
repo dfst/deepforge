@@ -25,7 +25,7 @@ requirejs([
     BlobClient
 ) {
     var url = process.env.ORIGIN_URL || 'http://127.0.0.1:8888',
-        CACHE_DIR = process.env.DEEPFORGE_CACHE || './worker-cache',
+        CACHE_DIR = process.env.DEEPFORGE_WORKER_CACHE || './worker-cache',
         protocol = url.split('://').shift(),
         address,
         port = (url.split(':') || ['80']).pop();
@@ -35,7 +35,12 @@ requirejs([
 
     // Create CACHE_DIR if it doesn't exist
     var prepareCache = function() {
-        return makeIfNeeded(CACHE_DIR);
+    var dirs = CACHE_DIR.replace(/\/$/, '').split('/'),
+        cacheParent;
+
+        dirs.pop();
+        cacheParent = dirs.join('/');
+        return makeIfNeeded(cacheParent).then(() => makeIfNeeded(CACHE_DIR));
     };
 
     var makeIfNeeded = function(dir) {

@@ -11,7 +11,7 @@ var Command = require('commander').Command,
     exists = require('exists-file'),
     forever = require('forever-monitor'),
     DEFAULT_CONFIG = require('./config.json'),
-    assign = require('lodash.assign'),
+    merge = require('lodash.merge'),
     config,
 
     configDir = path.join(process.env.HOME, '.deepforge'),
@@ -20,7 +20,12 @@ var Command = require('commander').Command,
 
     localConfig,
     rm_rf = require('rimraf'),
-    p = dir => dir.replace(/^~/, process.env.HOME);  // resolve '~' to '$HOME'
+    p = dir => {
+        if (typeof dir === 'string') {
+            return dir.replace(/^~/, process.env.HOME);  // resolve '~' to '$HOME'
+        }
+        return dir;
+    };
 
 // Check for any commands
 if (process.argv.length === 2) {
@@ -39,17 +44,17 @@ if (!exists.sync(configPath)) {
 }
 
 localConfig = require(configPath);
-config = assign(DEFAULT_CONFIG, require(configPath));
+config = merge({}, DEFAULT_CONFIG, localConfig);
 
-var getConfigValue = function(id) {
+var getConfigValue = function(id, srcConfig) {
     var keys = id.split('.'),
-        value = config;
+        value = srcConfig || config;
 
     for (var i = 0; i < keys.length; i++) {
-        value = value[keys[i]];
-        if (!value) {
+        if (!value.hasOwnProperty(keys[i])) {
             return null;
         }
+        value = value[keys[i]];
     }
     return value;
 };
@@ -59,7 +64,8 @@ var storeConfig = function(id, value) {
     var keys = id.split('.').filter(k => k),
         lastKey = keys.pop(),
         currentObj = localConfig,
-        current = getConfigValue(id);
+        current = getConfigValue(id),
+        expType = typeof getConfigValue(id, DEFAULT_CONFIG);
 
     // Check if it is a valid key
     if (current === null) {
@@ -73,6 +79,15 @@ var storeConfig = function(id, value) {
         currentObj = currentObj[keys[i]];
     }
 
+    if (expType !== 'string') {
+        try {  // try to downcast
+            value = JSON.parse(value);
+        } catch (e) {
+            console.log(`Invalid value: "${value}" (expected ${expType})`);
+            return;
+        }
+    }
+
     currentObj[lastKey] = value;
     fs.writeFileSync(configPath, JSON.stringify(localConfig, null, 2));
     return true;
@@ -84,6 +99,13 @@ var storeConfig = function(id, value) {
         var cKey = envToConf[env];
         process.env[env] = process.env[env] || p(getConfigValue(cKey));
     });
+
+    // Special cases
+    if (process.env.DEEPFORGE_WORKER_USE_BLOB === 'true' &&
+        exists.sync(process.env.DEEPFORGE_BLOB_DIR)) {
+
+        process.env.DEEPFORGE_WORKER_CACHE = process.env.DEEPFORGE_BLOB_DIR + '/wg-content';
+    }
 })();
 
 program

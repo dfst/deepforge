@@ -18,17 +18,17 @@
     "dotenv": "^2.0.0",
     "exists-file": "^2.1.0",
     "forever-monitor": "^1.7.0",
-    "lodash.assign": "^4.0.9",
     "lodash.difference": "^4.1.2",
+    "lodash.merge": "^4.5.1",
     "nodemon": "^1.9.2",
+    "rimraf": "^2.4.0",
     "webgme": "^2.0.0",
     "webgme-autoviz": "dfst/webgme-autoviz",
     "webgme-breadcrumbheader": "^2.1.0",
     "webgme-chflayout": "^2.0.0",
     "webgme-easydag": "dfst/webgme-easydag",
     "webgme-fab": "dfst/webgme-fab",
-    "webgme-simple-nodes": "^2.0.0",
-    "rimraf": "^2.4.0"
+    "webgme-simple-nodes": "^2.0.0"
   },
   "devDependencies": {
     "chai": "^3.0.0",

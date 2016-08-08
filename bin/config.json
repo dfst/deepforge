@@ -5,6 +5,12 @@
   "blob": {
     "dir": "~/.deepforge/blob"
   },
+  "worker": {
+    "cache": {
+        "useBlob": true,
+        "dir": "~/.deepforge/worker/cache"
+    }
+  },
   "mongo": {
     "dir": "~/.deepforge/data"
   }
