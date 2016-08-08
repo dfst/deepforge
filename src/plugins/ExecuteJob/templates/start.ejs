@@ -167,6 +167,7 @@ requirejs([
         fs.lstat(cachePath, (err, cacheStats) => {
             // Check if the data exists in the cache
             if (!err && cacheStats.isFile()) {
+            logger.info(`${inputName} already cached. Skipping retrieval from blob`);
                 return makeSymLink(cachePath, ipath).then(deferred.resolve);
             }
 

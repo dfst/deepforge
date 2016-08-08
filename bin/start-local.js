@@ -4,7 +4,14 @@ var spawn = require('child_process').spawn,
     execJob,
     path = require('path'),
     env = {cwd: path.join(__dirname, '..')},
-    workerJob = null;
+    workerJob = null,
+    gmeConfig = require(__dirname + '/../config');
+
+// Set the cache to the blob
+console.log(gmeConfig);
+if (gmeConfig.blob.type === 'FS') {
+    process.env.DEEPFORGE_CACHE = path.resolve(gmeConfig.blob.fsDir + '/wg-content');
+}
 
 process.env.NODE_ENV = 'local';
 execJob = spawn('npm', [
