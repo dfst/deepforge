@@ -78,6 +78,14 @@ var storeConfig = function(id, value) {
     return true;
 };
 
+(function() {  // Load config to env
+    var envToConf = require('./envConfig.json');
+    Object.keys(envToConf).forEach(env => {
+        var cKey = envToConf[env];
+        process.env[env] = process.env[env] || p(getConfigValue(cKey));
+    });
+})();
+
 program
     .version('v' + version)
     .description('Command line interface for managing deepforge');

@@ -9,6 +9,8 @@ require('dotenv').load({silent: true});
 // Add/overwrite any additional settings here
 config.server.port = +process.env.PORT || config.server.port;
 config.mongo.uri = process.env.MONGO_URI || config.mongo.uri;
+config.blob.fsDir = process.env.DEEPFORGE_BLOB_DIR || config.blob.fsDir;
+
 config.requirejsPaths.deepforge = './src/common';
 config.requirejsPaths.ace = './src/visualizers/widgets/TextEditor/lib/ace';
 config.seedProjects.defaultProject = 'project';

@@ -2,6 +2,9 @@
   "torch": {
     "dir": "~/.deepforge/torch"
   },
+  "blob": {
+    "dir": "~/.deepforge/blob"
+  },
   "mongo": {
     "dir": "~/.deepforge/data"
   }
