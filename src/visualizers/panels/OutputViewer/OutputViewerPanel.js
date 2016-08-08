@@ -305,6 +305,7 @@ define([
     /* * * * * * * * Visualizer life cycle callbacks * * * * * * * */
     OutputViewerPanel.prototype.destroy = function () {
         this.activePanel.destroy();
+        this.clearTerritory();
         PanelBaseWithHeader.prototype.destroy.call(this);
         WebGMEGlobal.KeyboardManager.setListener(undefined);
         WebGMEGlobal.Toolbar.refresh();
