@@ -3,6 +3,7 @@
 //   - receives some commands and uploads intermediate data
 var spawn = require('child_process').spawn,
     fs = require('fs'),
+    path = require('path'),
     log = console.error,
     logger = {};
 
@@ -24,12 +25,39 @@ requirejs([
     BlobClient
 ) {
     var url = process.env.ORIGIN_URL || 'http://127.0.0.1:8888',
+        CACHE_DIR = process.env.DEEPFORGE_CACHE || './worker-cache',
         protocol = url.split('://').shift(),
         address,
         port = (url.split(':') || ['80']).pop();
 
     address = url.replace(protocol + '://', '')
         .replace(':' + port, '');
+
+    // Create CACHE_DIR if it doesn't exist
+    var prepareCache = function() {
+        return makeIfNeeded(CACHE_DIR);
+    };
+
+    var makeIfNeeded = function(dir) {
+        var deferred = Q.defer(),
+            job;
+
+        log(`makeIfNeeded: ${JSON.stringify(dir)}`);
+        fs.lstat(dir, (err, stat) => {
+
+            if (err || !stat.isDirectory()) {
+                fs.mkdir(dir, err => {
+                    if (err) {
+                        return deferred.reject(err);
+                    }
+                    deferred.resolve();
+                });
+            } else {
+                deferred.resolve();
+            }
+        });
+        return deferred.promise;
+    };
 
     var blobClient = new BlobClient({
         server: address,
@@ -54,7 +82,7 @@ requirejs([
         remainingImageCount++;
         fs.readFile(filename, (err, content) => {
             if (err) {
-                console.error(`Could not read ${filename}: ${err}`);
+                logger.error(`Could not read ${filename}: ${err}`);
                 return;
             }
 
@@ -69,7 +97,7 @@ requirejs([
                     log('finished uploading ' + filename + ' ' + remainingImageCount + ' remain');
                     checkFinished();
                 })
-                .fail(err => console.error(`${filename} upload failed: ${err}`));
+                .fail(err => logger.error(`${filename} upload failed: ${err}`));
         });
     };
 
@@ -91,19 +119,72 @@ requirejs([
         process.stdout.write(result.join('\n'));
     };
 
-    var getData = function(ipath, hash) {
-        // Download the data and put it in the given path
-        var deferred = Q.defer();
+    var createCacheDir = function(hash) {
+        var dir = hash.substring(0, 2);
+        return makeIfNeeded(CACHE_DIR + '/' + dir);
+    };
 
-        return blobClient.getObject(hash)
-            .then(buffer => fs.writeFile(ipath, buffer, (err, result) => {
-                if (err) {
-                    console.error('Retrieving ' + ipath + ' failed!');
-                    deferred.reject(err);
-                }
-                console.error('Retrieved ' + ipath);
-                deferred.resolve(err);
-            }));
+    var dataCachePath = function(hash) {
+        var dir = hash.substring(0, 2),
+            filename = hash.substring(2),
+            cachePath = `${CACHE_DIR}/${dir}/${filename}`;
+
+        // Get the path for data in the cache
+        return cachePath;
+    };
+
+    var makeSymLink = function(target, src) {
+        var deferred = Q.defer(),
+            job;
+
+        src = path.resolve(src);
+        target = path.resolve(target);
+        fs.stat(src, err => {
+            if (err.code === 'ENOENT') {
+            logger.debug(`creating symlink "ln -s ${target} ${src}"`);
+                job = spawn('ln', ['-s', target, src || '.']);
+                job.on('exit', code => {
+                    if (code) {
+                        deferred.reject(`Could not create symlink ${target} -> ${src||'.'}`);
+                        return;
+                    }
+                    deferred.resolve();
+                });
+            }
+            deferred.resolve();
+        });
+        return deferred.promise;
+    };
+
+    var getData = function(ipath, hashes) {
+        // Download the data and put it in the given path
+        var deferred = Q.defer(),
+            inputName = ipath.split('/')[1],
+            cachePath = dataCachePath(hashes.cache);
+
+        
+        logger.debug(`retrieving ${ipath}`);
+        fs.lstat(cachePath, (err, cacheStats) => {
+            // Check if the data exists in the cache
+            if (!err && cacheStats.isFile()) {
+                return makeSymLink(cachePath, ipath).then(deferred.resolve);
+            }
+
+            createCacheDir(hashes.cache)
+                .then(() => blobClient.getObject(hashes.req))
+                .then(buffer => fs.writeFile(cachePath, buffer, (err, result) => {
+                    if (err) {
+                        logger.error('Retrieving ' + ipath + ' failed!');
+                        return deferred.reject(`Could not write to ${ipath}: ${err}`);
+                    }
+                    // Create the symlink
+                    logger.info('Retrieved ' + ipath);
+                    return makeSymLink(cachePath, ipath).then(deferred.resolve);
+                }))
+                .fail(err => deferred.reject(`Could not retrieve "${inputName}" (${err})`));
+        });
+
+        return deferred.promise;
     };
 
     // Download the large files
@@ -111,15 +192,21 @@ requirejs([
         inputPaths = Object.keys(inputData);
 
     // Request the data from the blob
-    Q.all(inputPaths.map(ipath => getData(ipath, inputData[ipath]))).then(() => {
-        // Run 'th init.lua' and merge the stdout, stderr
-        var job = spawn('th', ['init.lua']);
-        job.stdout.on('data', onStdout);
-        job.stderr.on('data', data => process.stdout.write(data));
-        job.on('close', code => {
-            exitCode = code;
-            log('script finished w/ exit code:', code);
-            checkFinished();
+    prepareCache()
+        .then(() => Q.all(inputPaths.map(ipath => getData(ipath, inputData[ipath]))))
+        .then(() => {
+            // Run 'th init.lua' and merge the stdout, stderr
+            var job = spawn('th', ['init.lua']);
+            job.stdout.on('data', onStdout);
+            job.stderr.on('data', data => process.stdout.write(data));
+            job.on('close', code => {
+                exitCode = code;
+                log('script finished w/ exit code:', code);
+                checkFinished();
+            });
+        })
+        .fail(err => {
+            console.log(`Data retrieval failed: ${err}`);
+            process.exit(1);
         });
-    });
 });

@@ -345,10 +345,12 @@ define([
                     mds.forEach((metadata, i) => {
                         // add the hashes for each input
                         var input = inputs[i], 
-                            name = metadata.name,
                             hash = files.inputAssets[input];
 
-                        inputData['inputs/' + input + '/' + name] = hash;
+                        inputData['inputs/' + input + '/data'] = {
+                            req: hash,
+                            cache: metadata.content
+                        };
                     });
 
                     delete files.inputAssets;
@@ -358,15 +360,19 @@ define([
                     Object.keys(files.ptrAssets)
                         .forEach(path => data[path] = files.ptrAssets[path]);
 
-                    delete files.ptrAssets;
-
                     // Add the executor config
                     return this.getOutputs(node);
                 })
                 .then(outputArgs => {
                     var config,
                         outputs,
+                        fileList,
+                        ptrFiles = Object.keys(files.ptrAssets),
                         file;
+
+                    files['start.js'] = _.template(Templates.START)(CONSTANTS);
+                    delete files.ptrAssets;
+                    fileList = Object.keys(files).concat(ptrFiles);
 
                     outputs = outputArgs.map(pair => pair[0])
                         .map(name => {
@@ -383,7 +389,7 @@ define([
                         },
                         {
                             name: name + '-all-files',
-                            resultPatterns: []
+                            resultPatterns: fileList
                         }
                     );
 
@@ -394,7 +400,6 @@ define([
                         resultArtifacts: outputs
                     };
                     files['executor_config.json'] = JSON.stringify(config, null, 4);
-                    files['start.js'] = _.template(Templates.START)(CONSTANTS);
 
                     // Save the artifact
                     // Remove empty hashes
