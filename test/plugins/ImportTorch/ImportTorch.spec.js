@@ -194,4 +194,9 @@ describe('ImportTorch', function () {
         importTorch('test', 'require \'nn\'\nrequire \'rnn\'')
             .nodeify(done);
     });
+
+    it('should not need require \'nn\'', function(done) {
+        importTorch('test', 'nn.Sequential():add(nn.Linear(100, 50))')
+            .nodeify(done);
+    });
 });

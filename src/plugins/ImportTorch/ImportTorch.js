@@ -72,6 +72,7 @@ define([
                 this.loadNNMock();
 
                 // Cross compile to js and run
+                src = 'require \'nn\'\n' + src;  // guarantee it loads nn
                 this.bin = this.context.loadString(src);
                 this.bin();
 
@@ -103,9 +104,6 @@ define([
                 return () => {};
             }
         }]);
-
-        // Some scripts don't include `require 'nn'`. I may have to add the
-        // "nn" package to the global scope...
     };
 
     return ImportTorch;
