@@ -14,6 +14,19 @@ var path = require('path'),
     address,
     config = {};
 
+var createDir = function(dir) {
+    try {
+        fs.statSync(dir);
+    } catch (e) {
+        // Create dir
+        fs.mkdirSync(dir);
+        return true;
+    }
+    return false;
+};
+createDir(workerPath);
+createDir(workerTmp);
+
 // Check torch support
 var result = childProcess.spawnSync('th', ['--help']);
 if (result.error) {
