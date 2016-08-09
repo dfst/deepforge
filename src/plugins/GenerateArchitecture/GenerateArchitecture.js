@@ -193,7 +193,7 @@ define([
                     fn = desc.setterFn[layer[setterNames[i]]];
                     layerCode += `:${fn}()`;
                 }
-            } else if (layer[setterNames[i]] !== null) {
+            } else if (layer[setterNames[i]] !== null && layer[setterNames[i]] !== undefined) {
                 fn = desc.setterFn;
                 layerCode += `:${fn}(${layer[setterNames[i]]})`;
             }
