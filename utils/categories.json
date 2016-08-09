@@ -1,4 +1,32 @@
 {
+   "Recurrent": [
+      "BiSequencer",
+      "BiSequencerLM",
+      "GRU",
+      "MaskZero",
+      "MaskZeroCriterion",
+      "Recurrence",
+      "Recurrent",
+      "RecurrentAttention",
+      "Recursor",
+      "Repeater",
+      "RepeaterCriterion",
+      "Sequencer",
+      "SequencerCriterion",
+      "TrimZero",
+
+      "CopyGrad",
+      "FastLSTM",
+      "LSTM",
+      "LookupTableMaskZero",
+      "NormStabilizer",
+      "SAdd",
+      "SeqBRNN",
+      "SeqGRU",
+      "SeqLSTM",
+      "SeqLSTMP",
+      "SeqReverseSequence"
+   ],
    "Convolution": [
       "TemporalConvolution",
       "TemporalMaxPooling",
@@ -65,6 +93,7 @@
    ],
    "Simple": [
       "Linear",
+      "LinearNoBias",
       "SparseLinear",
       "Dropout",
       "Abs",

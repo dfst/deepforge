@@ -58,9 +58,8 @@ define([
         var layers = tree[Constants.CHILDREN],
             //initialLayers,
             result = {},
-            code = 'require \'nn\'\n';
+            code = 'require \'nn\'\nrequire \'rnn\'\n';
 
-        //initialLayers = layers.filter(layer => layer[Constants.PREV].length === 0);
         // Add an index to each layer
         layers.forEach((l, index) => l[INDEX] = index);
 

@@ -75,8 +75,6 @@ define([
                 this.bin = this.context.loadString(src);
                 this.bin();
 
-                this.afterExecution();
-
                 return this.save('ImportTorch updated model.');
             })
             .then(() => {  // changes saved successfully
@@ -101,15 +99,13 @@ define([
         this.context._G.get('package').set('searchers', [function(name) {
             if (name === 'nn') {
                 return lib;
+            } else {
+                return () => {};
             }
         }]);
 
         // Some scripts don't include `require 'nn'`. I may have to add the
         // "nn" package to the global scope...
-    };
-
-    ImportTorch.prototype.afterExecution = function () {
-        // TODO
     };
 
     return ImportTorch;

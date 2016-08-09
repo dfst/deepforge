@@ -7,20 +7,29 @@ var fs = require('fs'),
     skipLayerList = require('./skipLayers.json'),
 
     categories = require('./categories.json'),
+    SKIP_ARGS = require('./skipArgs.json'),
     catNames = Object.keys(categories),
     exists = require('exists-file'),
     configDir = process.env.HOME + '/.deepforge/',
     configPath = configDir + 'config.json',
     layerToCategory = {},
+    outputName = 'nn',
+    outputDst = 'src/plugins/CreateTorchMeta/schemas/',
     config;
 
-// Check the deepforge config
+if (process.argv[2]) {
+    outputName = process.argv[2];
+}
+
+// Find the given package in the torch installation
 torchPath = process.env.HOME + '/torch';
-if (exists.sync(configPath)) {
+if (exists.sync(configPath)) {  // Check the deepforge config
     config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
     torchPath = (config.torch && config.torch.dir) || (configDir + 'torch');
 }
-torchPath += '/extra/nn/';
+torchPath += `/install/share/lua/5.1/${outputName}/`;
+
+console.log(`parsing ${outputName} from ${torchPath}`);
 
 skipLayerList.forEach(name => SKIP_LAYERS[name] = true);
 catNames.forEach(cat =>  // create layer -> category dictionary
@@ -40,7 +49,6 @@ fs.readdir(torchPath, function(err,files){
         layerByName = {};
 
     layers = files.filter(filename => path.extname(filename) === '.lua')
-        //.filter(filename => filename === 'SpatialAveragePooling.lua')
         .map(filename => fs.readFileSync(torchPath + filename, 'utf8'))
         .map(code => LayerParser.parse(code))
         .filter(layer => !!layer && layer.name);
@@ -53,17 +61,39 @@ fs.readdir(torchPath, function(err,files){
     // handle inheritance
     layers.forEach(layer => {
         var iter = layer,
-            params = layer.params;
+            params = layer.params,
+            unsupArgs = SKIP_ARGS[layer.name],
+            i;
 
         while (iter && params === undefined) {
             params = iter.params;
             iter = layerByName[iter.baseType];
         }
+        // Remove any unsupported (optional) args
+        if (unsupArgs) {
+            for (var k = params.length; k--;) {
+                i = unsupArgs.indexOf(params[k]);
+                if (i !== -1) {
+                    // eslint-disable-next-line no-console
+                    console.log(`Removing "${params[k]}" param from ${layer.name}`);
+                    params = params.splice(0, k);
+                }
+            }
+        }
         layer.params = params;
     });
     layers = layers.filter(layer => !SKIP_LAYERS[layer.name]);
 
+    outputDst += outputName + '.json';
     // eslint-disable-next-line no-console
-    console.log('Saved nn interface to src/common/layers.json');
-    fs.writeFileSync('src/common/layers.json', JSON.stringify(layers, null, 2));
+    console.log('Saved nn interface to ' + outputDst);
+    fs.writeFileSync(outputDst, JSON.stringify(layers, null, 2));
+
+    // Update the CreateTorchMeta index
+    var updateSchemas = `${__dirname}/../src/plugins/CreateTorchMeta/update-schemas.js`,
+        job = require('child_process').fork(updateSchemas);
+
+    job.on('close', code => {
+        process.exit(code);
+    });
 });

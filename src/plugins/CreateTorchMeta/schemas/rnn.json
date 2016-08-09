@@ -1,0 +1,142 @@
+[
+  {
+    "name": "CopyGrad",
+    "baseType": "Identity",
+    "setters": {},
+    "defaults": {},
+    "type": "Recurrent"
+  },
+  {
+    "name": "FastLSTM",
+    "baseType": "LSTM",
+    "params": [
+      "inputSize",
+      "outputSize",
+      "rho",
+      "eps",
+      "momentum",
+      "affine"
+    ],
+    "setters": {},
+    "defaults": {
+      "momentum": 0.1,
+      "eps": 0.1
+    },
+    "type": "Recurrent"
+  },
+  {
+    "name": "LSTM",
+    "baseType": "AbstractRecurrent",
+    "params": [
+      "inputSize",
+      "outputSize",
+      "rho",
+      "cell2gate"
+    ],
+    "setters": {},
+    "defaults": {
+      "rho": 9999
+    },
+    "type": "Recurrent"
+  },
+  {
+    "name": "LinearNoBias",
+    "baseType": "Linear",
+    "params": [
+      "inputSize",
+      "outputSize"
+    ],
+    "setters": {},
+    "defaults": {},
+    "type": "Simple"
+  },
+  {
+    "name": "LookupTableMaskZero",
+    "baseType": "LookupTable",
+    "params": [
+      "nIndex",
+      "nOutput"
+    ],
+    "setters": {},
+    "defaults": {},
+    "type": "Recurrent"
+  },
+  {
+    "name": "NormStabilizer",
+    "baseType": "AbstractRecurrent",
+    "params": [
+      "beta"
+    ],
+    "setters": {},
+    "defaults": {},
+    "type": "Recurrent"
+  },
+  {
+    "name": "SAdd",
+    "baseType": "Module",
+    "params": [
+      "addend",
+      "negate"
+    ],
+    "setters": {},
+    "defaults": {},
+    "type": "Recurrent"
+  },
+  {
+    "name": "SeqBRNN",
+    "baseType": "Container",
+    "params": [
+      "inputDim",
+      "hiddenDim",
+      "batchFirst"
+    ],
+    "setters": {},
+    "defaults": {},
+    "type": "Recurrent"
+  },
+  {
+    "name": "SeqGRU",
+    "baseType": "Module",
+    "params": [
+      "inputSize",
+      "outputSize"
+    ],
+    "setters": {},
+    "defaults": {},
+    "type": "Recurrent"
+  },
+  {
+    "name": "SeqLSTM",
+    "baseType": "Module",
+    "params": [
+      "inputsize",
+      "hiddensize",
+      "outputsize"
+    ],
+    "setters": {},
+    "defaults": {},
+    "type": "Recurrent"
+  },
+  {
+    "name": "SeqLSTMP",
+    "baseType": "SeqLSTM",
+    "params": [
+      "inputsize",
+      "hiddensize",
+      "outputsize"
+    ],
+    "setters": {},
+    "defaults": {},
+    "type": "Recurrent"
+  },
+  {
+    "name": "SeqReverseSequence",
+    "baseType": "Module",
+    "params": [
+      "dim"
+    ],
+    "setters": {},
+    "defaults": {},
+    "type": "Recurrent"
+  }
+]

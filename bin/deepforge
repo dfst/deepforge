@@ -3,7 +3,7 @@
 var Command = require('commander').Command,
     program = new Command(),
     childProcess = require('child_process'),
-    spawn = childProcess.spawn,
+    rawSpawn = childProcess.spawn,
     execSync = childProcess.execSync,
     path = require('path'),
     fs = require('fs'),
@@ -115,7 +115,7 @@ var checkMongo = function(args) {
 };
 
 var startMongo = function(args, silent) {
-    var job = spawn('mongod', ['--dbpath', p(config.mongo.dir)], {
+    var job = rawSpawn('mongod', ['--dbpath', p(config.mongo.dir)], {
         cwd: process.env.HOME
     });
     if (!silent) {
@@ -166,7 +166,8 @@ var _checkTorch = function(resolve, reject) {
                 process.chdir(tgtDir);
                 spawnMany([
                     'bash install-deps',
-                    './install.sh'
+                    './install.sh',
+                    'luarocks install rnn'
                 ], () => {
                     storeConfig('torch.dir', tgtDir);
                     resolve(true);
@@ -192,7 +193,7 @@ var spawnMany = function(cmds, succ, err) {
     rawCmd = cmds.shift();
     args = rawCmd.split(' ');
     cmd = args.shift();
-    job = spawn(cmd, args);
+    job = rawSpawn(cmd, args);
     job.stdout.on('data', data => process.stdout.write(data));
     job.stderr.on('data', data => process.stderr.write(data));
     job.on('close', code => {
@@ -204,6 +205,28 @@ var spawnMany = function(cmds, succ, err) {
         }
     });
 
+};
+
+var spawn = function(cmd, args, opts) {
+    var promise,
+        err;
+
+    args = args || [];
+    promise = new Promise((resolve, reject) => {
+        var job = opts ? rawSpawn(cmd, args, opts) : rawSpawn(cmd, args);
+        job.stdout.on('data', data => process.stdout.write(data));
+        job.stderr.on('data', data => process.stderr.write(data));
+        job.on('close', code => {
+            if (err) {
+                reject(err);
+            } else {
+                resolve(code);
+            }
+        });
+        job.on('error', e => err = e);
+    });
+
+    return promise;
 };
 
 program.command('start')
@@ -264,7 +287,6 @@ program
     .option('-s, --server', 'update deepforge')
     .action(args => {
         var pkg = 'deepforge',
-            job,
             latestVersion;
 
         // Install the project
@@ -287,16 +309,11 @@ program
                 }
             }
 
-            job = spawn('npm', ['install', '-g', pkg]);
-            job.stdout.on('data', data => process.stdout.write(data.toString()));
-            job.stderr.on('data', data => process.stderr.write(data.toString()));
-            job.on('close', code => {
-                if (!code) {
+            spawn('npm', ['install', '-g', pkg])
+                .then(() => {
                     console.log('Upgrade successful!');
-                } else {
-                    console.log('Upgrade failed w/ error code: ' + code);
-                }
-            });
+                })
+                .catch(code => console.log('Upgrade failed w/ error code: ' + code));
         }
 
         if (args.torch || !args.server) {
@@ -316,18 +333,17 @@ program
                         return;
                     }
 
-                    job = spawn('bash', ['./update.sh'], {
-                        cwd: p(config.torch.dir)
-                    });
-                    job.stdout.on('data', data => process.stdout.write(data.toString()));
-                    job.stderr.on('data', data => process.stderr.write(data.toString()));
-                    job.on('close', code => {
-                        if (!code) {
+                    spawn('bash', ['./update.sh'], {cwd: p(config.torch.dir)})
+                        .catch(err => console.log('Upgrade failed w/ error code: ' + err.code))
+                        .then(() => {
+                            console.log('About to update rnn package...');
+                            // Update rnn
+                            return spawn('luarocks', ['install', 'rnn']);
+                        })
+                        .then(() => {
                             console.log('Upgrade successful!');
-                        } else {
-                            console.log('Upgrade failed w/ error code: ' + code);
-                        }
-                    });
+                        })
+                        .catch(code => console.log('Upgrade failed w/ error code: ' + code));
                 }
             });
         }

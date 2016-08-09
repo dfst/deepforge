@@ -324,9 +324,7 @@
   {
     "name": "GradientReversal",
     "baseType": "Module",
-    "params": [
-      "lambda"
-    ],
+    "params": [],
     "setters": {},
     "defaults": {},
     "type": "Misc"
@@ -348,8 +346,7 @@
     "baseType": "Module",
     "params": [
       "min_value",
-      "max_value",
-      "inplace"
+      "max_value"
     ],
     "setters": {},
     "defaults": {
@@ -458,7 +455,9 @@
   {
     "name": "Log",
     "baseType": "Module",
-    "params": [],
+    "params": [
+      "inputSize"
+    ],
     "setters": {},
     "defaults": {},
     "type": "Misc"
@@ -833,16 +832,6 @@
     "type": "Transfer"
   },
   {
-    "name": "ReLU6",
-    "baseType": "Module",
-    "params": [
-      "inplace"
-    ],
-    "setters": {},
-    "defaults": {},
-    "type": "Transfer"
-  },
-  {
     "name": "Replicate",
     "baseType": "Module",
     "params": [
@@ -1037,17 +1026,6 @@
     "type": "Convolution"
   },
   {
-    "name": "SpatialClassNLLCriterion",
-    "baseType": "Criterion",
-    "params": [
-      "weights",
-      "sizeAverage"
-    ],
-    "setters": {},
-    "defaults": {},
-    "type": "Criterion"
-  },
-  {
     "name": "SpatialContrastiveNormalization",
     "baseType": "Module",
     "params": [
@@ -1149,28 +1127,6 @@
       "k": 1,
       "beta": 0.75,
       "alpha": 0.0001
-    },
-    "type": "Convolution"
-  },
-  {
-    "name": "SpatialDilatedConvolution",
-    "baseType": "SpatialConvolution",
-    "params": [
-      "nInputPlane",
-      "nOutputPlane",
-      "kW",
-      "kH",
-      "dW",
-      "dH",
-      "padW",
-      "padH",
-      "dilationH",
-      "dilationW"
-    ],
-    "setters": {},
-    "defaults": {
-      "dilationW": 1,
-      "dilationH": 1
     },
     "type": "Convolution"
   },
@@ -1691,21 +1647,6 @@
     "setters": {},
     "defaults": {},
     "type": "Convolution"
-  },
-  {
-    "name": "VolumetricReplicationPadding",
-    "baseType": "Module",
-    "params": [
-      "pleft",
-      "pright",
-      "ptop",
-      "pbottom",
-      "pfront",
-      "pback"
-    ],
-    "setters": {},
-    "defaults": {},
-    "type": "Misc"
   },
   {
     "name": "WeightedEuclidean",

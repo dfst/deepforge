@@ -1,4 +1,5 @@
 require 'nn'
+require 'rnn'
 
 local net = nn.Sequential()
 net:add(nn.SpatialConvolution(3, 64, 7, 7, 2, 2, 3, 3))

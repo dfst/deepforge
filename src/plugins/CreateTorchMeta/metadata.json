@@ -7,24 +7,29 @@
     "src": "",
     "class": "glyphicon glyphicon-ok-circle"
   },
-  "disableServerSideExecution": false,
+  "disableServerSideExecution": true,
   "disableBrowserSideExecution": false,
   "configStructure": [
-      {
-          "name": "layerNameHash",
-          "displayName": "Torch Layers",
-          "description": "Yaml file of torch layer descriptors (optional)",
-          "value": "",
-          "valueType": "asset",
-          "readOnly": false
-      },
-      {
-          "name": "removeOldLayers",
-          "displayName": "Delete old layers",
-          "description": "Delete all layers not in the current description",
-          "value": true,
-          "valueType": "boolean",
-          "readOnly": false
-      }
+    {
+      "name": "layerSchema",
+      "displayName": "Torch Libraries",
+      "description": "Torch nn libraries to create layers from",
+      "value": "all",
+      "valueItems": [
+        "nn",
+        "rnn",
+        "all"
+      ],
+      "valueType": "string",
+      "readOnly": false
+    },
+    {
+      "name": "removeOldLayers",
+      "displayName": "Delete old layers",
+      "description": "Delete all layers not in the current description",
+      "value": true,
+      "valueType": "boolean",
+      "readOnly": false
+    }
   ]
 }

@@ -7,7 +7,7 @@ define([
     'js/RegistryKeys',
     'js/Panels/MetaEditor/MetaEditorConstants',
     'underscore',
-    'text!deepforge/layers.json',
+    './schemas/index',
     'text!./metadata.json'
 ], function (
     PluginBase,
@@ -15,7 +15,7 @@ define([
     REGISTRY_KEYS,
     META_CONSTANTS,
     _,
-    DEFAULT_LAYERS,
+    Schemas,
     metadata
 ) {
     'use strict';
@@ -51,110 +51,98 @@ define([
      * @param {function(string, plugin.PluginResult)} callback - the result callback
      */
     CreateTorchMeta.prototype.main = function (callback) {
-        // Use self to access core, project, result, logger etc from PluginBase.
-        // These are all instantiated at this point.
-        var self = this;
-
         if (!this.META.Language) {
             return callback('"Language" container required to run plugin', this.result);
         }
 
         // Extra layer names
-        this.getJsonLayers((err, text) => {
-            if (err) {
-                return callback(err, this.result);
+        // The format is...
+        //      - (Abstract) CategoryLayerTypes
+        //          - LayerName
+        //              - Attributes (if exists)
+        var layers,
+            content = {},
+            categories,
+            config = this.getCurrentConfig(),
+            nodes = {};
+
+        try {
+            layers = this.getJsonLayers();
+        } catch (e) {
+            return callback('JSON parse error: ' + e, this.result);
+        }
+        layers.forEach(layer => {
+            if (!content[layer.type]) {
+                content[layer.type] = [];
             }
-
-            // The format is...
-            //      - (Abstract) CategoryLayerTypes
-            //          - LayerName
-            //              - Attributes (if exists)
-            var content = {},
-                categories,
-                config = this.getCurrentConfig(),
-                nodes = {},
-                layers;
-
-            try {
-                layers = JSON.parse(text);
-            } catch (e) {
-                return callback('JSON parse error: ' + e, this.result);
-            }
-            layers.forEach(layer => {
-                if (!content[layer.type]) {
-                    content[layer.type] = [];
-                }
-                content[layer.type].push(layer);
-            });
-
-            categories = Object.keys(content);
-            // Create the base class, if needed
-            if (!this.META.Layer) {
-                this.META.Layer = this.createMetaNode('Layer', this.META.FCO);
-            }
-
-            // Create the category nodes
-            categories
-                .forEach(name => {
-                    // Create a tab for each
-                    this.metaSheets[name] = this.createMetaSheetTab(name);
-                    this.sheetCounts[name] = 0;
-                    nodes[name] = this.createMetaNode(name, this.META.Layer, name);
-                });
-
-            // Make them abstract
-            categories
-                .forEach(name => this.core.setRegistry(nodes[name], 'isAbstract', true));
-
-            if (config.removeOldLayers) {
-                var isNewLayer = {},
-                    newLayers = layers.map(layer => layer.name),
-                    oldLayers,
-                    oldNames;
-
-                newLayers = newLayers.concat(categories);  // add the category nodes
-                newLayers.forEach(name => isNewLayer[name] = true);
-
-                // Set the newLayer nodes 'base' to 'Layer' so we don't accidentally
-                // delete them
-                newLayers
-                    .map(name => this.META[name])
-                    .filter(layer => !!layer)
-                    .forEach(layer => this.core.setBase(layer, this.META.Layer));
-
-                oldLayers = Object.keys(this.META)
-                        .filter(name => name !== 'Layer')
-                        .map(name => this.META[name])
-                        .filter(node => this.isMetaTypeOf(node, this.META.Layer))
-                        .filter(node => !isNewLayer[this.core.getAttribute(node, 'name')]);
-
-                oldNames = oldLayers.map(l => this.core.getAttribute(l, 'name'));
-                // Get the old layer names
-                this.logger.debug(`Removing layers: ${oldNames.join(', ')}`);
-                oldLayers.forEach(layer => this.core.deleteNode(layer));
-            }
-
-            // Create the actual nodes
-            categories.forEach(cat => {
-                content[cat]
-                    .forEach(layer => {
-                        var name = layer.name;
-
-                        nodes[name] = this.createMetaNode(name, nodes[cat], cat, layer);
-                        // Make the node non-abstract
-                        this.core.setRegistry(nodes[name], 'isAbstract', false);
-                    });
-            });
-
-            self.save('CreateTorchMeta updated model.', function (err) {
-                if (err) {
-                    callback(err, self.result);
-                    return;
-                }
-                self.result.setSuccess(true);
-                callback(null, self.result);
-            });
+            content[layer.type].push(layer);
         });
+
+        categories = Object.keys(content);
+        // Create the base class, if needed
+        if (!this.META.Layer) {
+            this.META.Layer = this.createMetaNode('Layer', this.META.FCO);
+        }
+
+        // Create the category nodes
+        categories
+            .forEach(name => {
+                // Create a tab for each
+                this.metaSheets[name] = this.createMetaSheetTab(name);
+                this.sheetCounts[name] = 0;
+                nodes[name] = this.createMetaNode(name, this.META.Layer, name);
+            });
+
+        // Make them abstract
+        categories
+            .forEach(name => this.core.setRegistry(nodes[name], 'isAbstract', true));
+
+        if (config.removeOldLayers) {
+            var isNewLayer = {},
+                newLayers = layers.map(layer => layer.name),
+                oldLayers,
+                oldNames;
+
+            newLayers = newLayers.concat(categories);  // add the category nodes
+            newLayers.forEach(name => isNewLayer[name] = true);
+
+            // Set the newLayer nodes 'base' to 'Layer' so we don't accidentally
+            // delete them
+            newLayers
+                .map(name => this.META[name])
+                .filter(layer => !!layer)
+                .forEach(layer => this.core.setBase(layer, this.META.Layer));
+
+            oldLayers = Object.keys(this.META)
+                    .filter(name => name !== 'Layer')
+                    .map(name => this.META[name])
+                    .filter(node => this.isMetaTypeOf(node, this.META.Layer))
+                    .filter(node => !isNewLayer[this.core.getAttribute(node, 'name')]);
+
+            oldNames = oldLayers.map(l => this.core.getAttribute(l, 'name'));
+            // Get the old layer names
+            this.logger.debug(`Removing layers: ${oldNames.join(', ')}`);
+            oldLayers.forEach(layer => this.core.deleteNode(layer));
+        }
+
+        // Create the actual nodes
+        categories.forEach(cat => {
+            content[cat]
+                .forEach(layer => {
+                    var name = layer.name;
+
+                    nodes[name] = this.createMetaNode(name, nodes[cat], cat, layer);
+                    // Make the node non-abstract
+                    this.core.setRegistry(nodes[name], 'isAbstract', false);
+                });
+        });
+
+        this.save('CreateTorchMeta updated model.')
+            .then(() => {
+                this.result.setSuccess(true);
+                callback(null, this.result);
+            })
+            .fail(err => callback(err, this.result));
     };
 
     CreateTorchMeta.prototype.removeFromMeta = function (nodeId) {
@@ -196,20 +184,16 @@ define([
         return sheet.SetID;
     };
 
-    CreateTorchMeta.prototype.getJsonLayers = function (callback) {
-        var config = this.getCurrentConfig();
+    CreateTorchMeta.prototype.getJsonLayers = function () {
+        var config = this.getCurrentConfig(),
+            schema = config.layerSchema;
 
-        if (config.layerNameHash) {
-            this.blobClient.getObject(config.layerNameHash, (err, buffer) => {
-                if (err) {
-                    return callback(err, this.result);
-                }
-                var text = String.fromCharCode.apply(null, new Uint8Array(buffer));
-                return callback(null, text);
-            });
-        } else {
-            return callback(null, DEFAULT_LAYERS);
+        if (schema === 'all') {
+            return Object.keys(Schemas).map(key => JSON.parse(Schemas[key]))
+                .reduce((l1, l2) => l1.concat(l2), []);
         }
+
+        return JSON.parse(Schemas[schema]);
     };
 
     var isBoolean = txt => {
