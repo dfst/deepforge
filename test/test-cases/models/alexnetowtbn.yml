@@ -1,8 +1,46 @@
-- type: SpatialConvolution
-  id: /A/0
+- type: ReLU
+  id: /V/1
   next:
-    - /A/w
+    - /V/M
   attributes:
+    ctor_arg_order: p
+    p: true
+- type: Linear
+  id: /V/29
+  next:
+    - /V/s
+  attributes:
+    bias: ''
+    ctor_arg_order: 'inputSize,outputSize,bias'
+    outputSize: 10
+    inputSize: 4096
+- type: Dropout
+  id: /V/3
+  next:
+    - /V/Q
+  attributes:
+    v1: ''
+    inplace: ''
+    ctor_arg_order: 'p,v1,inplace'
+    p: 0.5
+- type: SpatialMaxPooling
+  id: /V/4
+  next:
+    - /V/o
+  attributes:
+    padW: ''
+    padH: ''
+    ctor_arg_order: 'kW,kH,dW,dH,padW,padH'
+    dH: 2
+    dW: 2
+    kH: 3
+    kW: 3
+- type: SpatialConvolution
+  id: /V/6
+  next:
+    - /V/Z
+  attributes:
+    ctor_arg_order: 'nInputPlane,nOutputPlane,kW,kH,dW,dH,padW,padH'
     padH: 1
     padW: 1
     dH: 1
@@ -11,171 +49,67 @@
     kW: 3
     nOutputPlane: 384
     nInputPlane: 192
-- type: LogSoftMax
-  id: /A/2
-  next: []
-  attributes: {}
-- type: ReLU
-  id: /A/3
+- type: SpatialBatchNormalization
+  id: /V/8
   next:
-    - /A/H
+    - /V/R
   attributes:
-    p: ''
+    momentum: ''
+    affine: ''
+    ctor_arg_order: 'nOutput,eps,momentum,affine'
+    eps: 0.001
+    nOutput: 64
 - type: ReLU
-  id: /A/6
+  id: /V/F
   next:
-    - /A/NJ
+    - /V/a
   attributes:
+    ctor_arg_order: p
     p: true
-- type: SpatialMaxPooling
-  id: /A/7
+- type: SpatialBatchNormalization
+  id: /V/G
   next:
-    - /A/G
+    - /V/O
   attributes:
-    padW: 0
-    padH: 0
-    ceil_mode: false
+    momentum: ''
+    affine: ''
+    ctor_arg_order: 'nOutput,eps,momentum,affine'
+    eps: 0.001
+    nOutput: 192
+- type: ReLU
+  id: /V/H
+  next:
+    - /V/N
+  attributes:
+    ctor_arg_order: p
+    p: true
+- type: Dropout
+  id: /V/Im
+  next:
+    - /V/iP
+  attributes:
+    v1: ''
+    inplace: ''
+    ctor_arg_order: 'p,v1,inplace'
+    p: 0.5
+- type: SpatialMaxPooling
+  id: /V/M
+  next:
+    - /V/xK
+  attributes:
+    padW: ''
+    padH: ''
+    ctor_arg_order: 'kW,kH,dW,dH,padW,padH'
     dH: 2
     dW: 2
     kH: 3
     kW: 3
-- type: BatchNormalization
-  id: /A/A
-  next:
-    - /A/r7
-  attributes:
-    momentum: ''
-    affine: ''
-    eps: 0.001
-    nOutput: 4096
-- type: BatchNormalization
-  id: /A/B
-  next:
-    - /A/3
-  attributes:
-    momentum: ''
-    affine: ''
-    eps: 0.001
-    nOutput: 4096
-- type: ReLU
-  id: /A/F
-  next:
-    - /A/q
-  attributes:
-    p: true
-- type: View
-  id: /A/G
-  next:
-    - /A/a
-  attributes:
-    numInputDims: null
-    params: 9216
-- type: Dropout
-  id: /A/H
-  next:
-    - /A/i
-  attributes:
-    v1: ''
-    inplace: ''
-    p: 0.5
-- type: SpatialBatchNormalization
-  id: /A/I
-  next:
-    - /A/t
-  attributes:
-    momentum: ''
-    affine: ''
-    eps: 0.001
-    nOutput: 192
-- type: Linear
-  id: /A/M
-  next:
-    - /A/B
-  attributes:
-    bias: ''
-    outputSize: 4096
-    inputSize: 9216
 - type: SpatialConvolution
-  id: /A/NJ
+  id: /V/N
   next:
-    - /A/PF
+    - /V/g
   attributes:
-    padH: 1
-    padW: 1
-    dH: 1
-    dW: 1
-    kH: 3
-    kW: 3
-    nOutputPlane: 256
-    nInputPlane: 256
-- type: SpatialBatchNormalization
-  id: /A/PF
-  next:
-    - /A/X
-  attributes:
-    momentum: ''
-    affine: ''
-    eps: 0.001
-    nOutput: 256
-- type: ReLU
-  id: /A/X
-  next:
-    - /A/7
-  attributes:
-    p: true
-- type: Dropout
-  id: /A/a
-  next:
-    - /A/M
-  attributes:
-    v1: ''
-    inplace: ''
-    p: 0.5
-- type: ReLU
-  id: /A/d
-  next:
-    - /A/n
-  attributes:
-    p: true
-- type: Linear
-  id: /A/h
-  next:
-    - /A/2
-  attributes:
-    bias: ''
-    outputSize: 10
-    inputSize: 4096
-- type: Linear
-  id: /A/i
-  next:
-    - /A/A
-  attributes:
-    bias: ''
-    outputSize: 4096
-    inputSize: 4096
-- type: SpatialBatchNormalization
-  id: /A/k
-  next:
-    - /A/6
-  attributes:
-    momentum: ''
-    affine: ''
-    eps: 0.001
-    nOutput: 256
-- type: SpatialBatchNormalization
-  id: /A/l
-  next:
-    - /A/F
-  attributes:
-    momentum: ''
-    affine: ''
-    eps: 0.001
-    nOutput: 64
-- type: SpatialConvolution
-  id: /A/n
-  next:
-    - /A/k
-  attributes:
+    ctor_arg_order: 'nInputPlane,nOutputPlane,kW,kH,dW,dH,padW,padH'
     padH: 1
     padW: 1
     dH: 1
@@ -184,35 +118,19 @@
     kW: 3
     nOutputPlane: 256
     nInputPlane: 384
-- type: SpatialMaxPooling
-  id: /A/nm
+- type: ReLU
+  id: /V/O
   next:
-    - /A/0
+    - /V/k
   attributes:
-    padW: 0
-    padH: 0
-    ceil_mode: false
-    dH: 2
-    dW: 2
-    kH: 3
-    kW: 3
-- type: SpatialMaxPooling
-  id: /A/q
-  next:
-    - /A/y
-  attributes:
-    padW: 0
-    padH: 0
-    ceil_mode: false
-    dH: 2
-    dW: 2
-    kH: 3
-    kW: 3
+    ctor_arg_order: p
+    p: true
 - type: SpatialConvolution
-  id: /A/r
+  id: /V/P
   next:
-    - /A/l
+    - /V/8
   attributes:
+    ctor_arg_order: 'nInputPlane,nOutputPlane,kW,kH,dW,dH,padW,padH'
     padH: 2
     padW: 2
     dH: 4
@@ -221,32 +139,103 @@
     kW: 11
     nOutputPlane: 64
     nInputPlane: 3
-- type: ReLU
-  id: /A/r7
+- type: Linear
+  id: /V/Q
   next:
-    - /A/h
+    - /V/Qm
   attributes:
-    p: ''
-- type: ReLU
-  id: /A/t
+    bias: ''
+    ctor_arg_order: 'inputSize,outputSize,bias'
+    outputSize: 4096
+    inputSize: 4096
+- type: BatchNormalization
+  id: /V/Qm
   next:
-    - /A/nm
-  attributes:
-    p: true
-- type: SpatialBatchNormalization
-  id: /A/w
-  next:
-    - /A/d
+    - /V/t7
   attributes:
     momentum: ''
     affine: ''
+    ctor_arg_order: 'nOutput,eps,momentum,affine'
+    eps: 0.001
+    nOutput: 4096
+- type: ReLU
+  id: /V/R
+  next:
+    - /V/4
+  attributes:
+    ctor_arg_order: p
+    p: true
+- type: SpatialBatchNormalization
+  id: /V/Z
+  next:
+    - /V/H
+  attributes:
+    momentum: ''
+    affine: ''
+    ctor_arg_order: 'nOutput,eps,momentum,affine'
     eps: 0.001
     nOutput: 384
 - type: SpatialConvolution
-  id: /A/y
+  id: /V/a
   next:
-    - /A/I
+    - /V/z
   attributes:
+    ctor_arg_order: 'nInputPlane,nOutputPlane,kW,kH,dW,dH,padW,padH'
+    padH: 1
+    padW: 1
+    dH: 1
+    dW: 1
+    kH: 3
+    kW: 3
+    nOutputPlane: 256
+    nInputPlane: 256
+- type: BatchNormalization
+  id: /V/b
+  next:
+    - /V/t
+  attributes:
+    momentum: ''
+    affine: ''
+    ctor_arg_order: 'nOutput,eps,momentum,affine'
+    eps: 0.001
+    nOutput: 4096
+- type: SpatialBatchNormalization
+  id: /V/g
+  next:
+    - /V/F
+  attributes:
+    momentum: ''
+    affine: ''
+    ctor_arg_order: 'nOutput,eps,momentum,affine'
+    eps: 0.001
+    nOutput: 256
+- type: Linear
+  id: /V/iP
+  next:
+    - /V/b
+  attributes:
+    bias: ''
+    ctor_arg_order: 'inputSize,outputSize,bias'
+    outputSize: 4096
+    inputSize: 9216
+- type: SpatialMaxPooling
+  id: /V/k
+  next:
+    - /V/6
+  attributes:
+    padW: ''
+    padH: ''
+    ctor_arg_order: 'kW,kH,dW,dH,padW,padH'
+    dH: 2
+    dW: 2
+    kH: 3
+    kW: 3
+- type: SpatialConvolution
+  id: /V/o
+  next:
+    - /V/G
+  attributes:
+    ctor_arg_order: 'nInputPlane,nOutputPlane,kW,kH,dW,dH,padW,padH'
     padH: 2
     padW: 2
     dH: 1
@@ -255,3 +244,39 @@
     kW: 5
     nOutputPlane: 192
     nInputPlane: 64
+- type: LogSoftMax
+  id: /V/s
+  next: []
+  attributes:
+    ctor_arg_order: ''
+- type: ReLU
+  id: /V/t
+  next:
+    - /V/3
+  attributes:
+    p: ''
+    ctor_arg_order: p
+- type: ReLU
+  id: /V/t7
+  next:
+    - /V/29
+  attributes:
+    p: ''
+    ctor_arg_order: p
+- type: View
+  id: /V/xK
+  next:
+    - /V/Im
+  attributes:
+    ctor_arg_order: params
+    params: 9216
+- type: SpatialBatchNormalization
+  id: /V/z
+  next:
+    - /V/1
+  attributes:
+    momentum: ''
+    affine: ''
+    ctor_arg_order: 'nOutput,eps,momentum,affine'
+    eps: 0.001
+    nOutput: 256

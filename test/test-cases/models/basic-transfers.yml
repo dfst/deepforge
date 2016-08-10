@@ -1,76 +1,87 @@
-- type: Reshape
-  id: /J/1
-  next:
-    - /J/5
-  attributes:
-    params: 100
 - type: Linear
-  id: /J/5
+  id: /k/5
   next:
-    - /J/x
+    - /k/a
   attributes:
     bias: ''
-    outputSize: 300
+    ctor_arg_order: 'inputSize,outputSize,bias'
+    outputSize: 100
     inputSize: 100
-- type: Sigmoid
-  id: /J/F
-  next:
-    - /J/z
-  attributes: {}
-- type: ReLU
-  id: /J/G
-  next:
-    - /J/q
-  attributes:
-    p: ''
-- type: SoftMax
-  id: /J/Y
-  next: []
-  attributes: {}
-- type: LeakyReLU
-  id: /J/c
-  next:
-    - /J/m
-  attributes:
-    negval: ''
-    ip: false
 - type: Linear
-  id: /J/d
+  id: /k/6
   next:
-    - /J/G
+    - /k/Y
   attributes:
     bias: ''
+    ctor_arg_order: 'inputSize,outputSize,bias'
     outputSize: 100
     inputSize: 300
+- type: SoftMax
+  id: /k/O
+  next: []
+  attributes:
+    ctor_arg_order: ''
 - type: Linear
-  id: /J/m
+  id: /k/S
   next:
-    - /J/Y
+    - /k/y
   attributes:
     bias: ''
-    outputSize: 5
-    inputSize: 120
-- type: Linear
-  id: /J/q
-  next:
-    - /J/F
-  attributes:
-    bias: ''
-    outputSize: 100
+    ctor_arg_order: 'inputSize,outputSize,bias'
+    outputSize: 120
     inputSize: 100
-- type: RReLU
-  id: /J/x
+- type: Linear
+  id: /k/V
   next:
-    - /J/d
+    - /k/i
+  attributes:
+    bias: ''
+    ctor_arg_order: 'inputSize,outputSize,bias'
+    outputSize: 300
+    inputSize: 100
+- type: ReLU
+  id: /k/Y
+  next:
+    - /k/5
+  attributes:
+    p: ''
+    ctor_arg_order: p
+- type: Sigmoid
+  id: /k/a
+  next:
+    - /k/S
+  attributes:
+    ctor_arg_order: ''
+- type: RReLU
+  id: /k/i
+  next:
+    - /k/6
   attributes:
     l: ''
     u: ''
-    ip: false
+    ip: ''
+    ctor_arg_order: 'l,u,ip'
 - type: Linear
-  id: /J/z
+  id: /k/p
   next:
-    - /J/c
+    - /k/O
   attributes:
     bias: ''
-    outputSize: 120
-    inputSize: 100
+    ctor_arg_order: 'inputSize,outputSize,bias'
+    outputSize: 5
+    inputSize: 120
+- type: Reshape
+  id: /k/q
+  next:
+    - /k/V
+  attributes:
+    ctor_arg_order: params
+    params: 100
+- type: LeakyReLU
+  id: /k/y
+  next:
+    - /k/p
+  attributes:
+    negval: ''
+    ip: ''
+    ctor_arg_order: 'negval,ip'

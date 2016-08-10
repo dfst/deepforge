@@ -40,7 +40,7 @@ define([
         this.addCustomLayersToMeta();
         this.LayerDict = createLayerDict(this.core, this.META);
         this.uniqueId = 2;
-        this._oldTemplateSettings = _.templateSettings;
+        this.varnames = {};
         return PluginBase.prototype.main.apply(this, arguments);
     };
 
@@ -54,24 +54,36 @@ define([
             .forEach(node => this.META[this.core.getAttribute(node, 'name')] = node);
     };
 
+    GenerateArchitecture.prototype.hoist = function (code) {
+        this.definitions.push(code);
+    };
+
     GenerateArchitecture.prototype.createOutputFiles = function (tree) {
         var layers = tree[Constants.CHILDREN],
-            //initialLayers,
             result = {},
-            code = 'require \'nn\'\nrequire \'rnn\'\n';
+            code = '';
+
+        this.definitions = [
+            'require \'nn\'',
+            'require \'rnn\''
+        ];
 
         // Add an index to each layer
         layers.forEach((l, index) => l[INDEX] = index);
 
         // Define custom layers
         if (this.getCurrentConfig().standalone) {
+            this.logger.debug('Generating layer definitions');
             code += this.genLayerDefinitions(layers);
         }
 
+        this.logger.debug('Generating architecture code...');
         code += this.genArchCode(layers);
+        this.logger.debug('Prepending hoisted code...');
+        code = this.definitions.join('\n') + '\n' + code;
 
         result[tree.name + '.lua'] = code;
-        _.templateSettings = this._oldTemplateSettings;  // FIXME: Fix this in SimpleNodes
+        this.logger.debug(`Finished generating ${tree.name}.lua`);
         return result;
     };
 
@@ -82,10 +94,38 @@ define([
         ].join('\n');
     };
 
+    GenerateArchitecture.prototype.genRawArchCode = function (layers, name) {
+        var result = '';
+        if (layers.length > 1) {
+            return this.createSequential(layers[0], name).code;
+        } else if (name) {
+            result = `\nlocal ${name} = `;
+        }
+        result += this.createLayer(layers[0]);
+        return result;
+    };
+
+    GenerateArchitecture.prototype.getVarName = function (base) {
+        // Check "this.varnames"
+        var name = base,
+            i = 2;
+
+        while (this.varnames[name]) {
+            name = base + '_' + (i++);
+        }
+        this.varnames[name] = true;
+
+        return name;
+    };
+
+    GenerateArchitecture.prototype.createLayer = function (layer) {
+        var args = this.createArgString(layer);
+        return `nn.${layer.name}${args}`;
+    };
+
     GenerateArchitecture.prototype.createSequential = function (layer, name) {
         var next = layer[Constants.NEXT][0],
             args,
-            template,
             snippet,
             snippets,
             code = `\nlocal ${name} = nn.Sequential()`,
@@ -100,10 +140,8 @@ define([
                 next = layer;  // the given layer will be added by the caller
                 break;
             } else {  // add the given layer
-                args = this.createArgString(layer);
-                template = _.template(name + ':add(nn.{{= name }}' + args + ')');
-                snippet = template(layer);
-                code += '\n' + snippet;
+                snippet = this.createLayer(layer);
+                code += `\n${name}:add(${snippet})`;
 
             }
 
@@ -112,7 +150,7 @@ define([
 
                 this.logger.debug(`detected fork of size ${layer[Constants.NEXT].length}`);
                 snippets = layer[Constants.NEXT].map(nlayer =>
-                    this.createSequential(nlayer, 'net_'+(this.uniqueId++)));
+                    this.createSequential(nlayer, this.getVarName('net')));
                 code += '\n' + snippets.map(snippet => snippet.code).join('\n');
 
                 // Make sure all snippets end at the same concat node
@@ -150,7 +188,7 @@ define([
 
                     // merge the elements in the group
                     if (snippets.length) {  // prepare next iteration
-                        result = this.createSequential(next, 'net_'+(this.uniqueId++));
+                        result = this.createSequential(next, this.getVarName('net'));
                         code += result.code;
                         group = [result];
                         this.logger.debug('updating group ('+ snippets.length+ ' left)');
@@ -170,6 +208,38 @@ define([
         };
     };
 
+    GenerateArchitecture.abbr = function (word) {
+        word = word.substring(0, 1).toUpperCase() + word.substring(1);
+        return word.split(/[a-z]+/g).join('').toLowerCase();
+    };
+
+    GenerateArchitecture.prototype.getValue = function (arg, layer) {
+        var content = layer[arg];
+
+        if (typeof content === 'object') {  // layer as arg
+            if (content[Constants.CHILDREN].length) {
+                // Generate the code for the children of layer[arg]
+                var name = this.getVarName(GenerateArchitecture.abbr(arg)),
+                    layers;
+
+                this.logger.debug(`Adding layer arg for ${arg} (${layer.name})`);
+                try {
+                    layers = this.genRawArchCode(layer[arg][Constants.CHILDREN], name);
+                } catch (e) {
+                    this.logger.error(`Layer arg creation failed: ${e}`);
+                    return null;
+                }
+
+                // hoist layer definitions to the top of the file
+                this.hoist(layers);
+                return name;
+            } else {
+                return null;
+            }
+        }
+        return content;
+    };
+
     GenerateArchitecture.prototype.createArgString = function (layer) {
         var setters = this.LayerDict[layer.name].setters,
             setterNames = Object.keys(this.LayerDict[layer.name].setters),
@@ -178,8 +248,9 @@ define([
             fn,
             layerCode;
 
+        this.logger.debug(`Creating arg string for ${layer.name}`);
         layerCode = '(' + this.LayerDict[layer.name].args
-            .map(arg => layer[arg.name])
+            .map(arg => this.getValue(arg.name, layer))
             .filter(GenerateArchitecture.isSet)
             .join(', ') + ')';
 
@@ -199,6 +270,7 @@ define([
             }
         }
 
+        this.logger.debug(`Created nn.${layer.name}${layerCode}`);
         return layerCode;
     };
 

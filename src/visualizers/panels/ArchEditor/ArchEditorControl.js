@@ -2,12 +2,14 @@
 /*jshint browser: true*/
 
 define([
+    'deepforge/Constants',
     'deepforge/globals',
     'panels/EasyDAG/EasyDAGControl',
     'js/NodePropertyNames',
     'js/Utils/ComponentSettings',
     'underscore'
 ], function (
+    Constants,
     DeepForge,
     EasyDAGControl,
     nodePropertyNames,
@@ -38,6 +40,7 @@ define([
     _.extend(ArchEditorControl.prototype, EasyDAGControl.prototype);
 
     ArchEditorControl.prototype.TERRITORY_RULE = {children: 1};
+    ArchEditorControl.prototype.DEFAULT_DECORATOR = 'LayerDecorator';
     ArchEditorControl.prototype.getComponentId = function() {
         return 'ArchEditor';
     };
@@ -59,13 +62,24 @@ define([
         if (!desc.isConnection) {
             var allAttrs = desc.attributes,
                 names = Object.keys(allAttrs),
-                schema;
+                ctorInfo = desc.attributes[Constants.CTOR_ARGS_ATTR],
+                ctorAttrs = ctorInfo ? ctorInfo.value.split(','): [],
+                schema,
+                i;
 
             desc.attributes = {};
-            for (var i = names.length; i--;) {
+
+            // add ctor attributes
+            for (i = 0; i < ctorAttrs.length; i++) {
+                if (allAttrs[ctorAttrs[i]]) {  // (not a ref to a layer)
+                    desc.attributes[ctorAttrs[i]] = allAttrs[ctorAttrs[i]];
+                }
+            }
+
+            for (i = names.length; i--;) {
+                // check if it is a setter
                 schema = this._client.getAttributeSchema(id, names[i]);
-                if (names[i] === 'name' || schema.hasOwnProperty('argindex') ||
-                    schema.setterType) {
+                if (names[i] === 'name' || schema.setterType) {
                     desc.attributes[names[i]] = allAttrs[names[i]];
                 }
             }
@@ -164,7 +178,7 @@ define([
 
     ArchEditorControl.prototype.getCreateNewDecorator = function() {
         return this._client.decoratorManager.getDecoratorForWidget(
-            'EllipseDecorator',
+            'LayerDecorator',
             'EasyDAG'
         );
     };

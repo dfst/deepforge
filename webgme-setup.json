@@ -243,6 +243,9 @@
       },
       "ArtifactOpDecorator": {
         "src": "src/decorators/ArtifactOpDecorator"
+      },
+      "LayerDecorator": {
+        "src": "src/decorators/LayerDecorator"
       }
     },
     "seeds": {

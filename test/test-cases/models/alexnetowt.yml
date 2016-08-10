@@ -1,8 +1,30 @@
-- type: SpatialConvolution
-  id: /P/0
+- type: ReLU
+  id: /b/6
   next:
-    - /P/2
+    - /b/oG
   attributes:
+    p: ''
+    ctor_arg_order: p
+- type: ReLU
+  id: /b/7
+  next:
+    - /b/u4
+  attributes:
+    p: ''
+    ctor_arg_order: p
+- type: ReLU
+  id: /b/9
+  next:
+    - /b/X
+  attributes:
+    ctor_arg_order: p
+    p: true
+- type: SpatialConvolution
+  id: /b/I8
+  next:
+    - /b/9
+  attributes:
+    ctor_arg_order: 'nInputPlane,nOutputPlane,kW,kH,dW,dH,padW,padH'
     padH: 1
     padW: 1
     dH: 1
@@ -12,32 +34,46 @@
     nOutputPlane: 384
     nInputPlane: 192
 - type: ReLU
-  id: /P/2
+  id: /b/K
   next:
-    - /P/fX
+    - /b/w
   attributes:
+    ctor_arg_order: p
     p: true
-- type: Dropout
-  id: /P/6
+- type: ReLU
+  id: /b/N
   next:
-    - /P/C
+    - /b/s
   attributes:
-    v1: ''
-    inplace: ''
-    p: 0.5
-- type: Linear
-  id: /P/8p
+    ctor_arg_order: p
+    p: true
+- type: SpatialMaxPooling
+  id: /b/U
   next:
-    - /P/S8
+    - /b/W
+  attributes:
+    padW: ''
+    padH: ''
+    ctor_arg_order: 'kW,kH,dW,dH,padW,padH'
+    dH: 2
+    dW: 2
+    kH: 3
+    kW: 3
+- type: Linear
+  id: /b/V
+  next:
+    - /b/7
   attributes:
     bias: ''
-    outputSize: 5
-    inputSize: 4096
+    ctor_arg_order: 'inputSize,outputSize,bias'
+    outputSize: 4096
+    inputSize: 9216
 - type: SpatialConvolution
-  id: /P/A
+  id: /b/W
   next:
-    - /P/j
+    - /b/N
   attributes:
+    ctor_arg_order: 'nInputPlane,nOutputPlane,kW,kH,dW,dH,padW,padH'
     padH: 2
     padW: 2
     dH: 1
@@ -46,108 +82,12 @@
     kW: 5
     nOutputPlane: 192
     nInputPlane: 64
-- type: Linear
-  id: /P/C
-  next:
-    - /P/mQ
-  attributes:
-    bias: ''
-    outputSize: 4096
-    inputSize: 9216
-- type: ReLU
-  id: /P/F
-  next:
-    - /P/R
-  attributes:
-    p: true
-- type: Linear
-  id: /P/H
-  next:
-    - /P/e
-  attributes:
-    bias: ''
-    outputSize: 4096
-    inputSize: 4096
-- type: SpatialMaxPooling
-  id: /P/J
-  next:
-    - /P/A
-  attributes:
-    padW: 0
-    padH: 0
-    ceil_mode: false
-    dH: 2
-    dW: 2
-    kH: 3
-    kW: 3
-- type: Dropout
-  id: /P/L
-  next:
-    - /P/H
-  attributes:
-    v1: ''
-    inplace: ''
-    p: 0.5
-- type: View
-  id: /P/M
-  next:
-    - /P/6
-  attributes:
-    numInputDims: null
-    params: 9216
 - type: SpatialConvolution
-  id: /P/R
+  id: /b/X
   next:
-    - /P/i
+    - /b/o
   attributes:
-    padH: 1
-    padW: 1
-    dH: 1
-    dW: 1
-    kH: 3
-    kW: 3
-    nOutputPlane: 256
-    nInputPlane: 256
-- type: LogSoftMax
-  id: /P/S8
-  next: []
-  attributes: {}
-- type: SpatialMaxPooling
-  id: /P/c
-  next:
-    - /P/0
-  attributes:
-    padW: 0
-    padH: 0
-    ceil_mode: false
-    dH: 2
-    dW: 2
-    kH: 3
-    kW: 3
-- type: SpatialConvolution
-  id: /P/d
-  next:
-    - /P/q
-  attributes:
-    padH: 2
-    padW: 2
-    dH: 4
-    dW: 4
-    kH: 11
-    kW: 11
-    nOutputPlane: 64
-    nInputPlane: 3
-- type: ReLU
-  id: /P/e
-  next:
-    - /P/8p
-  attributes:
-    p: ''
-- type: SpatialConvolution
-  id: /P/fX
-  next:
-    - /P/F
-  attributes:
+    ctor_arg_order: 'nInputPlane,nOutputPlane,kW,kH,dW,dH,padW,padH'
     padH: 1
     padW: 1
     dH: 1
@@ -156,39 +96,117 @@
     kW: 3
     nOutputPlane: 256
     nInputPlane: 384
-- type: ReLU
-  id: /P/i
+- type: SpatialConvolution
+  id: /b/b
   next:
-    - /P/n5
+    - /b/K
   attributes:
+    ctor_arg_order: 'nInputPlane,nOutputPlane,kW,kH,dW,dH,padW,padH'
+    padH: 1
+    padW: 1
+    dH: 1
+    dW: 1
+    kH: 3
+    kW: 3
+    nOutputPlane: 256
+    nInputPlane: 256
+- type: View
+  id: /b/c
+  next:
+    - /b/v
+  attributes:
+    ctor_arg_order: params
+    params: 9216
+- type: SpatialConvolution
+  id: /b/d
+  next:
+    - /b/q
+  attributes:
+    ctor_arg_order: 'nInputPlane,nOutputPlane,kW,kH,dW,dH,padW,padH'
+    padH: 2
+    padW: 2
+    dH: 4
+    dW: 4
+    kH: 11
+    kW: 11
+    nOutputPlane: 64
+    nInputPlane: 3
+- type: LogSoftMax
+  id: /b/iW
+  next: []
+  attributes:
+    ctor_arg_order: ''
+- type: ReLU
+  id: /b/o
+  next:
+    - /b/b
+  attributes:
+    ctor_arg_order: p
     p: true
-- type: ReLU
-  id: /P/j
+- type: Linear
+  id: /b/oG
   next:
-    - /P/c
+    - /b/iW
   attributes:
+    bias: ''
+    ctor_arg_order: 'inputSize,outputSize,bias'
+    outputSize: 5
+    inputSize: 4096
+- type: ReLU
+  id: /b/q
+  next:
+    - /b/U
+  attributes:
+    ctor_arg_order: p
     p: true
-- type: ReLU
-  id: /P/mQ
-  next:
-    - /P/L
-  attributes:
-    p: ''
 - type: SpatialMaxPooling
-  id: /P/n5
+  id: /b/s
   next:
-    - /P/M
+    - /b/I8
   attributes:
-    padW: 0
-    padH: 0
-    ceil_mode: false
+    padW: ''
+    padH: ''
+    ctor_arg_order: 'kW,kH,dW,dH,padW,padH'
     dH: 2
     dW: 2
     kH: 3
     kW: 3
-- type: ReLU
-  id: /P/q
+- type: Dropout
+  id: /b/u4
   next:
-    - /P/J
+    - /b/x
   attributes:
-    p: true
+    v1: ''
+    inplace: ''
+    ctor_arg_order: 'p,v1,inplace'
+    p: 0.5
+- type: Dropout
+  id: /b/v
+  next:
+    - /b/V
+  attributes:
+    v1: ''
+    inplace: ''
+    ctor_arg_order: 'p,v1,inplace'
+    p: 0.5
+- type: SpatialMaxPooling
+  id: /b/w
+  next:
+    - /b/c
+  attributes:
+    padW: ''
+    padH: ''
+    ctor_arg_order: 'kW,kH,dW,dH,padW,padH'
+    dH: 2
+    dW: 2
+    kH: 3
+    kW: 3
+- type: Linear
+  id: /b/x
+  next:
+    - /b/6
+  attributes:
+    bias: ''
+    ctor_arg_order: 'inputSize,outputSize,bias'
+    outputSize: 4096
+    inputSize: 4096

@@ -8,6 +8,7 @@ var fs = require('fs'),
 
     categories = require('./categories.json'),
     SKIP_ARGS = require('./skipArgs.json'),
+    ARG_TYPES = require('./argTypes.json'),
     catNames = Object.keys(categories),
     exists = require('exists-file'),
     configDir = process.env.HOME + '/.deepforge/',
@@ -63,6 +64,7 @@ fs.readdir(torchPath, function(err,files){
         var iter = layer,
             params = layer.params,
             unsupArgs = SKIP_ARGS[layer.name],
+            type,
             i;
 
         while (iter && params === undefined) {
@@ -81,6 +83,18 @@ fs.readdir(torchPath, function(err,files){
             }
         }
         layer.params = params;
+
+        // Add any explicit types from argTypes.json
+        if (ARG_TYPES[layer.name]) {
+            for (i = layer.params.length; i--;) {
+                type = ARG_TYPES[layer.name][layer.params[i]];
+                if (type) {
+                    // eslint-disable-next-line no-console
+                    console.log(`Setting "${layer.params[i]}" (${layer.name}) to ${type}`);
+                    layer.types[layer.params[i]] = type;
+                }
+            }
+        }
     });
     layers = layers.filter(layer => !SKIP_LAYERS[layer.name]);
 

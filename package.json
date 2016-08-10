@@ -28,7 +28,7 @@
     "webgme-chflayout": "^2.0.0",
     "webgme-easydag": "dfst/webgme-easydag",
     "webgme-fab": "dfst/webgme-fab",
-    "webgme-simple-nodes": "^2.0.0"
+    "webgme-simple-nodes": "^2.1.0"
   },
   "devDependencies": {
     "chai": "^3.0.0",

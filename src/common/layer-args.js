@@ -1,6 +1,8 @@
 /* globals define*/
 define([
+    'deepforge/Constants'
 ], function(
+    Constants
 ) {
     'use strict';
 
@@ -15,16 +17,8 @@ define([
         return result;
     };
 
-    var isArgument = function(arg) {
-        return arg.hasOwnProperty('argindex');
-    };
-
     var isSetter = function(arg) {
         return arg.hasOwnProperty('setterType');
-    };
-
-    var sortByIndex = function(a, b) {
-        return a.argindex > b.argindex;
     };
 
     var createLayerDict = function(core, meta) {
@@ -32,19 +26,30 @@ define([
             names = Object.keys(meta),
             layers = {},
             setters,
+            ctorData,
+            ctorArgs,
             attrs;
 
         for (var i = names.length; i--;) {
             node = meta[names[i]];
-            attrs = core.getValidAttributeNames(node)
-                .map(attr => prepAttribute(core, node, attr));
+            ctorData = core.getAttribute(node, Constants.CTOR_ARGS_ATTR);
+            attrs = core.getValidAttributeNames(node);
+
             layers[names[i]] = {};
-            layers[names[i]].args = attrs
-                .filter(isArgument)
-                .sort(sortByIndex);
+            if (ctorData) {
+                ctorArgs = ctorData.split(',')
+                    .map(attr => prepAttribute(core, node, attr));
+
+                // Get the constructor args
+                layers[names[i]].args = ctorArgs;
+            } else {
+                layers[names[i]].args = [];
+            }
 
             layers[names[i]].setters = {};
-            setters = attrs.filter(isSetter);
+            setters = attrs
+                .map(attr => prepAttribute(core, node, attr))
+                .filter(isSetter);
             for (var j = setters.length; j--;) {
                 layers[names[i]].setters[setters[j].name] = setters[j];
             }
@@ -54,7 +59,7 @@ define([
     };
 
     // When provided with the META, create the given LayerDict object
-    //  - Sort (and filter) by argindex
+    //  - Filter out the ctor args (in order)
     //  - add name attribute to schema
     //  - store this array under the META name
 

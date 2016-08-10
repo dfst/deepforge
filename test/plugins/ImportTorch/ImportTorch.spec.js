@@ -60,7 +60,7 @@ describe('ImportTorch', function () {
                 checker = new GraphChecker({
                     core: core,
                     ignore: {
-                        attributes: []
+                        attributes: ['ctor_arg_order']
                     }
                 });
                 return project.createBranch('test', commitHash);

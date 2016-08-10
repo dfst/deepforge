@@ -93,7 +93,10 @@
     ],
     "setters": {},
     "types": {
-      "start": "nn.Module"
+      "start": "nn.Module",
+      "transfer": "nn.Module",
+      "feedback": "nn.Module",
+      "input": "nn.Module"
     },
     "defaults": {},
     "type": "RNN"

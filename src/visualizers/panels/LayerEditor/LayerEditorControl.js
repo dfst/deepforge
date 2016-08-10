@@ -2,9 +2,11 @@
 /*jshint browser: true*/
 
 define([
-    'panels/TextEditor/TextEditorControl'
+    'panels/TextEditor/TextEditorControl',
+    'deepforge/Constants'
 ], function (
-    TextEditorControl
+    TextEditorControl,
+    Constants
 ) {
 
     'use strict';
@@ -75,9 +77,11 @@ define([
         _.difference(currentAttrs, attributes)
             .forEach(attr => this._client.removeAttributeSchema(id, attr));
 
-        attributes.forEach((attr, i) =>
-            this._client.setAttributeSchema(id, attr, {type: 'string', argindex: i}));
+        attributes.forEach(attr =>
+            this._client.setAttributeSchema(id, attr, {type: 'string'}));
 
+        this._logger.debug(`Setting ctor args to ${attributes.join(',')}`);
+        this._client.setAttributes(id, Constants.CTOR_ARGS_ATTR, attributes.join(','));
         this._client.completeTransaction();
     };
 

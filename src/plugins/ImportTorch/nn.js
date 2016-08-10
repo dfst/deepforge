@@ -7,7 +7,7 @@ define([
 ], function(
     createLayerDict,
     assert,
-    luajs
+    lua
 ) {
     'use strict';
 
@@ -19,7 +19,8 @@ define([
             LayerDict = createLayerDict(core, META),
             helpers = context.__helpers,
             oldSet = helpers.__set,
-            isSetting = false;
+            isSetting = false,
+            connsFrom = {};
 
         // Override the helper's '__set' method to detect
         // if the code is in the middle of a "set".
@@ -29,24 +30,57 @@ define([
             isSetting = false;
         };
 
+        var allConnectedTo = function(current) {
+            var connectedIds = {},
+                node,
+                id;
+
+            while (current.length) {
+                node = current.shift();
+                id = core.getGuid(node);
+                if (connectedIds[id]) {
+                    continue;
+                }
+
+                connectedIds[id] = node;
+                if (connsFrom[id]) {
+                    current = current.concat(connsFrom[id]);
+                }
+            }
+            // Return an array of all things connected to the
+            // given node
+            return Object.keys(connectedIds).map(key => connectedIds[key]);
+        };
+
         var connect = function(src, dst) {
-            var conn = core.createNode({
+            var conn,
+                id;
+
+            conn = core.createNode({
                 parent: parent,
                 base: META.Connection
             });
             core.setPointer(conn, 'src', src);
             core.setPointer(conn, 'dst', dst);
+            // Record this
+            id = core.getGuid(src);
+            if (!connsFrom[id]) {
+                connsFrom[id] = [];
+            }
+            connsFrom[id].push(conn, dst);
         };
 
         // nn drawing library
         var Layer = function(base, attrs, args) {
             this._base = base;
             this._attrs = attrs;
+
             for (var i = 0; i < attrs.length; i++) {
                 this[attrs[i].name] = args[i];
             }
 
             // inputs/outputs used for being added to containers
+            this._values = args;
             this._cachedNode = null;
             this._inputs = [this._node()];
             this._outputs = [this._node()];
@@ -55,6 +89,10 @@ define([
         Layer.prototype._node = function() {
             var name,
                 node,
+                nodes,
+                cntr,
+                layer,
+                cntrName,
                 value;
 
             if (this._cachedNode) {
@@ -70,16 +108,40 @@ define([
 
             for (var i = this._attrs.length; i--;) {
                 name = this._attrs[i].name;
-                value = this[name]; 
-                if ((typeof value) === 'object') {
-                    // special lua.js object
-                    value = value.valueOf();
-                }
+                value = this._values[i];
 
-                // TODO: Update this to check if inferred and the value matches
-                // our inferred value. If so, skip it
-                if (value !== undefined/*&& !this._attrs[i].infer*/) {
-                    core.setAttribute(node, name, value);
+                if (value instanceof lua.types.LuaTable) {
+                    layer = value.get('_node');
+                    if (layer) {  // layer arg!
+                        // add all the inputs, outputs (and connected elements) to
+                        // be in an "Architecture" node in the current node
+                        cntr = core.createNode({
+                            base: META.Architecture,
+                            parent: node
+                        });
+                        cntrName = `${name} (${this._base})`;
+                        logger.debug(`Naming layer arg ${cntrName}`);
+                        core.setAttribute(cntr, 'name', cntrName);
+                        // Move all connecting elements of the value to 
+                        // the cntr
+                        nodes = allConnectedTo(layer._inputs.concat(layer._outputs));
+                        for (var j = nodes.length; j--;) {
+                            core.moveNode(nodes[j], cntr);
+                        }
+                        core.setPointer(node, name, cntr);
+                        logger.debug(`Moving ${nodes.length} to ${name}(${this._base})`);
+                    } else {  // Something like {1, 2, 3}
+                        logger.warn(`No support for tables as args yet... ${value}`);
+                    }
+                } else {  // attribute value
+                    if ((typeof value) === 'object') {
+                        // special lua.js object
+                        value = value.valueOf();
+                    }
+                    if (value !== undefined) {
+                        logger.debug(`Setting ${name} to ${value} (${this._base})`);
+                        core.setAttribute(node, name, value);
+                    }
                 }
             }
 
@@ -197,9 +259,9 @@ define([
         };
 
         var CreateLayer = function(type) {
-            var res = luajs.newContext()._G,
+            var res = lua.newContext()._G,
                 attrs = [].slice.call(arguments, 1),
-                ltGet = luajs.types.LuaTable.prototype.get,
+                ltGet = lua.types.LuaTable.prototype.get,
                 setters = [],
                 args = [],
                 node;
@@ -253,7 +315,7 @@ define([
             }
 
             // TODO: Create the nn object
-            var nn = luajs.newContext()._G,
+            var nn = lua.newContext()._G,
                 names = Object.keys(LayerDict);
 
             for (var i = names.length; i--;) {
