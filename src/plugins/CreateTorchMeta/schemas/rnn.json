@@ -4,7 +4,7 @@
     "baseType": "Identity",
     "setters": {},
     "defaults": {},
-    "type": "Recurrent"
+    "type": "RNN"
   },
   {
     "name": "FastLSTM",
@@ -18,11 +18,15 @@
       "affine"
     ],
     "setters": {},
+    "types": {
+      "eps": "number",
+      "momentum": "number"
+    },
     "defaults": {
       "momentum": 0.1,
       "eps": 0.1
     },
-    "type": "Recurrent"
+    "type": "RNN"
   },
   {
     "name": "LSTM",
@@ -34,10 +38,13 @@
       "cell2gate"
     ],
     "setters": {},
+    "types": {
+      "rho": "number"
+    },
     "defaults": {
       "rho": 9999
     },
-    "type": "Recurrent"
+    "type": "RNN"
   },
   {
     "name": "LinearNoBias",
@@ -47,6 +54,7 @@
       "outputSize"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Simple"
   },
@@ -58,8 +66,9 @@
       "nOutput"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
-    "type": "Recurrent"
+    "type": "RNN"
   },
   {
     "name": "NormStabilizer",
@@ -69,7 +78,25 @@
     ],
     "setters": {},
     "defaults": {},
-    "type": "Recurrent"
+    "type": "RNN"
+  },
+  {
+    "name": "Recurrent",
+    "baseType": "AbstractRecurrent",
+    "params": [
+      "start",
+      "input",
+      "feedback",
+      "transfer",
+      "rho",
+      "merge"
+    ],
+    "setters": {},
+    "types": {
+      "start": "nn.Module"
+    },
+    "defaults": {},
+    "type": "RNN"
   },
   {
     "name": "SAdd",
@@ -79,8 +106,9 @@
       "negate"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
-    "type": "Recurrent"
+    "type": "RNN"
   },
   {
     "name": "SeqBRNN",
@@ -91,8 +119,9 @@
       "batchFirst"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
-    "type": "Recurrent"
+    "type": "RNN"
   },
   {
     "name": "SeqGRU",
@@ -102,8 +131,9 @@
       "outputSize"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
-    "type": "Recurrent"
+    "type": "RNN"
   },
   {
     "name": "SeqLSTM",
@@ -114,8 +144,9 @@
       "outputsize"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
-    "type": "Recurrent"
+    "type": "RNN"
   },
   {
     "name": "SeqLSTMP",
@@ -126,8 +157,9 @@
       "outputsize"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
-    "type": "Recurrent"
+    "type": "RNN"
   },
   {
     "name": "SeqReverseSequence",
@@ -136,7 +168,8 @@
       "dim"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
-    "type": "Recurrent"
+    "type": "RNN"
   }
 ]

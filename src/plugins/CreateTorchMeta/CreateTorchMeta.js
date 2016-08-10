@@ -129,11 +129,15 @@ define([
         categories.forEach(cat => {
             content[cat]
                 .forEach(layer => {
-                    var name = layer.name;
+                    var name = layer.name,
+                        node;
 
-                    nodes[name] = this.createMetaNode(name, nodes[cat], cat, layer);
+                    node = this.createMetaNode(name, nodes[cat], cat, layer);
                     // Make the node non-abstract
-                    this.core.setRegistry(nodes[name], 'isAbstract', false);
+                    if (node) {
+                        this.core.setRegistry(node, 'isAbstract', false);
+                        nodes[name] = node;
+                    }
                 });
         });
 
@@ -200,6 +204,25 @@ define([
         return typeof txt === 'boolean' || (txt === 'false' || txt === 'true');
     };
 
+    var LUA_TO_GME = {
+        boolean: 'boolean',
+        number: 'float',
+        string: 'string'
+    };
+
+    var hasLayerInput = layer => {
+        var attrs = layer.params,
+            type;
+            
+        for (var i = attrs.length; i--;) {
+            type = layer.types[attrs[i]];
+            if (type && type.substring(0, 3) === 'nn.') {
+                return true;
+            }
+        }
+        return false;
+    };
+
     CreateTorchMeta.prototype.createMetaNode = function (name, base, tabName, layer) {
         var node = this.META[name],
             nodeId = node && this.core.getPath(node),
@@ -207,6 +230,8 @@ define([
             position = this.getPositionFor(name, tabName),
             setters = {},
             defaults = {},
+            types = {},
+            type,
             attrs,
             desc;
 
@@ -214,12 +239,17 @@ define([
             attrs = layer.params;
             setters = layer.setters;
             defaults = layer.defaults;
+            types = layer.types || types;
         }
         if (!tabId) {
             this.logger.error(`No meta sheet for ${tabName}`);
         }
 
         if (!node) {
+            if (layer && hasLayerInput(layer)) {  // skip layers w/ layer inputs for now
+                this.logger.warn(`${name} has layer argument (currently unsupported). Skipping...`);
+                return;
+            }
             // Create a node
             node = this.core.createNode({
                 parent: this.META.Language,
@@ -277,6 +307,10 @@ define([
                 desc = {};
                 desc.argindex = index;
                 defVal = defaults.hasOwnProperty(name) ? defaults[name] : '';
+                type = LUA_TO_GME[types[name]];
+                if (type) {
+                    desc.type = type;
+                }
                 this.addAttribute(name, node, desc, defVal);
             });
 

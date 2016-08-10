@@ -4,6 +4,7 @@
     "baseType": "Module",
     "params": [],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Simple"
   },
@@ -14,6 +15,7 @@
       "sizeAverage"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Criterion"
   },
@@ -25,6 +27,7 @@
       "scalar"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Simple"
   },
@@ -36,6 +39,7 @@
       "ip"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Simple"
   },
@@ -47,6 +51,7 @@
       "sizeAverage"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Criterion"
   },
@@ -73,6 +78,7 @@
       "bias"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Misc"
   },
@@ -83,6 +89,7 @@
       "ip"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Misc"
   },
@@ -91,6 +98,7 @@
     "baseType": "Module",
     "params": [],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Misc"
   },
@@ -101,6 +109,7 @@
       "params"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Simple"
   },
@@ -109,6 +118,7 @@
     "baseType": "Module",
     "params": [],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Misc"
   },
@@ -117,6 +127,7 @@
     "baseType": "Module",
     "params": [],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Misc"
   },
@@ -128,6 +139,7 @@
       "max_value"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Misc"
   },
@@ -139,6 +151,7 @@
       "sizeAverage"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Criterion"
   },
@@ -149,6 +162,7 @@
       "nClasses"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Criterion"
   },
@@ -159,6 +173,7 @@
       "dimension"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Containers"
   },
@@ -167,6 +182,7 @@
     "baseType": "Container",
     "params": [],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Misc"
   },
@@ -188,6 +204,7 @@
       "dontCast"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Simple"
   },
@@ -199,6 +216,7 @@
       "outputSize"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Misc"
   },
@@ -207,6 +225,7 @@
     "baseType": "Module",
     "params": [],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Misc"
   },
@@ -217,6 +236,7 @@
       "margin"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Criterion"
   },
@@ -227,6 +247,7 @@
       "criterion"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Criterion"
   },
@@ -237,6 +258,7 @@
       "weights"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Criterion"
   },
@@ -255,6 +277,7 @@
     "baseType": "Criterion",
     "params": [],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Criterion"
   },
@@ -263,6 +286,7 @@
     "baseType": "Module",
     "params": [],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Misc"
   },
@@ -275,6 +299,9 @@
       "inplace"
     ],
     "setters": {},
+    "types": {
+      "p": "number"
+    },
     "defaults": {
       "p": 0.5
     },
@@ -288,6 +315,10 @@
       "inplace"
     ],
     "setters": {},
+    "types": {
+      "alpha": "number",
+      "inplace": "boolean"
+    },
     "defaults": {
       "inplace": false,
       "alpha": 1
@@ -302,6 +333,7 @@
       "outputSize"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Simple"
   },
@@ -318,6 +350,7 @@
     "baseType": "Module",
     "params": [],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Misc"
   },
@@ -336,6 +369,9 @@
       "lam"
     ],
     "setters": {},
+    "types": {
+      "lam": "number"
+    },
     "defaults": {
       "lam": 0.5
     },
@@ -349,6 +385,9 @@
       "max_value"
     ],
     "setters": {},
+    "types": {
+      "max_value": "number"
+    },
     "defaults": {
       "max_value": 1
     },
@@ -361,6 +400,9 @@
       "margin"
     ],
     "setters": {},
+    "types": {
+      "margin": "number"
+    },
     "defaults": {
       "margin": 1
     },
@@ -381,6 +423,7 @@
       "dimension"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Misc"
   },
@@ -392,6 +435,7 @@
       "nInputDims"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Misc"
   },
@@ -400,6 +444,7 @@
     "baseType": "Criterion",
     "params": [],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Misc"
   },
@@ -410,6 +455,7 @@
       "margin"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Criterion"
   },
@@ -422,6 +468,9 @@
       "provideOutput"
     ],
     "setters": {},
+    "types": {
+      "sizeAverage": "boolean"
+    },
     "defaults": {
       "sizeAverage": false
     },
@@ -435,6 +484,9 @@
       "ip"
     ],
     "setters": {},
+    "types": {
+      "ip": "boolean"
+    },
     "defaults": {
       "ip": false
     },
@@ -449,6 +501,7 @@
       "bias"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Simple"
   },
@@ -459,6 +512,7 @@
       "inputSize"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Misc"
   },
@@ -508,7 +562,12 @@
         }
       }
     },
-    "defaults": {},
+    "types": {
+      "paddingValue": "number"
+    },
+    "defaults": {
+      "paddingValue": 0
+    },
     "type": "Convolution"
   },
   {
@@ -519,6 +578,10 @@
       "transB"
     ],
     "setters": {},
+    "types": {
+      "transA": "boolean",
+      "transB": "boolean"
+    },
     "defaults": {
       "transB": false,
       "transA": false
@@ -532,6 +595,7 @@
       "sizeAverage"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Criterion"
   },
@@ -542,6 +606,9 @@
       "trans"
     ],
     "setters": {},
+    "types": {
+      "trans": "boolean"
+    },
     "defaults": {
       "trans": false
     },
@@ -554,6 +621,9 @@
       "margin"
     ],
     "setters": {},
+    "types": {
+      "margin": "number"
+    },
     "defaults": {
       "margin": 1
     },
@@ -566,6 +636,7 @@
       "margin"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Criterion"
   },
@@ -574,6 +645,7 @@
     "baseType": "Module",
     "params": [],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Misc"
   },
@@ -585,6 +657,7 @@
       "nInputDims"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Simple"
   },
@@ -596,6 +669,7 @@
       "nInputDims"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Simple"
   },
@@ -607,6 +681,7 @@
       "nInputDims"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Simple"
   },
@@ -617,6 +692,7 @@
       "dim"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Misc"
   },
@@ -625,6 +701,7 @@
     "baseType": "Module",
     "params": [],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Simple"
   },
@@ -636,6 +713,7 @@
       "ip"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Simple"
   },
@@ -644,6 +722,7 @@
     "baseType": "Criterion",
     "params": [],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Criterion"
   },
@@ -652,6 +731,7 @@
     "baseType": "Criterion",
     "params": [],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Criterion"
   },
@@ -662,6 +742,7 @@
       "weights"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Criterion"
   },
@@ -674,6 +755,9 @@
       "margin"
     ],
     "setters": {},
+    "types": {
+      "margin": "number"
+    },
     "defaults": {
       "margin": 1
     },
@@ -688,6 +772,9 @@
       "length"
     ],
     "setters": {},
+    "types": {
+      "length": "number"
+    },
     "defaults": {
       "length": 1
     },
@@ -701,6 +788,9 @@
       "length"
     ],
     "setters": {},
+    "types": {
+      "length": "number"
+    },
     "defaults": {
       "length": 1
     },
@@ -714,6 +804,9 @@
       "eps"
     ],
     "setters": {},
+    "types": {
+      "eps": "number"
+    },
     "defaults": {
       "eps": 1e-10
     },
@@ -726,6 +819,7 @@
       "nOutputPlane"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Transfer"
   },
@@ -740,6 +834,10 @@
       "index"
     ],
     "setters": {},
+    "types": {
+      "value": "number",
+      "index": "number"
+    },
     "defaults": {
       "index": 1,
       "value": 0
@@ -753,6 +851,7 @@
       "p"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Misc"
   },
@@ -764,6 +863,7 @@
       "outputDimension"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Misc"
   },
@@ -774,6 +874,7 @@
       "repeatTarget"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Criterion"
   },
@@ -782,6 +883,7 @@
     "baseType": "Container",
     "params": [],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Misc"
   },
@@ -794,6 +896,7 @@
       "bias"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Misc"
   },
@@ -804,6 +907,7 @@
       "p"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Simple"
   },
@@ -816,6 +920,9 @@
       "ip"
     ],
     "setters": {},
+    "types": {
+      "ip": "boolean"
+    },
     "defaults": {
       "ip": false
     },
@@ -828,6 +935,7 @@
       "p"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Transfer"
   },
@@ -840,6 +948,9 @@
       "ndim"
     ],
     "setters": {},
+    "types": {
+      "dim": "number"
+    },
     "defaults": {
       "dim": 1
     },
@@ -852,6 +963,7 @@
       "params"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Simple"
   },
@@ -863,6 +975,7 @@
       "index"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Simple"
   },
@@ -873,6 +986,7 @@
       "index"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Misc"
   },
@@ -891,6 +1005,7 @@
       "sizeAverage"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Criterion"
   },
@@ -899,6 +1014,7 @@
     "baseType": "Criterion",
     "params": [],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Criterion"
   },
@@ -925,6 +1041,9 @@
       "beta"
     ],
     "setters": {},
+    "types": {
+      "beta": "number"
+    },
     "defaults": {
       "beta": 1
     },
@@ -937,6 +1056,9 @@
       "lam"
     ],
     "setters": {},
+    "types": {
+      "lam": "number"
+    },
     "defaults": {
       "lam": 0.5
     },
@@ -959,6 +1081,9 @@
       "doGradInput"
     ],
     "setters": {},
+    "types": {
+      "doGradInput": "boolean"
+    },
     "defaults": {
       "doGradInput": false
     },
@@ -972,6 +1097,7 @@
       "H"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Convolution"
   },
@@ -1002,13 +1128,18 @@
         }
       }
     },
+    "types": {
+      "dW": "number",
+      "dH": "number",
+      "padW": "number",
+      "padH": "number"
+    },
     "defaults": {
       "padH": 0,
       "padW": 0,
       "dH": 1,
       "dW": 1,
-      "count_include_pad": true,
-      "ceil_mode": false
+      "count_include_pad": true
     },
     "type": "Convolution"
   },
@@ -1035,6 +1166,9 @@
       "thresval"
     ],
     "setters": {},
+    "types": {
+      "nInputPlane": "number"
+    },
     "defaults": {
       "nInputPlane": 1
     },
@@ -1054,6 +1188,9 @@
       "padH"
     ],
     "setters": {},
+    "types": {
+      "padW": "number"
+    },
     "defaults": {
       "padW": 0
     },
@@ -1075,6 +1212,9 @@
       "padH"
     ],
     "setters": {},
+    "types": {
+      "padW": "number"
+    },
     "defaults": {
       "padW": 0
     },
@@ -1094,6 +1234,9 @@
       "padH"
     ],
     "setters": {},
+    "types": {
+      "padW": "number"
+    },
     "defaults": {
       "padW": 0
     },
@@ -1110,6 +1253,7 @@
       "dH"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Convolution"
   },
@@ -1123,6 +1267,11 @@
       "k"
     ],
     "setters": {},
+    "types": {
+      "alpha": "number",
+      "beta": "number",
+      "k": "number"
+    },
     "defaults": {
       "k": 1,
       "beta": 0.75,
@@ -1140,6 +1289,9 @@
       "thresval"
     ],
     "setters": {},
+    "types": {
+      "nInputPlane": "number"
+    },
     "defaults": {
       "nInputPlane": 1
     },
@@ -1152,6 +1304,9 @@
       "p"
     ],
     "setters": {},
+    "types": {
+      "p": "number"
+    },
     "defaults": {
       "p": 0.5
     },
@@ -1167,6 +1322,7 @@
       "arg2"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Convolution"
   },
@@ -1186,6 +1342,12 @@
       "adjH"
     ],
     "setters": {},
+    "types": {
+      "padW": "number",
+      "padH": "number",
+      "adjW": "number",
+      "adjH": "number"
+    },
     "defaults": {
       "adjH": 0,
       "adjW": 0,
@@ -1205,6 +1367,7 @@
       "dH"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Convolution"
   },
@@ -1220,6 +1383,7 @@
       "dH"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Convolution"
   },
@@ -1243,10 +1407,13 @@
         }
       }
     },
+    "types": {
+      "padW": "number",
+      "padH": "number"
+    },
     "defaults": {
       "padH": 0,
-      "padW": 0,
-      "ceil_mode": false
+      "padW": 0
     },
     "type": "Convolution"
   },
@@ -1257,6 +1424,9 @@
       "poolingModule"
     ],
     "setters": {},
+    "types": {
+      "poolingModule": "nn.SpatialMaxPooling"
+    },
     "defaults": {},
     "type": "Convolution"
   },
@@ -1270,6 +1440,7 @@
       "pad_b"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Convolution"
   },
@@ -1283,6 +1454,7 @@
       "pad_b"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Convolution"
   },
@@ -1305,6 +1477,7 @@
       "dH"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Convolution"
   },
@@ -1316,6 +1489,9 @@
       "kernel"
     ],
     "setters": {},
+    "types": {
+      "nInputPlane": "number"
+    },
     "defaults": {
       "nInputPlane": 1
     },
@@ -1328,6 +1504,7 @@
       "scale"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Convolution"
   },
@@ -1341,6 +1518,7 @@
       "pad_b"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Convolution"
   },
@@ -1352,6 +1530,7 @@
       "nInputDims"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Misc"
   },
@@ -1362,6 +1541,9 @@
       "b"
     ],
     "setters": {},
+    "types": {
+      "b": "number"
+    },
     "defaults": {
       "b": 0
     },
@@ -1374,6 +1556,7 @@
       "args"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Simple"
   },
@@ -1390,6 +1573,7 @@
         "setterFn": "setNumInputDims"
       }
     },
+    "types": {},
     "defaults": {},
     "type": "Misc"
   },
@@ -1402,6 +1586,10 @@
       "sizeAverage"
     ],
     "setters": {},
+    "types": {
+      "dimension": "number",
+      "sizeAverage": "boolean"
+    },
     "defaults": {
       "sizeAverage": false,
       "dimension": 1
@@ -1421,6 +1609,7 @@
     "baseType": "Module",
     "params": [],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Misc"
   },
@@ -1434,6 +1623,7 @@
       "dW"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Convolution"
   },
@@ -1445,6 +1635,7 @@
       "dW"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Convolution"
   },
@@ -1457,6 +1648,7 @@
       "dW"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Convolution"
   },
@@ -1469,6 +1661,7 @@
       "ip"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Transfer"
   },
@@ -1479,6 +1672,7 @@
       "params"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Misc"
   },
@@ -1495,6 +1689,7 @@
         "setterFn": "setNumInputDims"
       }
     },
+    "types": {},
     "defaults": {},
     "type": "Misc"
   },
@@ -1510,9 +1705,8 @@
         "setterFn": "setNumInputDims"
       }
     },
-    "defaults": {
-      "numInputDims": null
-    },
+    "types": {},
+    "defaults": {},
     "type": "Simple"
   },
   {
@@ -1527,6 +1721,7 @@
       "dH"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Convolution"
   },
@@ -1560,6 +1755,9 @@
       "padH"
     ],
     "setters": {},
+    "types": {
+      "padT": "number"
+    },
     "defaults": {
       "padT": 0
     },
@@ -1572,6 +1770,9 @@
       "p"
     ],
     "setters": {},
+    "types": {
+      "p": "number"
+    },
     "defaults": {
       "p": 0.5
     },
@@ -1597,6 +1798,14 @@
       "adjH"
     ],
     "setters": {},
+    "types": {
+      "padW": "number",
+      "padH": "number",
+      "padT": "number",
+      "adjW": "number",
+      "adjH": "number",
+      "adjT": "number"
+    },
     "defaults": {
       "adjH": 0,
       "adjW": 0,
@@ -1630,11 +1839,15 @@
         }
       }
     },
+    "types": {
+      "padT": "number",
+      "padW": "number",
+      "padH": "number"
+    },
     "defaults": {
       "padH": 0,
       "padW": 0,
-      "padT": 0,
-      "ceil_mode": false
+      "padT": 0
     },
     "type": "Convolution"
   },
@@ -1645,6 +1858,9 @@
       "poolingModule"
     ],
     "setters": {},
+    "types": {
+      "poolingModule": "nn.VolumetricMaxPooling"
+    },
     "defaults": {},
     "type": "Convolution"
   },
@@ -1656,6 +1872,7 @@
       "outputSize"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Simple"
   },
@@ -1666,6 +1883,7 @@
       "w"
     ],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Criterion"
   }

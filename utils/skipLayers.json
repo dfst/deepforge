@@ -8,7 +8,6 @@
     "MaskZero",
     "MaskZeroCriterion",
     "Recurrence",
-    "Recurrent",
     "RecurrentAttention",
     "Recursor",
     "Repeater",
