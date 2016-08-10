@@ -20,6 +20,8 @@ Next, start deepforge with `deepforge start`!
 
 Finally, navigate to [http://localhost:8888](http://localhost:8888) to start using DeepForge! For more, detailed instructions, check out the [wiki](https://github.com/dfst/deepforge/wiki/Installation-Guide).
 
+Also, be sure to check out the other available features of the `deepforge` cli; it can be used to update, manage your torch installation, uninstall deepforge and run individual components!
+
 ## Interested in contributing?
 Contributions are welcome! Either fork the project and submit some PR's or shoot me an email about getting more involved!
 
