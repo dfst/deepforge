@@ -83,17 +83,20 @@ define([
 
             // Check if it is a line
             if (desc.id !== this._currentNodeId) {
-                var points = (node.getAttribute('points') || '').split(';')
-                    .map(pair => {
-                        var nums = pair.split(','),
-                            x = parseFloat(nums[0]),
-                            y = parseFloat(nums[1]);
+                var rawPoints = node.getAttribute('points') || '',
+                    points = rawPoints.split(';')
+                        .filter(data => !!data)  // remove any ''
+                        .map(pair => {
+                            var nums = pair.split(','),
+                                x = parseFloat(nums[0]),
+                                y = parseFloat(nums[1]);
 
-                        return {
-                            x: x,
-                            y:y
-                        };
-                    });
+                            return {
+                                x: x,
+                                y:y
+                            };
+                        });
+
                 desc.type = 'line';
                 desc.points = points;
             }
