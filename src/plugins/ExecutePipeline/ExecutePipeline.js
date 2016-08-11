@@ -104,9 +104,11 @@ define([
             // If starting with a pipeline, we will create an Execution first
             startPromise = this.createExecution(this.activeNode)
                 .then(execNode => {
+                    this.logger.debug(`Finished creating execution "${this.core.getAttribute(execNode, 'name')}"`);
                     this.activeNode = execNode;
                 });
         } else if (this.core.isTypeOf(this.activeNode, this.META.Execution)) {
+            this.logger.debug('Restarting execution');
             startPromise = Q();
         } else {
             return callback('Current node is not a Pipeline or Execution!', this.result);
@@ -122,9 +124,12 @@ define([
                 .filter(n => this.core.getParent(n) === this.activeNode);
 
             this.pipelineName = this.core.getAttribute(this.activeNode, 'name');
+            this.logger.debug(`Loaded subtree of ${this.pipelineName}. About to build cache`);
             this.buildCache(subtree);
+            this.logger.debug('Parsing execution for job inter-dependencies');
             this.parsePipeline(children);  // record deps, etc
 
+            this.logger.debug('Clearing old results');
             return this.clearResults();
         })
         .then(() => this.executePipeline())

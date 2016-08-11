@@ -95,28 +95,40 @@ define([
 
         return this.getExecutionDir()
             .then(execDir => {
+                var execDirId = this.core.getPath(execDir),
+                    execTypeId = this.core.getPath(this.META.Execution),
+                    basename;
 
+                this.logger.debug(`Creating execution node in ${execDirId} (type is ${execTypeId})`);
                 tgtNode = this.core.createNode({
                     base: this.META.Execution,
                     parent: execDir
                 });
 
                 // Get a unique name
-                return this.getUniqueExecName(name + '_execution');
+                basename = name + '_execution';
+                this.logger.debug(`About to get a unique name starting w/ ${basename}`);
+                return this.getUniqueExecName(basename);
             })
             .then(execName => {
-                var isSnapshot = !this.getCurrentConfig().debug;
+                var isSnapshot = !this.getCurrentConfig().debug,
+                    originName = this.core.getAttribute(this.activeNode, 'name'),
+                    oId = this.core.getPath(this.activeNode),
+                    tgtId = this.core.getPath(tgtNode);
 
-                this.logger.debug(`Creating execution ${execName}`);
+                this.logger.debug(`Configuring execution attributes (${execName})`);
 
                 // Set all the metadata for the new execution
                 this.core.setAttribute(tgtNode, 'name', execName);
                 this.core.setAttribute(tgtNode, 'snapshot', isSnapshot);
                 this.core.setAttribute(tgtNode, 'tagname', execName);
                 this.core.setAttribute(tgtNode, 'createdAt', Date.now());
+                this.logger.debug(`Setting origin pipeline to ${originName} (${oId})`);
                 this.core.setPointer(tgtNode, 'origin', this.activeNode);
+                this.logger.debug(`Adding ${tgtId} to execution list of ${originName} (${oId})`);
                 this.core.addMember(this.activeNode, 'executions', tgtNode);
 
+                this.logger.debug(`Creating tag "${execName}"`);
                 return this.project.createTag(
                     execName,
                     this.currentHash
@@ -124,10 +136,13 @@ define([
             })
             .then(() => this.core.loadChildren(node))
             .then(children => {
+                var execName = this.core.getAttribute(tgtNode, 'name');
+
                 if (!children.length) {
                     this.logger.warn('No children in pipeline. Will proceed anyway');
                 }
 
+                this.logger.debug(`Copying operations to "${execName}"`);
                 return this.copyOperations(children, tgtNode);
             })
             .then(copiedPairs => {
@@ -138,6 +153,7 @@ define([
                     .filter(pair => this.core.isTypeOf(pair[0], this.META.Operation));
 
                 // Create a mapping of old names to new names
+                this.logger.debug('Creating mapping of old->new');
                 return Q.all(opTuples.map(pair =>
                         // Add the input/output mappings to the dataMapping
                         this.addDataToMap(originals[pair[1]], pair[0], dataMapping)
@@ -145,8 +161,11 @@ define([
                 );
             })
             .then(() => {  // datamapping is set!
+                this.logger.debug('Updating references...');
                 this.updateReferences(copies, dataMapping);
+                this.logger.debug('Placing operations in Job containers');
                 this.boxOperations(opTuples.map(o => o[0]), tgtNode);
+                this.logger.debug('Finished! Saving...');
                 return this.save(`Created execution from ${name}`);
             })
             .then(() => tgtNode);  // return tgtNode
@@ -164,6 +183,7 @@ define([
         return this.project.getTags()
             .then(tags => {
                 Object.keys(tags).forEach(name => taken[name] = true);
+                this.logger.debug(`Existing tags are ${Object.keys(tags).join(',')}`);
 
                 // Get the other executions
                 return this.getExecutionDir();
@@ -174,11 +194,13 @@ define([
             })
             .then(execs => {
                 var names = execs.map(exec => this.core.getAttribute(exec, 'name'));
+                this.logger.debug(`Existing names are ${names.join(',')}`);
                 names.forEach(name => taken[name] = true);
 
                 while (taken[name]) {
                     name = basename + '_' + (i++);
                 }
+                this.logger.debug(`Unique name is "${name}"`);
                 return name;
             });
     };
@@ -187,6 +209,7 @@ define([
         var snapshot = !this.getCurrentConfig().debug;
 
         if (snapshot) {
+            this.logger.debug('Execution is a snapshot -> severing the inheritance');
             return Q.all(nodes.map(node => {
                 if (this.isLocalOperation(node) ||
                     this.isMetaTypeOf(node, this.META.Transporter)) {
@@ -201,6 +224,7 @@ define([
             );
 
         } else if (nodes.length) {
+            this.logger.debug('Execution is not a snapshot -> doing a simple copy');
             var copies = this.core.copyNodes(nodes, dst);
             return nodes.map((node, i) => [node, copies[i]]);
         }
