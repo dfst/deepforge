@@ -37,6 +37,7 @@ function _Line:__init(graphId, name, opts)
 end
 
 function _Line:add(x, y)
+    assert(type(x) == "number" and type(y) == "number", "adding point (" .. tostring(x) .. ", " .. tostring(y) .. ") to " .. self.name .. " failed: expected (number, number)")
     deepforge._cmd('<%= GRAPH_PLOT %>', self.id, x, y)
 end
 
