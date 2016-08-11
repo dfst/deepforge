@@ -52,6 +52,13 @@ define([
         }
     };
 
+    ExecutionIndexControl.prototype.clearTerritory = function () {
+        if (this._territoryId) {
+            this._client.removeUI(this._territoryId);
+            this._territoryId = null;
+        }
+    };
+
     /* * * * * * * * Visualizer content update callbacks * * * * * * * */
     ExecutionIndexControl.prototype.selectedObjectChanged = function (nodeId) {
         var self = this;
@@ -59,10 +66,7 @@ define([
         self._logger.debug('activeObject nodeId \'' + nodeId + '\'');
 
         // Remove current territory patterns
-        if (self._currentNodeId) {
-            self._client.removeUI(self._territoryId);
-        }
-
+        self.clearTerritory();
         self._currentNodeId = nodeId;
 
         if (typeof self._currentNodeId === 'string') {
@@ -261,6 +265,7 @@ define([
     /* * * * * * * * Visualizer life cycle callbacks * * * * * * * */
     ExecutionIndexControl.prototype.destroy = function () {
         this._detachClientEventListeners();
+        this.clearTerritory();
     };
 
     ExecutionIndexControl.prototype._attachClientEventListeners = function () {
