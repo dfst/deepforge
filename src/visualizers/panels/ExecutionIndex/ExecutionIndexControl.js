@@ -132,6 +132,7 @@ define([
             desc;
 
         points = node.getAttribute('points').split(';')
+            .filter(data => !!data)  // remove any ''
             .map(pair => {
                 var nums = pair.split(',').map(num => parseFloat(num));
                 return {
