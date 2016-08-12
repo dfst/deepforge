@@ -38,9 +38,14 @@ define([
 
     SelectionManager.prototype._isCustomLayer = function() {
         var node = client.getNode(this.selectedItem.id),
-            attrNames = node.getAttributeNames();
+            attrNames;
 
-        return attrNames.indexOf('code') !== -1;
+        if (node) {
+            attrNames = node.getAttributeNames();
+            return attrNames.indexOf('code') !== -1;
+        }
+
+        return false;
     };
 
     return SelectionManager;

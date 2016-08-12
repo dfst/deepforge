@@ -3,9 +3,13 @@
 
 define([
     'panels/TextEditor/TextEditorControl',
+    'deepforge/LayerParser',
+    'deepforge/utils',
     'deepforge/Constants'
 ], function (
     TextEditorControl,
+    LayerParser,
+    utils,
     Constants
 ) {
 
@@ -52,64 +56,120 @@ define([
     };
 
     LayerEditorControl.prototype.saveTextFor = function (id, text) {
-        var r = /:__init\((.*)\)/,
-            match = text.match(r),
-            textMatch = match && match[1],
-            node = this._client.getNode(id),
+        var node = this._client.getNode(id),
             currentAttrs = node.getValidAttributeNames(),
-            attributes = [],
-            msg = `Updating layer definition for ${node.getAttribute('name')}`;
+            types,
+            ctorAttrs = [],
+            setterNames,
+            schema,
+            currentPtrs = {base: true},
+            type,
+            ptr,
+            msg = `Updating layer definition for ${node.getAttribute('name')}`,
+            i;
 
-        // Parse the attributes and update the node!
-        if (textMatch) {
-            attributes = textMatch.split(',')
-                .map(arg => arg.replace(/\s+/g, ''))  // trim white space
-                .filter(arg => !!arg);  // no empty strings!
+        // Parse the ctorAttrs and update the node!
+        var layerSchema = LayerParser.parse(text);
+        if (!layerSchema) {
+            return TextEditorControl.prototype.saveTextFor.call(this, id, text);
+        }
+
+        if (layerSchema.params) {
+            ctorAttrs = layerSchema.params;
         } else {  // inheriting __init
-            attributes = this.getInheritedAttrs(text);
+            ctorAttrs = this.getInheritedAttrs(layerSchema);
         }
 
         this._client.startTransaction(msg);
 
         TextEditorControl.prototype.saveTextFor.call(this, id, text);
+        this._client.setAttributes(id, 'name', layerSchema.name);
+
+        this._logger.debug(`Setting ctor args to ${ctorAttrs.join(',')}`);
+        this._client.setAttributes(id, Constants.CTOR_ARGS_ATTR, ctorAttrs.join(','));
+
+        types = layerSchema.types || {};
+        schema = this.getPointerMeta();
+
+        // Handle pointer types
+        for (i = ctorAttrs.length; i--;) {
+            type = types[ctorAttrs[i]];
+            if (type && type.substring(0, 3) === 'nn.') {
+                ptr = ctorAttrs.splice(i, 1)[0];
+                this._client.setPointerMeta(id, ptr, schema);
+                currentPtrs[ptr] = true;
+            }
+        }
+
+        // Remove old pointers
+        node.getPointerNames().filter(ptr => !currentPtrs[ptr])
+            .forEach(ptr => this._client.deleteMetaPointer(id, ptr));
 
         // Remove old attributes
-        _.difference(currentAttrs, attributes)
+        setterNames = Object.keys(layerSchema.setters);
+        _.difference(currentAttrs, ctorAttrs, setterNames)
             .forEach(attr => this._client.removeAttributeSchema(id, attr));
 
-        attributes.forEach(attr =>
-            this._client.setAttributeSchema(id, attr, {type: 'string'}));
+        // Add setters
+        for (i = setterNames.length; i--;) {
+            schema = utils.getSetterSchema(setterNames[i], layerSchema.setters, layerSchema.defaults);
+            // Get setter attr schema
+            if (schema.hasOwnProperty('default')) {
+                this._client.setAttributes(id, setterNames[i], schema.default);
+                delete schema.default;
+            }
+            if (types[setterNames[i]]) {
+                schema.type = types[setterNames[i]];
+            }
+            this._client.setAttributeSchema(id, setterNames[i], schema);
+        }
 
-        this._logger.debug(`Setting ctor args to ${attributes.join(',')}`);
-        this._client.setAttributes(id, Constants.CTOR_ARGS_ATTR, attributes.join(','));
+        ctorAttrs.forEach(attr =>
+            this._client.setAttributeSchema(id, attr, {
+                type: types[attr] || 'string'
+            })
+        );
+
         this._client.completeTransaction();
     };
 
-    LayerEditorControl.prototype.getInheritedAttrs = function (code) {
+    LayerEditorControl.prototype.getPointerMeta = function () {
+        var archNode = this._client.getAllMetaNodes()
+            .find(node => node.getAttribute('name') === 'Architecture');
+
+        if (!archNode) {
+            throw 'Could not find the "Architecture" node!';
+        }
+
+        return {
+            min: 1,
+            max: 1,
+            items: [
+                {
+                    id: archNode.getId(),
+                    max: 1
+                }
+            ]
+        };
+    };
+
+    LayerEditorControl.prototype.getInheritedAttrs = function (layerSchema) {
         // Get the base class
-        var r = /torch.class\((.*)\)/,
-            match = code.match(r),
-            baseType,
-            metanode,
-            textMatch = match && match[1];
+        var metanode;
 
-        if (textMatch) {
-            baseType = textMatch.split(',')[1]
-                .replace(/^\s*['"]nn\./, '')
-                .replace(/['"]\s*$/, '');
-
-            this._logger.debug(`inheriting the attributes from ${baseType}`);
+        if (layerSchema.baseType) {
+            this._logger.debug(`inheriting the attributes from ${layerSchema.baseType}`);
 
             // Get the meta node and valid attribute names
             metanode = this._client.getAllMetaNodes()
-                .find(node => node.getAttribute('name') === baseType);
+                .find(node => node.getAttribute('name') === layerSchema.baseType);
 
             if (metanode) {
                 return metanode.getValidAttributeNames()
                     .filter(attr => attr !== 'name');
             } else {
                 // Check if the type is known by torch
-                this._logger.warn(`Unknown base type ${baseType}. Assuming attributes are []`);
+                this._logger.warn(`Unknown base type ${layerSchema.baseType}. Assuming attributes are []`);
             }
         }
         return [];

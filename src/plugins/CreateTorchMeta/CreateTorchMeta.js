@@ -5,6 +5,7 @@ define([
     'plugin/PluginBase',
     'common/util/guid',
     'deepforge/Constants',
+    'deepforge/utils',
     'js/RegistryKeys',
     'js/Panels/MetaEditor/MetaEditorConstants',
     'underscore',
@@ -14,6 +15,7 @@ define([
     PluginBase,
     generateGuid,
     Constants,
+    utils,
     REGISTRY_KEYS,
     META_CONSTANTS,
     _,
@@ -203,10 +205,6 @@ define([
     };
 
     // Some helper methods w/ attribute handling
-    var isBoolean = txt => {
-        return typeof txt === 'boolean' || (txt === 'false' || txt === 'true');
-    };
-
     var LUA_TO_GME = {
         boolean: 'boolean',
         number: 'float',
@@ -319,26 +317,9 @@ define([
 
             // Add the setters to the meta
             Object.keys(setters).forEach(name => {
-                var values;
-                desc = setters[name];
-                defVal = defaults.hasOwnProperty(name) ? defaults[name] : '';
-                if (desc.setterType === 'const') {
-                    values = Object.keys(desc.setterFn);
-                    desc.isEnum = true;
-                    desc.enumValues = values;
-                    if (values.every(isBoolean)) {
-                        if (!defaults.hasOwnProperty(name) && values.length === 1) {
-                            // there is only a method to toggle the flag to true/false, 
-                            // then the default must be the other one
-                            defVal = values[0] === 'true' ? false : true;
-                        }
-
-                        if (isBoolean(defVal)) {
-                            this.logger.debug(`setting ${name} to boolean`);
-                            desc.type = 'boolean';
-                        }
-                    }
-                }
+                desc = utils.getSetterSchema(name, setters, defaults);
+                defVal = desc.default;
+                delete desc.default;
                 this.addAttribute(name, node, desc, defVal);
             });
         }

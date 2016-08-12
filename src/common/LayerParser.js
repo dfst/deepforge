@@ -83,20 +83,6 @@
 
     //////////////////////// Setters END //////////////////////// 
 
-    var findInitParams = function(ast){
-        // Find '__init' function
-        var params;
-        ast.block.stats.forEach(function(block){
-            if(block.key && block.key.val == '__init' && block.func){
-                params = block.func.args;
-                if(params.length === 0 && block.func.varargs){
-                    params[0] = 'params';
-                }
-            }
-        });
-        return params;
-    };
-
     var isInitFn = function(node, className) {
         if (node.type === 'stat.method' && node.self.val === className) {
             return node.key.val === '__init';
@@ -280,7 +266,7 @@
         var torchClassArgs,  // args for `torch.class(...)`
             name = '',
             baseType,
-            params = [],
+            params,
             setters = {},
             defaults = {},
             paramDefs,
@@ -297,7 +283,6 @@
                     name = torchClassArgs[0];
                     if(name !== ''){
                         name = name.replace('nn.', '');
-                        params = findInitParams(ast);
                         if (torchClassArgs.length > 1) {
                             baseType = torchClassArgs[1].replace('nn.', '');
                         }
@@ -335,12 +320,18 @@
                 paramDefs = getAttrsAndVals(curr);
                 attrDefs = getClassAttrDefs(curr);
                 types = inferParamTypes(curr, paramDefs);
+
+                // get ctor args
+                params = curr.func.args;
+                if(params.length === 0 && curr.func.varargs){
+                    params.push('params');
+                }
             }
 
         })(ast);
 
         // Get the defaults for the params from defs
-        if (paramDefs) {
+        if (paramDefs && params) {
             copyNodeValues(params, paramDefs, defaults);
         }
 
@@ -377,8 +368,12 @@
     };
 
     LayerParser.parse = function(text) {
-        var ast = luajs.parser.parse(text);
-        return findTorchClass(ast);
+        try {
+            var ast = luajs.parser.parse(text);
+            return findTorchClass(ast);
+        } catch (e) {
+            return null;
+        }
     };
 
     return LayerParser;
