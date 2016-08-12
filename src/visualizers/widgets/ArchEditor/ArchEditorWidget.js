@@ -5,6 +5,7 @@ define([
     'deepforge/globals',
     'widgets/EasyDAG/EasyDAGWidget',
     'widgets/EasyDAG/AddNodeDialog',
+    './SelectionManager',
     './Layer',
     'q',
     'underscore',
@@ -13,6 +14,7 @@ define([
     DeepForge,
     EasyDAGWidget,
     AddNodeDialog,
+    SelectionManager,
     Layer,
     Q,
     _
@@ -31,6 +33,7 @@ define([
     _.extend(ArchEditorWidget.prototype, EasyDAGWidget.prototype);
 
     ArchEditorWidget.prototype.ItemClass = Layer;
+    ArchEditorWidget.prototype.SelectionManager = SelectionManager;
 
     ArchEditorWidget.prototype.onCreateInitialNode = function() {
         var nodes = this.getValidInitialNodes();
