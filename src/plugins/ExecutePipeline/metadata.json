@@ -11,6 +11,14 @@
   "disableBrowserSideExecution": true,
   "configStructure": [
       {
+          "name": "name",
+          "displayName": "Execution name",
+          "description": "Optional name for this execution instance",
+          "value": "",
+          "valueType": "string",
+          "readOnly": false
+      },
+      {
           "name": "debug",
           "displayName": "Debug Mode",
           "description": "Allow for operation editing after creation",

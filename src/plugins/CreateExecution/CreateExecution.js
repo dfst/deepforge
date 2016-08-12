@@ -79,7 +79,11 @@ define([
     };
 
     CreateExecution.prototype.createExecution = function (node) {
-        var name = this.core.getAttribute(node, 'name');
+        // Get the user supplied name
+        var name = this.core.getAttribute(node, 'name'),
+            config = this.getCurrentConfig(),
+            basename = config.name || (name + '_execution');
+            
 
         // Given a pipeline, copy all the operations to a custom job
         //   - Copy the operations 
@@ -96,8 +100,7 @@ define([
         return this.getExecutionDir()
             .then(execDir => {
                 var execDirId = this.core.getPath(execDir),
-                    execTypeId = this.core.getPath(this.META.Execution),
-                    basename;
+                    execTypeId = this.core.getPath(this.META.Execution);
 
                 this.logger.debug(`Creating execution node in ${execDirId} (type is ${execTypeId})`);
                 tgtNode = this.core.createNode({
@@ -106,7 +109,6 @@ define([
                 });
 
                 // Get a unique name
-                basename = name + '_execution';
                 this.logger.debug(`About to get a unique name starting w/ ${basename}`);
                 return this.getUniqueExecName(basename);
             })
