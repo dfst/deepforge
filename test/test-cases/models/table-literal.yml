@@ -1,0 +1,13 @@
+- type: Transpose
+  id: /O/c
+  next:
+    - /O/j
+  attributes:
+    ctor_arg_order: params
+    params: '{1, 2}'
+- type: Transpose
+  id: /O/j
+  next: []
+  attributes:
+    ctor_arg_order: params
+    params: '{{1, 2}, {3, 4}}'

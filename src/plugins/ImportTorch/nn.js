@@ -30,6 +30,17 @@ define([
             isSetting = false;
         };
 
+        var stringify = function(table) {
+            var strings = table.array.map(val => {
+                if (val instanceof lua.types.LuaTable) {
+                    return stringify(val);
+                } else {
+                    return val;
+                }
+            });
+            return '{' + strings.join(', ') + '}';
+        };
+
         var allConnectedTo = function(current) {
             var connectedIds = {},
                 node,
@@ -131,7 +142,9 @@ define([
                         core.setPointer(node, name, cntr);
                         logger.debug(`Moving ${nodes.length} to ${name}(${this._base})`);
                     } else {  // Something like {1, 2, 3}
-                        logger.warn(`No support for tables as args yet... ${value}`);
+                        value = stringify(value);
+                        logger.debug(`Setting ${name} to ${value} (${this._base})`);
+                        core.setAttribute(node, name, value);
                     }
                 } else {  // attribute value
                     if ((typeof value) === 'object') {
