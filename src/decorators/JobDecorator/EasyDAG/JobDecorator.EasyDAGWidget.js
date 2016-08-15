@@ -3,9 +3,13 @@
 
 define([
     'decorators/EllipseDecorator/EasyDAG/EllipseDecorator.EasyDAGWidget',
+    './PointerField.RO',
+    './AttributeField.RO',
     'css!./JobDecorator.EasyDAGWidget.css'
 ], function (
-    EllipseDecorator
+    EllipseDecorator,
+    PointerField,
+    AttributeField
 ) {
 
     'use strict';
@@ -42,6 +46,8 @@ define([
     _.extend(JobDecorator.prototype, EllipseDecorator.prototype);
 
     JobDecorator.prototype.DECORATOR_ID = DECORATOR_ID;
+    JobDecorator.prototype.AttributeField = AttributeField;
+    JobDecorator.prototype.PointerField = PointerField;
 
     JobDecorator.prototype.getDisplayName = function() {
         return this._node.name;
@@ -50,10 +56,16 @@ define([
     JobDecorator.prototype.setAttributes = function() {
         EllipseDecorator.prototype.setAttributes.call(this);
         var attrs = this._node.attributes,
-            status = attrs.status && attrs.status.value;
+            status = attrs.status && attrs.status.value,
+            opAttrs = Object.keys(this._node.opAttributes);
 
         // Update the color based on the 'status' attr
         this.color = COLORS[status] || COLORS.fail;
+
+        // Set _attributes from opAttributes
+        for (var i = opAttrs.length; i--;) {
+            this._attributes[opAttrs[i]] = this._node.opAttributes[opAttrs[i]];
+        }
     };
 
     return JobDecorator;
