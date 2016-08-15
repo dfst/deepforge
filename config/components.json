@@ -12,7 +12,8 @@
         "LayerColors": {}
     },
     "BreadcrumbHeader": {
-        "pathRule": "history"
+        "pathRule": "history",
+        "cachePrefix": "deepforge-header"
     },
     "FloatingActionButton": {
         "hideOnEmpty": true

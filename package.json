@@ -24,7 +24,7 @@
     "rimraf": "^2.4.0",
     "webgme": "^2.0.0",
     "webgme-autoviz": "dfst/webgme-autoviz",
-    "webgme-breadcrumbheader": "^2.1.0",
+    "webgme-breadcrumbheader": "^2.1.1",
     "webgme-chflayout": "^2.0.0",
     "webgme-easydag": "dfst/webgme-easydag",
     "webgme-fab": "dfst/webgme-fab",
