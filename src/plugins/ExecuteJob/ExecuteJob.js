@@ -830,10 +830,17 @@ define([
                     return executor.getOutput(hash, currentLine, actualLine+1)
                         .then(outputLines => {
                             var stdout = this.core.getAttribute(job, 'stdout'),
-                                output = outputLines.map(o => o.output).join('');
+                                output = outputLines.map(o => o.output).join(''),
+                                last = stdout.lastIndexOf('\n'),
+                                lastLine;
 
                             // parse deepforge commands
-                            output = this.parseForMetadataCmds(job, output);
+                            if (last !== -1) {
+                                stdout = stdout.substring(0, last+1);
+                                lastLine = stdout.substring(last+1);
+                                output = lastLine + output;
+                            }
+                            output = this.processStdout(job, output, true);
 
                             if (output) {
                                 stdout += output;
@@ -875,7 +882,7 @@ define([
                         })
                         .then(stdout => {
                             // Parse the remaining code
-                            stdout = this.parseForMetadataCmds(job, stdout, true);
+                            stdout = this.processStdout(job, stdout);
                             this.core.setAttribute(job, 'stdout', stdout);
                             if (info.status !== 'SUCCESS') {
                                 // Download all files
@@ -978,10 +985,35 @@ define([
         LocalExecutor.prototype
     );
 
+    ExecuteJob.prototype.processStdout = function (job, text, continued) {
+        // resolve \r
+        var lines = text.split('\n'),
+            chars,
+            result,
+            i = 0;
+
+        for (var l = lines.length-1; l >= 0; l--) {
+            i = 0;
+            chars = lines[l].split('');
+            result = [];
+
+            for (var c = 0; c < chars.length; c++) {
+                if (chars[c] === '\r') {
+                    i = 0;
+                }
+                result[i] = chars[c];
+                i++;
+            }
+            lines[l] = result.join('');
+        }
+
+        // ... and metadata commands
+        return this.parseForMetadataCmds(job, lines, !continued);
+    };
+
     //////////////////////////// Metadata ////////////////////////////
-    ExecuteJob.prototype.parseForMetadataCmds = function (job, text, skip) {
+    ExecuteJob.prototype.parseForMetadataCmds = function (job, lines, skip) {
         var jobId = this.core.getPath(job),
-            lines = text.split('\n'),
             args,
             result = [],
             cmdCnt = 0,
