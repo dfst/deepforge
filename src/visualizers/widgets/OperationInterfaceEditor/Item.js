@@ -1,4 +1,4 @@
-/*globals define */
+/*globals define*/
 define([
     'widgets/EasyDAG/DAGItem',
     'underscore'
@@ -13,6 +13,7 @@ define([
         // Show the warnings
         this.$warning = null;
         this.updateWarnings();
+
     };
 
     _.extend(Item.prototype, DAGItem.prototype);
@@ -29,37 +30,54 @@ define([
         if (this.desc.used === false) {
             this.warn(msg, isInput ? 'bottom' : 'top');
         } else {
-            this.clearWarning();
+            this.clearNotification('$warning');
+        }
+
+        if (this.desc.isUnknown) {  // ptrs only
+            this.error('Unknown type! Click to set', 'bottom');
+        } else if (this.$error) {
+            // Set the baseName tooltip, if needed
+            this.clearNotification('$error');
+            this.decorator.enableTooltip(this.desc.baseName, 'dark');
         }
     };
 
     Item.prototype.warn = function(message, tipJoint) {
-        // Create a temporary div over the given svg element
-        if (this.$warning) {
-            this.clearWarning();
-        }
+        this.notify(message, '$warning', '#ffeb3b', 'standard', tipJoint);
+    };
 
-        this.decorator.highlight('#ffeb3b');
-        this.$warning = this.createTooltip(message, {
+    Item.prototype.error = function(message, tipJoint) {
+        this.notify(message, '$error', '#ef5350', 'alert', tipJoint);
+    };
+
+    Item.prototype.notify = function(message, varname, color, style, tipJoint) {
+        this.clearNotification(varname);
+
+        this.decorator.highlight(color);
+        this[varname] = this.createTooltip(message, {
             showIf: () => !this.isSelected(),
             tipJoint: tipJoint,
-            style: 'standard'
+            style: style
         });
     };
 
-    Item.prototype.clearWarning = function() {
-        if (this.$warning) {
-            this.destroyTooltip(this.$warning);
-            this.$warning = null;
+    Item.prototype.clearNotification = function(varname) {
+        if (this[varname]) {
+            this.destroyTooltip(this[varname]);
+            this[varname] = null;
         }
         this.decorator.unHighlight();
     };
-
 
     Item.prototype.onSelect = function() {
         DAGItem.prototype.onSelect.call(this);
         if (this.$warning) {
             this.$warning.hide();
+        }
+
+        // Add click listener to set type
+        if (this.desc.isUnknown) {
+            this.onSetRefClicked(this.desc.name);
         }
     };
 

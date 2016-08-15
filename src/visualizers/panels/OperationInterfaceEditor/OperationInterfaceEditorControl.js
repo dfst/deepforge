@@ -255,13 +255,23 @@ define([
     };
 
     OperationInterfaceEditorControl.prototype.getPtrDescriptor = function(name) {
-        var targetId = this._client.getPointerMeta(this._currentNodeId, name)
-                .items[0].id,
-            target = this._client.getNode(targetId),
-            decManager = this._client.decoratorManager,
-            Decorator = decManager.getDecoratorForWidget('OpIntPtrDecorator', 'EasyDAG'),
+        var Decorator = this._client.decoratorManager.getDecoratorForWidget('OpIntPtrDecorator', 'EasyDAG'),
             id = 'ptr_'+name,
-            used = this.isUsedInput(name);
+            used = this.isUsedInput(name),
+            ptrMeta = this._client.getPointerMeta(this._currentNodeId, name),
+            targetId,
+            target,
+            baseName;
+
+        if (ptrMeta.items.length === 0) {
+            // No known type
+            this._logger.error(`No known target type for "${name}" reference`);
+            baseName = null;
+        } else {
+            targetId = ptrMeta.items[0].id;
+            target = this._client.getNode(targetId);
+            baseName = target.getAttribute('name');
+        }
 
         if (used === null) {
             used = this._usage[id] !== undefined ? this._usage[id] : true;
@@ -270,7 +280,8 @@ define([
         return {
             id: id,
             isPointer: true,
-            baseName: target.getAttribute('name'),
+            baseName: baseName,
+            isUnknown: !baseName,
             Decorator: Decorator,
             used: used,
             attributes: {},

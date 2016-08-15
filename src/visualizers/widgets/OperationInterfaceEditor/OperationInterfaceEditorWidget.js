@@ -37,7 +37,7 @@ define([
         EasyDAG.prototype.setupItemCallbacks.call(this);
         // Add ptr rename callback
         this.ItemClass.prototype.changePtrName = (from, to) => this.changePtrName(from, to);
-
+        this.ItemClass.prototype.onSetRefClicked = OperationInterfaceEditorWidget.prototype.onSetRefClicked.bind(this);
     };
 
     OperationInterfaceEditorWidget.prototype.onAddItemSelected = function(selected, isInput) {
@@ -75,6 +75,25 @@ define([
     OperationInterfaceEditorWidget.prototype.onDeactivate = function() {
         EasyDAG.prototype.onDeactivate.call(this);
         this.active = true;  // keep refreshing the screen -> it is always visible
+    };
+
+    OperationInterfaceEditorWidget.prototype.onSetRefClicked = function(name) {
+        var refs = this.allValidReferences();
+
+        // Get all valid references
+        if (refs.length > 1) {
+            // Create the modal view with all possible subsequent nodes
+            var dialog = new AddNodeDialog();
+
+            dialog.show(null, refs);
+            dialog.onSelect = selected => {
+                if (selected) {
+                    this.setRefType(name, selected.node.id);
+                }
+            };
+        } else if (refs[0]) {
+            this.setRefType(name, refs[0].node.id);
+        }
     };
 
     OperationInterfaceEditorWidget.prototype.onAddRefClicked = function() {
