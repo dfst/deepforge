@@ -36,6 +36,10 @@ define([
     GenerateArchitecture.prototype = Object.create(PluginBase.prototype);
     GenerateArchitecture.prototype.constructor = GenerateArchitecture;
 
+    GenerateArchitecture.prototype.getTemplateSettings = function () {
+        return null;
+    };
+
     GenerateArchitecture.prototype.main = function () {
         this.addCustomLayersToMeta();
         this.LayerDict = createLayerDict(this.core, this.META);
