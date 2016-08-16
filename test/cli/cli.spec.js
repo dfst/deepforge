@@ -22,6 +22,9 @@ var childProcess = {
             return mocks.childProcess.execSync.apply(this, arguments);
         }
     },
+    spawnSync: function() {
+        return {};
+    },
     spawn: function() {
         if (mocks.childProcess.spawn) {
             mocks.childProcess.spawn.apply(this, arguments);
@@ -66,7 +69,7 @@ describe('cli', function() {
         afterEach(function() {
             callRegister.childProcess.execSync = [];
             mocks.childProcess.spawn = nop;
-            mocks.childProcess.execSync = cmd => '123';
+            mocks.childProcess.execSync = () => '123';
             mocks.rimraf.sync = nop;
             delete require.cache[require.resolve('../../bin/deepforge')];
             cli = require('../../bin/deepforge');
@@ -106,14 +109,11 @@ describe('cli', function() {
 
         it('should start local deepforge by default', function(done) {
             mocks.childProcess.spawn = (main, args) => {
-                console.log('spawning:', main);
-                console.log(args);
                 if (main === 'node') {
                     assert.notEqual(args[0].indexOf('start-local.js'), -1);
                     done();
                 }
             };
-            console.log('starting local...');
             cli('start');
         });
 
@@ -165,17 +165,20 @@ describe('cli', function() {
     describe('update', function() {
         it('should update deepforge w/ npm', function() {
             mocks.childProcess.spawn = (cmd, args) => {
-                assert.equal(cmd, 'npm');
-                assert.equal(args[0], 'install');
-                assert.notEqual(args.indexOf('deepforge'), -1);
-                assert.notEqual(args.indexOf('-g'), -1);
+                if (cmd === 'npm') {
+                    assert.equal(args[0], 'install');
+                    assert.notEqual(args.indexOf('deepforge'), -1);
+                    assert.notEqual(args.indexOf('-g'), -1);
+                }
             };
             cli('update');
         });
 
         it('should update deepforge from git if --git set w/ npm', function() {
             mocks.childProcess.spawn = (cmd, args) => {
-                assert.notEqual(args.indexOf('dfst/deepforge'), -1);
+                if (cmd === 'npm') {
+                    assert.notEqual(args.indexOf('dfst/deepforge'), -1);
+                }
             };
             cli('update --git');
         });

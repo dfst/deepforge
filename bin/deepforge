@@ -4,6 +4,7 @@ var Command = require('commander').Command,
     program = new Command(),
     childProcess = require('child_process'),
     rawSpawn = childProcess.spawn,
+    Q = require('q'),
     execSync = childProcess.execSync,
     path = require('path'),
     fs = require('fs'),
@@ -166,86 +167,66 @@ var startMongo = function(args, silent) {
         }
     });
 };
-var checkTorch = function() {
-    return new Promise(_checkTorch)
-        .catch(() => 'Torch installation failed');
+
+var hasTorch = function() {
+    var result = childProcess.spawnSync('th', ['--help']);
+    return !result.error;
 };
 
-var _checkTorch = function(resolve, reject) {
-    var result = childProcess.spawnSync('th', ['--help']),
-        tgtDir = p(config.torch.dir),
-        gcl = `git clone https://github.com/torch/distro.git ${tgtDir} --recursive`;
+var installTorch = function() {
+    var tgtDir = p(config.torch.dir),
+        args;
 
-    if (result.error) {
+    if (!hasTorch()) {
         // Try to install torch
         console.log(`Torch7 not found. Installing to ${tgtDir}...`);
+        args = `clone https://github.com/torch/distro.git ${tgtDir} --recursive`.split(' ');
 
-        spawnMany([gcl],
-            () => {
-                process.chdir(tgtDir);
-                spawnMany([
-                    'bash install-deps',
-                    './install.sh',
-                    'luarocks install rnn'
-                ], () => {
-                    storeConfig('torch.dir', tgtDir);
-                    resolve(true);
-                }, reject);
-            },
-            reject
-        );
+        return spawn('git', args)
+            .then(code => {
+                if (code !== 0) {
+                    if (code === 128) {
+                        console.error(`${tgtDir} is not empty. ` +
+                            'Please empty it or change the torch directory:\n' +
+                            '\n    deepforge config torch.dir NEW/TORCH/PATH\n');
+
+                    }
+
+                    throw `Torch install Failed with exit code ${code}`;
+                } else {  // continue installation
+                    process.chdir(tgtDir);
+                    return spawn('bash', ['install-deps'])
+                        .then(() => spawn('bash', ['install.sh']))
+                        .then(() => spawn('luarocks', ['install', 'rnn']))
+                        .then(() => {
+                            storeConfig('torch.dir', tgtDir);
+                        });
+                }
+            });
     } else {
-        resolve(false);
+        return Q();
     }
-};
-
-var spawnMany = function(cmds, succ, err) {
-    var rawCmd,
-        cmd,
-        args,
-        job;
-
-    if (cmds.length === 0) {
-        return succ();
-    }
-
-    rawCmd = cmds.shift();
-    args = rawCmd.split(' ');
-    cmd = args.shift();
-    job = rawSpawn(cmd, args);
-    job.stdout.on('data', data => process.stdout.write(data));
-    job.stderr.on('data', data => process.stderr.write(data));
-    job.on('close', code => {
-        if (code) {
-            console.log(`${rawCmd} failed w/ error code ${code}`);
-            err(code, rawCmd);
-        } else {
-            spawnMany(cmds, succ, err);
-        }
-    });
-
 };
 
 var spawn = function(cmd, args, opts) {
-    var promise,
+    var deferred = Q.defer(),
+        job,
         err;
 
     args = args || [];
-    promise = new Promise((resolve, reject) => {
-        var job = opts ? rawSpawn(cmd, args, opts) : rawSpawn(cmd, args);
-        job.stdout.on('data', data => process.stdout.write(data));
-        job.stderr.on('data', data => process.stderr.write(data));
-        job.on('close', code => {
-            if (err) {
-                reject(err);
-            } else {
-                resolve(code);
-            }
-        });
-        job.on('error', e => err = e);
+    job = opts ? rawSpawn(cmd, args, opts) : rawSpawn(cmd, args);
+    job.stdout.on('data', data => process.stdout.write(data));
+    job.stderr.on('data', data => process.stderr.write(data));
+    job.on('close', code => {
+        if (err) {
+            deferred.reject(err, code);
+        } else {
+            deferred.resolve(code);
+        }
     });
+    job.on('error', e => err = e);
 
-    return promise;
+    return deferred.promise;
 };
 
 program.command('start')
@@ -268,7 +249,7 @@ program.command('start')
         }
 
         if (args.worker) {
-            checkTorch().then(() => {
+            installTorch().then(() => {
                 main = path.join(__dirname, 'start-worker.js');
                 if (args.worker !== true) {
                     spawn('node', [main, args.worker]);
@@ -285,7 +266,9 @@ program.command('start')
         if (!args.server && !args.worker && !args.mongo) {
             // Starting everything
             checkMongo(args);
-            checkTorch().then(() => spawn('node', [main]));
+            installTorch().then(() => {
+                spawn('node', [main]);
+            });
         }
 
     });
@@ -330,34 +313,34 @@ program
 
         if (args.torch || !args.server) {
             // Update torch
-            checkTorch().then(justInstalled => {
-                if (!justInstalled) {
-                    // Upgrade torch
-                    console.log('Upgrading torch...');
-                    console.log(`Checking for torch in ${config.torch.dir}`);
-                    // Verify that torch is installed in the config's location
-                    if (!exists.sync(path.join(config.torch.dir, 'update.sh'))) {
-                        // config is incorrect!
-                        console.log('Could not find torch installation. Please update the deepforge config with:');
-                        console.log('');
-                        console.log('    deepforge config torch.dir ~/path/to/torch/install');
-                        console.log('');
-                        return;
-                    }
-
-                    spawn('bash', ['./update.sh'], {cwd: p(config.torch.dir)})
-                        .catch(err => console.log('Upgrade failed w/ error code: ' + err.code))
-                        .then(() => {
-                            console.log('About to update rnn package...');
-                            // Update rnn
-                            return spawn('luarocks', ['install', 'rnn']);
-                        })
-                        .then(() => {
-                            console.log('Upgrade successful!');
-                        })
-                        .catch(code => console.log('Upgrade failed w/ error code: ' + code));
+            if (hasTorch()) {
+                // Upgrade torch
+                console.log('Upgrading torch...');
+                console.log(`Checking for torch in ${config.torch.dir}`);
+                // Verify that torch is installed in the config's location
+                if (!exists.sync(path.join(config.torch.dir, 'update.sh'))) {
+                    // config is incorrect!
+                    console.log('Could not find torch installation. Please update the deepforge config with:');
+                    console.log('');
+                    console.log('    deepforge config torch.dir ~/path/to/torch/install');
+                    console.log('');
+                    return;
                 }
-            });
+
+                spawn('bash', ['./update.sh'], {cwd: p(config.torch.dir)})
+                    .catch(err => console.log('Upgrade failed w/ error code: ' + err.code))
+                    .then(() => {
+                        console.log('About to update rnn package...');
+                        // Update rnn
+                        return spawn('luarocks', ['install', 'rnn']);
+                    })
+                    .then(() => {
+                        console.log('Upgrade successful!');
+                    })
+                    .catch(code => console.log('Upgrade failed w/ error code: ' + code));
+            } else {
+                installTorch();
+            }
         }
     });
 
@@ -382,11 +365,9 @@ program
         }
 
         if (!opts.torch || opts.clean) {  // uninstall deepforge
-            spawnMany(
-                ['npm uninstall -g deepforge'],
-                () => console.log('deepforge has been uninstalled!'),
-                () => console.log('uninstall failed')
-            );
+            spawn('npm', ['uninstall', '-g', 'deepforge'])
+                .then(() => console.log('deepforge has been uninstalled!'))
+                .catch(() => console.log('uninstall failed'));
         }
     });
 
