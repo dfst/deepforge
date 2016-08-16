@@ -27,6 +27,7 @@ define([
         this._el.addClass('log-viewer');
         this.editor.setTheme('ace/theme/twilight');
         this.editor.setShowPrintMargin(false);
+        this.editor.renderer.setScrollMargin(0, 75);
 
         // Override the textlayer to add support for ansi colors
         this.customizeAce();

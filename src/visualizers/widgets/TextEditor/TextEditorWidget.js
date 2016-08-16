@@ -111,7 +111,8 @@ define([
             return;
         }
 
-        text = this.editor.getValue().replace(this.currentHeader + '\n', '');
+        text = this.editor.getValue()
+            .replace(this.currentHeader + '\n', '');
         if (typeof this.activeNode === 'string') {
             this.saveTextFor(this.activeNode, text);
         } else {
