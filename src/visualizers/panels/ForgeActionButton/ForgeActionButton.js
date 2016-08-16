@@ -1,14 +1,13 @@
-/*globals DeepForge, $, WebGMEGlobal, window, define, _ */
+/*globals DeepForge, $, window, define, _ */
 /*jshint browser: true*/
 
 define([
-    'panel/FloatingActionButton/styles/Materialize',
     'blob/BlobClient',
-    'executor/ExecutorClient',
     'js/Constants',
     'panel/FloatingActionButton/FloatingActionButton',
     'deepforge/viz/PipelineControl',
     'deepforge/viz/NodePrompter',
+    'deepforge/viz/Execute',
     './Actions',
     'widgets/EasyDAG/AddNodeDialog',
     'js/RegistryKeys',
@@ -17,13 +16,12 @@ define([
     'text!./PluginConfig.json',
     'deepforge/globals'
 ], function (
-    Materialize,
     BlobClient,
-    ExecutorClient,
     CONSTANTS,
     PluginButton,
     PipelineControl,
     NodePrompter,
+    Execute,
     ACTIONS,
     AddNodeDialog,
     REGISTRY_KEYS,
@@ -37,17 +35,14 @@ define([
     var ForgeActionButton= function (layoutManager, params) {
         PluginButton.call(this, layoutManager, params);
         this._pluginConfig = JSON.parse(PluginConfig);
-        this._executor = new ExecutorClient({
-            logger: this.logger.fork('ExecutorClient'),
-            serverPort: WebGMEGlobal.gmeConfig.server.port,
-            httpsecure: window.location.protocol === 'https:'
-        });
         this._client = this.client;
         this._actions = [];
         this._blobClient = new BlobClient({
             logger: this.logger.fork('BlobClient')
         });
 
+        Execute.call(this, this.client, this.logger);
+        this.initializeKeyListener();
         this.logger.debug('ctor finished');
     };
 
@@ -55,8 +50,45 @@ define([
     _.extend(
         ForgeActionButton.prototype,
         PluginButton.prototype,
+        Execute.prototype,
         PipelineControl.prototype
     );
+
+    ForgeActionButton.prototype.initializeKeyListener = function() {
+        // add key listener to parent?
+        this.oldOnKeyDown = document.body.onkeydown;
+        document.onkeydown = event => {
+            var keys = String.fromCharCode(event.which) || '',
+                names = Object.keys(this.buttons),
+                btn,
+                name;
+
+            // Simple button detection
+            if (event.which === 13) {
+                keys = 'enter';
+            }
+            if (event.shiftKey) {
+                keys = 'shift ' + keys;
+            }
+
+            for (var i = names.length; i--;) {
+                name = names[i];
+                btn = this.buttons[name];
+                if (btn.hotkey && btn.hotkey === keys) {
+                    btn.action.call(this, event);
+                }
+            }
+            if (this.oldOnKeyDown) {
+                this.oldOnKeyDown(event);
+            }
+        };
+    };
+
+    ForgeActionButton.prototype.destroy = function() {
+        PluginButton.prototype.destroy.call(this);
+        PipelineControl.prototype.destroy.call(this);
+        document.body.onclick = this.oldOnKeyDown;
+    };
 
     ForgeActionButton.prototype.findActionsFor = function(nodeId) {
         var node = this.client.getNode(nodeId),
@@ -328,75 +360,6 @@ define([
             this.client.delMoreNodes([nodeId]);
             this.client.completeTransaction(msg);
         }
-    };
-
-    ForgeActionButton.prototype.runExecutionPlugin = function(pluginId, useSecondary) {
-        var context = this.client.getCurrentPluginContext(pluginId),
-            name = this.client.getNode(this._currentNodeId).getAttribute('name'),
-            method;
-
-        context.managerConfig.namespace = 'pipeline';
-        method = useSecondary ? 'runBrowserPlugin' : 'runServerPlugin';
-        this.client[method](pluginId, context, (err, result) => {
-            var msg = err ? `${name} failed!` : `${name} executed successfully!`,
-                duration = err ? 4000 : 2000;
-
-            // Check if it was canceled - if so, show that type of message
-            if (result) {
-                msg = result.messages[0].message;
-                duration = 4000;
-            }
-
-            Materialize.toast(msg, duration);
-        });
-    };
-
-    ForgeActionButton.prototype.isRunning = function(node) {
-        var baseId,
-            base,
-            type;
-
-        node = node || this.client.getNode(this._currentNodeId);
-        baseId = node.getBaseId();
-        base = this.client.getNode(baseId);
-        type = base.getAttribute('name');
-
-        if (type === 'Execution') {
-            return node.getAttribute('status') === 'running';
-        } else if (type === 'Job') {
-            return this.isRunningJob(node);
-        }
-        return false;
-    };
-
-    ForgeActionButton.prototype.isRunningJob = function(job) {
-        var status = job.getAttribute('status');
-
-        return (status === 'running' || status === 'pending') &&
-            job.getAttribute('secret') && job.getAttribute('jobId');
-    };
-
-    ForgeActionButton.prototype.stopJob = function(job) {
-        var jobHash,
-            jobId,
-            secret;
-
-        job = job || this.client.getNode(this._currentNodeId);
-        jobId = job.getId();
-        jobHash = job.getAttribute('jobId');
-        secret = job.getAttribute('secret');
-        if (!jobHash || !secret) {
-            this.logger.error('Cannot stop job. Missing jobHash or secret');
-            return;
-        }
-
-        this.client.delAttributes(jobId, 'jobId');
-        this.client.delAttributes(jobId, 'secret');
-        this.client.setAttributes(jobId, 'status', 'canceled');
-
-        return this._executor.cancelJob(jobHash, secret)
-            .then(() => this.logger.info(`${jobHash} has been cancelled!`))
-            .fail(err => this.logger.error(`Job cancel failed: ${err}`));
     };
 
     return ForgeActionButton;

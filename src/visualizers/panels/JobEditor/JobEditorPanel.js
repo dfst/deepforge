@@ -68,6 +68,9 @@ define([
 
             // The OperationCodeEditor should receive the
             if (!this.readOnly) {
+                // Pass a reference to the panel
+                this._panels[0].control.currentJobId = nodeId;
+
                 // Get the operation base node id and pass it to OpCodeEditor selObjChanged
                 if (this._territoryId) {
                     this._client.removeUI(this._territoryId);

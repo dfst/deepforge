@@ -17,6 +17,15 @@ define([
     OperationCodeEditorWidget = function (logger, container) {
         TextEditorWidget.call(this, logger, container);
         this.lineOffset = 0;
+        // Add the shift-enter command
+        this.editor.commands.addCommand({
+            name: 'executeOrStopJob',
+            bindKey: {
+                mac: 'Shift-Enter',
+                win: 'Shift-Enter'
+            },
+            exec: () => this.executeOrStopJob()
+        });
     };
 
     _.extend(OperationCodeEditorWidget.prototype, TextEditorWidget.prototype);

@@ -4,11 +4,13 @@
 define([
     'panels/TextEditor/TextEditorControl',
     'deepforge/viz/OperationControl',
+    'deepforge/viz/Execute',
     'deepforge/Constants',
     'underscore'
 ], function (
     TextEditorControl,
     OperationControl,
+    Execute,
     CONSTANTS,
     _
 ) {
@@ -20,17 +22,21 @@ define([
     OperationCodeEditorControl = function (options) {
         options.attributeName = 'code';
         TextEditorControl.call(this, options);
+        Execute.call(this, this._client, this._logger);
+        this.currentJobId = null;
     };
 
     _.extend(
         OperationCodeEditorControl.prototype,
         OperationControl.prototype,
-        TextEditorControl.prototype
+        TextEditorControl.prototype,
+        Execute.prototype
     );
 
     OperationCodeEditorControl.prototype._initWidgetEventHandlers = function () {
         TextEditorControl.prototype._initWidgetEventHandlers.call(this);
         this._widget.getOperationAttributes = this.getOperationAttributes.bind(this);
+        this._widget.executeOrStopJob = this.executeOrStopJob.bind(this);
     };
 
     OperationCodeEditorControl.prototype.TERRITORY_RULE = {children: 3};
@@ -76,6 +82,19 @@ define([
         }
 
         return attrs;
+    };
+
+    OperationCodeEditorControl.prototype.executeOrStopJob = function () {
+        var job;
+
+        if (this.currentJobId) {  // Only if nested in a job
+            job = this._client.getNode(this.currentJobId);
+            if (this.isRunning(job)) {
+                this.stopJob(job);
+            } else {
+                this.executeJob(job);
+            }
+        }
     };
 
     // Line offset handling

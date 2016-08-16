@@ -138,18 +138,19 @@ define([
         }
     ];
 
-    var makeRestartButton = function(name, pluginId) {
+    var makeRestartButton = function(name, pluginId, hotkeys) {
         return {
             name: 'Restart ' + name,
             icon: 'replay',
             priority: 1000,
             color: 'red',
+            hotkey: hotkeys && 'shift enter',
             filter: function() {
                 // Only show if stopped!
                 return !this.isRunning();
             },
             action: function(event) {
-                this.runExecutionPlugin(pluginId, event.shiftKey);
+                this.runExecutionPlugin(pluginId, {useSecondary: event.shiftKey});
             }
         };
     };
@@ -239,12 +240,13 @@ define([
             }
         ],
         Execution: [
-            makeRestartButton('Execution', 'ExecutePipeline'),
+            makeRestartButton('Execution', 'ExecutePipeline', true),
             // Stop execution button
             {
                 name: 'Stop Running Execution',
                 icon: 'stop',
                 priority: 1001,
+                hotkey: 'shift enter',
                 filter: function() {
                     return this.isRunning();
                 },
