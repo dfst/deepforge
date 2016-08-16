@@ -987,11 +987,13 @@ define([
 
     ExecuteJob.prototype.processStdout = function (job, text, continued) {
         // resolve \r
-        var lines = text.split('\n'),
+        var lines,
             chars,
             result,
             i = 0;
 
+        text = text.replace(/\u0000/g, '');
+        lines = text.split('\n');
         for (var l = lines.length-1; l >= 0; l--) {
             i = 0;
             chars = lines[l].split('');
