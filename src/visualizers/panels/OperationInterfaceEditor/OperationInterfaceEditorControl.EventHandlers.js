@@ -145,7 +145,11 @@ define([
 
         if (!meta) {
             this.logger.debug(`No meta found for ${ref}. Creating a new reference to ${targetId}`);
-            return this.addRefTo(targetId);
+            meta = {
+                min: 1,
+                max: 1,
+                items: []
+            };
         }
 
         meta.items.push({

@@ -263,7 +263,7 @@ define([
             target,
             baseName;
 
-        if (ptrMeta.items.length === 0) {
+        if (!ptrMeta || ptrMeta.items.length === 0) {
             // No known type
             this._logger.error(`No known target type for "${name}" reference`);
             baseName = null;
