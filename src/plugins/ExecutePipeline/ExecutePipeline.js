@@ -181,6 +181,8 @@ define([
         this.core.setAttribute(this.activeNode, 'status', 'running');
         this.logger.info('Setting all jobs status to "pending"');
         this.logger.debug(`Making a commit from ${this.currentHash}`);
+        this.core.setAttribute(this.activeNode, 'startTime', Date.now());
+        this.core.delAttribute(this.activeNode, 'endTime');
         return this.save(`Initializing ${this.pipelineName} for execution`);
     };
 
@@ -319,6 +321,7 @@ define([
         }
 
         this.logger.debug(`Pipeline "${name}" complete!`);
+        this.core.setAttribute(this.activeNode, 'endTime', Date.now());
         this.core.setAttribute(this.activeNode, 'status',
             (this.pipelineError ? 'failed' : (this.canceled ? 'canceled' : 'success')));
 

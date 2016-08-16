@@ -105,6 +105,8 @@ define([
                 desc.originTime = node.getAttribute('createdAt');
                 desc.originId = node.getPointer('origin').to;
                 desc.pipelineName = this._pipelineNames[desc.originId];
+                desc.startTime = node.getAttribute('startTime');
+                desc.endTime = node.getAttribute('endTime');
                 this._logger.debug(`Looking up pipeline name for ${desc.name}: ${desc.pipelineName}`);
 
                 // Create a territory for this origin and update it!

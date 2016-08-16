@@ -97,6 +97,8 @@ define([
 
     // Adding/Removing/Updating items
     ExecutionIndexWidget.prototype.addNode = function (desc) {
+        var isFirstNode = Object.keys(this.nodes).length === 0;
+
         if (desc.type === 'Execution') {
             // Add node to a table of nodes
             this.addExecLine(desc);
@@ -104,6 +106,10 @@ define([
         } else if (desc.type === 'line') {
             desc.type = 'line';
             this.lineGraph.addNode(desc);
+        }
+
+        if (isFirstNode) {
+            this.updateTimes();
         }
     };
 
@@ -120,6 +126,7 @@ define([
             fields,
             pipeline,
             name,
+            duration = $('<div>'),
             td;
 
         pipeline = $('<a>', {
@@ -133,7 +140,8 @@ define([
             checkBox,
             name,
             Utils.getDisplayTime(desc.originTime),
-            pipeline
+            pipeline,
+            duration
         ];
 
         for (var i = 0; i < fields.length; i++) {
@@ -152,11 +160,61 @@ define([
 
         this.nodes[desc.id] = {
             statusClass: statusClass,
+            desc: desc,
             $el: row,
             $checkbox: checkBox[0],
             $pipeline: pipeline,
+            $duration: duration,
             $name: name
         };
+        this.updateTime(desc.id, true);
+    };
+
+    ExecutionIndexWidget.prototype.getDurationText = function (duration) {
+        var hours,
+            min,
+            sec;
+
+        sec = duration/1000;
+        hours = Math.floor(sec/3600);
+        sec = sec%3600;
+        min = Math.floor(sec/60);
+        sec = Math.floor(sec%60);
+
+        return `${hours}:${min}:${sec}`;
+    };
+
+    ExecutionIndexWidget.prototype.updateTime = function (id, force) {
+        var desc = this.nodes[id].desc,
+            duration = 'unknown';
+
+        if (desc.status === 'running') {
+            if (desc.startTime) {
+                duration = this.getDurationText(Date.now() - desc.startTime);
+            }
+            this.nodes[id].$duration.text(duration);
+            return true;
+        } else if (force) {
+            if (desc.endTime && desc.startTime) {
+                duration = this.getDurationText(desc.endTime - desc.startTime);
+            }
+            this.nodes[id].$duration.text(duration);
+            return true;
+        }
+        return false;
+    };
+
+    ExecutionIndexWidget.prototype.updateTimes = function () {
+        var nodeIds = Object.keys(this.nodes),
+            updated = false;
+
+        for (var i = nodeIds.length; i--;) {
+            updated = this.updateTime(nodeIds[i]) || updated;
+        }
+        
+        if (updated) {  // if there are still nodes, call again!
+            setTimeout(this.updateTimes.bind(this), 1000);
+        }
     };
 
     ExecutionIndexWidget.prototype.removeNode = function (id) {
@@ -205,6 +263,7 @@ define([
             this._logger.debug(`setting execution ${desc.id} to ${desc.status}`);
 
             node.statusClass = Utils.ClassForJobStatus[desc.status];
+            node.desc = desc;
         } else if (desc.type === 'line') {
             this.lineGraph.updateNode(desc);
         }
