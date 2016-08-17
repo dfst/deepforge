@@ -181,8 +181,7 @@ define([
         ];
 
     var createNew = function(type, metasheetName) {
-        var parentId,
-            placeName = TYPE_TO_CONTAINER[type],
+        var placeName = TYPE_TO_CONTAINER[type],
             newId,
             baseId,
             msg = `Created new ${type + (metasheetName ? ' prototype' : '')}`;
@@ -192,19 +191,20 @@ define([
                 .getId();
 
         // Look up the parent container
-        parentId = DeepForge.places[placeName];
+        DeepForge.places[placeName]().then(parentId => {
 
-        client.startTransaction(msg);
-        newId = createNamedNode(baseId, parentId, !!metasheetName);
+            client.startTransaction(msg);
+            newId = createNamedNode(baseId, parentId, !!metasheetName);
 
-        if (metasheetName) {
-            addToMetaSheet(newId, metasheetName);
-        }
+            if (metasheetName) {
+                addToMetaSheet(newId, metasheetName);
+            }
 
-        client.completeTransaction();
+            client.completeTransaction();
 
-        WebGMEGlobal.State.registerActiveObject(newId);
-        return newId;
+            WebGMEGlobal.State.registerActiveObject(newId);
+            return newId;
+        });
     };
 
     var createCustomLayer = function(typeName) {
