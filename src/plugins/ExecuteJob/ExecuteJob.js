@@ -115,8 +115,25 @@ define([
                     msg = `"${name}" execution has forked to "${result.forkName}"`;
                     this.currentForkName = result.forkName;
                     this.sendNotification(msg);
+                } else if (result.status === STORAGE_CONSTANTS.MERGED) {
+                    this.logger.debug('Merged changes. About to update plugin nodes');
+                    return this.updateNodes();
                 }
             });
+    };
+
+    ExecuteJob.prototype.updateNodes = function () {
+        var activeId = this.core.getPath(this.activeNode);
+
+        return Q.ninvoke(this.project, 'loadObject', this.currentHash)
+            .then(commitObject => {
+                return this.core.loadRoot(commitObject.root);
+            })
+            .then(rootObject => {
+                this.rootNode = rootObject;
+                return this.core.loadByPath(rootObject,activeId);
+            })
+            .then(activeObject => this.activeNode = activeObject);
     };
 
     ExecuteJob.prototype.getConnections = function (nodes) {

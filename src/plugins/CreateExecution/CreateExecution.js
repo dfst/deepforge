@@ -88,9 +88,6 @@ define([
         // Given a pipeline, copy all the operations to a custom job
         //   - Copy the operations 
         //   - Wrap the operations in "Job" boxes which contain running info
-        //     - eg,
-        //       - 'debug' the given run (download all execution files)
-        //       - 'console' show console output (future feature)
         //   - Update the references
         var tgtNode,
             execName,
@@ -108,6 +105,7 @@ define([
                     base: this.META.Execution,
                     parent: execDir
                 });
+                this.logger.debug(`New execution created w/ id: ${this.core.getPath(tgtNode)}`);
 
                 // Get a unique name
                 this.logger.debug(`About to get a unique name starting w/ ${basename}`);
@@ -189,6 +187,7 @@ define([
             })
             .then(execDir => {
                 var cIds = this.core.getChildrenPaths(execDir);
+                this.logger.debug(`Current executions are ${cIds.join(', ')}`);
                 return Q.all(cIds.map(id => this.core.loadByPath(this.rootNode, id)));
             })
             .then(execs => {

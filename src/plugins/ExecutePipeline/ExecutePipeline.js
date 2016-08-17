@@ -149,10 +149,31 @@ define([
                     this.currentForkName = result.forkName;
                     msg = `"${this.pipelineName}" execution has forked to "${result.forkName}"`;
                     this.sendNotification(msg);
+                } else if (result.status === STORAGE_CONSTANTS.MERGED) {
+                    this.logger.debug('Merged changes. About to update plugin nodes');
+                    return this.updateNodes();
                 }
+
             });
 
         return this._currentSave;
+    };
+
+    ExecutePipeline.prototype.updateNodes = function () {
+        var result = ExecuteJob.prototype.updateNodes.call(this);
+        return result.then(() => this.updateCache());
+    };
+
+    ExecutePipeline.prototype.updateCache = function () {
+        var nodeIds = Object.keys(this.nodes),
+            nodes = nodeIds.map(id => this.core.loadByPath(this.rootNode, id));
+
+        this.logger.debug(`updating node cache (${nodeIds.length} nodes)`);
+        return Q.all(nodes).then(nodes => {
+            for (var i = nodeIds.length; i--;) {
+                this.nodes[nodeIds[i]] = nodes[i];
+            }
+        });
     };
 
     ExecutePipeline.prototype.isInputData = function (node) {
