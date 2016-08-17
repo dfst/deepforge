@@ -73,7 +73,8 @@ define([
         this.control.toggleEmbeddedPanel = this.toggleEmbeddedPanel.bind(this);
         var selectedObjectChanged = this.control.selectedObjectChanged;
         this.control.selectedObjectChanged = id => {
-            this.embeddedPanel.control.selectedObjectChanged(this.getEmbeddedNode());
+            this.getEmbeddedNode().then(nodeId =>
+                this.embeddedPanel.control.selectedObjectChanged(nodeId));
             selectedObjectChanged.call(this.control, id);
         };
 
@@ -82,7 +83,11 @@ define([
     };
 
     MainViewPanel.prototype.getEmbeddedNode = function() {
-        return this.nextPanelIndex === 1 ? DeepForge.places.MyPipelines : DeepForge.places.MyExecutions;
+        if (this.nextPanelIndex === 1) {
+            return DeepForge.places.MyPipelines();
+        } else {
+            return DeepForge.places.MyExecutions();
+        }
     };
 
     MainViewPanel.prototype.toggleEmbeddedPanel = function (silent) {
@@ -102,7 +107,8 @@ define([
         // Call on Resize and selectedObjectChanged
         this.onResize(this.width, this.height);
         if (!silent) {
-            this.embeddedPanel.control.selectedObjectChanged(this.getEmbeddedNode());
+            this.getEmbeddedNode().then(nodeId =>
+                this.embeddedPanel.control.selectedObjectChanged(nodeId));
         }
     };
 

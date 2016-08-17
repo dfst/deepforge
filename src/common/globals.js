@@ -4,12 +4,14 @@ define([
     'panel/FloatingActionButton/styles/Materialize',
     'js/RegistryKeys',
     'js/Panels/MetaEditor/MetaEditorConstants',
-    'js/Constants'
+    'js/Constants',
+    'q'
 ], function(
     Materialize,
     REGISTRY_KEYS,
     META_CONSTANTS,
-    CONSTANTS
+    CONSTANTS,
+    Q
 ) {
     var DeepForge = {},
         placesTerritoryId,
@@ -92,6 +94,7 @@ define([
     };
 
     //////////////////// DeepForge places detection ////////////////////
+    DeepForge.places = {};
     var TYPE_TO_CONTAINER = {
         
         Architecture: 'MyArchitectures',
@@ -107,10 +110,29 @@ define([
     PLACE_NAMES = Object.keys(TYPE_TO_CONTAINER).map(key => TYPE_TO_CONTAINER[key]);
 
     // Add DeepForge directories
+    var placePromises = {},
+        setPlaceId = {},
+        firstProject = true;
+
+    var getPlace = function(name) {
+        return placePromises[name];
+    };
+
+    var initializePlaces = function() {
+        PLACE_NAMES.forEach(name => {
+            var deferred = Q.defer();
+            placePromises[name] = deferred.promise;
+            setPlaceId[name] = deferred.resolve;
+        });
+    };
+
     var updateDeepForgeNamespace = function() {
         var territory = {};
 
-        DeepForge.places = {};
+        if (!firstProject) {
+            initializePlaces();
+        }
+        firstProject = false;
 
         // Create a territory
         if (placesTerritoryId) {
@@ -137,12 +159,15 @@ define([
         nodes.forEach(node =>
             nodeIdsByName[node.getAttribute('name')] = node.getId());
 
-        PLACE_NAMES.forEach(name => DeepForge.places[name] = nodeIdsByName[name]);
+        PLACE_NAMES.forEach(name => setPlaceId[name](nodeIdsByName[name]));
         
         // Remove the territory
         client.removeUI(placesTerritoryId);
         placesTerritoryId = null;
     };
+
+    initializePlaces();
+    PLACE_NAMES.forEach(name => DeepForge.places[name] = getPlace.bind(null, name));
 
     //////////////////// DeepForge creation actions ////////////////////
     var instances = [
@@ -200,16 +225,20 @@ define([
             }
         }
 
-        client.startTransaction(msg);
+        return DeepForge.places.MyLayers()
+            .then(id => {
 
-        newId = createNamedNode(baseId, DeepForge.places.MyLayers, true);
-        addToMetaSheet(newId, 'CustomLayers');
-        client.addMixin(newId, customLayerId);
-        client.setRegistry(newId, REGISTRY_KEYS.IS_ABSTRACT, false);
+                client.startTransaction(msg);
 
-        client.completeTransaction();
+                newId = createNamedNode(baseId, id, true);
+                addToMetaSheet(newId, 'CustomLayers');
+                client.addMixin(newId, customLayerId);
+                client.setRegistry(newId, REGISTRY_KEYS.IS_ABSTRACT, false);
 
-        WebGMEGlobal.State.registerActiveObject(newId);
+                client.completeTransaction();
+
+                WebGMEGlobal.State.registerActiveObject(newId);
+            });
     };
 
     // Creating Artifacts

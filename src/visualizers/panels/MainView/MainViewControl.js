@@ -94,9 +94,11 @@ define([
 
                 // Update the territory
                 this.territory[type] = {};
-                this.territory[type][DeepForge.places[dirname]] = {children: 1};
-                this.ui[type] = this._client.addUI(this, this.handleEvents.bind(this, type));
-                this._client.updateTerritory(this.ui[type], this.territory[type]);
+                DeepForge.places[dirname]().then(id => {
+                    this.territory[type][id] = {children: 1};
+                    this.ui[type] = this._client.addUI(this, this.handleEvents.bind(this, type));
+                    this._client.updateTerritory(this.ui[type], this.territory[type]);
+                });
             });
         }
     };

@@ -1,4 +1,4 @@
-/*globals DeepForge, $, window, define, _ */
+/*globals $, window, define, _ */
 /*jshint browser: true*/
 
 define([
@@ -27,7 +27,8 @@ define([
     REGISTRY_KEYS,
     META_CONSTANTS,
     Q,
-    PluginConfig
+    PluginConfig,
+    DeepForge
 ) {
     'use strict';
 
