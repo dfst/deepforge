@@ -28,12 +28,31 @@ define([
         this.editor.setTheme('ace/theme/twilight');
         this.editor.setShowPrintMargin(false);
         this.editor.renderer.setScrollMargin(0, 75);
+        this.addKeyListeners();
 
         // Override the textlayer to add support for ansi colors
         this.customizeAce();
     };
 
     _.extend(LogViewerWidget.prototype, TextEditorWidget.prototype);
+
+    LogViewerWidget.prototype.addKeyListeners = function() {
+        // Need to add key listeners to the container itself since ace is in read-only mode
+        this._el.on('keydown', event => {
+            // ctrl-alt-pagedown -> EOF
+            if (event.key === 'PageDown' && event.altKey && (event.ctrlKey || event.metaKey)) {
+                this.editor.gotoLine(Infinity);
+                event.stopPropagation();
+                event.preventDefault();
+            }
+            // ctrl-alt-pagedown -> beginning of file
+            if (event.key === 'PageUp' && event.altKey && (event.ctrlKey || event.metaKey)) {
+                this.editor.gotoLine(0);
+                event.stopPropagation();
+                event.preventDefault();
+            }
+        });
+    };
 
     LogViewerWidget.prototype.getHeader = function(desc) {
         return `Console logging for Operation "${desc.name}":\n`;
