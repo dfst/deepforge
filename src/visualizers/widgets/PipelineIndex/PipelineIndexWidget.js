@@ -44,7 +44,7 @@ define([
             this.deletePipeline(id);
         });
 
-        this.$el.on('dblclick', '.pipeline-name', event => {
+        this.$el.on('click', '.pipeline-name', event => {
             var html = $(event.target),
                 id = html.data('id');
 

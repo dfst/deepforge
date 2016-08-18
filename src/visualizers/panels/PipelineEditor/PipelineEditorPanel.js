@@ -62,7 +62,7 @@ define(['js/PanelBase/PanelBaseWithHeader',
         });
 
         // Editable pipeline name
-        this.$panelHeaderTitle.on('dblclick', () => this.editTitle());
+        this.$panelHeaderTitle.on('click', () => this.editTitle());
 
         this.onActivate();
     };

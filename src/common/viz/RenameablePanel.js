@@ -21,7 +21,7 @@ define([
 
     RenameablePanel.OPTIONS = PanelBaseWithHeader.OPTIONS;
     RenameablePanel.prototype.initializeRenameable = function () {
-        this.$panelHeaderTitle.on('dblclick', this.editTitle.bind(this));
+        this.$panelHeaderTitle.on('click', this.editTitle.bind(this));
     };
 
     RenameablePanel.prototype.currentNodeId = function () {
