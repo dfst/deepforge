@@ -8,7 +8,6 @@ var spawn = require('child_process').spawn,
     gmeConfig = require(__dirname + '/../config');
 
 // Set the cache to the blob
-console.log(gmeConfig);
 if (gmeConfig.blob.type === 'FS') {
     process.env.DEEPFORGE_WORKER_CACHE = path.resolve(gmeConfig.blob.fsDir + '/wg-content');
 }

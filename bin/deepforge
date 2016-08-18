@@ -9,7 +9,6 @@ var Command = require('commander').Command,
     fs = require('fs'),
     version = require('../package.json').version,
     exists = require('exists-file'),
-    forever = require('forever-monitor'),
     DEFAULT_CONFIG = require('./config.json'),
     merge = require('lodash.merge'),
     config,
@@ -111,16 +110,6 @@ var storeConfig = function(id, value) {
 program
     .version('v' + version)
     .description('Command line interface for managing deepforge');
-
-// start
-var start = function(main, opts) {
-    var child = new forever.Monitor(main, opts);
-    child.on('exit', function () {
-        console.log('Exited after 3 failed restarts');
-    });
-
-    child.start();
-};
 
 var isLocalUri = function(protocol, uri) {
     return uri.indexOf(protocol + '://localhost') === 0 ||
@@ -266,33 +255,26 @@ program.command('start')
     .option('-w, --worker [url]', 'start a worker and connect to given url. Defaults to local deepforge')
     .option('-m, --mongo', 'start MongoDB')
     .action(args => {
-        var main = path.join(__dirname, 'start-local.js'),
-            opts;
-
-        opts = {
-            max: 3,
-            args: []
-        };
+        var main = path.join(__dirname, 'start-local.js');
 
         if (args.port) {
-            opts.env = {
-                PORT: args.port
-            };
+            process.env.PORT = args.port;
         }
 
         if (args.server) {
             checkMongo(args);
             main = path.join(__dirname, '..', 'app.js');
-            start(main, opts);
+            spawn('node', [main]);
         }
 
         if (args.worker) {
             checkTorch().then(() => {
                 main = path.join(__dirname, 'start-worker.js');
                 if (args.worker !== true) {
-                    opts.args.push(args.worker);
+                    spawn('node', [main, args.worker]);
+                } else {
+                    spawn('node', [main]);
                 }
-                start(main, opts);
             });
         }
 
@@ -303,7 +285,7 @@ program.command('start')
         if (!args.server && !args.worker && !args.mongo) {
             // Starting everything
             checkMongo(args);
-            checkTorch().then(() => start(main, opts));
+            checkTorch().then(() => spawn('node', [main]));
         }
 
     });
@@ -440,8 +422,8 @@ program
 
 module.exports = function(cmd) {
     var cmds = cmd.split(/\s+/).filter(w => !!w);
-    cmds.unshift('node');
     cmds.unshift('./bin/deepforge');
+    cmds.unshift('node');
     program.parse(cmds);
 };
 

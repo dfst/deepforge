@@ -12,8 +12,7 @@ var callRegister = {
 
 var mocks = {
     childProcess: {},
-    rimraf: {},
-    forever: {}
+    rimraf: {}
 };
 
 var childProcess = {
@@ -38,16 +37,6 @@ var childProcess = {
         };
     }
 };
-var forever = {};
-forever.Monitor = function() {
-    var res = {};
-    res.on = nop;
-    res.start = nop;
-    if (mocks.forever.Monitor) {
-        mocks.forever.Monitor.apply(this, arguments);
-    }
-    return res;
-};
 var rimraf = {};
 rimraf.sync = function() {
     if (mocks.rimraf.sync) {
@@ -63,8 +52,9 @@ describe('cli', function() {
             warnOnUnregistered: false
         });
         mockery.registerMock('child_process', childProcess);
-        mockery.registerMock('forever-monitor', forever);
         mockery.registerMock('rimraf', rimraf);
+        // Clear node's cache
+        delete require.cache[require.resolve('../../bin/deepforge')];
         cli = require('../../bin/deepforge');
     });
 
@@ -75,10 +65,11 @@ describe('cli', function() {
     describe('start', function() {
         afterEach(function() {
             callRegister.childProcess.execSync = [];
-            mocks.childProcess.execSync = nop;
             mocks.childProcess.spawn = nop;
-            mocks.forever.Monitor = nop;
+            mocks.childProcess.execSync = cmd => '123';
             mocks.rimraf.sync = nop;
+            delete require.cache[require.resolve('../../bin/deepforge')];
+            cli = require('../../bin/deepforge');
         });
 
         it('should check for running mongo', function() {
@@ -113,21 +104,32 @@ describe('cli', function() {
             cli('start --mongo');
         });
 
-        it('should start local deepforge by default', function() {
-            mocks.forever.Monitor = main =>
-                assert.notEqual(main.indexOf('start-local.js'), -1);
+        it('should start local deepforge by default', function(done) {
+            mocks.childProcess.spawn = (main, args) => {
+                console.log('spawning:', main);
+                console.log(args);
+                if (main === 'node') {
+                    assert.notEqual(args[0].indexOf('start-local.js'), -1);
+                    done();
+                }
+            };
+            console.log('starting local...');
             cli('start');
         });
 
-        it('should start normal deepforge if --server set', function() {
-            mocks.forever.Monitor = main =>
-                assert.notEqual(main.indexOf('app.js'), -1);
+        it('should start normal deepforge if --server set', function(done) {
+            mocks.childProcess.spawn = (main, args) => {
+                if (main === 'node') {
+                    assert.notEqual(args[0].indexOf('app.js'), -1);
+                    done();
+                }
+            };
             cli('start --server');
         });
 
         it('should start worker if --worker set', function(done) {
-            mocks.forever.Monitor = main => {
-                if (main.indexOf('start-worker.js') !== -1) {
+            mocks.childProcess.spawn = (main, args) => {
+                if (args[0].indexOf('start-worker.js') !== -1) {
                     done();
                 }
             };

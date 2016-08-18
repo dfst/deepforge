@@ -17,7 +17,6 @@
     "commander": "^2.9.0",
     "dotenv": "^2.0.0",
     "exists-file": "^2.1.0",
-    "forever-monitor": "^1.7.0",
     "lodash.difference": "^4.1.2",
     "lodash.merge": "^4.5.1",
     "nodemon": "^1.9.2",
