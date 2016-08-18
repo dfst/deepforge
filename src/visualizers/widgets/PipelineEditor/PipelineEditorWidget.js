@@ -44,6 +44,7 @@ define([
         this._connForPort = {};
         this._itemsShowingPorts = [];
 
+        this.updateExecutions = _.debounce(this._updateExecutions, 50);
         this.initExecs(execCntr);
     };
 
@@ -283,7 +284,7 @@ define([
         this.updateExecutions();
     };
 
-    PipelineEditorWidget.prototype.updateExecutions = function() {
+    PipelineEditorWidget.prototype._updateExecutions = function() {
         var keys = Object.keys(this.executions),
             hasExecutions = !!keys.length,
             msg = `${keys.length || 'No'} Associated Execution` +
