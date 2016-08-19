@@ -93,6 +93,7 @@ define([
         //       - 'console' show console output (future feature)
         //   - Update the references
         var tgtNode,
+            execName,
             copies,
             opTuples,  // [[op, index], [op, index], ...]
             dataMapping = {};
@@ -112,12 +113,13 @@ define([
                 this.logger.debug(`About to get a unique name starting w/ ${basename}`);
                 return this.getUniqueExecName(basename);
             })
-            .then(execName => {
+            .then(_execName => {
                 var isSnapshot = !this.getCurrentConfig().debug,
                     originName = this.core.getAttribute(this.activeNode, 'name'),
                     oId = this.core.getPath(this.activeNode),
                     tgtId = this.core.getPath(tgtNode);
 
+                execName = _execName;
                 this.logger.debug(`Configuring execution attributes (${execName})`);
 
                 // Set all the metadata for the new execution
@@ -131,15 +133,9 @@ define([
                 this.core.addMember(this.activeNode, 'executions', tgtNode);
 
                 this.logger.debug(`Creating tag "${execName}"`);
-                return this.project.createTag(
-                    execName,
-                    this.currentHash
-                );
             })
             .then(() => this.core.loadChildren(node))
             .then(children => {
-                var execName = this.core.getAttribute(tgtNode, 'name');
-
                 if (!children.length) {
                     this.logger.warn('No children in pipeline. Will proceed anyway');
                 }
@@ -170,6 +166,7 @@ define([
                 this.logger.debug('Finished! Saving...');
                 return this.save(`Created execution from ${name}`);
             })
+            .then(() => this.project.createTag(execName, this.currentHash))
             .then(() => tgtNode);  // return tgtNode
     };
 
