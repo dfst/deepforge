@@ -8,8 +8,10 @@ var path = require('path'),
     projectConfig = require(__dirname + '/../config'),
     executorSrc = path.join(__dirname, '..', 'node_modules', 'webgme', 'src',
         'server', 'middleware', 'executor', 'worker'),
-    workerPath = path.join(__dirname, '..', 'src', 'worker'),
-    workerConfigPath =  path.join(workerPath, 'config_' + Date.now() + '.json'),
+    id = Date.now(),
+    workerRootPath = path.join(__dirname, '..', 'src', 'worker'),
+    workerPath = path.join(workerRootPath, `worker_${id}`),
+    workerConfigPath =  path.join(workerPath, 'config.json'),
     workerTmp = path.join(workerPath, 'tmp'),
     address,
     config = {};
@@ -24,6 +26,7 @@ var createDir = function(dir) {
     }
     return false;
 };
+createDir(workerRootPath);
 createDir(workerPath);
 createDir(workerTmp);
 
@@ -37,8 +40,8 @@ if (result.error) {
 }
 
 var cleanUp = function() {
-    console.log('removing config ', workerConfigPath);
-    rm_rf.sync(workerConfigPath);
+    console.log('removing worker directory ', workerPath);
+    rm_rf.sync(workerPath);
 };
 
 var startExecutor = function() {
