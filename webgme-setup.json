@@ -52,6 +52,10 @@
       "UpdateLibrarySeed": {
         "src": "src/plugins/UpdateLibrarySeed",
         "test": "test/plugins/UpdateLibrarySeed"
+      },
+      "ExportExecution": {
+        "src": "src/plugins/ExportExecution",
+        "test": "test/plugins/ExportExecution"
       }
     },
     "layouts": {},
