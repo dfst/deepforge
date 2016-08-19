@@ -49,6 +49,8 @@ define([
             return callback('Torch code not provided.', this.result);
         }
 
+        this.addCustomLayersToMeta();
+
         this.blobClient.getMetadata(srcHash)
             .then(mdata => {  // Create the new model
                 // If the current node is an architecture, assume we are just extending it
@@ -88,6 +90,22 @@ define([
             .fail(err =>
                 callback(err, this.result)
             );
+    };
+
+    ImportTorch.prototype.addCustomLayersToMeta = function () {
+        // Add custom layers to the metamodel
+        var metanodes = this.core.getAllMetaNodes(this.rootNode),
+            name;
+
+        Object.keys(metanodes).map(id => metanodes[id])
+            .filter(node => this.core.isTypeOf(node, this.META.Layer))
+            .forEach(layer => {
+                name = this.core.getAttribute(layer, 'name');
+                if (!this.META[name]) {
+                    this.logger.debug(`Adding ${name} to the meta`);
+                    this.META[name] = layer;
+                }
+            });
     };
 
     // Create the 'nn' shim and add it to the global context
