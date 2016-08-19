@@ -48,6 +48,7 @@ define([
                     .axisLabel(this.options.xAxis);
             }
 
+            chart.yAxis.tickFormat(d3.format('.02f'));
             if (this.options.yAxis) {
                 chart.yAxis
                     .axisLabel(this.options.yAxis);
