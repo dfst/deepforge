@@ -9,7 +9,8 @@
     "cache": {
         "useBlob": true,
         "dir": "~/.deepforge/worker/cache"
-    }
+    },
+    "dir": "~/.deepforge/worker"
   },
   "mongo": {
     "dir": "~/.deepforge/data"
