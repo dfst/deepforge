@@ -30,6 +30,16 @@ createDir(workerRootPath);
 createDir(workerPath);
 createDir(workerTmp);
 
+// Create sym link to the node_modules
+var modules = path.join(workerRootPath, 'node_modules');
+try {
+    fs.statSync(modules);
+} catch (e) {
+    // Create dir
+    childProcess.spawnSync('ln', ['-s', `${__dirname}/../node_modules`, modules]);
+    return true;
+}
+
 // Check torch support
 var result = childProcess.spawnSync('th', ['--help']);
 if (result.error) {
