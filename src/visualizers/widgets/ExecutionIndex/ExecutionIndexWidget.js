@@ -23,6 +23,7 @@ define([
 
         this.nodes = {};
         this.graphs = {};
+        this.checkedIds = [];
         this._initialize();
 
         this._logger.debug('ctor finished');
@@ -134,7 +135,8 @@ define([
             'data-id': desc.originId
         }).text(desc.pipelineName || 'view pipeline');
 
-        name = $('<a>', {class: 'node-nav', 'data-id': desc.id}).text(desc.name);
+        name = $('<a>', {class: 'node-nav', 'data-id': desc.id})
+            .text(desc.name);
 
         fields = [
             checkBox,
@@ -243,8 +245,46 @@ define([
         
     };
 
+    ExecutionIndexWidget.prototype.toggleAbbreviations = function (show, ids) {
+        var node,
+            desc,
+            name;
+
+        ids = ids || this.checkedIds;
+        for (var i = ids.length; i--;) {
+            node = this.nodes[ids[i]];
+            desc = node.desc;
+            name = show ? `${desc.name} (${desc.abbr})` : desc.name;
+            node.$name.text(name);
+        }
+    };
+
     ExecutionIndexWidget.prototype.setSelect = function (id, checked) {
+        var wasChecked = this.checkedIds.length > 1,
+            isChecked;
+
         this.nodes[id].$checkbox.checked = checked;
+
+        // If multiple are checked, display the abbreviation
+        if (checked) {
+            this.checkedIds.push(id);
+        } else {
+            var k = this.checkedIds.indexOf(id);
+            if (k !== -1) {
+                this.checkedIds.splice(k, 1);
+            }
+        }
+
+        isChecked = this.checkedIds.length > 1;
+        if (isChecked !== wasChecked) {
+            this.toggleAbbreviations(isChecked);
+        }
+
+        // Update the given node
+        if (!checked || isChecked) {
+            this.toggleAbbreviations(checked, [id]);
+        }
+
         this.setExecutionDisplayed(id, checked);
     };
 

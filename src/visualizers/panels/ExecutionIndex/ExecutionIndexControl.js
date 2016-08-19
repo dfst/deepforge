@@ -2,9 +2,11 @@
 /*jshint browser: true*/
 
 define([
-    'js/Constants'
+    'js/Constants',
+    'deepforge/utils'
 ], function (
-    CONSTANTS
+    CONSTANTS,
+    utils
 ) {
 
     'use strict';
@@ -27,6 +29,9 @@ define([
         this._lineToExec = {};
         this._pipelineNames = {};
 
+        this.abbrToId = {};
+        this.abbrFor = {};
+
         this._initWidgetEventHandlers();
 
         this._logger.debug('ctor finished');
@@ -38,13 +43,34 @@ define([
 
     ExecutionIndexControl.prototype.setExecutionDisplayed = function (id, bool) {
         var lines = this._linesForExecution[id] || [],
-            action = bool ? 'addNode' : 'removeNode';
-
-        // If removing, just get the ids
-        lines = bool ? lines : lines.map(line => line.id);
+            otherLines,
+            wasMultiLine = this.displayedExecCount() > 1,
+            isMultiLine;
 
         this._logger.info(`setting execution ${id} to ${bool ? 'displayed' : 'hidden'}`);
         this.displayedExecutions[id] = bool;
+
+        // If we just crossed the multi line threshold, then update all the lines
+        isMultiLine = this.displayedExecCount() > 1;
+        if (isMultiLine !== wasMultiLine) {
+            // Refresh the other lines visible
+            otherLines = Object.keys(this.displayedExecutions)
+                .filter(eId => this.displayedExecutions[eId] && (eId !== id))
+                .map(id => this._linesForExecution[id])
+                .reduce((l1, l2) => l1.concat(l2), []);
+
+            this._updateLines(otherLines, false);
+            this._updateLines(otherLines, true);
+        }
+
+        this._updateLines(lines, bool);
+    };
+
+    ExecutionIndexControl.prototype._updateLines = function (lines, added) {
+        var action = added ? 'addNode' : 'removeNode';
+
+        // If removing, just get the ids
+        lines = !added ? lines : lines.map(line => this._getObjectDescriptor(line));
 
         // update the given lines
         for (var i = lines.length; i--;) {
@@ -83,6 +109,28 @@ define([
         }
     };
 
+    ExecutionIndexControl.prototype.getUniqAbbreviation = function(desc) {
+        // Get a unique abbreviation for the given execution
+        var base = utils.abbr(desc.name).toLowerCase(),
+            abbr = base,
+            oldAbbr = this.abbrFor[desc.id],
+            i = 2;
+
+        // Make sure it is unique!
+        while (this.abbrToId[abbr] && this.abbrToId[abbr] !== desc.id) {
+            abbr = base + i;
+            i++;
+        }
+
+        if (oldAbbr !== undefined) {  // updating abbr
+            delete this.abbrToId[oldAbbr];
+        }
+
+        this.abbrToId[abbr] = desc.id;
+        this.abbrFor[desc.id] = abbr;
+        return abbr;
+    };
+
     // This next function retrieves the relevant node information for the widget
     ExecutionIndexControl.prototype._getObjectDescriptor = function (nodeId) {
         var node = this._client.getNode(nodeId),
@@ -108,6 +156,8 @@ define([
                 desc.startTime = node.getAttribute('startTime');
                 desc.endTime = node.getAttribute('endTime');
                 this._logger.debug(`Looking up pipeline name for ${desc.name}: ${desc.pipelineName}`);
+                // Add the (unique) abbreviation of the execution!
+                desc.abbr = this.getUniqAbbreviation(desc);
 
                 // Create a territory for this origin and update it!
                 this._selfPatterns[desc.originId] = {children: 0};
@@ -149,7 +199,6 @@ define([
 
         desc = {
             id: id,
-            //execName: execName,
             execId: execId,
             lineName: node.getAttribute('name'),
             name: node.getAttribute('name'),
@@ -157,12 +206,23 @@ define([
             points: points
         };
 
-        // Update records
-        if (!this._linesForExecution[execId]) {
-            this._linesForExecution[execId] = [];
+        if (!this._lineToExec[id]) {
+            // Update records
+            if (!this._linesForExecution[execId]) {
+                this._linesForExecution[execId] = [];
+            }
+            this._linesForExecution[execId].push(id);
+            this._lineToExec[id] = execId;
         }
-        this._linesForExecution[execId].push(desc);
-        this._lineToExec[id] = execId;
+
+        // If there are multiple executions, add the exec's abbr
+        var displayedCnt = this.displayedExecCount(),
+            execAbbr;
+
+        if (displayedCnt > 1) {
+            execAbbr = this.abbrFor[execId] || this._getObjectDescriptor(execId).abbr;
+            desc.name = `${desc.name} (${execAbbr})`;
+        }
 
         return desc;
     };
@@ -237,16 +297,23 @@ define([
     };
 
     ExecutionIndexControl.prototype._onUnload = function (id) {
-        var execId = this._lineToExec[id];
+        var execId = this._lineToExec[id],
+            abbr;
 
         if (execId) {  // it is a line
             delete this._lineToExec[id];
             for (var k = this._linesForExecution[execId].length; k--;) {
-                if (this._linesForExecution[execId][k].id === id) {
+                if (this._linesForExecution[execId][k] === id) {
                     this._linesForExecution[execId].splice(k, 1);
                     break;
                 }
             }
+        }
+
+        if (this.abbrFor[id]) {
+            abbr = this.abbrFor[id];
+            delete this.abbrFor[id];
+            delete this.abbrToId[abbr];
         }
 
         this._widget.removeNode(id);
@@ -255,6 +322,12 @@ define([
     ExecutionIndexControl.prototype.isLineDisplayed = function (line) {
         // lines are only displayed if their execution is checked
         return this.displayedExecutions[line.execId];
+    };
+
+    ExecutionIndexControl.prototype.displayedExecCount = function () {
+        return Object.keys(this.displayedExecutions)
+            .map(id => this.displayedExecutions[id])
+            .filter(shown => shown).length;
     };
 
     ExecutionIndexControl.prototype._stateActiveObjectChanged = function (model, activeObjectId) {

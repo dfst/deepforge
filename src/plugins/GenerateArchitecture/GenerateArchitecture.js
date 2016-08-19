@@ -5,12 +5,14 @@ define([
     'SimpleNodes/SimpleNodes',
     'SimpleNodes/Constants',
     'deepforge/layer-args',
+    'deepforge/utils',
     'underscore',
     'text!./metadata.json'
 ], function (
     PluginBase,
     Constants,
     createLayerDict,
+    utils,
     _,
     metadata
 ) {
@@ -212,18 +214,13 @@ define([
         };
     };
 
-    GenerateArchitecture.abbr = function (word) {
-        word = word.substring(0, 1).toUpperCase() + word.substring(1);
-        return word.split(/[a-z]+/g).join('').toLowerCase();
-    };
-
     GenerateArchitecture.prototype.getValue = function (arg, layer) {
         var content = layer[arg];
 
         if (typeof content === 'object') {  // layer as arg
             if (content[Constants.CHILDREN].length) {
                 // Generate the code for the children of layer[arg]
-                var name = this.getVarName(GenerateArchitecture.abbr(arg)),
+                var name = this.getVarName(utils.abbr(arg)),
                     layers;
 
                 this.logger.debug(`Adding layer arg for ${arg} (${layer.name})`);
