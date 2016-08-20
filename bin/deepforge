@@ -173,6 +173,20 @@ var hasTorch = function() {
     return !result.error;
 };
 
+var installTorchExtras = function() {
+    // Check if rnn is installed
+    var result = childProcess.spawnSync('luarocks', ['list', '--porcelain']),
+        pkgs = result.stdout.toString().split('\n')
+            .map(line => line.match(/^[a-zA-Z0-9]+/g))
+            .map(m => m && m[0]);
+
+    if (pkgs.indexOf('rnn') === -1) {
+        return spawn('luarocks', ['install', 'rnn']);
+    } else {
+        return Q();
+    }
+};
+
 var installTorch = function() {
     var tgtDir = p(config.torch.dir),
         args;
@@ -196,10 +210,13 @@ var installTorch = function() {
                 } else {  // continue installation
                     process.chdir(tgtDir);
                     return spawn('bash', ['install-deps'])
-                        .then(() => spawn('bash', ['install.sh']))
-                        .then(() => spawn('luarocks', ['install', 'rnn']))
+                        .then(() => spawn('bash', ['install.sh'], true))
                         .then(() => {
                             storeConfig('torch.dir', tgtDir);
+                            console.log('Installed torch. Please close and ' +
+                                're-open your terminal to use DeepForge w/ ' +
+                                'torch support!');
+                            process.exit(0);
                         });
                 }
             });
@@ -211,13 +228,17 @@ var installTorch = function() {
 var spawn = function(cmd, args, opts) {
     var deferred = Q.defer(),
         job,
+        spawnOpts = typeof opts === 'object' ? opts : null,
+        forwardStdin = opts === true,
+        isOpen = true,
         err;
 
     args = args || [];
-    job = opts ? rawSpawn(cmd, args, opts) : rawSpawn(cmd, args);
+    job = spawnOpts ? rawSpawn(cmd, args, spawnOpts) : rawSpawn(cmd, args);
     job.stdout.on('data', data => process.stdout.write(data));
     job.stderr.on('data', data => process.stderr.write(data));
     job.on('close', code => {
+        isOpen = false;
         if (err) {
             deferred.reject(err, code);
         } else {
@@ -225,6 +246,14 @@ var spawn = function(cmd, args, opts) {
         }
     });
     job.on('error', e => err = e);
+
+    if (forwardStdin) {
+        process.stdin.on('data', data => {
+            if (isOpen) {
+                job.stdin.write(data);
+            }
+        });
+    }
 
     return deferred.promise;
 };
@@ -249,14 +278,18 @@ program.command('start')
         }
 
         if (args.worker) {
-            installTorch().then(() => {
-                main = path.join(__dirname, 'start-worker.js');
-                if (args.worker !== true) {
-                    spawn('node', [main, args.worker]);
-                } else {
-                    spawn('node', [main]);
-                }
-            });
+            if (hasTorch()) {
+                installTorchExtras().then(() => {
+                    main = path.join(__dirname, 'start-worker.js');
+                    if (args.worker !== true) {
+                        spawn('node', [main, args.worker]);
+                    } else {
+                        spawn('node', [main]);
+                    }
+                });
+            } else {
+                installTorch();
+            }
         }
 
         if (args.mongo) {
@@ -266,9 +299,11 @@ program.command('start')
         if (!args.server && !args.worker && !args.mongo) {
             // Starting everything
             checkMongo(args);
-            installTorch().then(() => {
-                spawn('node', [main]);
-            });
+            if (hasTorch()) {
+                installTorchExtras().then(() => spawn('node', [main]));
+            } else {
+                installTorch();
+            }
         }
 
     });

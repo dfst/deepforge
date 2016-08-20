@@ -22,7 +22,12 @@ var childProcess = {
             return mocks.childProcess.execSync.apply(this, arguments);
         }
     },
-    spawnSync: function() {
+    spawnSync: function(cmd) {
+        if (cmd === 'luarocks') {
+            return {
+                stdout: 'rnn'
+            };
+        }
         return {};
     },
     spawn: function() {
