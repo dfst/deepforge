@@ -122,10 +122,11 @@ define([
             });
     };
 
-    ExecuteJob.prototype.updateNodes = function () {
+    ExecuteJob.prototype.updateNodes = function (hash) {
         var activeId = this.core.getPath(this.activeNode);
 
-        return Q.ninvoke(this.project, 'loadObject', this.currentHash)
+        hash = hash || this.currentHash;
+        return Q.ninvoke(this.project, 'loadObject', hash)
             .then(commitObject => {
                 return this.core.loadRoot(commitObject.root);
             })

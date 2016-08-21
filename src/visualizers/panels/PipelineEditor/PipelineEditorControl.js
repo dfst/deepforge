@@ -5,6 +5,7 @@ define([
     'js/Constants',
     'panels/EasyDAG/EasyDAGControl',
     'deepforge/viz/PipelineControl',
+    'deepforge/viz/Execute',
     'deepforge/globals',
     'common/core/coreQ',
     'common/storage/constants',
@@ -14,6 +15,7 @@ define([
     CONSTANTS,
     EasyDAGControl,
     PipelineControl,
+    Execute,
     DeepForge,
     Core,
     STORAGE_CONSTANTS,
@@ -36,19 +38,19 @@ define([
 
     PipelineEditorControl = function (options) {
         EasyDAGControl.call(this, options);
+        Execute.call(this, this._client, this._logger);
         this.addedIds = {};
         this.executionTerritory = {};
         this.executionUI = null;
         this.invalidated = {};
-        this._widget.deleteNode = id => {
-            this._deleteNode(id);
-        };
+        this._widget.deleteExecution = this.deleteExecution.bind(this);
     };
 
     _.extend(
         PipelineEditorControl.prototype,
         EasyDAGControl.prototype,
-        PipelineControl.prototype
+        PipelineControl.prototype,
+        Execute.prototype
     );
 
     PipelineEditorControl.prototype._getValidInitialNodes =
@@ -592,6 +594,30 @@ define([
         } else {
             return this._client.decoratorManager.getDecoratorForWidget(
                 this.DEFAULT_DECORATOR, WIDGET_NAME);
+        }
+    };
+
+    PipelineEditorControl.prototype.deleteExecution = function (id) {
+        var node = this._client.getNode(id),
+            name = '',
+            msg;
+
+        if (node) {
+            name = node && node.getAttribute('name');
+        }
+
+        msg = `Deleted ${name} (${id}) execution`;
+
+        // Stop the execution w/o setting any attributes on the execution
+        this._client.startTransaction(msg);
+        if (this.isRunning(node)) {
+            this.silentStopExecution(id, true).then(() => {
+                this._client.delMoreNodes([id]);
+                this._client.completeTransaction();
+            });
+        } else {
+            this._client.delMoreNodes([id]);
+            this._client.completeTransaction();
         }
     };
 

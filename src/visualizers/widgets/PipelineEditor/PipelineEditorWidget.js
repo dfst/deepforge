@@ -326,7 +326,7 @@ define([
             () => WebGMEGlobal.State.registerActiveObject(exec.id));
 
         // Add the remove icon
-        rmIcon.on('click', () => this.deleteNode(exec.id));
+        rmIcon.on('click', () => this.deleteExecution(exec.id));
         row.append(title, timestamp, rmIcon);
         row[0].className = className;
         return row;

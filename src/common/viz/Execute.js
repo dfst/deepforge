@@ -1,9 +1,11 @@
 /* globals define, WebGMEGlobal */
 // Mixin for executing jobs and pipelines
 define([
+    'q',
     'executor/ExecutorClient',
     'panel/FloatingActionButton/styles/Materialize'
 ], function(
+    Q,
     ExecutorClient,
     Materialize
 ) {
@@ -75,13 +77,11 @@ define([
             job.getAttribute('secret') && job.getAttribute('jobId');
     };
 
-    Execute.prototype.stopJob = function(job) {
+    Execute.prototype.silentStopJob = function(job) {
         var jobHash,
-            jobId,
             secret;
 
         job = job || this.client.getNode(this._currentNodeId);
-        jobId = job.getId();
         jobHash = job.getAttribute('jobId');
         secret = job.getAttribute('secret');
         if (!jobHash || !secret) {
@@ -89,13 +89,94 @@ define([
             return;
         }
 
+        return this._executor.cancelJob(jobHash, secret)
+            .then(() => this.logger.info(`${jobHash} has been cancelled!`))
+            .fail(err => this.logger.error(`Job cancel failed: ${err}`));
+    };
+
+    Execute.prototype.stopJob = function(job, silent) {
+        var jobId;
+
+        job = job || this.client.getNode(this._currentNodeId);
+        jobId = job.getId();
+
+        this.silentStopJob(job);
+
+        if (!silent) {
+            this.client.startTransaction(`Stopping "${name}" job`);
+        }
+
         this.client.delAttributes(jobId, 'jobId');
         this.client.delAttributes(jobId, 'secret');
         this.client.setAttributes(jobId, 'status', 'canceled');
 
-        return this._executor.cancelJob(jobHash, secret)
-            .then(() => this.logger.info(`${jobHash} has been cancelled!`))
-            .fail(err => this.logger.error(`Job cancel failed: ${err}`));
+        if (!silent) {
+            this.client.completeTransaction();
+        }
+    };
+
+
+    Execute.prototype.loadChildren = function(id) {
+        var deferred = Q.defer(),
+            execNode = this.client.getNode(id || this._currentNodeId),
+            jobIds = execNode.getChildrenIds(),
+            jobsLoaded = !jobIds.length || this.client.getNode(jobIds[0]);
+
+        // May need to load the jobs...
+        if (!jobsLoaded) {
+            // Create a territory and load the nodes
+            var territory = {},
+                ui;
+
+            territory[id] = {children: 1};
+            ui = this.client.addUI(this, () => {
+                this.client.removeUI(ui);
+                deferred.resolve();
+            });
+            this.client.updateTerritory(ui, territory);
+        } else {
+            deferred.resolve();
+        }
+
+        return deferred.promise;
+    };
+
+    Execute.prototype.stopExecution = function(id, inTransaction) {
+        var execNode = this.client.getNode(id || this._currentNodeId);
+
+        return this.loadChildren(id)
+            .then(() => this._stopExecution(execNode, inTransaction));
+    };
+
+    Execute.prototype.silentStopExecution = function(id) {
+        var execNode = this.client.getNode(id || this._currentNodeId);
+
+        // Stop the execution w/o setting any attributes
+        return this.loadChildren(id)
+            .then(() => this._silentStopExecution(execNode));
+    };
+
+    Execute.prototype._stopExecution = function(execNode, inTransaction) {
+        var msg = `Canceling ${execNode.getAttribute('name')} execution`;
+
+        if (!inTransaction) {
+            this.client.startTransaction(msg);
+        }
+
+        this._silentStopExecution(execNode);
+        this.client.setAttributes(execNode.getId(), 'status', 'canceled');
+
+        if (!inTransaction) {
+            this.client.completeTransaction();
+        }
+    };
+
+    Execute.prototype._silentStopExecution = function(execNode) {
+        var jobIds = execNode.getChildrenIds();
+
+        jobIds.map(id => this.client.getNode(id))
+            .filter(job => this.isRunning(job))  // get running jobs
+            .forEach(job => this.silentStopJob(job));  // stop them
     };
 
     return Execute;

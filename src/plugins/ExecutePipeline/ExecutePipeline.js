@@ -94,12 +94,9 @@ define([
      * @param {function(string, plugin.PluginResult)} callback - the result callback
      */
     ExecutePipeline.prototype.main = function (callback) {
-        // This will probably need to execute the operations, too, because the
-        // inputs for the next operation cannot be created until the inputs have
-        // been generated
+        var startPromise;
 
         this.initRun();
-        var startPromise;
         if (this.core.isTypeOf(this.activeNode, this.META.Pipeline)) {
             // If starting with a pipeline, we will create an Execution first
             startPromise = this.createExecution(this.activeNode)
@@ -159,8 +156,8 @@ define([
         return this._currentSave;
     };
 
-    ExecutePipeline.prototype.updateNodes = function () {
-        var result = ExecuteJob.prototype.updateNodes.call(this);
+    ExecutePipeline.prototype.updateNodes = function (hash) {
+        var result = ExecuteJob.prototype.updateNodes.call(this, hash);
         return result.then(() => this.updateCache());
     };
 
@@ -341,19 +338,56 @@ define([
             msg += 'finished!';
         }
 
-        this.logger.debug(`Pipeline "${name}" complete!`);
-        this.core.setAttribute(this.activeNode, 'endTime', Date.now());
-        this.core.setAttribute(this.activeNode, 'status',
-            (this.pipelineError ? 'failed' : (this.canceled ? 'canceled' : 'success')));
+        this.isDeleted().then(isDeleted => {
+            if (isDeleted) {
 
-        this._finished = true;
-        this.resultMsg(msg);
-        this.save('Pipeline execution finished')
-            .then(() => {
+                this.logger.debug(`Pipeline "${name}" complete!`);
+                this.core.setAttribute(this.activeNode, 'endTime', Date.now());
+                this.core.setAttribute(this.activeNode, 'status',
+                    (this.pipelineError ? 'failed' :
+                    (this.canceled ? 'canceled' : 'success')
+                    )
+                );
+
+                this._finished = true;
+                this.resultMsg(msg);
+                this.save('Pipeline execution finished')
+                    .then(() => {
+                        this.result.setSuccess(!this.pipelineError);
+                        this._callback(this.pipelineError || null, this.result);
+                    })
+                    .fail(e => this.logger.error(e));
+            } else {  // deleted!
+                this.logger.debug('Execution has been deleted!');
                 this.result.setSuccess(!this.pipelineError);
                 this._callback(this.pipelineError || null, this.result);
+            }
+        });
+
+    };
+
+    ExecutePipeline.prototype.isDeleted = function () {
+        var activeId = this.core.getPath(this.activeNode);
+
+        // Check if the current execution has been deleted
+        return this.project.getBranchHash(this.branchName)
+            .then(hash => this.updateNodes(hash))
+            .then(() => this.core.loadByPath(this.rootNode, activeId))
+            .then(node => {
+                var deleted = node === null,
+                    msg = `Verified that execution is ${deleted ? '' : 'not '}deleted`;
+
+                this.logger.debug(msg);
+                return deleted;
             })
-            .fail(e => this.logger.error(e));
+            .fail(err => this.logger.error(err));
+    };
+
+    ExecutePipeline.prototype.onPipelineDeleted = function () {
+        var msg = `${this.pipelineName} has been deleted`;
+        this.resultMsg(msg);
+        this.result.setSuccess(true);
+        this._callback(null, this.result);
     };
 
     ExecutePipeline.prototype.executeReadyOperations = function () {
