@@ -125,6 +125,7 @@ define([
             desc.name = nodeObj.getAttribute(nodePropertyNames.Attributes.name);
             desc.parentId = nodeObj.getParentId();  // used by the 'up' button in the toolbar
             desc.text = nodeObj.getAttribute(this.ATTRIBUTE_NAME);
+            desc.ownText = nodeObj.getOwnAttribute(this.ATTRIBUTE_NAME);
         }
 
         return desc;

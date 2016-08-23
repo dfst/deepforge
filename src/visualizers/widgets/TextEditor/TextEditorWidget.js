@@ -34,9 +34,11 @@ define([
         this.editor.$blockScrolling = Infinity;
         this.DELAY = 750;
         this.silent = false;
+        this.saving = false;
 
         this.editor.on('change', () => {
             if (!this.silent) {
+                this.saving = true;
                 this.onChange();
             }
         });
@@ -107,6 +109,7 @@ define([
     TextEditorWidget.prototype.saveText = function () {
         var text;
 
+        this.saving = false;
         if (this.readOnly) {
             return;
         }
@@ -128,20 +131,17 @@ define([
     };
 
     TextEditorWidget.prototype.updateNode = function (desc) {
+        var shouldUpdate = this.readOnly ||
+            (!this.saving && !this.editor.isFocused()) ||
+            (this.activeNode === desc.id && this.getHeader(desc) !== this.currentHeader);
+
         // Check for header changes
-        if (this.readOnly) {
-            this.addNode(desc);
-        } else if (this.activeNode === desc.id &&
-            this.getHeader(desc) !== this.currentHeader) {
+        if (shouldUpdate) {
             this.addNode(desc);
         }
         // TODO: Handle concurrent editing... Currently, last save wins and there are no
         // updates after opening the node. Supporting multiple users editing the same
         // operation/layer is important but more work than it is worth for now
-        //var currentText = this.editor.getValue().replace(this.currentHeader, '');
-        //if (this.activeNode === desc.id && desc.text !== currentText) {
-            //this.addNode(desc);
-        //}
     };
 
     /* * * * * * * * Visualizer life cycle callbacks * * * * * * * */

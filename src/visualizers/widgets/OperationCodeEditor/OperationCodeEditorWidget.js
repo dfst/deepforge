@@ -34,7 +34,6 @@ define([
         // Add comment about the inputs, attributes and references
         var inputs = desc.inputs.map(pair => `-- ${pair[0]} (${pair[1]})`).join('\n'),
             refs = desc.references.map(name => `-- ${name}`).join('\n'),
-            outputs,
             header = [
                 `-- Editing "${desc.name}" Implementation`
             ];
@@ -50,22 +49,28 @@ define([
         header.push('--');
         header.push('-- The following will be executed when the operation is run:');
 
-        // Add info about outputs
-        outputs = desc.outputs.map(pair => `--   ${pair[0]} = <${pair[1]}>`)
-            .join('\n');
-
-        if (outputs.length) {
-            header.push('-- Returning something like:');
-            header.push('-- {');
-            header.push(outputs);
-            header.push('-- }');
-        }
-
         return header.join('\n');
     };
 
-    OperationCodeEditorWidget.prototype.addNode = function () {
-        TextEditorWidget.prototype.addNode.apply(this, arguments);
+    OperationCodeEditorWidget.prototype.canAddReturnTmpl = function (desc) {
+        return desc.outputs.length &&
+            (!desc.ownText || desc.ownText.indexOf('return') === -1);
+    };
+
+    OperationCodeEditorWidget.prototype.updateText = function (desc) {
+        if (this.canAddReturnTmpl(desc)) {
+            // Add the return template 
+            desc.text += '\n\nreturn {\n' +
+                desc.outputs.map((pair, i) =>
+                    `   ${pair[0]} = nil${i === desc.outputs.length-1 ? '' : ','}  -- ${pair[1]}`).join('\n') +
+                '\n}';
+                
+        }
+    };
+
+    OperationCodeEditorWidget.prototype.addNode = function (desc) {
+        this.updateText(desc);
+        TextEditorWidget.prototype.addNode.call(this, desc);
         this.updateOffset();
     };
 
