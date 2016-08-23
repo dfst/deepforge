@@ -2,11 +2,13 @@
 /*jshint browser: true, camelcase: false*/
 
 define([
+    'deepforge/Constants',
     'decorators/EllipseDecorator/EasyDAG/EllipseDecorator.EasyDAGWidget',
     './PointerField.RO',
     './AttributeField.RO',
     'css!./JobDecorator.EasyDAGWidget.css'
 ], function (
+    CONSTANTS,
     EllipseDecorator,
     PointerField,
     AttributeField
@@ -49,12 +51,12 @@ define([
     JobDecorator.prototype.AttributeField = AttributeField;
     JobDecorator.prototype.PointerField = PointerField;
 
-    JobDecorator.prototype.isArtifactLoader = function() {
-        return this._node.name === 'ArtifactLoader';
+    JobDecorator.prototype.isInputOperation = function() {
+        return this._node.name === CONSTANTS.OP.INPUT;
     };
 
     JobDecorator.prototype.getDisplayName = function() {
-        if (this.isArtifactLoader()) {
+        if (this.isInputOperation()) {
             var id = this._node.pointers.artifact;
 
             // Try to look up the pointer name

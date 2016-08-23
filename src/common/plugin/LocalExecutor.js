@@ -2,14 +2,16 @@
 // This is an 'executor' containing the implementations of all local operations
 // These are all primitives in DeepForge
 define([
+    'deepforge/Constants'
 ], function(
+    CONSTANTS
 ) {
     'use strict';
     var LocalExecutor = function() {
     };
 
     // Should these be in lua?
-    LocalExecutor.prototype.ArtifactLoader = function(node) {
+    LocalExecutor.prototype[CONSTANTS.OP.INPUT] = function(node) {
         // Get the hash from the output node
         var hash;
         return this.core.loadChildren(node)
@@ -105,7 +107,7 @@ define([
             });
     };
 
-    LocalExecutor.prototype.Save = function(node) {
+    LocalExecutor.prototype[CONSTANTS.OP.OUTPUT] = function(node) {
         var parentNode,
             currNameHashPairs;
         

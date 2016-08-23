@@ -2,6 +2,7 @@
 /*jshint browser: true*/
 
 define([
+    'deepforge/Constants',
     'js/Constants',
     'panels/EasyDAG/EasyDAGControl',
     'deepforge/viz/PipelineControl',
@@ -13,6 +14,7 @@ define([
     'underscore'
 ], function (
     CONSTANTS,
+    GME_CONSTANTS,
     EasyDAGControl,
     PipelineControl,
     Execute,
@@ -31,10 +33,11 @@ define([
             DST: 'dst'
         },
         DECORATORS = {
-            ArtifactLoader: 'ArtifactOpDecorator',
             ArtifactFinder: 'ArtifactOpDecorator'
         },
         WIDGET_NAME = 'EasyDAG';
+
+    DECORATORS[CONSTANTS.OP.INPUT] = 'ArtifactOpDecorator';
 
     PipelineEditorControl = function (options) {
         EasyDAGControl.call(this, options);
@@ -129,7 +132,7 @@ define([
         // Add arch/artifact dir to the territory
         // loading more than necessary.... can restrict it in the future
         // if perf is a problem
-        this._territories[CONSTANTS.PROJECT_ROOT_ID] = {children: 2};
+        this._territories[GME_CONSTANTS.PROJECT_ROOT_ID] = {children: 2};
 
         this._client.updateTerritory(this._territoryId, this._territories);
     };
@@ -501,7 +504,7 @@ define([
 
     PipelineEditorControl.prototype._getTargetDirs = function (typeIds) {
         // Find the directories containing these types
-        return this._client.getNode(CONSTANTS.PROJECT_ROOT_ID).getChildrenIds()
+        return this._client.getNode(GME_CONSTANTS.PROJECT_ROOT_ID).getChildrenIds()
             // No referencing data meta types
             .filter(id => {
                 var cMeta = this._client.getChildrenMeta(id),
@@ -546,11 +549,11 @@ define([
         // Handle events related to the associated executions
         for (var i = events.length; i--;) {
             event = events[i];
-            if (event.etype === CONSTANTS.TERRITORY_EVENT_LOAD) {
+            if (event.etype === GME_CONSTANTS.TERRITORY_EVENT_LOAD) {
                 this.onExecLoad(event.eid);
-            } else if (event.etype === CONSTANTS.TERRITORY_EVENT_UPDATE) {
+            } else if (event.etype === GME_CONSTANTS.TERRITORY_EVENT_UPDATE) {
                 this.onExecUpdate(event.eid);
-            } else if (event.etype === CONSTANTS.TERRITORY_EVENT_UNLOAD) {
+            } else if (event.etype === GME_CONSTANTS.TERRITORY_EVENT_UNLOAD) {
                 this.onExecUnload(event.eid);
             }
         }

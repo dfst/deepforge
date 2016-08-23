@@ -1,12 +1,8 @@
 /*globals define, _*/
 /*jshint browser: true, camelcase: false*/
 
-/**
- * @author brollb / https://github.com/brollb
- */
-
 define([
-    'js/Constants',
+    'deepforge/Constants',
     'decorators/DcOpDecorator/EasyDAG/DcOpDecorator.EasyDAGWidget',
     'css!./ArtifactOpDecorator.EasyDAGWidget.css'
 ], function (
@@ -19,15 +15,16 @@ define([
     var ArtifactOpDecorator,
         DECORATOR_ID = 'ArtifactOpDecorator',
         CAST_OPTS = {
-            ArtifactLoader: {
-                ptr: 'artifact',
-                metaTgt: false
-            },
             ArtifactFinder: {
                 ptr: 'type',
                 metaTgt: true
             }
         };
+
+    CAST_OPTS[CONSTANTS.OP.INPUT] = {
+        ptr: 'artifact',
+        metaTgt: false
+    };
 
     // ArtifactOp nodes need to be able to...
     //     - dynamically change their outputs (downcast)
@@ -74,7 +71,7 @@ define([
     };
 
     ArtifactOpDecorator.prototype.getDisplayName = function() {
-        var ptrName = this._node.baseName === 'ArtifactLoader' ? 'artifact' : 'type',
+        var ptrName = this._node.baseName === CONSTANTS.OP.INPUT ? 'artifact' : 'type',
             id = this._node.pointers[ptrName],
             name = this.nameFor[id] || this._node.name;
         return name;
@@ -91,7 +88,7 @@ define([
     ArtifactOpDecorator.prototype.updateTargetName = function(id, name) {
         DecoratorBase.prototype.updateTargetName.apply(this, arguments);
         // Update name
-        var ptrName = this._node.baseName === 'ArtifactLoader' ? 'artifact' : 'type';
+        var ptrName = this._node.baseName === CONSTANTS.OP.INPUT ? 'artifact' : 'type';
         if (this._node.pointers[ptrName] === id) {
             this._name = name;
             this.onResize();

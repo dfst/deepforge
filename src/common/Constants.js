@@ -12,5 +12,11 @@ define({
     GRAPH_CREATE_LINE: 'LINE',
 
     // Code Generation Constants
-    CTOR_ARGS_ATTR: 'ctor_arg_order'
+    CTOR_ARGS_ATTR: 'ctor_arg_order',
+
+    // Operation types
+    OP: {
+        INPUT: 'Input',
+        OUTPUT: 'Output'
+    }
 });
