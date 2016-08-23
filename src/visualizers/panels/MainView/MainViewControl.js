@@ -4,14 +4,12 @@
 define([
     'blob/BlobClient',
     'js/Constants',
-    'js/Utils/GMEConcepts',
-    'js/NodePropertyNames',
+    'q',
     'deepforge/globals'
 ], function (
     BlobClient,
     CONSTANTS,
-    GMEConcepts,
-    nodePropertyNames,
+    Q,
     DeepForge
 ) {
 
@@ -22,15 +20,11 @@ define([
     MainViewControl = function (options) {
 
         this._logger = options.logger.fork('Control');
-
         this._client = options.client;
-
-        // Initialize core collections and variables
         this._widget = options.widget;
 
         this._currentNodeId = null;
         this._embedded = options.embedded;
-
         this.territory = {};
         this.ui = {};
         this._blobClient = new BlobClient({
@@ -67,12 +61,33 @@ define([
         };
 
         this._widget.toggleEmbeddedPanel = () => this.toggleEmbeddedPanel();
+        this._widget.updateLibraries = this.updateLibraries.bind(this);
+        this._widget.checkLibUpdates = this.checkLibUpdates.bind(this);
+        this._widget.getProjectName = this.getProjectName.bind(this);
+    };
+
+    MainViewControl.prototype.getProjectName = function () {
+        return this._client.getActiveProjectId().split('+')[1];
+    };
+
+    MainViewControl.prototype.checkLibUpdates = function () {
+        var pluginId = 'CheckLibraries',
+            context = this._client.getCurrentPluginContext(pluginId);
+
+        return Q.ninvoke(this._client, 'runServerPlugin', pluginId, context)
+            .then(res => {
+                return res.messages.map(msg => msg.message.split(' '));
+            });
+    };
+
+    MainViewControl.prototype.updateLibraries = function (libraries) {
+        var promises = libraries
+            .map(lib => Q.ninvoke(this._client, 'updateLibrary', lib[0], lib[1]));
+
+        return Q.all(promises);
     };
 
     /* * * * * * * * Visualizer content update callbacks * * * * * * * */
-    // One major concept here is with managing the territory. The territory
-    // defines the parts of the project that the visualizer is interested in
-    // (this allows the browser to then only load those relevant parts).
     MainViewControl.prototype.selectedObjectChanged = function (nodeId) {
         this._logger.debug('activeObject nodeId \'' + nodeId + '\'');
 

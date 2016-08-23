@@ -1,0 +1,28 @@
+{
+  "id": "UpdateLibrarySeed",
+  "name": "UpdateLibrarySeed",
+  "version": "0.1.0",
+  "description": "",
+  "icon": {
+    "class": "glyphicon glyphicon-cog",
+    "src": ""
+  },
+  "disableServerSideExecution": false,
+  "disableBrowserSideExecution": true,
+  "writeAccessRequired": false,
+  "configStructure": [
+      {
+          "name": "releaseType",
+          "displayName": "Release Type",
+          "description": "Specify major, minor or patch release",
+          "value": "minor",
+          "valueItems": [
+              "major",
+              "minor",
+              "patch"
+          ],
+          "valueType": "string",
+          "readOnly": false
+      }
+  ]
+}
