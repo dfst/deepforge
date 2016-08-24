@@ -48,7 +48,13 @@ define([
     };
 
     TextEditorControl.prototype.saveTextFor = function (id, text) {
+        var node = this._client.getNode(this._currentNodeId),
+            name = node.getAttribute('name'),
+            msg = `Updating ${this.ATTRIBUTE_NAME} of ${name} (${id})`;
+
+        this._client.startTransaction(msg);
         this._client.setAttributes(id, this.ATTRIBUTE_NAME, text);
+        this._client.completeTransaction();
     };
 
     TextEditorControl.prototype.setName = function (name) {

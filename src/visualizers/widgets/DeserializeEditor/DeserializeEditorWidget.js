@@ -25,6 +25,7 @@ define([
     _.extend(DeserializeEditorWidget.prototype, SerializeEditorWidget.prototype);
 
     DeserializeEditorWidget.prototype.getHeader = function(desc) {
+        this._name = desc.name;
         return [
             `-- The deserialization function for ${desc.name}`,
             '-- Globals:',
