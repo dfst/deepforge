@@ -82,7 +82,7 @@ define([
 
         this._client.startTransaction(msg);
 
-        TextEditorControl.prototype.saveTextFor.call(this, id, text);
+        TextEditorControl.prototype.saveTextFor.call(this, id, text, true);
         this._client.setAttributes(id, 'name', layerSchema.name);
 
         this._logger.debug(`Setting ctor args to ${ctorAttrs.join(',')}`);

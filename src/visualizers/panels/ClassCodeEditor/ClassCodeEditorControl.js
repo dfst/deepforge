@@ -117,7 +117,7 @@ define([
             }
         }
 
-        TextEditorControl.prototype.saveTextFor.call(this, id, text);
+        TextEditorControl.prototype.saveTextFor.call(this, id, text, true);
         this._client.completeTransaction();
     };
 

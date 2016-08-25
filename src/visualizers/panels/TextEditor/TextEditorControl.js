@@ -47,14 +47,18 @@ define([
         this._widget.setName = this.setName.bind(this);
     };
 
-    TextEditorControl.prototype.saveTextFor = function (id, text) {
+    TextEditorControl.prototype.saveTextFor = function (id, text, inTransaction) {
         var node = this._client.getNode(this._currentNodeId),
             name = node.getAttribute('name'),
             msg = `Updating ${this.ATTRIBUTE_NAME} of ${name} (${id})`;
 
-        this._client.startTransaction(msg);
+        if (!inTransaction) {
+            this._client.startTransaction(msg);
+        }
         this._client.setAttributes(id, this.ATTRIBUTE_NAME, text);
-        this._client.completeTransaction();
+        if (!inTransaction) {
+            this._client.completeTransaction();
+        }
     };
 
     TextEditorControl.prototype.setName = function (name) {
