@@ -597,6 +597,17 @@ define([
         }
     };
 
+    PipelineEditorControl.prototype._deleteTag = function (tagName) {
+        // Check if the tag exists and delete it if so!
+        var projectId = this._client.getActiveProjectId();
+
+        this._client.deleteTag(projectId, tagName, err => {
+            if (err) {
+                this.logger.error(`Tag deletion failed: ${err}`);
+            }
+        });
+    };
+
     PipelineEditorControl.prototype.deleteExecution = function (id) {
         var node = this._client.getNode(id),
             name = '',
@@ -610,6 +621,7 @@ define([
 
         // Stop the execution w/o setting any attributes on the execution
         this._client.startTransaction(msg);
+        this._deleteTag(name);  // Remove execution tag
         if (this.isRunning(node)) {
             this.silentStopExecution(id, true).then(() => {
                 this._client.delMoreNodes([id]);
