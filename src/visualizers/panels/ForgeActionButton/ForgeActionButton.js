@@ -13,7 +13,6 @@ define([
     'js/RegistryKeys',
     'js/Panels/MetaEditor/MetaEditorConstants',
     'q',
-    'text!./PluginConfig.json',
     'deepforge/globals'
 ], function (
     BlobClient,
@@ -27,7 +26,6 @@ define([
     REGISTRY_KEYS,
     META_CONSTANTS,
     Q,
-    PluginConfig,
     DeepForge
 ) {
     'use strict';
@@ -35,7 +33,6 @@ define([
     var NEW_OPERATION_ID = '__NEW_OPERATION__';
     var ForgeActionButton= function (layoutManager, params) {
         PluginButton.call(this, layoutManager, params);
-        this._pluginConfig = JSON.parse(PluginConfig);
         this._client = this.client;
         this._actions = [];
         this._blobClient = new BlobClient({

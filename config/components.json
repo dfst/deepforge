@@ -16,7 +16,28 @@
         "cachePrefix": "deepforge-header"
     },
     "FloatingActionButton": {
-        "hideOnEmpty": true
+        "hideOnEmpty": true,
+        "pluginUIConfigs": {
+            "GenerateArchitecture": {
+                "icon": "description",
+                "hotkey": "shift enter",
+                "priority": -1
+            },
+            "ExecutePipeline": {
+                "icon": "play_arrow",
+                "hotkey": "shift enter",
+                "color": "green",
+                "priority": 1
+            },
+            "ImportTorch": {
+                "icon": "import_export",
+                "priority": -1
+            },
+            "GenerateExecFile": {
+                "icon": "play_for_work",
+                "priority": -1
+            }
+        }
     },
     "GenericUIProjectNavigatorController": {
         "rootMenuClass": "deepforge-logo",
