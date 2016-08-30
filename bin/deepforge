@@ -117,7 +117,7 @@ var isLocalUri = function(protocol, uri) {
         uri.indexOf(protocol + '://127.0.0.1') === 0;
 };
 
-var checkMongo = function(args) {
+var checkMongo = function(args, notSilent) {
     // check the webgme config
     var gmeConfig = require('../config'),
         mongoUri = gmeConfig.mongo.uri;
@@ -129,15 +129,26 @@ var checkMongo = function(args) {
             console.log('MongoDB is already running!');
         } catch (e) {  // no pIds
             console.log('Starting MongoDB...');
-            startMongo(args, true);
+            var match = mongoUri.match(/:([0-9]+)/),
+                port = '80';
+
+            if (match) {
+                port = match[1];
+            }
+
+            startMongo(args, port, !notSilent);
         }
+    } else if (notSilent) {
+        console.log(`Cannot start remote mongo locally: ${mongoUri}`);
+    } else {
+        console.log(`Using remote mongo: ${mongoUri}`);
     }
 };
 
-var startMongo = function(args, silent) {
-    var job = rawSpawn('mongod', ['--dbpath', p(config.mongo.dir)], {
-        cwd: process.env.HOME
-    });
+var startMongo = function(args, port, silent) {
+    var opts = ['--dbpath', p(config.mongo.dir), '--port', port],
+        job = rawSpawn('mongod', opts, {cwd: process.env.HOME});
+
     if (!silent) {
         job.stdout.on('data',
             data => process.stdout.write(data.toString()));
@@ -293,7 +304,7 @@ program.command('start')
         }
 
         if (args.mongo) {
-            startMongo(args);
+            checkMongo(args, true);
         }
 
         if (!args.server && !args.worker && !args.mongo) {
