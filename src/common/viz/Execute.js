@@ -43,7 +43,7 @@ define([
                 duration = err ? 4000 : 2000;
 
             // Check if it was canceled - if so, show that type of message
-            if (result) {
+            if (result && result.messages.length) {
                 msg = result.messages[0].message;
                 duration = 4000;
             }
