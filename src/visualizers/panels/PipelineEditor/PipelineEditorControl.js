@@ -44,6 +44,7 @@ define([
         this.executionUI = null;
         this.invalidated = {};
         this._widget.deleteExecution = this.deleteExecution.bind(this);
+        this._widget.isArchitecturePtr = this.isArchitecturePtr.bind(this);
     };
 
     _.extend(
@@ -679,7 +680,19 @@ define([
         } else {
             return EasyDAGControl.prototype._getValidTargetsFor.apply(this, arguments);
         }
+    };
 
+    PipelineEditorControl.prototype.isArchitecturePtr = function (id, ptr) {
+        var ptrMeta = this._client.getPointerMeta(id, ptr),
+            targets;
+
+        // Check if ptr of the given id is referencing an architecture
+        if (ptrMeta.items) {
+            targets = ptrMeta.items.map(item => this._client.getNode(item.id));
+            return !!targets.find(node => node.getAttribute('name') === 'Architecture');
+        }
+
+        return false;
     };
 
     return PipelineEditorControl;

@@ -32,8 +32,7 @@ define([
         STATE = {
             DEFAULT: 'default',
             CONNECTING: 'connecting'
-        },
-        UPLOAD_ARTIFACT_ID = '__UPLOAD_ARTIFACT__';
+        };
 
     PipelineEditorWidget = function (logger, container, execCntr) {
         EasyDAGWidget.call(this, logger, container);
@@ -342,33 +341,52 @@ define([
         // If it is an 'ArtifactLoader', then we will need to add 'upload artifact'
         // options
         if (this.items[itemId].desc.baseName === 'ArtifactLoader') {
-            this.selectTargetForLoader.apply(this, arguments);
+            return this.selectTargetForLoader.apply(this, arguments);
+        } else if (this.isArchitecturePtr.apply(this, arguments)) {
+            // Create new architecture from the "set ptr" dialog
+            return this.selectArchitectureTarget.apply(this, arguments);
         } else {
             return EasyDAGWidget.prototype.selectTargetFor.apply(this, arguments);
         }
     };
 
-    PipelineEditorWidget.prototype.selectTargetForLoader = function(itemId, ptr, filter) {
-        var validTargets = this.getValidTargetsFor(itemId, ptr, filter),
-            nodeId = validTargets.length ? validTargets[0].node.id : null,
-            uploadNode;
+    PipelineEditorWidget.prototype.addCreationNode = function(name, targets) {
+        var nodeId = targets.length ? targets[0].node.id : null,
+            creationNode;
 
-        // Add the 'Upload Artifact' option
-        uploadNode = {
+        creationNode = {
             node: {
-                id: UPLOAD_ARTIFACT_ID,
-                name: 'Upload Artifact',
+                id: `creation-node-${name}`,
+                name: name,
                 class: 'create-node',
                 attributes: {},
                 Decorator: this.getDecorator(nodeId)
             }
         };
-        validTargets.push(uploadNode);
 
+        targets.push(creationNode);
+        return creationNode.node.id;
+    };
+
+    PipelineEditorWidget.prototype.selectArchitectureTarget = function(itemId, ptr, filter) {
+        return this.selectTargetWithCreationNode('New Architecture',
+            DeepForge.create.Architecture, itemId, ptr, filter);
+    };
+
+    PipelineEditorWidget.prototype.selectTargetForLoader = function(itemId, ptr, filter) {
+        return this.selectTargetWithCreationNode('Upload Artifact',
+            DeepForge.create.Artifact, itemId, ptr, filter);
+    };
+
+    PipelineEditorWidget.prototype.selectTargetWithCreationNode = function(name, fn, itemId, ptr, filter) {
+        var validTargets = this.getValidTargetsFor(itemId, ptr, filter),
+            creationNodeId = this.addCreationNode(name, validTargets);
+
+        // Add the 'Upload Artifact' option
         AddNodeDialog.prompt(validTargets)
             .then(selected => {
-                if (selected.node.id === UPLOAD_ARTIFACT_ID) {
-                    DeepForge.create.Artifact();
+                if (selected.node.id === creationNodeId) {
+                    fn();
                 } else {
                     var item = this.items[itemId];
                     if (item.decorator.savePointer) {
