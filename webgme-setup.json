@@ -44,6 +44,14 @@
       "ExecuteJob": {
         "src": "src/plugins/ExecuteJob",
         "test": "test/plugins/ExecuteJob"
+      },
+      "CheckLibraries": {
+        "src": "src/plugins/CheckLibraries",
+        "test": "test/plugins/CheckLibraries"
+      },
+      "UpdateLibrarySeed": {
+        "src": "src/plugins/UpdateLibrarySeed",
+        "test": "test/plugins/UpdateLibrarySeed"
       }
     },
     "layouts": {},

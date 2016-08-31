@@ -33,3 +33,5 @@ node_modules
 tmp/
 test-tmp/
 blob-local-storage/
+src/seeds/nn/hash.txt
+src/seeds/pipeline/hash.txt
