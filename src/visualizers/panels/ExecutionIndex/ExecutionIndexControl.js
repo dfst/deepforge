@@ -56,9 +56,8 @@ define([
             // Refresh the other lines visible
             otherLines = Object.keys(this.displayedExecutions)
                 .filter(eId => this.displayedExecutions[eId] && (eId !== id))
-                .map(id => this._linesForExecution[id])
-                .reduce((l1, l2) => l1.concat(l2), [])
-                .filter(lineId => !!lineId);
+                .map(id => this._linesForExecution[id] || [])
+                .reduce((l1, l2) => l1.concat(l2), []);
 
             this._updateLines(otherLines, false);
             this._updateLines(otherLines, true);
@@ -71,7 +70,8 @@ define([
         var action = added ? 'addNode' : 'removeNode';
 
         // If removing, just get the ids
-        lines = !added ? lines : lines.map(line => this._getObjectDescriptor(line));
+        lines = !added ? lines : lines.map(line => this._getObjectDescriptor(line))
+            .filter(line => !!line);
 
         // update the given lines
         for (var i = lines.length; i--;) {
