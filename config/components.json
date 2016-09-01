@@ -41,7 +41,7 @@
     },
     "GenericUIProjectNavigatorController": {
         "rootMenuClass": "deepforge-logo",
-        "rootDisplayName": ""
+        "rootDisplayName": "DeepForge"
     },
     "CHFLayout": {
         "panels": [

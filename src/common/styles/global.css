@@ -1,10 +1,12 @@
 li.deepforge-logo {
-  background-image: url(../deepforge-logo.png);
-  background-repeat: no-repeat;
-  width: 100px;
-  height: 34px;
- 
-  background-size: 100px 34px;
+    background-image: url(img/deepforge-logo.png);
+    background-repeat: no-repeat;
+    width: 100px;
+    background-size: 100px 34px;
+}
+
+li.deepforge-logo span {
+    visibility: hidden;
 }
 
 .create-node text {
