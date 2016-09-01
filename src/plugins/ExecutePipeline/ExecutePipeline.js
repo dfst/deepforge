@@ -339,7 +339,7 @@ define([
         }
 
         this.isDeleted().then(isDeleted => {
-            if (isDeleted) {
+            if (!isDeleted) {
 
                 this.logger.debug(`Pipeline "${name}" complete!`);
                 this.core.setAttribute(this.activeNode, 'endTime', Date.now());
