@@ -57,7 +57,8 @@ define([
             otherLines = Object.keys(this.displayedExecutions)
                 .filter(eId => this.displayedExecutions[eId] && (eId !== id))
                 .map(id => this._linesForExecution[id])
-                .reduce((l1, l2) => l1.concat(l2), []);
+                .reduce((l1, l2) => l1.concat(l2), [])
+                .filter(lineId => !!lineId);
 
             this._updateLines(otherLines, false);
             this._updateLines(otherLines, true);
