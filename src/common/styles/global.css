@@ -1,7 +1,7 @@
 li.deepforge-logo {
-    /* TODO: update this for the deepforge text logo */
     background-image: url(img/deepforge-logo.png);
     background-repeat: no-repeat;
+    background-position: center;
     width: 100px;
     background-size: 100px 34px;
 }
@@ -11,8 +11,8 @@ li.deepforge-logo span {
 }
 
 i.gme-icon {
-    /* TODO: put the simple icon here */
-    background-image: url(img/deepforge-logo.png);
+    background-image: url(img/deepforge-icon.png);
+    background-size: 15.20px 18px;
 }
 
 .create-node text {
