@@ -105,7 +105,9 @@ define([
         });
     };
 
-    ExecuteJob.prototype.setAttribute = function (nodeId, attr, value) {
+    ExecuteJob.prototype.setAttribute = function (node, attr, value) {
+        var nodeId = this.core.getPath(node);
+
         if (!this.changes[nodeId]) {
             this.changes[nodeId] = {};
         }
@@ -125,7 +127,7 @@ define([
 
     ExecuteJob.prototype._applyNodeChanges = function (node, changes) {
         for (var i = changes.length; i--;) {
-            this.core.setAttribute(changes[0], changes[1]);
+            this.core.setAttribute(node, changes[i][0], changes[i][1]);
         }
         return node;
     };
