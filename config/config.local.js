@@ -7,7 +7,6 @@ var config = require('./config.default'),
 
 // Turn up the worker polling rate
 config.executor.workerRefreshInterval = 150;
-config.executor.clearOldDataAtStartUp = true,
 
 validateConfig(config);
 module.exports = config;
