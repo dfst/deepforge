@@ -32,6 +32,8 @@ define([
     LayerEditorControl.prototype._getObjectDescriptor = function (nodeId) {
         var desc = TextEditorControl.prototype._getObjectDescriptor.call(this, nodeId),
             node = this._client.getNode(nodeId),
+            baseId = node.getBaseId(),
+            base = this._client.getNode(baseId),
             hasCode = node.getValidAttributeNames().indexOf('code') > -1,
             template;
 
@@ -50,7 +52,16 @@ define([
         }
 
         if (template) {
-            desc.text = _.template(template)(desc);
+            var baseTorchType = 'nn.Module';
+            // If the base type is 'Criterion', set the base type to nn.Criterion
+            if (base.getAttribute('name') === 'Criterion') {
+                baseTorchType = 'nn.Criterion';
+            }
+
+            desc.text = _.template(template)({
+                name: desc.name,
+                baseTorchType: baseTorchType
+            });
         }
         return desc;
     };
