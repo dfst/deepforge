@@ -41,15 +41,9 @@ detect_profile() {
 }
 detect_profile
 
-command -v node >/dev/null 2>&1 || {
-    # No node! Install nvm
-    echo >&2 "NodeJS is not found. Installing (using nvm)...";
-    curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.31.1/install.sh | bash;
-    source $DETECTED_PROFILE
-    . $NVM_DIR/nvm.sh
-
+set_node_version() {
     # Install nodejs v6.2.0
-    echo "Installing nodejs v6.2.0"
+    echo "Installing NodeJS v6.2.0"
     nvm install v6.2.0
     nvm alias default v6.2.0
 
@@ -58,40 +52,21 @@ command -v node >/dev/null 2>&1 || {
 }
 
 command -v node >/dev/null 2>&1 || {
-    # No mongod!
-    echo >&2 "MongoDB is not found. Installing...";
-    if [[ `uname` == "Darwin" ]]; then
-        brew install mongodb
-    elif [[ "$(uname)" == 'Linux' ]]; then
+    # No node! Install nvm
+    echo >&2 "NodeJS is not found. Installing (using nvm)...";
+    curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.31.1/install.sh | bash;
+    source $DETECTED_PROFILE
+    . $NVM_DIR/nvm.sh
 
-        if [[ -r /etc/os-release ]]; then
-            # this will get the required information without dirtying any env state
-            DIST_VERS="$( ( . /etc/os-release &>/dev/null
-                            echo "$ID $VERSION_ID") )"
-            DISTRO="${DIST_VERS%% *}" # get our distro name
-            VERSION="${DIST_VERS##* }" # get our version number
-        elif [[ -r /etc/lsb-release ]]; then
-            DIST_VERS="$( ( . /etc/lsb-release &>/dev/null
-                            echo "${DISTRIB_ID,,} $DISTRIB_RELEASE") )"
-            DISTRO="${DIST_VERS%% *}" # get our distro name
-            VERSION="${DIST_VERS##* }" # get our version number
-        else # well, I'm out of ideas for now
-            echo '==> Failed to determine distro and version.'
-            exit 1
-        fi
+    set_node_version
+}
 
-        # Detect archlinux
-        if [[ "$DISTRO" = "arch" ]]; then
-            distribution="archlinux"
-            sudo pacman -S mongodb
-        # Detect Ubuntu
-        elif [[ "$DISTRO" = "ubuntu" ]]; then
-            export DEBIAN_FRONTEND=noninteractive
-            sudo apt-get install mongodb
-        else
-            NEEDS_MONGO=true
-        fi
-    fi
+# Check node version supports arrow fns and string templates
+node -e '() => console.log(`print "3": ${1+2}`)' >/dev/null 2>&1 || {
+    echo "Unsupported version of NodeJS."
+    echo ""
+    echo "Please update NodeJS to version 4.x.x or later (6.x.x recommended)"
+    exit 1
 }
 
 echo >&2 "Installing DeepForge...";
