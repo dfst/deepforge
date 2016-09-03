@@ -34,6 +34,7 @@ define([
         this.pluginMetadata = pluginMetadata;
 
         this._currentSave = Q();
+        this.changes = {};
         this.initRun();
     };
 
@@ -101,7 +102,7 @@ define([
             // If starting with a pipeline, we will create an Execution first
             startPromise = this.createExecution(this.activeNode)
                 .then(execNode => {
-                    this.logger.debug(`Finished creating execution "${this.core.getAttribute(execNode, 'name')}"`);
+                    this.logger.debug(`Finished creating execution "${this.getAttribute(execNode, 'name')}"`);
                     this.activeNode = execNode;
                 });
         } else if (this.core.isTypeOf(this.activeNode, this.META.Execution)) {
@@ -120,7 +121,7 @@ define([
             var children = subtree
                 .filter(n => this.core.getParent(n) === this.activeNode);
 
-            this.pipelineName = this.core.getAttribute(this.activeNode, 'name');
+            this.pipelineName = this.getAttribute(this.activeNode, 'name');
             this.logger.debug(`Loaded subtree of ${this.pipelineName}. About to build cache`);
             this.buildCache(subtree);
             this.logger.debug('Parsing execution for job inter-dependencies');
@@ -139,6 +140,7 @@ define([
         // before continuing
         this._currentSave = this._currentSave
             .then(() => this.updateForkName(this.pipelineName))
+            .then(() => this.applyChanges())
             .then(() => CreateExecution.prototype.save.call(this, msg))
             .then(result => {
                 var msg;
@@ -192,14 +194,14 @@ define([
         nodes.filter(node => this.core.isTypeOf(node, this.META.Job))
             .forEach(node => {
                 this.recordOldMetadata(node);
-                this.core.setAttribute(node, 'status', 'pending');
+                this.setAttribute(node, 'status', 'pending');
             });
 
         // Set the status of the execution to 'running'
-        this.core.setAttribute(this.activeNode, 'status', 'running');
+        this.setAttribute(this.activeNode, 'status', 'running');
         this.logger.info('Setting all jobs status to "pending"');
         this.logger.debug(`Making a commit from ${this.currentHash}`);
-        this.core.setAttribute(this.activeNode, 'startTime', Date.now());
+        this.setAttribute(this.activeNode, 'startTime', Date.now());
         this.core.delAttribute(this.activeNode, 'endTime');
         return this.save(`Initializing ${this.pipelineName} for execution`);
     };
@@ -291,24 +293,24 @@ define([
     ExecutePipeline.prototype.onOperationFail = function(node, err) {
         var job = this.core.getParent(node),
             id = this.core.getPath(node),
-            name = this.core.getAttribute(node, 'name');
+            name = this.getAttribute(node, 'name');
 
         this.logger.debug(`Operation ${name} (${id}) failed: ${err}`);
-        this.core.setAttribute(job, 'status', 'fail');
+        this.setAttribute(job, 'status', 'fail');
         this.clearOldMetadata(job);
         this.onPipelineComplete(err);
     };
 
     ExecutePipeline.prototype.onOperationCanceled = function(op) {
         var job = this.core.getParent(op);
-        this.core.setAttribute(job, 'status', 'canceled');
+        this.setAttribute(job, 'status', 'canceled');
         this.runningJobs--;
-        this.logger.debug(`${this.core.getAttribute(job, 'name')} has been canceled`);
+        this.logger.debug(`${this.getAttribute(job, 'name')} has been canceled`);
         this.onPipelineComplete();
     };
 
     ExecutePipeline.prototype.onPipelineComplete = function(err) {
-        var name = this.core.getAttribute(this.activeNode, 'name'),
+        var name = this.getAttribute(this.activeNode, 'name'),
             msg = `"${this.pipelineName}" `;
 
         if (err) {
@@ -342,8 +344,8 @@ define([
             if (!isDeleted) {
 
                 this.logger.debug(`Pipeline "${name}" complete!`);
-                this.core.setAttribute(this.activeNode, 'endTime', Date.now());
-                this.core.setAttribute(this.activeNode, 'status',
+                this.setAttribute(this.activeNode, 'endTime', Date.now());
+                this.setAttribute(this.activeNode, 'status',
                     (this.pipelineError ? 'failed' :
                     (this.canceled ? 'canceled' : 'success')
                     )
@@ -420,7 +422,7 @@ define([
     };
 
     ExecutePipeline.prototype.onOperationComplete = function (opNode) {
-        var name = this.core.getAttribute(opNode, 'name'),
+        var name = this.getAttribute(opNode, 'name'),
             nextPortIds = this.getOperationOutputIds(opNode),
             jNode = this.core.getParent(opNode),
             resultPorts,
@@ -430,7 +432,7 @@ define([
         // Set the operation to 'success'!
         this.clearOldMetadata(jNode);
         this.runningJobs--;
-        this.core.setAttribute(jNode, 'status', 'success');
+        this.setAttribute(jNode, 'status', 'success');
         this.logger.info(`Setting ${jobId} status to "success"`);
         this.logger.info(`There are now ${this.runningJobs} running jobs`);
         this.logger.debug(`Making a commit from ${this.currentHash}`);
@@ -449,11 +451,11 @@ define([
                     .forEach(pair => {  // [ resultPort, nextPort ]
                         var result = pair[0],
                             next = pair[1],
-                            hash = this.core.getAttribute(result, 'data');
+                            hash = this.getAttribute(result, 'data');
                         
                         this.logger.info(`forwarding data (${hash}) from ${this.core.getPath(result)} ` +
                             `to ${this.core.getPath(next)}`);
-                        this.core.setAttribute(next, 'data', hash);
+                        this.setAttribute(next, 'data', hash);
                         this.logger.info(`Setting ${jobId} data to ${hash}`);
                     });
 
