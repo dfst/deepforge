@@ -281,6 +281,12 @@
       "xor": {
         "src": "src/seeds/xor"
       }
+    },
+    "routers": {
+      "JobLogsAPI": {
+        "src": "src/routers/JobLogsAPI",
+        "mount": "execution/logs"
+      }
     }
   },
   "dependencies": {
@@ -337,6 +343,7 @@
         "path": "node_modules/webgme-easydag/src/decorators/EllipseDecorator"
       }
     },
-    "seeds": {}
+    "seeds": {},
+    "routers": {}
   }
 }

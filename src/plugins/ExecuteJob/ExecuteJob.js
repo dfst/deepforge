@@ -8,6 +8,7 @@ define([
     'plugin/PluginBase',
     'deepforge/plugin/LocalExecutor',
     'deepforge/plugin/PtrCodeGen',
+    'deepforge/JobLogsClient',
     'deepforge/Constants',
     './templates/index',
     'q',
@@ -19,6 +20,7 @@ define([
     PluginBase,
     LocalExecutor,  // DeepForge operation primitives
     PtrCodeGen,
+    JobLogsClient,
     CONSTANTS,
     Templates,
     Q,
@@ -49,6 +51,7 @@ define([
         this._oldMetadataByName = {};  // name -> id
         this.lastAppliedCmd = {};
         this.canceled = false;
+        this.logManager = null;
     };
 
     /**
@@ -81,6 +84,13 @@ define([
             return callback(`Cannot execute ${typeName} (expected Job)`, this.result);
         }
 
+        // Get the gmeConfig...
+        this.logManager = new JobLogsClient({
+            logger: this.logger,
+            port: this.gmeConfig.server.port,
+            branchName: this.branchName,
+            projectId: this.projectId
+        });
         this._callback = callback;
         this.currentForkName = null;
         this.prepare()
@@ -114,6 +124,7 @@ define([
                 if (result.status === STORAGE_CONSTANTS.FORKED) {
                     msg = `"${name}" execution has forked to "${result.forkName}"`;
                     this.currentForkName = result.forkName;
+                    this.logManager.fork(result.forkName);
                     this.sendNotification(msg);
                 } else if (result.status === STORAGE_CONSTANTS.MERGED) {
                     this.logger.debug('Merged changes. About to update plugin nodes');
@@ -484,7 +495,8 @@ define([
         this.outputLineCount[jobId] = 0;
         // Set the job status to 'running'
         this.core.setAttribute(job, 'status', 'queued');
-        this.core.setAttribute(job, 'stdout', '');
+        this.core.delAttribute(job, 'stdout');
+        this.logManager.deleteLog(jobId);
         this.logger.info(`Setting ${jobId} status to "queued" (${this.currentHash})`);
         this.logger.debug(`Making a commit from ${this.currentHash}`);
         this.save(`Queued "${name}" operation in ${this.pipelineName}`)
@@ -818,6 +830,13 @@ define([
         });
     };
 
+    ExecuteJob.prototype.notifyStdoutUpdate = function (nodeId) {
+        this.sendNotification({
+            message: `${CONSTANTS.STDOUT_UPDATE}/${nodeId}`,
+            toBranch: true
+        });
+    };
+
     ExecuteJob.prototype.watchOperation = function (executor, hash, op, job) {
         var jobId = this.core.getPath(job),
             opId = this.core.getPath(op),
@@ -861,9 +880,9 @@ define([
                             output = this.processStdout(job, output, true);
 
                             if (output) {
-                                stdout += output;
-                                this.core.setAttribute(job, 'stdout', stdout);
-                                return this.save(`Received stdout for ${name}`);
+                                // Send notification to all clients watching the branch
+                                this.logManager.appendTo(jobId, output)
+                                    .then(() => this.notifyStdoutUpdate(jobId));
                             }
                         });
                 }
@@ -888,7 +907,11 @@ define([
                     // If it was cancelled, the pipeline has been stopped
                     this.logger.debug(`"${name}" has been CANCELED!`);
                     this.canceled = true;
-                    return this.onOperationCanceled(op);
+                    return this.logManager.getLog(jobId)
+                        .then(stdout => {
+                            this.core.setAttribute(job, 'stdout', stdout);
+                            return this.onOperationCanceled(op);
+                        });
                 }
 
                 if (info.status === 'SUCCESS' || info.status === 'FAILED_TO_EXECUTE') {
@@ -902,6 +925,7 @@ define([
                             // Parse the remaining code
                             stdout = this.processStdout(job, stdout);
                             this.core.setAttribute(job, 'stdout', stdout);
+                            this.logManager.deleteLog(jobId);
                             if (info.status !== 'SUCCESS') {
                                 // Download all files
                                 this.result.addArtifact(info.resultHashes[name + '-all-files']);

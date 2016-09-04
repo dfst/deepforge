@@ -8,7 +8,7 @@
     "start-dev": "NODE_ENV=dev node app.js",
     "local": "node ./bin/start-local.js",
     "worker": "node ./bin/start-worker.js",
-    "test": "node ./node_modules/mocha/bin/mocha --recursive test",
+    "test": "mkdir ./test-tmp; node ./node_modules/mocha/bin/mocha --recursive test",
     "watch-test": "./node_modules/nodemon/bin/nodemon.js --exec 'node ./node_modules/mocha/bin/mocha --recursive test'",
     "build-nn": "node ./utils/nn-parser.js"
   },
