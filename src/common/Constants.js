@@ -5,7 +5,13 @@ define({
     // DeepForge metadata creation in dist execution
     START_CMD: 'deepforge-cmd',
 
-    IMAGE: 'IMG',
+    IMAGE: {  // all prefixed w/ 'IMG' for simple upload detection
+        PREFIX: 'IMG',
+        BASIC: 'IMG-B',
+        CREATE: 'IMG-C',
+        UPDATE: 'IMG-U',
+        NAME: 'IMAGE-N'  // No upload required
+    },
 
     GRAPH_CREATE: 'GRAPH',
     GRAPH_PLOT: 'PLOT',

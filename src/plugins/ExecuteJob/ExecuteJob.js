@@ -1238,20 +1238,33 @@ define([
         this._metadata[jobId + '/' + id] = line;
     };
 
-    ExecuteJob.prototype[CONSTANTS.IMAGE] = function (job, hash) {
-        var jobId = this.core.getPath(job),
-            name = Array.prototype.slice.call(arguments, 2).join(' '),
-            id = jobId + '/IMAGE/' + name,
-            imageNode = this._metadata[id];  // Look for the metadata imageNode
+    ExecuteJob.prototype[CONSTANTS.IMAGE.BASIC] =
+    ExecuteJob.prototype[CONSTANTS.IMAGE.UPDATE] =
+    ExecuteJob.prototype[CONSTANTS.IMAGE.CREATE] = function (job, hash, imgId) {
+        var name = Array.prototype.slice.call(arguments, 3).join(' '),
+            imageNode = this._getImageNode(job, imgId, name);
 
-        id = jobId + '/' + id;
-        this.logger.info(`Creating graph ${id} named ${name}`);
+        this.setAttribute(imageNode, 'data', hash);
+    };
+
+    ExecuteJob.prototype[CONSTANTS.IMAGE.NAME] = function (job, imgId) {
+        var name = Array.prototype.slice.call(arguments, 2).join(' '),
+            imageNode = this._getImageNode(job, imgId, name);
+
+        this.setAttribute(imageNode, 'name', name);
+    };
+
+    ExecuteJob.prototype._getImageNode = function (job, imgId, name) {
+        var jobId = this.core.getPath(job),
+            id = jobId + '/IMAGE/' + imgId,
+            imageNode = this._metadata[id];  // Look for the metadata imageNode
 
         if (!imageNode) {
 
             // Check if the imageNode already exists
             imageNode = this._getExistingMetadata(jobId, 'Image', name);
             if (!imageNode) {
+                this.logger.info(`Creating image ${id} named ${name}`);
                 imageNode = this.core.createNode({
                     base: this.META.Image,
                     parent: job
@@ -1260,8 +1273,7 @@ define([
             }
             this._metadata[id] = imageNode;
         }
-
-        this.setAttribute(imageNode, 'data', hash);
+        return imageNode;
     };
 
     ExecuteJob.prototype._getExistingMetadata = function (jobId, type, name) {

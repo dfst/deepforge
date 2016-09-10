@@ -53,7 +53,7 @@ function Graph:line(name, opts)
 end
 
 -- Image support
-function deepforge.image(name, tensor)
+local function saveImage(name, tensor)
     require 'image'
     require 'paths'
 
@@ -66,7 +66,32 @@ function deepforge.image(name, tensor)
     end
 
     image.save(path, tensor)
-    deepforge._cmd("<%= IMAGE %>", name)
+end
+
+function deepforge.image(name, tensor)
+    saveImage(name, tensor)
+    deepforge._cmd("<%= IMAGE.BASIC %>", deepforge.id(), name)
+end
+
+Image = torch.class('deepforge.Image')
+function Image:__init(name, tensor)
+    self.id = deepforge.id()
+    self.name = name
+
+    if tensor ~= nil then
+        saveImage(name, tensor)
+        deepforge._cmd('<%= IMAGE.CREATE %>', self.id, self.name)
+    end
+end
+
+function Image:update(tensor)
+    saveImage(self.name, tensor)
+    deepforge._cmd('<%= IMAGE.UPDATE %>', self.id, self.name)
+end
+
+function Image:title(name)
+    self.name = name
+    deepforge._cmd('<%= IMAGE.NAME %>', self.id, self.name)
 end
 
 return deepforge

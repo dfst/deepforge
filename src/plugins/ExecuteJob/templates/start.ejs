@@ -12,7 +12,7 @@ var spawn = require('child_process').spawn,
 
 // Get the BlobClient...
 var COMMAND_PREFIX = '<%= START_CMD %>',
-    IMAGE = '<%= IMAGE %>',
+    IMAGE = '<%= IMAGE.PREFIX %>',
     requirejs = require('webgme').requirejs,
     remainingImageCount = 0,
     exitCode = null;
@@ -80,7 +80,7 @@ requirejs([
 
     var uploadImage = function(line) {
         var args = line.split(/\s+/),
-            name = args.slice(2).join(' ').replace(/\s+$/, ''),
+            name = args.slice(3).join(' ').replace(/\s+$/, ''),
             filename = 'metadata/' + name + '.png';
 
         // Upload the image from metadata/

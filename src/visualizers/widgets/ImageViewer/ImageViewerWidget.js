@@ -82,7 +82,6 @@ define([
 
     ImageViewerWidget.prototype.updateImage = function (url) {
         url = url || NO_IMAGE_URL;
-        this.zoom = 1;
         this.$image.attr('src', url);
     };
 
