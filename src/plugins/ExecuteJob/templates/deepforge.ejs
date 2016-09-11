@@ -16,7 +16,7 @@ function deepforge._cmd(...)
     for i=1,n do
         cmd = cmd .. ' ' .. tostring(arg[i])
     end
-    print(cmd)
+    print(cmd .. ' ')  -- guarantee ends w/ space
 end
 
 -- Graph support

@@ -2,6 +2,7 @@ var path = require('path'),
     Q = require('q'),
     fs = require('fs'),
     exists = require('exists-file'),
+    utils = require('../../common/utils'),
     NO_LOG_FOUND = '';
 
 var JobLogManager = function(logger, config) {
@@ -10,11 +11,12 @@ var JobLogManager = function(logger, config) {
     this._onCopyFinished = {};
 };
 
-JobLogManager.prototype._getFilePath = function(jobInfo) {
-    var jobId = jobInfo.job.replace(/\//g, '_'),
+JobLogManager.prototype._getFilePath = function(jInfo) {
+    this.logger.info(`getting file path for ${jInfo.job} in ${jInfo.project} on ${jInfo.branch}`);
+    var jobId = jInfo.job.replace(/\//g, '_'),
         filename = `${jobId}.txt`;
 
-    return path.join(this.rootDir, jobInfo.project, jobInfo.branch, filename);
+    return path.join(this.rootDir, jInfo.project, jInfo.branch, filename);
 };
 
 JobLogManager.prototype.exists = function(jobInfo) {
@@ -83,6 +85,21 @@ JobLogManager.prototype.migrate = function(migrationInfo, jobIds) {
     }));
 };
 
+JobLogManager.prototype._appendTo = function(filename, logs) {
+    return Q.nfcall(exists, filename).then(exists => {
+        var promise = Q().then(() => '');
+        if (exists) {
+            promise = Q.nfcall(fs.readFile, filename, 'utf8');
+        }
+
+        return promise.then(content => {
+            // This could be optimized to not re-read/write the whole file each time...
+            var lines = utils.resolveCarriageReturns(content + logs);
+            return Q.nfcall(fs.writeFile, filename, lines.join('\n'));
+        });
+    });
+};
+
 JobLogManager.prototype.appendTo = function(jobInfo, logs) {
     var filename = this._getFilePath(jobInfo),
         branchDirname = path.dirname(filename),
@@ -93,7 +110,7 @@ JobLogManager.prototype.appendTo = function(jobInfo, logs) {
     return this.mkdirIfNeeded(this.rootDir)
         .then(() => this.mkdirIfNeeded(projDirname))
         .then(() => this.mkdirIfNeeded(branchDirname))
-        .then(() => Q.nfcall(fs.appendFile, filename, logs));
+        .then(() => this._appendTo(filename, logs));
 };
 
 JobLogManager.prototype.getLog = function(jobInfo) {

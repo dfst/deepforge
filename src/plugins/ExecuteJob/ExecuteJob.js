@@ -10,6 +10,7 @@ define([
     'deepforge/plugin/PtrCodeGen',
     'deepforge/JobLogsClient',
     'deepforge/Constants',
+    'deepforge/utils',
     './templates/index',
     'q',
     'underscore'
@@ -22,6 +23,7 @@ define([
     PtrCodeGen,
     JobLogsClient,
     CONSTANTS,
+    utils,
     Templates,
     Q,
     _
@@ -869,7 +871,9 @@ define([
                             var stdout = this.core.getAttribute(job, 'stdout'),
                                 output = outputLines.map(o => o.output).join(''),
                                 last = stdout.lastIndexOf('\n'),
-                                lastLine;
+                                result,
+                                lastLine,
+                                msg;
 
                             // parse deepforge commands
                             if (last !== -1) {
@@ -877,12 +881,17 @@ define([
                                 lastLine = stdout.substring(last+1);
                                 output = lastLine + output;
                             }
-                            output = this.processStdout(job, output, true);
+                            result = this.processStdout(job, output, true);
+                            output = result.stdout;
 
                             if (output) {
                                 // Send notification to all clients watching the branch
                                 this.logManager.appendTo(jobId, output)
                                     .then(() => this.notifyStdoutUpdate(jobId));
+                            }
+                            if (result.hasMetadata) {
+                                msg = `Updated graph/image output for ${name}`;
+                                return this.save(msg);
                             }
                         });
                 }
@@ -923,8 +932,8 @@ define([
                         })
                         .then(stdout => {
                             // Parse the remaining code
-                            stdout = this.processStdout(job, stdout);
-                            this.core.setAttribute(job, 'stdout', stdout);
+                            var result = this.processStdout(job, stdout);
+                            this.core.setAttribute(job, 'stdout', result.stdout);
                             this.logManager.deleteLog(jobId);
                             if (info.status !== 'SUCCESS') {
                                 // Download all files
@@ -1028,31 +1037,11 @@ define([
     );
 
     ExecuteJob.prototype.processStdout = function (job, text, continued) {
-        // resolve \r
-        var lines,
-            chars,
-            result,
-            i = 0;
+        var lines = text.replace(/\u0000/g, '').split('\n'),
+            result = this.parseForMetadataCmds(job, lines, !continued);
 
-        text = text.replace(/\u0000/g, '');
-        lines = text.split('\n');
-        for (var l = lines.length-1; l >= 0; l--) {
-            i = 0;
-            chars = lines[l].split('');
-            result = [];
-
-            for (var c = 0; c < chars.length; c++) {
-                if (chars[c] === '\r') {
-                    i = 0;
-                }
-                result[i] = chars[c];
-                i++;
-            }
-            lines[l] = result.join('');
-        }
-
-        // ... and metadata commands
-        return this.parseForMetadataCmds(job, lines, !continued);
+        result.stdout = utils.resolveCarriageReturns(result.stdout);
+        return result;
     };
 
     //////////////////////////// Metadata ////////////////////////////
@@ -1062,28 +1051,37 @@ define([
             result = [],
             cmdCnt = 0,
             ansiRegex = /\[\d+(;\d+)?m/g,
+            hasMetadata = false,
+            trimStartRegex = new RegExp(CONSTANTS.START_CMD + '.*'),
+            matches,
             cmd;
 
         for (var i = 0; i < lines.length; i++) {
             // Check for a deepforge command
             if (lines[i].indexOf(CONSTANTS.START_CMD) !== -1) {
-                lines[i] = lines[i].replace(ansiRegex, '');
-                cmdCnt++;
-                args = lines[i].split(/\s+/);
-                args.shift();
-                cmd = args[0];
-                args[0] = job;
-                if (this[cmd] && (!skip || cmdCnt >= this.lastAppliedCmd[jobId])) {
-                    this[cmd].apply(this, args);
-                    this.lastAppliedCmd[jobId]++;
-                } else if (!this[cmd]) {
-                    this.logger.error(`Invoked unimplemented metadata method "${cmd}"`);
+                matches = lines[i].replace(ansiRegex, '').match(trimStartRegex);
+                for (var m = 0; m < matches.length; m++) {
+                    cmdCnt++;
+                    args = matches[m].split(/\s+/);
+                    args.shift();
+                    cmd = args[0];
+                    args[0] = job;
+                    if (this[cmd] && (!skip || cmdCnt >= this.lastAppliedCmd[jobId])) {
+                        this[cmd].apply(this, args);
+                        this.lastAppliedCmd[jobId]++;
+                        hasMetadata = true;
+                    } else if (!this[cmd]) {
+                        this.logger.error(`Invoked unimplemented metadata method "${cmd}"`);
+                    }
                 }
             } else {
                 result.push(lines[i]);
             }
         }
-        return result.join('\n');
+        return {
+            stdout: result.join('\n'),
+            hasMetadata: hasMetadata
+        };
     };
 
     ExecuteJob.prototype[CONSTANTS.GRAPH_CREATE] = function (job, id) {

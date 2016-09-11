@@ -1,7 +1,13 @@
 /* globals define*/
-define([
-], function(
-) {
+(function(root, factory){
+    if(typeof define === 'function' && define.amd) {
+        define([], function(){
+            return (root.utils = factory());
+        });
+    } else if(typeof module === 'object' && module.exports) {
+        module.exports = (root.utils = factory());
+    }
+}(this, function() {
     var isBoolean = txt => {
         return typeof txt === 'boolean' || (txt === 'false' || txt === 'true');
     };
@@ -51,8 +57,37 @@ define([
         }
     };
 
+    // Resolving stdout
+    var resolveCarriageReturns = function(text) {
+        // resolve \r
+        var lines,
+            chars,
+            result,
+            i = 0;
+
+        text = text.replace(/\u0000/g, '');
+        lines = text.split('\n');
+        for (var l = lines.length-1; l >= 0; l--) {
+            i = 0;
+            chars = lines[l].split('');
+            result = [];
+
+            for (var c = 0; c < chars.length; c++) {
+                if (chars[c] === '\r') {
+                    i = 0;
+                }
+                result[i] = chars[c];
+                i++;
+            }
+            lines[l] = result.join('');
+        }
+        return lines;
+    };
+
+
     return {
         getSetterSchema: getSetterSchema,
+        resolveCarriageReturns: resolveCarriageReturns,
         abbr: abbr
     };
-});
+}));
