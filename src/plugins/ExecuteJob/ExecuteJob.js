@@ -1040,7 +1040,7 @@ define([
         var lines = text.replace(/\u0000/g, '').split('\n'),
             result = this.parseForMetadataCmds(job, lines, !continued);
 
-        result.stdout = utils.resolveCarriageReturns(result.stdout);
+        result.stdout = utils.resolveCarriageReturns(result.stdout).join('\n');
         return result;
     };
 
