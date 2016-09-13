@@ -83,6 +83,7 @@ define([
         var type = this.core.getMetaType(this.activeNode),
             typeName = type && this.getAttribute(type, 'name');
 
+        // TODO: Set the baseURL from the config
         if (typeName !== 'Job') {
             return callback(`Cannot execute ${typeName} (expected Job)`, this.result);
         }
@@ -472,20 +473,29 @@ define([
                 })
                 .then(mds => {
                     // Record the large files
-                    var inputData = {};
+                    var inputData = {},
+                        runsh = '# Bash script to download data files and run job\n';
+
                     mds.forEach((metadata, i) => {
                         // add the hashes for each input
                         var input = inputs[i], 
-                            hash = files.inputAssets[input];
+                            hash = files.inputAssets[input],
+                            dataPath = 'inputs/' + input + '/data',
+                            url = this.baseURL + this.blobClient.getDownloadURL(hash);
 
-                        inputData['inputs/' + input + '/data'] = {
+                        inputData[dataPath] = {
                             req: hash,
                             cache: metadata.content
                         };
+
+                        // Add to the run.sh file
+                        runsh += `wget ${url} ${dataPath}\n`;
                     });
 
                     delete files.inputAssets;
                     files['input-data.json'] = JSON.stringify(inputData, null, 2);
+                    runsh += 'th init.lua';
+                    files['run.sh'] = runsh;
 
                     // Add pointer assets
                     Object.keys(files.ptrAssets)
