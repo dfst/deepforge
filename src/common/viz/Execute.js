@@ -38,6 +38,14 @@ define([
         context.managerConfig.namespace = 'pipeline';
         context.managerConfig.activeNode = node.getId();
         method = opts.useSecondary ? 'runBrowserPlugin' : 'runServerPlugin';
+
+        if (method === 'runServerPlugin' &&
+            this.client.getBranchStatus() !== this.client.CONSTANTS.BRANCH_STATUS.SYNC) {
+
+            Materialize.toast('Cannot execute operations when client is out-of-sync', 2000);
+            return;
+        }
+
         this.client[method](pluginId, context, (err, result) => {
             var msg = err ? `${name} failed!` : `${name} executed successfully!`,
                 duration = err ? 4000 : 2000;
