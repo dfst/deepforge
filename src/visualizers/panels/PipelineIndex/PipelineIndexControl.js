@@ -33,12 +33,33 @@ define([
         this._widget.deletePipeline = id => {
             var node = this._client.getNode(id),
                 name = node.getAttribute('name'),
-                msg = `Deleting pipeline "${name}"`;
+                msg = `Deleting pipeline "${name}"`,
+                delTerritory = {},
+                delUI,
+                ids = [id];
 
-            // Change the current active object
-            this._client.startTransaction(msg);
-            this._client.delMoreNodes([id]);
-            this._client.completeTransaction();
+            // Delete all associated executions
+            ids = node.getMemberIds('executions');
+            for (var i = ids.length; i--;) {
+                delTerritory[ids[i]] = {children: 0};
+            }
+
+            delUI = this._client.addUI(this, events => {
+                var ids = [id];
+
+                for (i = events.length; i--;) {
+                    if (events[i].eid && events[i].etype === CONSTANTS.TERRITORY_EVENT_LOAD) {
+                        ids.push(events[i].eid);
+                    }
+                }
+
+                this._client.startTransaction(msg);
+                this._client.delMoreNodes(ids);
+                this._client.completeTransaction();
+
+                this._client.removeUI(delUI);
+            });
+            this._client.updateTerritory(delUI, delTerritory);
         };
 
         this._widget.setName = (id, name) => {
