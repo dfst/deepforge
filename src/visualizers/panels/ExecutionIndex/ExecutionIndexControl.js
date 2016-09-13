@@ -161,7 +161,9 @@ define([
                 desc.abbr = this.getUniqAbbreviation(desc);
 
                 // Create a territory for this origin and update it!
-                this._selfPatterns[desc.originId] = {children: 0};
+                if (desc.originId) {
+                    this._selfPatterns[desc.originId] = {children: 0};
+                }
                 setTimeout(() => this._client.updateTerritory(this._territoryId, this._selfPatterns), 0);
             } else if (type === 'Line') {
                 desc = this.getLineDesc(node);
