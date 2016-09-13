@@ -193,6 +193,19 @@ describe('JobLogsAPI', function() {
                     done(err);
                 });
         });
+
+        it('should not crash on bad request', function(done) {
+            url = [
+                server.getUrl(),
+                mntPt + '/migrate',
+                encodeURIComponent(proj),
+                encodeURIComponent('someBranch3'),
+                encodeURIComponent(b2)
+            ].join('/');
+            superagent.post(url)
+                .send({jobs: [j1]})
+                .end(err => done(err));
+        });
     });
 
 });

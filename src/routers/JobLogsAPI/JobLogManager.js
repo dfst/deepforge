@@ -35,14 +35,21 @@ JobLogManager.prototype.mkdirIfNeeded = function(dir) {
 };
 
 JobLogManager.prototype._copyFile = function(src, dst) {
-    return this.mkdirIfNeeded(path.dirname(dst)).then(() => {
-        var deferred = Q.defer(),
-            stream = fs.createReadStream(src).pipe(fs.createWriteStream(dst));
+    return Q.nfcall(exists, src).then(exists => {
+        if (!exists) {
+            this.logger.warn(`Cannot copy file from ${src}. File doesn't exist!`);
+            return;
+        }
 
-        stream.on('error', deferred.reject);
-        stream.on('finish', deferred.resolve);
+        return this.mkdirIfNeeded(path.dirname(dst)).then(() => {
+            var deferred = Q.defer(),
+                stream = fs.createReadStream(src).pipe(fs.createWriteStream(dst));
 
-        return deferred.promise;
+            stream.on('error', deferred.reject);
+            stream.on('finish', deferred.resolve);
+
+            return deferred.promise;
+        });
     });
 };
 
