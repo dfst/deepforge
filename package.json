@@ -8,15 +8,16 @@
     "start-dev": "NODE_ENV=dev node app.js",
     "local": "node ./bin/start-local.js",
     "worker": "node ./bin/start-worker.js",
-    "test": "node ./node_modules/mocha/bin/mocha --recursive test",
+    "test": "mkdir ./test-tmp; node ./node_modules/mocha/bin/mocha --recursive test",
     "watch-test": "./node_modules/nodemon/bin/nodemon.js --exec 'node ./node_modules/mocha/bin/mocha --recursive test'",
     "build-nn": "node ./utils/nn-parser.js"
   },
-  "version": "0.14.1",
+  "version": "0.15.0",
   "dependencies": {
     "commander": "^2.9.0",
     "dotenv": "^2.0.0",
     "exists-file": "^2.1.0",
+    "express": "^4.14.0",
     "lodash.difference": "^4.1.2",
     "lodash.merge": "^4.5.1",
     "nodemon": "^1.9.2",

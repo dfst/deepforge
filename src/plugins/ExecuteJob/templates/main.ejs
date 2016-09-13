@@ -1,15 +1,12 @@
--- load custom layers
-require './custom-layers'
-
--- load custom class definitions
-require './classes'
+-- load custom layers and classes
+deepforge.initialize()
 
 -- input data<% inputs.forEach(function(pair) { var input = pair[0], isNil = pair[1];%>
-<%= isNil ? 'local ' : ''%><%= input %> = <% if (isNil) { %>nil<% } else { %>require './inputs/<%= input %>'<%}}); %>
+local <%= input %> = <% if (isNil) { %>nil<% } else { %>require './inputs/<%= input %>'<%}}); %>
 
 -- load references<% pointers.forEach(function(pair) { var pointer = pair[0], isNil = pair[1];%>
-<%= isNil ? 'local ' : ''%><%= pointer %> = <% if (isNil) { %>nil<% } else { %>require './pointers/<%= pointer %>'<%}}); %>
-attributes = require './attributes'
+local <%= pointer %> = <% if (isNil) { %>nil<% } else { %>require './pointers/<%= pointer %>'<%}}); %>
+local attributes = require './attributes'
 
 -- main operation code for <%= name %>
 <%= code %>

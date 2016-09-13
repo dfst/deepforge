@@ -6,33 +6,34 @@
 var config = require('webgme/config/config.default'),
     validateConfig = require('webgme/config/validator');
 
-
 // The paths can be loaded from the webgme-setup.json
-config.plugin.basePaths.push('src/plugins');
-config.plugin.basePaths.push('node_modules/webgme-simple-nodes/src/plugins');
-config.visualization.layout.basePaths.push('node_modules/webgme-chflayout/src/layouts');
-config.visualization.decoratorPaths.push('src/decorators');
-config.visualization.decoratorPaths.push('node_modules/webgme-easydag/src/decorators');
-config.seedProjects.basePaths.push('src/seeds/nn');
-config.seedProjects.basePaths.push('src/seeds/devTests');
-config.seedProjects.basePaths.push('src/seeds/devUtilTests');
-config.seedProjects.basePaths.push('src/seeds/pipeline');
-config.seedProjects.basePaths.push('src/seeds/devPipelineTests');
-config.seedProjects.basePaths.push('src/seeds/project');
-config.seedProjects.basePaths.push('src/seeds/cifar10');
-config.seedProjects.basePaths.push('src/seeds/xor');
+config.plugin.basePaths.push(__dirname + '/../src/plugins');
+config.plugin.basePaths.push(__dirname + '/../node_modules/webgme-simple-nodes/src/plugins');
+config.visualization.layout.basePaths.push(__dirname + '/../node_modules/webgme-chflayout/src/layouts');
+config.visualization.decoratorPaths.push(__dirname + '/../src/decorators');
+config.visualization.decoratorPaths.push(__dirname + '/../node_modules/webgme-easydag/src/decorators');
+config.seedProjects.basePaths.push(__dirname + '/../src/seeds/nn');
+config.seedProjects.basePaths.push(__dirname + '/../src/seeds/devTests');
+config.seedProjects.basePaths.push(__dirname + '/../src/seeds/devUtilTests');
+config.seedProjects.basePaths.push(__dirname + '/../src/seeds/pipeline');
+config.seedProjects.basePaths.push(__dirname + '/../src/seeds/devPipelineTests');
+config.seedProjects.basePaths.push(__dirname + '/../src/seeds/project');
+config.seedProjects.basePaths.push(__dirname + '/../src/seeds/cifar10');
+config.seedProjects.basePaths.push(__dirname + '/../src/seeds/xor');
 
 
 
-config.visualization.panelPaths.push('node_modules/webgme-fab/src/visualizers/panels');
-config.visualization.panelPaths.push('node_modules/webgme-breadcrumbheader/src/visualizers/panels');
-config.visualization.panelPaths.push('node_modules/webgme-autoviz/src/visualizers/panels');
-config.visualization.panelPaths.push('node_modules/webgme-easydag/src/visualizers/panels');
-config.visualization.panelPaths.push('src/visualizers/panels');
+config.visualization.panelPaths.push(__dirname + '/../node_modules/webgme-fab/src/visualizers/panels');
+config.visualization.panelPaths.push(__dirname + '/../node_modules/webgme-breadcrumbheader/src/visualizers/panels');
+config.visualization.panelPaths.push(__dirname + '/../node_modules/webgme-autoviz/src/visualizers/panels');
+config.visualization.panelPaths.push(__dirname + '/../node_modules/webgme-easydag/src/visualizers/panels');
+config.visualization.panelPaths.push(__dirname + '/../src/visualizers/panels');
 
+
+config.rest.components['execution/logs'] = __dirname + '/../src/routers/JobLogsAPI/JobLogsAPI.js'
 
 // Visualizer descriptors
-config.visualization.visualizerDescriptors.push('./src/visualizers/Visualizers.json');
+config.visualization.visualizerDescriptors.push(__dirname + '/../src/visualizers/Visualizers.json');
 // Add requirejs paths
 config.requirejsPaths = {
   'EllipseDecorator': 'node_modules/webgme-easydag/src/decorators/EllipseDecorator',

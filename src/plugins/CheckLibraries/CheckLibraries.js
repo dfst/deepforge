@@ -64,14 +64,18 @@ define([
                 tuples = libs.map(lib => {  // map to [name, version, dir]
                     var version,
                         hash,
+                        data,
                         versionPath = this.getSeedVersionPath(lib);
 
                     try {
                         this.logger.info(`Checking for version info at ${versionPath}`);
                         version = fs.readFileSync(versionPath, 'utf8');
                         this.logger.debug(`${lib} version is ${version}`);
-                        hash = fs.readFileSync(this.getSeedHashPath(lib), 'utf8');
-                        this.logger.debug(`${lib} hash is ${hash}`);
+                        data = fs.readFileSync(this.getSeedHashPath(lib), 'utf8').split(' ');
+                        if (data[1] === version) {
+                            hash = data[0];
+                            this.logger.debug(`${lib} hash is ${hash}`);
+                        }
                     } catch (e) {
                         if (!version) {
                             this.logger.warn(`Could not find library version for ${lib}`);
@@ -141,7 +145,7 @@ define([
                     return Q.nfcall(
                         fs.writeFile,
                         this.getSeedHashPath(name),
-                        hash
+                        `${hash} ${version}`
                     );
                 }).then(() => hash);
         }

@@ -1,8 +1,5 @@
 /*globals define, _, WebGMEGlobal, $ */
 /*jshint browser: true*/
-/**
- * @author rkereskenyi / https://github.com/rkereskenyi
- */
 
 define([
     'js/PanelBase/PanelBase',
@@ -10,13 +7,15 @@ define([
     'js/Widgets/BranchStatus/BranchStatusWidget',
     'js/Widgets/BranchSelector/BranchSelectorWidget',
     'js/Widgets/KeyboardManager/KeyboardManagerWidget',
-    'js/Widgets/Notification/NotificationWidget'
-], function (PanelBase,
-             NetworkStatusWidget,
-             BranchStatusWidget,
-             BranchSelectorWidget,
-             KeyboardManagerWidget,
-             NotificationWidget) {
+    './FilteredNotificationWidget'
+], function (
+    PanelBase,
+    NetworkStatusWidget,
+    BranchStatusWidget,
+    BranchSelectorWidget,
+    KeyboardManagerWidget,
+    NotificationWidget
+) {
 
     'use strict';
 

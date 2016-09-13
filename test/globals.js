@@ -7,6 +7,9 @@
 'use strict';
 
 var testFixture = require('webgme/test/_globals'),
+    path = require('path'),
+    fs = require('fs'),
+    exists = require('exists-file'),
     WEBGME_CONFIG_PATH = '../config';
 
 // This flag will make sure the config.test.js is being used
@@ -34,4 +37,18 @@ testFixture.requirejs.config({
 testFixture.getGmeConfig = getGmeConfig;
 
 testFixture.DF_SEED_DIR = testFixture.path.join(__dirname, '..', 'src', 'seeds');
+
+testFixture.mkdir = function(dir) {
+    var dirs = path.resolve(dir).split(path.sep),
+        shortDir,
+        i = 1;
+
+    while (i++ < dirs.length) {
+        shortDir = dirs.slice(0,i).join(path.sep);
+        if (!exists.sync(shortDir)) {
+            fs.mkdirSync(shortDir);
+        }
+    }
+};
+
 module.exports = testFixture;

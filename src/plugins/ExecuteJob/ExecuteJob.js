@@ -8,7 +8,9 @@ define([
     'plugin/PluginBase',
     'deepforge/plugin/LocalExecutor',
     'deepforge/plugin/PtrCodeGen',
+    'deepforge/JobLogsClient',
     'deepforge/Constants',
+    'deepforge/utils',
     './templates/index',
     'q',
     'underscore'
@@ -19,7 +21,9 @@ define([
     PluginBase,
     LocalExecutor,  // DeepForge operation primitives
     PtrCodeGen,
+    JobLogsClient,
     CONSTANTS,
+    utils,
     Templates,
     Q,
     _
@@ -50,6 +54,7 @@ define([
         this.lastAppliedCmd = {};
         this.canceled = false;
         this.changes = {};
+        this.logManager = null;
     };
 
     /**
@@ -82,6 +87,13 @@ define([
             return callback(`Cannot execute ${typeName} (expected Job)`, this.result);
         }
 
+        // Get the gmeConfig...
+        this.logManager = new JobLogsClient({
+            logger: this.logger,
+            port: this.gmeConfig.server.port,
+            branchName: this.branchName,
+            projectId: this.projectId
+        });
         this._callback = callback;
         this.currentForkName = null;
         this.prepare()
@@ -115,10 +127,18 @@ define([
     };
 
     ExecuteJob.prototype.getAttribute = function (node, attr) {
-        var nodeId = this.core.getPath(node);
+        var nodeId = this.core.getPath(node),
+            base,
+            baseId;
 
         // Check the changes; fallback on actual node
-        if (this.changes[nodeId] && this.changes[nodeId][attr]) {
+        if (this.changes[nodeId] && this.changes[nodeId][attr] !== undefined) {
+            // If deleted the attribute, get the default (inherited) value
+            if (this.changes[nodeId][attr] === null) {
+                base = this.core.getBase(node);
+                baseId = this.core.getPath(base);
+                return this.getAttribute(baseId, attr);
+            }
             return this.changes[nodeId][attr];
         }
 
@@ -126,8 +146,17 @@ define([
     };
 
     ExecuteJob.prototype._applyNodeChanges = function (node, changes) {
+        var attr,
+            value;
+
         for (var i = changes.length; i--;) {
-            this.core.setAttribute(node, changes[i][0], changes[i][1]);
+            attr = changes[i][0];
+            value = changes[i][1];
+            if (value !== null) {
+                this.core.setAttribute(node, attr, value);
+            } else {
+                this.core.delAttribute(node, attr);
+            }
         }
         return node;
     };
@@ -174,6 +203,7 @@ define([
                 if (result.status === STORAGE_CONSTANTS.FORKED) {
                     msg = `"${name}" execution has forked to "${result.forkName}"`;
                     this.currentForkName = result.forkName;
+                    this.logManager.fork(result.forkName);
                     this.sendNotification(msg);
                 } else if (result.status === STORAGE_CONSTANTS.MERGED) {
                     this.logger.debug('Merged changes. About to update plugin nodes');
@@ -544,7 +574,8 @@ define([
         this.outputLineCount[jobId] = 0;
         // Set the job status to 'running'
         this.setAttribute(job, 'status', 'queued');
-        this.setAttribute(job, 'stdout', '');
+        this.setAttribute(job, 'stdout', null);
+        this.logManager.deleteLog(jobId);
         this.logger.info(`Setting ${jobId} status to "queued" (${this.currentHash})`);
         this.logger.debug(`Making a commit from ${this.currentHash}`);
         this.save(`Queued "${name}" operation in ${this.pipelineName}`)
@@ -878,6 +909,13 @@ define([
         });
     };
 
+    ExecuteJob.prototype.notifyStdoutUpdate = function (nodeId) {
+        this.sendNotification({
+            message: `${CONSTANTS.STDOUT_UPDATE}/${nodeId}`,
+            toBranch: true
+        });
+    };
+
     ExecuteJob.prototype.watchOperation = function (executor, hash, op, job) {
         var jobId = this.core.getPath(job),
             opId = this.core.getPath(op),
@@ -910,7 +948,9 @@ define([
                             var stdout = this.getAttribute(job, 'stdout'),
                                 output = outputLines.map(o => o.output).join(''),
                                 last = stdout.lastIndexOf('\n'),
-                                lastLine;
+                                result,
+                                lastLine,
+                                msg;
 
                             // parse deepforge commands
                             if (last !== -1) {
@@ -918,12 +958,17 @@ define([
                                 lastLine = stdout.substring(last+1);
                                 output = lastLine + output;
                             }
-                            output = this.processStdout(job, output, true);
+                            result = this.processStdout(job, output, true);
+                            output = result.stdout;
 
                             if (output) {
-                                stdout += output;
-                                this.setAttribute(job, 'stdout', stdout);
-                                return this.save(`Received stdout for ${name}`);
+                                // Send notification to all clients watching the branch
+                                this.logManager.appendTo(jobId, output)
+                                    .then(() => this.notifyStdoutUpdate(jobId));
+                            }
+                            if (result.hasMetadata) {
+                                msg = `Updated graph/image output for ${name}`;
+                                return this.save(msg);
                             }
                         });
                 }
@@ -958,7 +1003,11 @@ define([
                     // If it was cancelled, the pipeline has been stopped
                     this.logger.debug(`"${name}" has been CANCELED!`);
                     this.canceled = true;
-                    return this.onOperationCanceled(op);
+                    return this.logManager.getLog(jobId)
+                        .then(stdout => {
+                            this.core.setAttribute(job, 'stdout', stdout);
+                            return this.onOperationCanceled(op);
+                        });
                 }
 
                 if (info.status === 'SUCCESS' || info.status === 'FAILED_TO_EXECUTE') {
@@ -970,8 +1019,9 @@ define([
                         })
                         .then(stdout => {
                             // Parse the remaining code
-                            stdout = this.processStdout(job, stdout);
-                            this.setAttribute(job, 'stdout', stdout);
+                            var result = this.processStdout(job, stdout);
+                            this.setAttribute(job, 'stdout', result.stdout);
+                            this.logManager.deleteLog(jobId);
                             if (info.status !== 'SUCCESS') {
                                 // Download all files
                                 this.result.addArtifact(info.resultHashes[name + '-all-files']);
@@ -1074,31 +1124,11 @@ define([
     );
 
     ExecuteJob.prototype.processStdout = function (job, text, continued) {
-        // resolve \r
-        var lines,
-            chars,
-            result,
-            i = 0;
+        var lines = text.replace(/\u0000/g, '').split('\n'),
+            result = this.parseForMetadataCmds(job, lines, !continued);
 
-        text = text.replace(/\u0000/g, '');
-        lines = text.split('\n');
-        for (var l = lines.length-1; l >= 0; l--) {
-            i = 0;
-            chars = lines[l].split('');
-            result = [];
-
-            for (var c = 0; c < chars.length; c++) {
-                if (chars[c] === '\r') {
-                    i = 0;
-                }
-                result[i] = chars[c];
-                i++;
-            }
-            lines[l] = result.join('');
-        }
-
-        // ... and metadata commands
-        return this.parseForMetadataCmds(job, lines, !continued);
+        result.stdout = utils.resolveCarriageReturns(result.stdout).join('\n');
+        return result;
     };
 
     //////////////////////////// Metadata ////////////////////////////
@@ -1108,28 +1138,37 @@ define([
             result = [],
             cmdCnt = 0,
             ansiRegex = /\[\d+(;\d+)?m/g,
+            hasMetadata = false,
+            trimStartRegex = new RegExp(CONSTANTS.START_CMD + '.*'),
+            matches,
             cmd;
 
         for (var i = 0; i < lines.length; i++) {
             // Check for a deepforge command
             if (lines[i].indexOf(CONSTANTS.START_CMD) !== -1) {
-                lines[i] = lines[i].replace(ansiRegex, '');
-                cmdCnt++;
-                args = lines[i].split(/\s+/);
-                args.shift();
-                cmd = args[0];
-                args[0] = job;
-                if (this[cmd] && (!skip || cmdCnt >= this.lastAppliedCmd[jobId])) {
-                    this[cmd].apply(this, args);
-                    this.lastAppliedCmd[jobId]++;
-                } else if (!this[cmd]) {
-                    this.logger.error(`Invoked unimplemented metadata method "${cmd}"`);
+                matches = lines[i].replace(ansiRegex, '').match(trimStartRegex);
+                for (var m = 0; m < matches.length; m++) {
+                    cmdCnt++;
+                    args = matches[m].split(/\s+/);
+                    args.shift();
+                    cmd = args[0];
+                    args[0] = job;
+                    if (this[cmd] && (!skip || cmdCnt >= this.lastAppliedCmd[jobId])) {
+                        this[cmd].apply(this, args);
+                        this.lastAppliedCmd[jobId]++;
+                        hasMetadata = true;
+                    } else if (!this[cmd]) {
+                        this.logger.error(`Invoked unimplemented metadata method "${cmd}"`);
+                    }
                 }
             } else {
                 result.push(lines[i]);
             }
         }
-        return result.join('\n');
+        return {
+            stdout: result.join('\n'),
+            hasMetadata: hasMetadata
+        };
     };
 
     ExecuteJob.prototype[CONSTANTS.GRAPH_CREATE] = function (job, id) {

@@ -46,7 +46,7 @@ define([
         this.addCustomLayersToMeta();
         this.LayerDict = createLayerDict(this.core, this.META);
         this.uniqueId = 2;
-        this.varnames = {};
+        this.varnames = {net: true};
         return PluginBase.prototype.main.apply(this, arguments);
     };
 
@@ -247,17 +247,27 @@ define([
             base = layer[Constants.BASE],
             desc,
             fn,
-            layerCode;
+            layerCode,
+            args,
+            i;
 
         this.logger.debug(`Creating arg string for ${layer.name}`);
-        layerCode = '(' + this.LayerDict[layer.name].args
-            .map(arg => this.getValue(arg.name, layer))
-            .filter(GenerateArchitecture.isSet)
+        args = this.LayerDict[layer.name].args
+            .map(arg => this.getValue(arg.name, layer));
+
+        for (i = args.length; i--;) {
+            if (GenerateArchitecture.isSet(args[i])) {
+                break;
+            }
+            args.pop();
+        }
+
+        layerCode = '(' + args.map(arg => GenerateArchitecture.isSet(arg) ? arg : 'nil')
             .join(', ') + ')';
 
         // Add any setters
         // For each setter, check if it has been changed (and needs to be set)
-        for (var i = setterNames.length; i--;) {
+        for (i = setterNames.length; i--;) {
             desc = setters[setterNames[i]];
             if (desc.setterType === 'const') {
                 // if the value is not the default, add the given fn

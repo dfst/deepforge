@@ -18,5 +18,8 @@ define({
     OP: {
         INPUT: 'Input',
         OUTPUT: 'Output'
-    }
+    },
+
+    // Job stdout update
+    STDOUT_UPDATE: 'stdout_update'
 });
