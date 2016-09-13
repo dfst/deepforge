@@ -117,6 +117,10 @@ define([
         });
     };
 
+    ExecuteJob.prototype.delAttribute = function (node, attr) {
+        return this.setAttribute(node, attr, null);
+    };
+
     ExecuteJob.prototype.setAttribute = function (node, attr, value) {
         var nodeId = this.core.getPath(node);
 
@@ -322,8 +326,8 @@ define([
         delete this.lastAppliedCmd[nodeId];
         delete this._markForDeletion[nodeId];
 
-        this.core.delAttribute(job, 'jobId');
-        this.core.delAttribute(job, 'secret');
+        this.delAttribute(job, 'jobId');
+        this.delAttribute(job, 'secret');
     };
 
     ExecuteJob.prototype.resultMsg = function(msg) {
@@ -574,7 +578,7 @@ define([
         this.outputLineCount[jobId] = 0;
         // Set the job status to 'running'
         this.setAttribute(job, 'status', 'queued');
-        this.setAttribute(job, 'stdout', null);
+        this.delAttribute(job, 'stdout');
         this.logManager.deleteLog(jobId);
         this.logger.info(`Setting ${jobId} status to "queued" (${this.currentHash})`);
         this.logger.debug(`Making a commit from ${this.currentHash}`);
@@ -928,7 +932,7 @@ define([
             secret = this.getAttribute(job, 'secret');
             if (secret) {
                 executor.cancelJob(hash, secret);
-                this.core.delAttribute(job, 'secret');
+                this.delAttribute(job, 'secret');
                 this.canceled = true;
                 return this.onOperationCanceled(op);
             }
@@ -1005,7 +1009,7 @@ define([
                     this.canceled = true;
                     return this.logManager.getLog(jobId)
                         .then(stdout => {
-                            this.core.setAttribute(job, 'stdout', stdout);
+                            this.setAttribute(job, 'stdout', stdout);
                             return this.onOperationCanceled(op);
                         });
                 }
