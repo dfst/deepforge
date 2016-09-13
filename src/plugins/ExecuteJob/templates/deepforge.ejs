@@ -1,6 +1,13 @@
 -- Instantiate the deepforge object
 deepforge = {}
 
+function deepforge.initialize()
+    require 'nn'
+    require 'rnn'
+    require './classes/init'
+    require './custom-layers'
+end
+
 function deepforge.id()
     if __deepforge_id == nil then
         __deepforge_id = 0

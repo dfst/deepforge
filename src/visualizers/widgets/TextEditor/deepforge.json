@@ -1,6 +1,7 @@
 {
     "deepforge": [
         "Graph",
+        "initialize",
         "image"
     ],
     "torch": [
