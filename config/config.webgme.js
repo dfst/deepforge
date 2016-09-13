@@ -30,7 +30,7 @@ config.visualization.panelPaths.push(__dirname + '/../node_modules/webgme-easyda
 config.visualization.panelPaths.push(__dirname + '/../src/visualizers/panels');
 
 
-config.rest.components['execution/logs'] = __dirname + '/../src/routers/JobLogsAPI/JobLogsAPI.js'
+config.rest.components['execution/logs'] = __dirname + '/../src/routers/JobLogsAPI/JobLogsAPI.js';
 
 // Visualizer descriptors
 config.visualization.visualizerDescriptors.push(__dirname + '/../src/visualizers/Visualizers.json');
