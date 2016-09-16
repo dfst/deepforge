@@ -37,6 +37,7 @@ define([
 
         this._currentSave = Q();
         this.changes = {};
+        this.creations = {};
         this.initRun();
     };
 
