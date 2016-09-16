@@ -2,6 +2,7 @@
 /*jshint node:true, browser:true*/
 
 define([
+    'common/util/assert',
     'common/storage/constants',
     'text!./metadata.json',
     'executor/ExecutorClient',
@@ -15,6 +16,7 @@ define([
     'q',
     'underscore'
 ], function (
+    assert,
     STORAGE_CONSTANTS,
     pluginMetadata,
     ExecutorClient,
@@ -117,6 +119,11 @@ define([
         });
     };
 
+    ExecuteJob.prototype.createNode = function (baseType, parentId) {
+        // TODO
+        this.creations
+    };
+
     ExecuteJob.prototype.delAttribute = function (node, attr) {
         return this.setAttribute(node, attr, null);
     };
@@ -124,6 +131,7 @@ define([
     ExecuteJob.prototype.setAttribute = function (node, attr, value) {
         var nodeId = this.core.getPath(node);
 
+	assert(typeof nodeId === 'string', `Cannot set attribute of ${nodeId}`);
         if (!this.changes[nodeId]) {
             this.changes[nodeId] = {};
         }
@@ -153,6 +161,7 @@ define([
         var attr,
             value;
 
+        this.logger.info(`About to apply changes for ${this.core.getPath(node)}`);
         for (var i = changes.length; i--;) {
             attr = changes[i][0];
             value = changes[i][1];
@@ -175,6 +184,7 @@ define([
             id,
             promise;
 
+        this.logger.info('Collecting changes to apply in commit');
         for (var i = nodeIds.length; i--;) {
             changes = [];
             attrs = Object.keys(this.changes[nodeIds[i]]);
@@ -182,15 +192,18 @@ define([
                 value = this.changes[nodeIds[i]][attrs[a]];
                 changes.push([attrs[a], value]);
             }
+            assert(changes !== undefined, `changes are undefined for ${nodeIds[i]}`);
             changesFor[nodeIds[i]] = changes;
             promise = this.core.loadByPath(this.rootNode, nodeIds[i]);
             promises.push(promise);
         }
 
         this.changes = {};
+        this.logger.info(`About to apply changes for ${promises.length} nodes`);
         return Q.all(promises).then(nodes => {
             for (var i = nodes.length; i--;) {
                 id = this.core.getPath(nodes[i]);
+                assert(nodes[i], `node is ${nodes[i]} (${nodeIds[i]})`);
                 this._applyNodeChanges(nodes[i], changesFor[id]);
             }
         });
@@ -204,6 +217,7 @@ define([
             .then(() => PluginBase.prototype.save.call(this, msg))
             .then(result => {
                 var msg;
+		this.logger.info(`Save finished w/ status: ${result.status}`);
                 if (result.status === STORAGE_CONSTANTS.FORKED) {
                     msg = `"${name}" execution has forked to "${result.forkName}"`;
                     this.currentForkName = result.forkName;
@@ -310,18 +324,20 @@ define([
                 }
 
                 // make the deletion ids relative to the job node
+                this.logger.debug(`About to delete ${idsToDelete.length}: ${idsToDelete.join(', ')}`);
                 idsToDelete = idsToDelete.map(id => id.replace(nodeId, ''));
                 return Q.all(idsToDelete.map(id => this.core.loadByPath(job, id)));
             })
-            .then(nodes => nodes.forEach(node => this.core.deleteNode(node)));
+            .then(nodes => nodes.forEach(node => this.core.deleteNode(node)));  // FIXME
     };
 
     ExecuteJob.prototype.clearOldMetadata = function (job) {
         var nodeId = this.core.getPath(job),
             nodeIds = Object.keys(this._markForDeletion[nodeId]);
 
+        this.logger.debug(`About to delete ${nodeIds.length}: ${nodeIds.join(', ')}`);
         for (var i = nodeIds.length; i--;) {
-            this.core.deleteNode(this._markForDeletion[nodeId][nodeIds[i]]);
+            this.core.deleteNode(this._markForDeletion[nodeId][nodeIds[i]]);  // FIXME
         }
         delete this.lastAppliedCmd[nodeId];
         delete this._markForDeletion[nodeId];
@@ -1186,7 +1202,7 @@ define([
         // Check if the graph already exists
         graph = this._getExistingMetadata(jobId, 'Graph', name);
         if (!graph) {
-            graph = this.core.createNode({
+            graph = this.core.createNode({  // FIXME
                 base: this.META.Graph,
                 parent: job
             });
@@ -1230,7 +1246,7 @@ define([
 
         // Create a 'line' node in the given Graph metadata node
         name = name.replace(/\s+$/, '');
-        line = this.core.createNode({
+        line = this.core.createNode({  // FIXME
             base: this.META.Line,
             parent: graph
         });
@@ -1265,7 +1281,7 @@ define([
             imageNode = this._getExistingMetadata(jobId, 'Image', name);
             if (!imageNode) {
                 this.logger.info(`Creating image ${id} named ${name}`);
-                imageNode = this.core.createNode({
+                imageNode = this.core.createNode({  // FIXME
                     base: this.META.Image,
                     parent: job
                 });
