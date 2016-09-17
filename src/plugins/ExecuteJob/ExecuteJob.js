@@ -144,6 +144,7 @@ define([
         }
 
         this.logger.info(`Creating ${id} of type ${baseType} in ${parentId}`);
+        assert(this.META[baseType], `Cannot create node w/ unrecognized type: ${baseType}`);
         this.creations[id] = {
             base: baseType,
             parent: parentId
@@ -364,11 +365,13 @@ define([
             nodeId,
             id;
 
+        this.logger.info(`Applying creation of ${tmpId} (${baseType}) in ${parentId}`);
+
         assert(!this.isCreateId(parentId),
             `Did not resolve parent id: ${parentId} for ${tmpId}`);
-        this.logger.info(`Applying creation of ${tmpId} (${baseType}) in ${parentId}`);
+        assert(base, `Invalid base type: ${baseType}`);
         return this.core.loadByPath(this.rootNode, parentId)
-            .then(parent => this.core.createNode({ base, parent}))
+            .then(parent => this.core.createNode({base, parent}))
             .then(node => {  // Update the _metadata records
                 id = this.createIdToMetadataId[tmpId];
                 delete this.createIdToMetadataId[tmpId];
@@ -431,7 +434,16 @@ define([
                 this.rootNode = rootObject;
                 return this.core.loadByPath(rootObject,activeId);
             })
-            .then(activeObject => this.activeNode = activeObject);
+            .then(activeObject => this.activeNode = activeObject)
+            .then(() => {
+                var metaNames = Object.keys(this.META);
+                return Q.all(metaNames.map(name => this.updateMetaNode(name)));
+            });
+    };
+
+    ExecuteJob.prototype.updateMetaNode = function (name) {
+        var id = this.core.getPath(this.META[name]);
+        return this.core.loadByPath(this.rootNode, id).then(node => this.META[name] = node);
     };
 
     //////////////////////////// END Safe Save ////////////////////////////
