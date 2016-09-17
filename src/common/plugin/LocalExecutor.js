@@ -74,7 +74,6 @@ define([
 
                             paths = outputs.map(output => this.core.getPath(output));
                             // Get the 'data' hash and store it in the output data ports
-                            this.logger.info(`Loading blob data (${hash}) to ${paths.map(p => `"${p}"`)}`);
 
                             outputs.forEach(output => this.setAttribute(output, 'data', hash));
 
