@@ -69,12 +69,8 @@ define([
                 } else {
                     return this.getOutputs(node)
                         .then(outputPairs => {
-                            var outputs = outputPairs.map(pair => pair[2]),
-                                paths;
-
-                            paths = outputs.map(output => this.core.getPath(output));
+                            var outputs = outputPairs.map(pair => pair[2]);
                             // Get the 'data' hash and store it in the output data ports
-
                             outputs.forEach(output => this.setAttribute(output, 'data', hash));
 
                             this.onOperationComplete(node);
