@@ -254,8 +254,11 @@ define([
                 value = this.changes[nodeIds[i]][attrs[a]];
                 changes.push([attrs[a], value]);
             }
-            assert(changes !== undefined, `changes are undefined for ${nodeIds[i]}`);
             changesFor[nodeIds[i]] = changes;
+
+            assert(changes, `changes are invalid for ${nodeIds[i]}: ${changes}`);
+            assert(!this.isCreateId(nodeIds[i]),
+                `Creation id not resolved to actual id: ${nodeIds[i]}`);
             promise = this.core.loadByPath(this.rootNode, nodeIds[i]);
             promises.push(promise);
         }

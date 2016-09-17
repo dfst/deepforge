@@ -152,7 +152,7 @@ define([
         // before continuing
         this._currentSave = this._currentSave
             .then(() => this.updateForkName(this.pipelineName))
-            .then(() => this.applyChanges())
+            .then(() => this.applyModelChanges())
             .then(() => CreateExecution.prototype.save.call(this, msg))
             .then(result => {
                 var msg;
