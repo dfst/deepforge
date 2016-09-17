@@ -130,7 +130,7 @@ define([
     };
 
     ExecuteJob.prototype.isCreateId = function (id) {
-        return (typeof node === 'string') && id.indexOf(CREATE_PREFIX) === 0;
+        return (typeof id === 'string') && id.indexOf(CREATE_PREFIX) === 0;
     };
 
     ExecuteJob.prototype.createNode = function (baseType, parent) {
