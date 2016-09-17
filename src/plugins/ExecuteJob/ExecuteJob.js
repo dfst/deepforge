@@ -130,13 +130,20 @@ define([
     };
 
     ExecuteJob.prototype.isCreateId = function (id) {
-        return (typeof id === 'string') && id.indexOf(CREATE_PREFIX) === 0;
+        return (typeof id === 'string') && (id.indexOf(CREATE_PREFIX) === 0);
     };
 
     ExecuteJob.prototype.createNode = function (baseType, parent) {
         var id = this.getCreateId(),
-            parentId = this.core.getPath(parent);
+            parentId;
 
+        if (this.isCreateId(parent)) {
+            parentId = parent;
+        } else {
+            parentId = this.core.getPath(parent);
+        }
+
+        this.logger.info(`Creating ${id} of type ${baseType} in ${parentId}`);
         this.creations[id] = {
             base: baseType,
             parent: parentId
@@ -162,6 +169,12 @@ define([
             assert(typeof nodeId === 'string', `Cannot set attribute of ${nodeId}`);
         }
 
+        if (value !== null) {
+            this.logger.info(`Setting ${attr} of ${nodeId} to ${value}`);
+        } else {
+            this.logger.info(`Deleting ${attr} of ${nodeId}`);
+        }
+
         if (!this.changes[nodeId]) {
             this.changes[nodeId] = {};
         }
@@ -169,19 +182,30 @@ define([
     };
 
     ExecuteJob.prototype.getAttribute = function (node, attr) {
-        var nodeId = this.core.getPath(node),
-            base,
-            baseId;
+        var nodeId,
+            base;
 
         assert(this.deletions.indexOf(nodeId) === -1,
             `Cannot get ${attr} from deleted node ${nodeId}`);
+
+        // Check if it was newly created
+        if (this.isCreateId(node)) {
+            nodeId = node;
+            assert(this.creations[nodeId], `Creation node not updated: ${nodeId}`);
+
+            // Set the node to the base so it falls back to an
+            // existing node if the attr info isn't in the diff
+            node = this.META[this.creations[nodeId].base];
+        } else {
+            nodeId = this.core.getPath(node);
+        }
+
         // Check the changes; fallback on actual node
         if (this.changes[nodeId] && this.changes[nodeId][attr] !== undefined) {
             // If deleted the attribute, get the default (inherited) value
             if (this.changes[nodeId][attr] === null) {
                 base = this.core.getBase(node);
-                baseId = this.core.getPath(base);
-                return this.getAttribute(baseId, attr);
+                return this.getAttribute(base, attr);
             }
             return this.changes[nodeId][attr];
         }
@@ -206,6 +230,12 @@ define([
         return node;
     };
 
+    ExecuteJob.prototype.applyModelChanges = function () {
+        return this.applyCreations()
+            .then(() => this.applyChanges())
+            .then(() => this.applyDeletions());
+    };
+
     ExecuteJob.prototype.applyChanges = function () {
         var nodeIds = Object.keys(this.changes),
             attrs,
@@ -215,9 +245,6 @@ define([
             changesFor = {},
             id,
             promise;
-
-        // Handle node creations
-        this.applyCreations();
 
         this.logger.info('Collecting changes to apply in commit');
         for (var i = nodeIds.length; i--;) {
@@ -242,24 +269,91 @@ define([
                     assert(nodes[i], `node is ${nodes[i]} (${nodeIds[i]})`);
                     this._applyNodeChanges(nodes[i], changesFor[id]);
                 }
-            })
-            // Apply node deletions
-            .then(() => this.applyDeletions());
+            });
     };
 
     ExecuteJob.prototype.applyCreations = function () {
         var nodeIds = Object.keys(this.creations),
-            nodes = [],
-            node;
+            tiers = this.createCreationTiers(nodeIds),
+            creations = this.creations,
+            newIds = {},
+            promise = Q(),
+            tier;
 
         this.logger.info('Applying node creations');
-        for (var i = nodeIds.length; i--;) {
-            node = this.creations[nodeIds[i]];
-            nodes.push(this.applyCreation(nodeIds[i], node.base, node.parent));
+        for (var i = 0; i < tiers.length; i++) {
+            tier = tiers[i];
+            // Chain the promises, loading each tier sequentially
+            promise = promise.then(this.applyCreationTier.bind(this, creations, newIds, tier));
         }
 
         this.creations = {};
-        return Q.all(nodes);
+        return promise;
+    };
+
+    ExecuteJob.prototype.applyCreationTier = function (creations, newIds, tier) {
+        var promises = [],
+            parentId,
+            node;
+
+        for (var j = tier.length; j--;) {
+            node = creations[tier[j]];
+            assert(node, `Could not find create info for ${tier[j]}`);
+            parentId = newIds[node.parent] || node.parent;
+            promises.push(this.applyCreation(tier[j], node.base, parentId));
+        }
+        return Q.all(promises).then(nodes => {
+            // Record the newIds so they can be used to resolve creation ids
+            // in subsequent tiers
+            for (var i = tier.length; i--;) {
+                newIds[tier[i]] = this.core.getPath(nodes[i]);
+            }
+        });
+    };
+
+    // Figure out the dependencies between nodes to create.
+    // eg, if newId1 is to be created in newId2, then newId2 will
+    // be in an earlier tier than newId1. Essentially a topo-sort
+    // on a tree structure
+    ExecuteJob.prototype.createCreationTiers = function (nodeIds) {
+        var tiers = [],
+            prevTier = {},
+            tier = {},
+            id,
+            prevLen,
+            i;
+
+        // Create first tier (created inside existing nodes)
+        for (i = nodeIds.length; i--;) {
+            id = nodeIds[i];
+            if (!this.isCreateId(this.creations[id].parent)) {
+                tier[id] = true;
+                nodeIds.splice(i, 1);
+            }
+        }
+        prevTier = tier;
+        tiers.push(Object.keys(tier));
+
+        // Now, each tier consists of the nodes to be created inside a
+        // node from the previous tier
+        while (nodeIds.length) {
+            prevLen = nodeIds.length;
+            tier = {};
+            for (i = nodeIds.length; i--;) {
+                id = nodeIds[i];
+                if (prevTier[this.creations[id].parent]) {
+                    tier[id] = true;
+                    nodeIds.splice(i, 1);
+                }
+            }
+            prevTier = tier;
+            tiers.push(Object.keys(tier));
+            // Every iteration should find at least one node
+            assert(prevLen > nodeIds.length,
+                `Created empty create tier! Remaining: ${nodeIds.join(', ')}`);
+        }
+
+        return tiers;
     };
 
     ExecuteJob.prototype.applyCreation = function (tmpId, baseType, parentId) {
@@ -267,6 +361,9 @@ define([
             nodeId,
             id;
 
+        assert(!this.isCreateId(parentId),
+            `Did not resolve parent id: ${parentId} for ${tmpId}`);
+        this.logger.info(`Applying creation of ${tmpId} (${baseType}) in ${parentId}`);
         return this.core.loadByPath(this.rootNode, parentId)
             .then(parent => this.core.createNode({ base, parent}))
             .then(node => {  // Update the _metadata records
@@ -282,6 +379,7 @@ define([
                     this.changes[nodeId] = this.changes[tmpId];
                     delete this.changes[tmpId];
                 }
+                return node;
             });
     };
 
@@ -302,7 +400,7 @@ define([
         var name = this.getAttribute(this.activeNode, 'name');
 
         return this.updateForkName(name)
-            .then(() => this.applyChanges())
+            .then(() => this.applyModelChanges())
             .then(() => PluginBase.prototype.save.call(this, msg))
             .then(result => {
                 this.logger.info(`Save finished w/ status: ${result.status}`);
@@ -1300,33 +1398,33 @@ define([
             if (name) {
                 this.setAttribute(graph, 'name', name);
             }
+            this.createIdToMetadataId[graph] = id;
         }
 
-        this.createIdToMetadataId[graph] = id;
         this._metadata[id] = graph;
     };
 
     ExecuteJob.prototype[CONSTANTS.GRAPH_PLOT] = function (job, id, x, y) {
         var jobId = this.core.getPath(job),
             nonNum = /[^\d-\.]*/g,
-            graph,
+            line,
             points;
             
 
         id = jobId + '/' + id;
         this.logger.info(`Adding point ${x}, ${y} to ${id}`);
-        graph = this._metadata[id];
-        if (!graph) {
-            this.logger.warn(`Can't add point to non-existent graph: ${id}`);
+        line = this._metadata[id];
+        if (!line) {
+            this.logger.warn(`Can't add point to non-existent line: ${id}`);
             return;
         }
 
         // Clean the points by removing and special characters
         x = x.replace(nonNum, '');
         y = y.replace(nonNum, '');
-        points = this.getAttribute(graph, 'points');
+        points = this.getAttribute(line, 'points');
         points += `${x},${y};`;
-        this.setAttribute(graph, 'points', points);
+        this.setAttribute(line, 'points', points);
     };
 
     ExecuteJob.prototype[CONSTANTS.GRAPH_CREATE_LINE] = function (job, graphId, id) {
@@ -1372,9 +1470,9 @@ define([
                 this.logger.info(`Creating image ${id} named ${name}`);
                 imageNode = this.createNode('Image', job);
                 this.setAttribute(imageNode, 'name', name);
+                this.createIdToMetadataId[imageNode] = id;
             }
             this._metadata[id] = imageNode;
-            this.createIdToMetadataId[imageNode] = id;
         }
         return imageNode;
     };
