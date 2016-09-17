@@ -59,6 +59,8 @@ define([
         this.canceled = false;
         this.changes = {};
         this.creations = {};
+        this.deletions = [];
+        this.createIdToMetadataId = {};
         this.logManager = null;
     };
 
@@ -122,6 +124,7 @@ define([
         });
     };
 
+    //////////////////////////// Safe Save ////////////////////////////
     ExecuteJob.prototype.getCreateId = function () {
         return CREATE_PREFIX + (++INDEX);
     };
@@ -139,6 +142,10 @@ define([
             parent: parentId
         };
         return id;
+    };
+
+    ExecuteJob.prototype.deleteNode = function (nodeId) {
+        this.deletions.push(nodeId);
     };
 
     ExecuteJob.prototype.delAttribute = function (node, attr) {
@@ -166,6 +173,8 @@ define([
             base,
             baseId;
 
+        assert(this.deletions.indexOf(nodeId) === -1,
+            `Cannot get ${attr} from deleted node ${nodeId}`);
         // Check the changes; fallback on actual node
         if (this.changes[nodeId] && this.changes[nodeId][attr] !== undefined) {
             // If deleted the attribute, get the default (inherited) value
@@ -226,13 +235,16 @@ define([
 
         this.changes = {};
         this.logger.info(`About to apply changes for ${promises.length} nodes`);
-        return Q.all(promises).then(nodes => {
-            for (var i = nodes.length; i--;) {
-                id = this.core.getPath(nodes[i]);
-                assert(nodes[i], `node is ${nodes[i]} (${nodeIds[i]})`);
-                this._applyNodeChanges(nodes[i], changesFor[id]);
-            }
-        });
+        return Q.all(promises)
+            .then(nodes => {
+                for (var i = nodes.length; i--;) {
+                    id = this.core.getPath(nodes[i]);
+                    assert(nodes[i], `node is ${nodes[i]} (${nodeIds[i]})`);
+                    this._applyNodeChanges(nodes[i], changesFor[id]);
+                }
+            })
+            // Apply node deletions
+            .then(() => this.applyDeletions());
     };
 
     ExecuteJob.prototype.applyCreations = function () {
@@ -273,6 +285,18 @@ define([
             });
     };
 
+    ExecuteJob.prototype.applyDeletions = function () {
+        var deletions = this.deletions;
+
+        this.deletions = [];
+        return Q.all(deletions.map(id => this.core.loadByPath(this.rootNode, id)))
+            .then(nodes => {
+                for (var i = nodes.length; i--;) {
+                    this.core.deleteNode(nodes[i]);
+                }
+            });
+    };
+
     // Override 'save' to notify the user on fork
     ExecuteJob.prototype.save = function (msg) {
         var name = this.getAttribute(this.activeNode, 'name');
@@ -308,6 +332,8 @@ define([
             })
             .then(activeObject => this.activeNode = activeObject);
     };
+
+    //////////////////////////// END Safe Save ////////////////////////////
 
     ExecuteJob.prototype.getConnections = function (nodes) {
         var conns = [];
@@ -357,7 +383,8 @@ define([
             idsToDelete = [],
             type,
             base,
-            child;
+            child,
+            i;
 
         this.lastAppliedCmd[nodeId] = 0;
         this._oldMetadataByName[nodeId] = {};
@@ -365,7 +392,7 @@ define([
         return this.core.loadChildren(job)
             .then(jobChildren => {
                 // Remove any metadata nodes
-                for (var i = jobChildren.length; i--;) {
+                for (i = jobChildren.length; i--;) {
                     child = jobChildren[i];
                     if (this.isMetaTypeOf(child, this.META.Metadata)) {
                         id = this.core.getPath(child);
@@ -389,19 +416,21 @@ define([
 
                 // make the deletion ids relative to the job node
                 this.logger.debug(`About to delete ${idsToDelete.length}: ${idsToDelete.join(', ')}`);
-                idsToDelete = idsToDelete.map(id => id.replace(nodeId, ''));
-                return Q.all(idsToDelete.map(id => this.core.loadByPath(job, id)));
-            })
-            .then(nodes => nodes.forEach(node => this.core.deleteNode(node)));  // FIXME
+                for (i = idsToDelete.length; i--;) {
+                    this.deleteNode(idsToDelete[i]);
+                }
+            });
     };
 
     ExecuteJob.prototype.clearOldMetadata = function (job) {
         var nodeId = this.core.getPath(job),
-            nodeIds = Object.keys(this._markForDeletion[nodeId]);
+            nodeIds = Object.keys(this._markForDeletion[nodeId]),
+            node;
 
         this.logger.debug(`About to delete ${nodeIds.length}: ${nodeIds.join(', ')}`);
         for (var i = nodeIds.length; i--;) {
-            this.core.deleteNode(this._markForDeletion[nodeId][nodeIds[i]]);  // FIXME
+            node = this._markForDeletion[nodeId][nodeIds[i]];
+            this.deleteNode(this.core.getPath(node));
         }
         delete this.lastAppliedCmd[nodeId];
         delete this._markForDeletion[nodeId];

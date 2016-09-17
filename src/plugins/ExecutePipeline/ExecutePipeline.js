@@ -38,6 +38,8 @@ define([
         this._currentSave = Q();
         this.changes = {};
         this.creations = {};
+        this.deletions = [];
+        this.createIdToMetadataId = {};
         this.initRun();
     };
 
