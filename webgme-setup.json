@@ -230,6 +230,13 @@
         "panel": "src/visualizers/panels/ExecutionIndex",
         "secondary": false,
         "widget": "src/visualizers/widgets/ExecutionIndex"
+      },
+      "Header": {
+        "src": "panels/Header/HeaderPanel",
+        "title": "Header",
+        "panel": "src/visualizers/panels/Header",
+        "secondary": false,
+        "widget": "src/visualizers/widgets/Header"
       }
     },
     "addons": {},

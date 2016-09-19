@@ -10,6 +10,7 @@ describe('ExecuteJob', function () {
         PluginCliManager = testFixture.WebGME.PluginCliManager,
         projectName = 'testProject',
         pluginName = 'ExecuteJob',
+        ExecJob = testFixture.requirejs('plugin/ExecuteJob/ExecuteJob/ExecuteJob'),
         project,
         gmeAuth,
         storage,
@@ -66,6 +67,24 @@ describe('ExecuteJob', function () {
             expect(typeof pluginResult).to.equal('object');
             expect(pluginResult.success).to.equal(false);
             done();
+        });
+    });
+
+    // How can I test the race condition?
+    // TODO
+    // I really need an executor mock... TODO
+    describe('metadata parsing', function() {
+        describe('graph', function() {
+            it('should support plotting negative numbers', function () {
+                // Get the plot parsing fn
+                // TODO
+
+                // Mock the necessary fn's (core.getPath, etc)
+                // TODO
+
+                // Verify that it edits the appropriate line
+                // TODO
+            });
         });
     });
 });

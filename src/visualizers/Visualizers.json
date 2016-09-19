@@ -100,5 +100,11 @@
     "title": "ExecutionIndex",
     "panel": "panels/ExecutionIndex/ExecutionIndexPanel",
     "DEBUG_ONLY": false
+  },
+  {
+    "id": "Header",
+    "title": "Header",
+    "panel": "panels/Header/HeaderPanel",
+    "DEBUG_ONLY": false
   }
 ]

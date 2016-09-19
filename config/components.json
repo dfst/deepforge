@@ -47,7 +47,7 @@
         "panels": [
             {
                 "id": "Header",
-                "panel": "BreadcrumbHeader/BreadcrumbHeaderPanel",
+                "panel": "Header/HeaderPanel",
                 "container": "header",
                 "DEBUG_ONLY": false
             },
