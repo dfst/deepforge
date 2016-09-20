@@ -1,0 +1,13 @@
+.worker-modal .modal-content .modal-header span {
+  font-size: 28px;
+  vertical-align: middle;
+}
+
+.worker-modal .modal-content .modal-header .header-icon {
+  height: 28px;
+  width: 28px;
+  margin-right: 1ex;
+  display: inline-block;
+  vertical-align: middle;
+  background-size: 28px 28px;
+}

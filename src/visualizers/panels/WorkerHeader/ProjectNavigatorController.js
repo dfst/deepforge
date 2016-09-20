@@ -1,9 +1,11 @@
 /* globals define, WebGMEGlobal */
 define([
     'js/Dialogs/Projects/ProjectsDialog',
+    './WorkerDialog',
     'js/Panels/Header/ProjectNavigatorController'
 ], function(
     ProjectsDialog,
+    WorkerDialog,
     GMEProjectNavigatorController
 ) {
     'use strict';
@@ -16,7 +18,9 @@ define([
     ProjectNavigatorController.prototype.initialize = function () {
         var self = this,
             newProject,
-            manageProjects;
+            manageProjects,
+            manageWorkers;
+
 
         // initialize model structure for view
         self.$scope.navigator = {
@@ -34,6 +38,12 @@ define([
             pd.show();
         };
         self.userId = WebGMEGlobal.userInfo._id;
+
+        manageWorkers = function() {
+            // Create the worker dialog
+            var pd = new WorkerDialog(self.gmeClient);
+            pd.show();
+        };
 
         // initialize root menu
         // projects id is mandatory
@@ -69,8 +79,7 @@ define([
                             id: 'manageWorkers',
                             label: 'Manage workers ...',
                             iconClass: 'glyphicon glyphicon-cloud',
-                            action: newProject,
-                            actionData: {newType: 'import'}
+                            action: manageWorkers
                         }
                     ]
                 },
