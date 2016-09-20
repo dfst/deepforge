@@ -12,7 +12,7 @@ var JobLogManager = function(logger, config) {
 };
 
 JobLogManager.prototype._getFilePath = function(jInfo) {
-    this.logger.info(`getting file path for ${jInfo.job} in ${jInfo.project} on ${jInfo.branch}`);
+    this.logger.debug(`getting file path for ${jInfo.job} in ${jInfo.project} on ${jInfo.branch}`);
     var jobId = jInfo.job.replace(/\//g, '_'),
         filename = `${jobId}.txt`;
 
@@ -123,7 +123,7 @@ JobLogManager.prototype.appendTo = function(jobInfo, logs) {
 JobLogManager.prototype.getLog = function(jobInfo) {
     var filename = this._getFilePath(jobInfo);
 
-    this.logger.info(`Getting log content to ${filename}`);
+    this.logger.info(`Getting log content from ${filename}`);
     return this.exists(jobInfo)
         .then(exists => {
             if (exists) {

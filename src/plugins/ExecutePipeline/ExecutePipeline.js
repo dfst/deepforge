@@ -37,6 +37,7 @@ define([
 
         this._currentSave = Q();
         this.changes = {};
+        this.currentChanges = {};  // read-only changes being applied
         this.creations = {};
         this.deletions = [];
         this.createIdToMetadataId = {};

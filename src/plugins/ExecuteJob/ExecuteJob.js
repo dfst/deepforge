@@ -57,7 +57,9 @@ define([
         this._oldMetadataByName = {};  // name -> id
         this.lastAppliedCmd = {};
         this.canceled = false;
+
         this.changes = {};
+        this.currentChanges = {};  // read-only changes being applied
         this.creations = {};
         this.deletions = [];
         this.createIdToMetadataId = {};
@@ -75,6 +77,18 @@ define([
     // Prototypical inheritance from PluginBase.
     ExecuteJob.prototype = Object.create(PluginBase.prototype);
     ExecuteJob.prototype.constructor = ExecuteJob;
+
+    ExecuteJob.prototype.configure = function () {
+        var result = PluginBase.prototype.configure.apply(this, arguments);
+
+        this.logManager = new JobLogsClient({
+            logger: this.logger,
+            port: this.gmeConfig.server.port,
+            branchName: this.branchName,
+            projectId: this.projectId
+        });
+        return result;
+    };
 
     /**
      * Main function for the plugin to execute. This will perform the execution.
@@ -94,13 +108,6 @@ define([
             return callback(`Cannot execute ${typeName} (expected Job)`, this.result);
         }
 
-        // Get the gmeConfig...
-        this.logManager = new JobLogsClient({
-            logger: this.logger,
-            port: this.gmeConfig.server.port,
-            branchName: this.branchName,
-            projectId: this.projectId
-        });
         this._callback = callback;
         this.currentForkName = null;
         this.prepare()
@@ -183,8 +190,7 @@ define([
     };
 
     ExecuteJob.prototype.getAttribute = function (node, attr) {
-        var nodeId,
-            base;
+        var nodeId;
 
         assert(this.deletions.indexOf(nodeId) === -1,
             `Cannot get ${attr} from deleted node ${nodeId}`);
@@ -193,25 +199,36 @@ define([
         if (this.isCreateId(node)) {
             nodeId = node;
             assert(this.creations[nodeId], `Creation node not updated: ${nodeId}`);
-
-            // Set the node to the base so it falls back to an
-            // existing node if the attr info isn't in the diff
             node = this.META[this.creations[nodeId].base];
         } else {
             nodeId = this.core.getPath(node);
         }
 
-        // Check the changes; fallback on actual node
-        if (this.changes[nodeId] && this.changes[nodeId][attr] !== undefined) {
-            // If deleted the attribute, get the default (inherited) value
-            if (this.changes[nodeId][attr] === null) {
-                base = this.core.getBase(node);
-                return this.getAttribute(base, attr);
-            }
-            return this.changes[nodeId][attr];
+        // Check the most recent changes, then the currentChanges, then the model
+        var value = this._getValueFrom(nodeId, attr, node, this.changes) ||
+            this._getValueFrom(nodeId, attr, node, this.currentChanges);
+
+        if (value) {
+            return value;
         }
 
         return this.core.getAttribute(node, attr);
+    };
+
+    ExecuteJob.prototype._getValueFrom = function (nodeId, attr, node, changes) {
+        var base;
+        if (changes[nodeId] && changes[nodeId][attr] !== undefined) {
+            // If deleted the attribute, get the default (inherited) value
+            if (changes[nodeId][attr] === null) {
+                if (this.isCreateId(nodeId)) {
+                    base = node;
+                } else {
+                    base = this.core.getBase(node);
+                }
+                return this.getAttribute(base, attr);
+            }
+            return changes[nodeId][attr];
+        }
     };
 
     ExecuteJob.prototype._applyNodeChanges = function (node, changes) {
@@ -223,6 +240,7 @@ define([
             attr = changes[i][0];
             value = changes[i][1];
             if (value !== null) {
+                this.logger.info(`Setting ${attr} to ${value} (${this.core.getPath(node)})`);
                 this.core.setAttribute(node, attr, value);
             } else {
                 this.core.delAttribute(node, attr);
@@ -248,6 +266,7 @@ define([
             promise;
 
         this.logger.info('Collecting changes to apply in commit');
+
         for (var i = nodeIds.length; i--;) {
             changes = [];
             attrs = Object.keys(this.changes[nodeIds[i]]);
@@ -264,7 +283,9 @@ define([
             promises.push(promise);
         }
 
+        this.currentChanges = this.changes;
         this.changes = {};
+        // Need to differentiate between read/write changes.
         this.logger.info(`About to apply changes for ${promises.length} nodes`);
         return Q.all(promises)
             .then(nodes => {
@@ -273,6 +294,9 @@ define([
                     assert(nodes[i], `node is ${nodes[i]} (${nodeIds[i]})`);
                     this._applyNodeChanges(nodes[i], changesFor[id]);
                 }
+
+                // Local model is now up-to-date. No longer need currentChanges
+                this.currentChanges = {};
             });
     };
 
@@ -437,7 +461,24 @@ define([
             .then(activeObject => this.activeNode = activeObject)
             .then(() => {
                 var metaNames = Object.keys(this.META);
+
                 return Q.all(metaNames.map(name => this.updateMetaNode(name)));
+            })
+            .then(() => {
+                var mdNodes,
+                    mdIds;
+
+                mdIds = Object.keys(this._metadata)
+                    .filter(id => !this.isCreateId(this._metadata[id]));
+
+                mdNodes = mdIds.map(id => this.core.getPath(this._metadata[id]))
+                    .map(nodeId => this.core.loadByPath(this.rootNode, nodeId));
+
+                return Q.all(mdNodes).then(nodes => {
+                    for (var i = nodes.length; i--;) {
+                        this._metadata[mdIds[i]] = nodes[i];
+                    }
+                });
             });
     };
 
@@ -1176,6 +1217,7 @@ define([
                                 last = stdout.lastIndexOf('\n'),
                                 result,
                                 lastLine,
+                                next = Q(),
                                 msg;
 
                             // parse deepforge commands
@@ -1189,13 +1231,15 @@ define([
 
                             if (output) {
                                 // Send notification to all clients watching the branch
-                                this.logManager.appendTo(jobId, output)
+                                next = next
+                                    .then(() => this.logManager.appendTo(jobId, output))
                                     .then(() => this.notifyStdoutUpdate(jobId));
                             }
                             if (result.hasMetadata) {
                                 msg = `Updated graph/image output for ${name}`;
-                                return this.save(msg);
+                                next = next.then(() => this.save(msg));
                             }
+                            return next;
                         });
                 }
             })
