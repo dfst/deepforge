@@ -46,8 +46,8 @@
     "CHFLayout": {
         "panels": [
             {
-                "id": "Header",
-                "panel": "Header/HeaderPanel",
+                "id": "WorkerHeader",
+                "panel": "WorkerHeader/WorkerHeaderPanel",
                 "container": "header",
                 "DEBUG_ONLY": false
             },

@@ -231,12 +231,12 @@
         "secondary": false,
         "widget": "src/visualizers/widgets/ExecutionIndex"
       },
-      "Header": {
-        "src": "panels/Header/HeaderPanel",
-        "title": "Header",
-        "panel": "src/visualizers/panels/Header",
+      "WorkerHeader": {
+        "src": "panels/WorkerHeader/WorkerHeaderPanel",
+        "title": "WorkerHeader",
+        "panel": "src/visualizers/panels/WorkerHeader",
         "secondary": false,
-        "widget": "src/visualizers/widgets/Header"
+        "widget": "src/visualizers/widgets/WorkerHeader"
       }
     },
     "addons": {},

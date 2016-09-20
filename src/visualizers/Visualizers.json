@@ -102,9 +102,9 @@
     "DEBUG_ONLY": false
   },
   {
-    "id": "Header",
-    "title": "Header",
-    "panel": "panels/Header/HeaderPanel",
+    "id": "WorkerHeader",
+    "title": "WorkerHeader",
+    "panel": "panels/WorkerHeader/WorkerHeaderPanel",
     "DEBUG_ONLY": false
   }
 ]
