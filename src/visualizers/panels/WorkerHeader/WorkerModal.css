@@ -11,3 +11,7 @@
   vertical-align: middle;
   background-size: 28px 28px;
 }
+
+.worker-modal .modal-content .modal-body th {
+    text-align: left;
+}
