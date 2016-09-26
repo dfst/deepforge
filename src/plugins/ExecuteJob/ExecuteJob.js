@@ -142,13 +142,7 @@ define([
 
     ExecuteJob.prototype.createNode = function (baseType, parent) {
         var id = this.getCreateId(),
-            parentId;
-
-        if (this.isCreateId(parent)) {
-            parentId = parent;
-        } else {
-            parentId = this.core.getPath(parent);
-        }
+            parentId = this.isCreateId(parent) ? parent : this.core.getPath(parent);
 
         this.logger.info(`Creating ${id} of type ${baseType} in ${parentId}`);
         assert(this.META[baseType], `Cannot create node w/ unrecognized type: ${baseType}`);
@@ -220,11 +214,7 @@ define([
         if (changes[nodeId] && changes[nodeId][attr] !== undefined) {
             // If deleted the attribute, get the default (inherited) value
             if (changes[nodeId][attr] === null) {
-                if (this.isCreateId(nodeId)) {
-                    base = node;
-                } else {
-                    base = this.core.getBase(node);
-                }
+                base = this.isCreateId(nodeId) ? node : this.core.getBase(node);
                 return this.getAttribute(base, attr);
             }
             return changes[nodeId][attr];
