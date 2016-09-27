@@ -83,10 +83,6 @@ define([
         var type = this.core.getMetaType(this.activeNode),
             typeName = type && this.getAttribute(type, 'name');
 
-        // This might be tough...
-        this.baseURL = this.getCurrentConfig().baseURL;
-
-        // TODO: Pass the baseURL in the plugin config
         if (typeName !== 'Job') {
             return callback(`Cannot execute ${typeName} (expected Job)`, this.result);
         }
@@ -477,14 +473,17 @@ define([
                 .then(mds => {
                     // Record the large files
                     var inputData = {},
-                        runsh = '# Bash script to download data files and run job\n';
+                        runsh = '# Bash script to download data files and run job\n' +
+                        'if [ -z "$DEEPFORGE_URL" ]; then\n  echo "Please set DEEPFORGE_URL and' +
+                        ' re-run:"\n  echo ""  \n  echo "  DEEPFORGE_URL=http://my.' +
+                        'deepforge.server.com:8080 bash run.sh"\n  echo ""\n exit 1\nfi\n';
 
                     mds.forEach((metadata, i) => {
                         // add the hashes for each input
                         var input = inputs[i], 
                             hash = files.inputAssets[input],
                             dataPath = 'inputs/' + input + '/data',
-                            url = this.baseURL + this.blobClient.getRelativeDownloadURL(hash);
+                            url = this.blobClient.getRelativeDownloadURL(hash);
 
                         inputData[dataPath] = {
                             req: hash,
@@ -492,7 +491,7 @@ define([
                         };
 
                         // Add to the run.sh file
-                        runsh += `wget ${url} ${dataPath}\n`;
+                        runsh += `wget $DEEPFORGE_URL${url} -O ${dataPath}\n`;
                     });
 
                     delete files.inputAssets;
