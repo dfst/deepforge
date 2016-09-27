@@ -25,6 +25,7 @@ describe('JobOriginAPI', function() {
             return {
                 hash: hash,
                 job: 'SomeJob',
+                branch: 'master',
                 execution: 'train_execution',
                 project: 'guest+example',
                 nodeId: 'K/6/1'
@@ -85,6 +86,30 @@ describe('JobOriginAPI', function() {
                             done();
                         });
                 });
+            });
+    });
+
+    it('should update job branch', function(done) {
+        var job = getJobInfo(),
+            url = getUrl(job.hash);
+
+        superagent.post(url)  // create the job
+            .send(job)
+            .end(function (err, res) {
+                expect(res.status).equal(201, err);
+                superagent.patch(url)  // update the branch
+                    .send({branch: 'newBranch'})
+                    .end(err => {
+                        expect(err).equal(null);
+
+                        superagent.get(url)  // check the new version
+                            .end((err, res) => {
+                                var info = JSON.parse(res.text);
+                                expect(info.branch).equal('newBranch');
+                                expect(res.status).equal(200, err);
+                                done();
+                            });
+                    });
             });
     });
 });

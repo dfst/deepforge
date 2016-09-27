@@ -45,6 +45,10 @@ define([
             });
     };
 
+    JobOriginClient.prototype.fork = function(hash, forkName) {
+        return this._request('patch', hash, {branch: forkName});
+    };
+
     JobOriginClient.prototype.deleteRecord = function(hash) {
         return this._request('delete', hash);
     };

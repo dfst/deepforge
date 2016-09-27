@@ -67,4 +67,15 @@ describe('JobOriginClient', function() {
             .then(res => expect(res).equal(null))
             .nodeify(done);
     });
+
+    it('should update job branch on fork', function(done) {
+        var job = getJobInfo(),
+            newBranch = 'newBranch';
+
+        client.record(job.hash, job)
+            .then(() => client.fork(job.hash, newBranch))
+            .then(() => client.getOrigin(job.hash))
+            .then(res => expect(res.branch).equal(newBranch))
+            .nodeify(done);
+    });
 });

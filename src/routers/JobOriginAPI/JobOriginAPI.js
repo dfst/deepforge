@@ -32,7 +32,7 @@ function initialize(middlewareOpts) {
     var logger = middlewareOpts.logger.fork('JobOriginAPI'),
         gmeConfig = middlewareOpts.gmeConfig,
         ensureAuthenticated = middlewareOpts.ensureAuthenticated,
-        REQUIRED_FIELDS = ['hash', 'project', 'execution', 'job', 'nodeId'],
+        REQUIRED_FIELDS = ['hash', 'project', 'execution', 'job', 'nodeId', 'branch'],
         mongo;
 
     logger.debug('initializing ...');
@@ -85,6 +85,7 @@ function initialize(middlewareOpts) {
                 hash: hash,
                 project: req.body.project,
                 execution: req.body.execution,
+                branch: req.body.branch,
                 job: req.body.job,  // job name
                 nodeId: req.body.nodeId
             };
@@ -111,6 +112,25 @@ function initialize(middlewareOpts) {
 
         mongo.findOneAndDelete({hash: hash})
             .then(() => res.sendStatus(204));
+    });
+
+    // on fork
+    router.patch('/:jobHash', function (req, res) {
+        var hash = req.params.jobHash;
+
+        if (!req.body.branch) {
+            return res.status(400).send('Missing "branch" field');
+        }
+
+        return mongo.findOneAndUpdate({hash: hash}, {$set: {branch: req.body.branch}})
+            .then(() => {
+                console.log('Finished updateOne!');
+                res.sendStatus(200);
+            })
+            .catch(err => {
+                logger.error(`Job update failed: ${err}`);
+                res.status(500).send(err);
+            });
     });
 
     logger.debug('ready');
