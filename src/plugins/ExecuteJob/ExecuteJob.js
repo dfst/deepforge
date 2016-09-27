@@ -83,7 +83,10 @@ define([
         var type = this.core.getMetaType(this.activeNode),
             typeName = type && this.getAttribute(type, 'name');
 
-        // TODO: Set the baseURL from the config
+        // This might be tough...
+        this.baseURL = this.getCurrentConfig().baseURL;
+
+        // TODO: Pass the baseURL in the plugin config
         if (typeName !== 'Job') {
             return callback(`Cannot execute ${typeName} (expected Job)`, this.result);
         }
@@ -481,7 +484,7 @@ define([
                         var input = inputs[i], 
                             hash = files.inputAssets[input],
                             dataPath = 'inputs/' + input + '/data',
-                            url = this.baseURL + this.blobClient.getDownloadURL(hash);
+                            url = this.baseURL + this.blobClient.getRelativeDownloadURL(hash);
 
                         inputData[dataPath] = {
                             req: hash,
