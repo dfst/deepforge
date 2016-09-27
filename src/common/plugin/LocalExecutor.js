@@ -20,13 +20,13 @@ define([
                 var output = cntrs
                     .find(cntr => {
                         var metaNode = this.core.getMetaType(cntr),
-                            metaName = this.core.getAttribute(metaNode, 'name');
+                            metaName = this.getAttribute(metaNode, 'name');
                         return metaName === 'Outputs';
                     });
                 return this.core.loadChildren(output);
             })
             .then(dataNodes => {
-                hash = this.core.getAttribute(dataNodes[0], 'data');
+                hash = this.getAttribute(dataNodes[0], 'data');
                 return this.getOutputs(node);
             })
             .then(outputTuples => {
@@ -48,7 +48,7 @@ define([
         var hash,
             typeId = this.core.getPointerPath(node, 'type'),
             type,
-            artifactName = this.core.getAttribute(node, 'artifactName');
+            artifactName = this.getAttribute(node, 'artifactName');
 
         return this.core.loadByPath(this.rootNode, typeId)
             .then(_type => {
@@ -58,25 +58,20 @@ define([
             .then(saveDir => this.core.loadChildren(saveDir))
             .then(artifacts => {
                 return artifacts.find(artifact =>
-                    this.core.getAttribute(artifact, 'name') === artifactName &&
+                    this.getAttribute(artifact, 'name') === artifactName &&
                         this.isMetaTypeOf(artifact, type));
             })
             .then(matchingArtifact => {
-                hash = matchingArtifact && this.core.getAttribute(matchingArtifact, 'data');
+                hash = matchingArtifact && this.getAttribute(matchingArtifact, 'data');
                 // If no hash, just continue (the subsequent ops will receive 'nil')
                 if (!hash) {
                     return this.onOperationComplete(node);
                 } else {
                     return this.getOutputs(node)
                         .then(outputPairs => {
-                            var outputs = outputPairs.map(pair => pair[2]),
-                                paths;
-
-                            paths = outputs.map(output => this.core.getPath(output));
+                            var outputs = outputPairs.map(pair => pair[2]);
                             // Get the 'data' hash and store it in the output data ports
-                            this.logger.info(`Loading blob data (${hash}) to ${paths.map(p => `"${p}"`)}`);
-
-                            outputs.forEach(output => this.core.setAttribute(output, 'data', hash));
+                            outputs.forEach(output => this.setAttribute(output, 'data', hash));
 
                             this.onOperationComplete(node);
                         });
@@ -99,7 +94,7 @@ define([
 
                 if (containers.length > 1) {
                     saveDir = containers.find(c =>
-                        this.core.getAttribute(c, 'name').toLowerCase().indexOf('artifacts') > -1
+                        this.getAttribute(c, 'name').toLowerCase().indexOf('artifacts') > -1
                     ) || containers[0];
                 }
 
@@ -121,8 +116,8 @@ define([
             .then(artifacts => {
                 currNameHashPairs = artifacts
                     .map(node => [
-                        this.core.getAttribute(node, 'name'),
-                        this.core.getAttribute(node, 'data')
+                        this.getAttribute(node, 'name'),
+                        this.getAttribute(node, 'data')
                     ]);
                 return this.getInputs(node);
             })
@@ -142,9 +137,9 @@ define([
 
                 // Remove nodes that already exist
                 dataNodes = allDataNodes.filter(dataNode => {
-                    var hash = this.core.getAttribute(dataNode, 'data'),
+                    var hash = this.getAttribute(dataNode, 'data'),
                         name = this.core.getOwnAttribute(node, 'saveName') ||
-                            this.core.getAttribute(dataNode, 'name');
+                            this.getAttribute(dataNode, 'name');
 
                     return !(currNameHashPairs
                         .find(pair => pair[0] === name && pair[1] === hash));
@@ -156,10 +151,10 @@ define([
                         newName = this.core.getOwnAttribute(node, 'saveName');
                     if (newName) {
                         newNodes.forEach(node =>
-                            this.core.setAttribute(node, 'name', newName)
+                            this.setAttribute(node, 'name', newName)
                         );
                     }
-                    var hashes = dataNodes.map(n => this.core.getAttribute(n, 'data'));
+                    var hashes = dataNodes.map(n => this.getAttribute(n, 'data'));
                     this.logger.info(`saving hashes: ${hashes.map(h => `"${h}"`)}`);
                 } else if (allDataNodes.length === 0) {
                     this.logger.warn('No data nodes found!');

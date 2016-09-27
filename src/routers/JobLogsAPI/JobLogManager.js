@@ -123,7 +123,7 @@ JobLogManager.prototype.appendTo = function(jobInfo, logs) {
 JobLogManager.prototype.getLog = function(jobInfo) {
     var filename = this._getFilePath(jobInfo);
 
-    this.logger.debug(`Getting log content to ${filename}`);
+    this.logger.info(`Getting log content from ${filename}`);
     return this.exists(jobInfo)
         .then(exists => {
             if (exists) {

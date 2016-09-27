@@ -37,6 +37,10 @@ define([
 
         this._currentSave = Q();
         this.changes = {};
+        this.currentChanges = {};  // read-only changes being applied
+        this.creations = {};
+        this.deletions = [];
+        this.createIdToMetadataId = {};
         this.initRun();
     };
 
@@ -149,7 +153,7 @@ define([
         // before continuing
         this._currentSave = this._currentSave
             .then(() => this.updateForkName(this.pipelineName))
-            .then(() => this.applyChanges())
+            .then(() => this.applyModelChanges())
             .then(() => CreateExecution.prototype.save.call(this, msg))
             .then(result => {
                 var msg;

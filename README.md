@@ -7,7 +7,13 @@
 **Notice**: DeepForge is still a work in progress and is also lacking significant documentation! That being said, any contributions and/or feedback is greatly appreciated (and feel free to always ask any questions on the gitter)!
 
 # DeepForge
-DeepForge is an open-source visual development environment for deep learning. Currently, it supports Convolutional Neural Networks but we are planning on supporting additional deep learning classifiers such as RNNs and LSTMs. Additional features include real-time collaborative editing and version control.
+DeepForge is an open-source visual development environment for deep learning. Currently, it supports Convolutional Neural Networks, RNNs and LSTMs as well as the creation of custom layers. Additional features include:
+- Graphical architecture editor
+- Training/testing pipeline creation
+- Distributed pipeline execution
+- Real-time pipeline feedback
+- Collaborative editing
+- Automatic version control.
 
 ## Quick Start
 Simply run the following command to install deepforge with its dependencies:
