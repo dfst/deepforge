@@ -22,10 +22,6 @@ define([
 
         this.logger.debug(`Setting url to ${this.url}`);
 
-        // Get the project, branch name
-        if (!(params.branchName && params.projectId)) {
-            throw Error('"branchName" and "projectId" required');
-        }
         this.branch = params.branchName;
         this.project = params.projectId;
         this._modifiedJobs = [];
@@ -66,7 +62,7 @@ define([
 
         req.end((err, res) => {
             if (err || res.status > 399) {
-                return deferred.reject(err || res.status);
+                return deferred.reject(res || err);
             }
 
             return deferred.resolve(res);

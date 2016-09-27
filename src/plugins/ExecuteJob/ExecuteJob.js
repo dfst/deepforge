@@ -860,7 +860,7 @@ define([
         info = {
             hash: hash,
             nodeId: this.core.getPath(job),
-            node: this.getAttribute(job, 'name'),
+            job: this.getAttribute(job, 'name'),
             execution: this.getAttribute(execNode, 'name')
         };
         return this.originManager.record(hash, info);

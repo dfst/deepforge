@@ -41,7 +41,7 @@ define([
 
         manageWorkers = function() {
             // Create the worker dialog
-            var pd = new WorkerDialog(self.gmeClient);
+            var pd = new WorkerDialog(self.logger);
             pd.show();
         };
 

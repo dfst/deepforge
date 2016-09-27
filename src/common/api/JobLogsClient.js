@@ -18,6 +18,11 @@ define([
         this.logger = params.logger.fork('JobLogsClient');
         APIClient.call(this, params);
 
+        // Get the project, branch name
+        if (!(params.branchName && params.projectId)) {
+            throw Error('"branchName" and "projectId" required');
+        }
+
         this._modifiedJobs = [];
 
         this.logger.debug(`Using <project>:<branch>: "${this.project}"/"${this.branch}"`);

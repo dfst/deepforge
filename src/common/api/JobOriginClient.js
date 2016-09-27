@@ -31,7 +31,10 @@ define([
             execution: info.execution
         };
 
-        return this._request('post', hash, jobInfo);
+        return this._request('post', hash, jobInfo)
+            .catch(err => {
+                throw err.text || err;
+            });
     };
 
     JobOriginClient.prototype.getOrigin = function(hash) {

@@ -4,7 +4,6 @@
 define([
     'plugin/CreateExecution/CreateExecution/CreateExecution',
     'plugin/ExecuteJob/ExecuteJob/ExecuteJob',
-    'deepforge/JobLogsClient',
     'common/storage/constants',
     'common/core/constants',
     'q',
@@ -13,7 +12,6 @@ define([
 ], function (
     CreateExecution,
     ExecuteJob,
-    JobLogsClient,
     STORAGE_CONSTANTS,
     CONSTANTS,
     Q,
@@ -118,13 +116,6 @@ define([
             return callback('Current node is not a Pipeline or Execution!', this.result);
         }
 
-        // Get the gmeConfig...
-        this.logManager = new JobLogsClient({
-            logger: this.logger,
-            port: this.gmeConfig.server.port,
-            branchName: this.branchName,
-            projectId: this.projectId
-        });
         this._callback = callback;
         this.currentForkName = null;
 
