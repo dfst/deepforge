@@ -36,9 +36,9 @@ define([
     WorkerDialog.prototype.initialize = function() {
         this._dialog = $(WorkerHtml);
         this._table = this._dialog.find('.worker-list');
-        this._jobContainer = this._dialog.find('.job-queue');
+        this.$noJobs = this._dialog.find('.no-jobs-msg');
         this._isShowingJobs = true;
-        this._queue = this._jobContainer.find('.job-queue-list');
+        this._queue = this._dialog.find('.job-queue-list');
         this._dialog.modal('show');
         this._dialog.on('hidden.bs.modal', () => this.active = false);
     };
@@ -131,10 +131,10 @@ define([
     };
 
     WorkerDialog.prototype.setJobQueueVisibility = function(visible) {
-        var visibility = visible ? 'inherit' : 'none';
+        var visibility = !visible ? 'inherit' : 'none';
 
         if (visible !== this._isShowingJobs) {
-            this._jobContainer.css('display', visibility);
+            this.$noJobs.css('display', visibility);
             this._isShowingJobs = visible;
         }
     };
@@ -148,19 +148,16 @@ define([
     WorkerDialog.prototype.updateJobItemName = function(jobId) {
         return this.originManager.getOrigin(jobId)
             .then(info => {
-                var job = this.jobs[jobId];
-                if (job && this.active) {
-                    var name = [
-                        info.project.replace(/^guest\+/, ''),
-                        info.execution,
-                        info.job
-                    ].join('/');
+                var job = this.jobs[jobId],
+                    project = info.project.replace(/^guest\+/, '');
 
+                if (job && this.active) {
                     if (info.branch !== 'master') {
-                        name += ' (' + info.branch + ')';
+                        project += ' (' + info.branch + ')';
                     }
-                    job.find('.job-id').text(name);
-                    
+                    job.find('.job-id').text(info.job);
+                    job.find('.execution').text(info.execution);
+                    job.find('.project').text(project);
                 }
             });
     };
@@ -168,16 +165,15 @@ define([
     WorkerDialog.prototype.updateJobItem = function(jobId) {
         var job = this.jobs[jobId] || $(WorkerJobItem),
             info = this.jobsDict[jobId],
-            clazz = utils.ClassForJobStatus[info.status.toLowerCase()] || 'default';
+            createdTime = new Date(info.createTime).getTime(),
+            clazz = utils.ClassForJobStatus[info.status.toLowerCase()];
 
-        if (clazz.indexOf('job') === -1) {
-            clazz = 'label-' + clazz;
-        }
-
-        job[0].className = `job-tag label ${clazz}`;
+        job.find('.status').text(info.status);
+        job[0].className = `job-tag ${clazz}`;
 
         if (!this.jobs[jobId]) {
             job.find('.job-id').text('Loading');
+            job.find('.createdAt').text(utils.getDisplayTime(createdTime));
             this.updateJobItemName(jobId);
             this._queue.append(job);
             this.jobs[jobId] = job;

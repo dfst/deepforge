@@ -34,8 +34,23 @@
                 </div>
                 <div class="job-queue">
                     <div class="job-queue-title">Job Queue:</div>
-                    <div class="job-queue-list">
-                    </div>
+                    <table class="table table-projects">
+                        <thead>
+                            <tr class="with-children">
+                                <th>Job</th>
+                                <th>Execution</th>
+                                <th>Project</th>
+                                <th>Creation Date</th>
+                                <th>Status</th>
+                            </tr>
+                            <!--<tr class="with-no-children">-->
+                                <!--<th>No queued jobs</th>-->
+                            <!--</tr>-->
+                        </thead>
+                        <tbody class="job-queue-list">
+                            <tr class="no-jobs-msg">No jobs</tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
