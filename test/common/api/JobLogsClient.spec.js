@@ -1,4 +1,4 @@
-var testFixture = require('../globals'),
+var testFixture = require('../../globals'),
     expect = testFixture.expect,
     assert = require('assert'),
     path = testFixture.path,
@@ -7,7 +7,7 @@ var testFixture = require('../globals'),
     server = testFixture.WebGME.standaloneServer(gmeConfig),
     Logger = require('webgme/src/server/logger'),
     logger = Logger.createWithGmeConfig('gme', gmeConfig, true),
-    JobLogsClient = testFixture.requirejs('deepforge/JobLogsClient'),
+    JobLogsClient = testFixture.requirejs('deepforge/api/JobLogsClient'),
     rm_rf = require('rimraf'),
     exists = require('exists-file');
 

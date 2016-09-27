@@ -1,6 +1,5 @@
 var testFixture = require('../../globals'),
     superagent = testFixture.superagent,
-    assert = testFixture.assert,
     expect = testFixture.expect,
     gmeConfig = testFixture.getGmeConfig(),
     server = testFixture.WebGME.standaloneServer(gmeConfig),
@@ -62,8 +61,6 @@ describe('JobOriginAPI', function() {
                 superagent.get(url)
                     .end((err, res) => {
                         var jobInfo = JSON.parse(res.text);
-                        console.log('jobInfo:', jobInfo);
-                        console.log('job:', job);
                         Object.keys(jobInfo).forEach(key => {
                             expect(jobInfo[key]).equal(job[key]);
                         });
