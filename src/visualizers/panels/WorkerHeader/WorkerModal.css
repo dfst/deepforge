@@ -19,9 +19,13 @@
 .worker-modal .job-queue-title {
   color: #555555;
   font-weight: bold;
-  font-size: 1.45em;
 }
 
 .worker-modal .job-tag {
+  margin-right: 5px;
+}
+
+.worker-modal .job-queue-title {
+  float: left;
   margin-right: 5px;
 }

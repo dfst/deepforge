@@ -31,7 +31,9 @@ define([
     WorkerDialog.prototype.initialize = function() {
         this._dialog = $(WorkerHtml);
         this._table = this._dialog.find('.worker-list');
-        this._queue = this._dialog.find('.job-queue-list');
+        this._jobContainer = this._dialog.find('.job-queue');
+        this._isShowingJobs = true;
+        this._queue = this._jobContainer.find('.job-queue-list');
         this._dialog.modal('show');
         this._dialog.on('hidden.bs.modal', () => this.active = false);
     };
@@ -110,19 +112,29 @@ define([
 
     WorkerDialog.prototype.updateJobs = function(jobsDict) {
         var allJobIds = Object.keys(jobsDict),
+            isVisible = false,
             id;
 
         this.jobsDict = jobsDict;
         for (var i = allJobIds.length; i--;) {
             id = allJobIds[i];
             if (this.jobs[id] || !this.isFinished(id)) {
-                this.updateJobItem(id);
+                isVisible = this.updateJobItem(id) || isVisible;
             }
+        }
+        this.setJobQueueVisibility(isVisible);  // hide if no queue
+    };
+
+    WorkerDialog.prototype.setJobQueueVisibility = function(visible) {
+        var visibility = visible ? 'inherit' : 'none';
+
+        if (visible !== this._isShowingJobs) {
+            this._jobContainer.css('display', visibility);
+            this._isShowingJobs = visible;
         }
     };
 
     WorkerDialog.prototype.isFinished = function(jobId) {
-        return false;  // TODO: REMOVE
         return this.jobsDict[jobId].status === 'FAILED_TO_EXECUTE' ||
             this.jobsDict[jobId].status === 'SUCCESS' ||
             this.jobsDict[jobId].status === 'CANCELED';
@@ -148,7 +160,9 @@ define([
         if (this.isFinished(jobId)) {
             job.remove();
             delete this.jobs[jobId];
+            return false;
         }
+        return true;
     };
 
     return WorkerDialog;

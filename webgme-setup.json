@@ -293,6 +293,10 @@
       "JobLogsAPI": {
         "src": "src/routers/JobLogsAPI",
         "mount": "execution/logs"
+      },
+      "JobOriginAPI": {
+        "src": "src/routers/JobOriginAPI",
+        "mount": "job/origins"
       }
     }
   },
