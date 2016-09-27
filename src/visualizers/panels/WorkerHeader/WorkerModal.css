@@ -13,5 +13,11 @@
 }
 
 .worker-modal .modal-content .modal-body th {
-    text-align: left;
+  text-align: left;
+}
+
+.worker-modal .job-queue {
+}
+
+.worker-modal .job-queue .job span {
 }

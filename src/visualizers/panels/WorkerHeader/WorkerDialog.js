@@ -5,13 +5,15 @@ define([
     'deepforge/viz/Utils',
     'text!./WorkerModal.html',
     'text!./WorkerTemplate.html.ejs',
+    'text!./WorkerJobItem.html',
     'css!./WorkerModal.css'
 ], function(
     Q,
     superagent,
     utils,
     WorkerHtml,
-    WorkerTemplate
+    WorkerTemplate,
+    WorkerJobItem
 ) {
     'use strict';
 
@@ -19,16 +21,17 @@ define([
         JOBS_ENDPOINT = '/rest/executor';
 
     var WorkerDialog = function() {
-        // TODO: Poll /rest/executor/worker for the worker status
-        // TODO: Poll the current job queue
         this.workerDict = {};
         this.workers = {};
+        this.jobsDict = {};
+        this.jobs = {};
         this.active = false;
     };
 
     WorkerDialog.prototype.initialize = function() {
         this._dialog = $(WorkerHtml);
         this._table = this._dialog.find('.worker-list');
+        this._queue = this._dialog.find('.job-queue');
         this._dialog.modal('show');
         this._dialog.on('hidden.bs.modal', () => this.active = false);
     };
@@ -37,7 +40,6 @@ define([
         this.active = true;
         this.update();
         this.initialize();
-        // TODO
     };
 
     WorkerDialog.prototype.get = function(url) {
@@ -55,7 +57,6 @@ define([
     };
 
     WorkerDialog.prototype.update = function() {
-        console.log('updating...');
         // Poll the workers
         return Q.all([
             this.get(WORKER_ENDPOINT).then(workers => this.updateWorkers(workers)),
@@ -108,7 +109,46 @@ define([
     };
 
     WorkerDialog.prototype.updateJobs = function(jobsDict) {
-        console.log('jobs:', jobsDict);
+        var allJobIds = Object.keys(jobsDict),
+            id;
+
+        this.jobsDict = jobsDict;
+        for (var i = allJobIds.length; i--;) {
+            id = allJobIds[i];
+            if (this.jobs[id] || !this.isFinished(id)) {
+                this.updateJobItem(id);
+            }
+        }
+    };
+
+    WorkerDialog.prototype.isFinished = function(jobId) {
+        return false;
+        return this.jobsDict[jobId].status === 'FAILED_TO_EXECUTE' ||
+            this.jobsDict[jobId].status === 'SUCCESS' ||
+            this.jobsDict[jobId].status === 'CANCELED';
+    };
+
+    WorkerDialog.prototype.updateJobItem = function(jobId) {
+        var job = this.jobs[jobId] || $(WorkerJobItem),
+            info = this.jobsDict[jobId],
+            clazz = utils.ClassForJobStatus[info.status] || '';
+
+        if (clazz) {
+            clazz = ' label-' + clazz;
+        }
+        // TODO: Get the job item name
+        job.find('.job-id').text('Example Name');
+        job[0].className = `label${clazz}`;
+
+        if (!this.jobs[jobId]) {
+            this._queue.append(job);
+            this.jobs[jobId] = job;
+        }
+
+        if (this.isFinished(jobId)) {
+            job.remove();
+            delete this.jobs[jobId];
+        }
     };
 
     return WorkerDialog;
