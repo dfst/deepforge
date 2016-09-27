@@ -16,8 +16,12 @@
   text-align: left;
 }
 
-.worker-modal .job-queue {
+.worker-modal .job-queue-title {
+  color: #555555;
+  font-weight: bold;
+  font-size: 1.45em;
 }
 
-.worker-modal .job-queue .job span {
+.worker-modal .job-tag {
+  margin-right: 5px;
 }

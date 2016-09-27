@@ -31,7 +31,7 @@ define([
     WorkerDialog.prototype.initialize = function() {
         this._dialog = $(WorkerHtml);
         this._table = this._dialog.find('.worker-list');
-        this._queue = this._dialog.find('.job-queue');
+        this._queue = this._dialog.find('.job-queue-list');
         this._dialog.modal('show');
         this._dialog.on('hidden.bs.modal', () => this.active = false);
     };
@@ -122,7 +122,7 @@ define([
     };
 
     WorkerDialog.prototype.isFinished = function(jobId) {
-        return false;
+        return false;  // TODO: REMOVE
         return this.jobsDict[jobId].status === 'FAILED_TO_EXECUTE' ||
             this.jobsDict[jobId].status === 'SUCCESS' ||
             this.jobsDict[jobId].status === 'CANCELED';
@@ -131,14 +131,14 @@ define([
     WorkerDialog.prototype.updateJobItem = function(jobId) {
         var job = this.jobs[jobId] || $(WorkerJobItem),
             info = this.jobsDict[jobId],
-            clazz = utils.ClassForJobStatus[info.status] || '';
+            clazz = utils.ClassForJobStatus[info.status.toLowerCase()] || 'default';
 
-        if (clazz) {
-            clazz = ' label-' + clazz;
+        if (clazz.indexOf('job') === -1) {
+            clazz = 'label-' + clazz;
         }
         // TODO: Get the job item name
         job.find('.job-id').text('Example Name');
-        job[0].className = `label${clazz}`;
+        job[0].className = `job-tag label ${clazz}`;
 
         if (!this.jobs[jobId]) {
             this._queue.append(job);
