@@ -189,6 +189,10 @@ define([
         });
     };
 
+    ExecutePipeline.prototype.isExecutionCanceled = function () {
+        return this.getAttribute(this.activeNode, 'status') === 'canceled';
+    };
+
     ExecutePipeline.prototype.isInputData = function (node) {
         var prnt = this.core.getParent(node);
         return this.core.isTypeOf(prnt, this.META.Inputs);

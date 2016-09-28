@@ -1185,6 +1185,11 @@ define([
         });
     };
 
+    ExecuteJob.prototype.isExecutionCanceled = function () {
+        var execNode = this.core.getParent(this.activeNode);
+        return this.getAttribute(execNode, 'status') === 'canceled';
+    };
+
     ExecuteJob.prototype.watchOperation = function (executor, hash, op, job) {
         var jobId = this.core.getPath(job),
             opId = this.core.getPath(op),
@@ -1193,7 +1198,7 @@ define([
             name = this.getAttribute(job, 'name');
 
         // If canceled, stop the operation
-        if (this.canceled) {
+        if (this.canceled || this.isExecutionCanceled()) {
             secret = this.getAttribute(job, 'secret');
             if (secret) {
                 executor.cancelJob(hash, secret);
