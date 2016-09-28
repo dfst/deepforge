@@ -252,4 +252,35 @@ describe('ExecuteJob', function () {
                 .nodeify(done);
         });
     });
+
+    // Canceling
+    describe('cancel', function() {
+        beforeEach(preparePlugin);
+
+        it('should stop the job if the execution is canceled', function(done) {
+            var job = node,
+                hash = 'abc123',
+                exec = {
+                    cancelJob: jobHash => expect(jobHash).equal(hash)
+                };
+
+            plugin.setAttribute(node, 'secret', 'abc');
+            plugin.isExecutionCanceled = () => true;
+            plugin.onOperationCanceled = () => done();
+            plugin.watchOperation(exec, hash, job, job);
+        });
+
+        it('should stop the job if a job is canceled', function(done) {
+            var job = node,
+                hash = 'abc123',
+                exec = {
+                    cancelJob: jobHash => expect(jobHash).equal(hash)
+                };
+
+            plugin.setAttribute(job, 'secret', 'abc');
+            plugin.canceled = true;
+            plugin.onOperationCanceled = () => done();
+            plugin.watchOperation(exec, hash, job, job);
+        });
+    });
 });
