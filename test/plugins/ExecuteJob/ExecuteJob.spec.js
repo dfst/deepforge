@@ -71,14 +71,13 @@ describe('ExecuteJob', function () {
 
     ////////// Helper Functions //////////
     var plugin,
-        nodeId = '/K/R/p',  // hello world job
         node,
         preparePlugin = function(done) {
             var context = {
                 project: project,
                 commitHash: commitHash,
                 branchName: 'test',
-                activeNode: '/K/R'
+                activeNode: '/K/R/p'  // hello world job
             };
 
             return manager.initializePlugin(pluginName)
@@ -86,10 +85,7 @@ describe('ExecuteJob', function () {
                     plugin = plugin_;
                     return manager.configurePlugin(plugin, {}, context);
                 })
-                .then(() => {
-                    return plugin.core.loadByPath(plugin.rootNode, nodeId);
-                })
-                .then(node_ => node = node_)
+                .then(() => node = plugin.activeNode)
                 .nodeify(done);
         };
 
@@ -281,6 +277,20 @@ describe('ExecuteJob', function () {
             plugin.canceled = true;
             plugin.onOperationCanceled = () => done();
             plugin.watchOperation(exec, hash, job, job);
+        });
+
+        it('should set exec to running', function(done) {
+            var job = node,
+                execNode = plugin.core.getParent(job);
+
+            // Set the execution to canceled
+            plugin.setAttribute(execNode, 'status', 'canceled');
+            plugin.prepare = () => {
+                var status = plugin.getAttribute(execNode, 'status');
+                expect(status).to.not.equal('canceled');
+                return {then: () => done()};
+            };
+            plugin.main();
         });
     });
 });

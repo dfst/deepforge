@@ -102,10 +102,19 @@ define([
     ExecuteJob.prototype.main = function (callback) {
         // Check the activeNode to make sure it is a valid node
         var type = this.core.getMetaType(this.activeNode),
-            typeName = type && this.getAttribute(type, 'name');
+            typeName = type && this.getAttribute(type, 'name'),
+            execNode,
+            status;
 
         if (typeName !== 'Job') {
             return callback(`Cannot execute ${typeName} (expected Job)`, this.result);
+        }
+
+        // Set the parent execution to 'running'
+        execNode = this.core.getParent(this.activeNode);
+        status = this.getAttribute(execNode, 'status');
+        if (status !== 'running') {
+            this.setAttribute(execNode, 'status', 'running');
         }
 
         this._callback = callback;
