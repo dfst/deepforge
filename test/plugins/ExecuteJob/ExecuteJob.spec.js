@@ -283,4 +283,60 @@ describe('ExecuteJob', function () {
             plugin.watchOperation(exec, hash, job, job);
         });
     });
+
+    describe('exec files', function() {
+        describe('attribute file', function() {
+            var boolString = /['"](true|false)['"]/g;
+
+            beforeEach(preparePlugin);
+
+            it('should not quote true (s) boolean values', function() {
+                var files = {},
+                    content,
+                    matches;
+
+                plugin.setAttribute(node, 'debug', 'true');
+                plugin.createAttributeFile(node, files);
+                content = files['attributes.lua'];
+                matches = content.match(boolString);
+                expect(matches).to.equal(null);
+            });
+
+            it('should not quote true boolean values', function() {
+                var files = {},
+                    content,
+                    matches;
+
+                plugin.setAttribute(node, 'debug', true);
+                plugin.createAttributeFile(node, files);
+                content = files['attributes.lua'];
+                matches = content.match(boolString);
+                expect(matches).to.equal(null);
+            });
+
+            it('should not quote false (s) boolean values', function() {
+                var files = {},
+                    content,
+                    matches;
+
+                plugin.setAttribute(node, 'debug', 'false');
+                plugin.createAttributeFile(node, files);
+                content = files['attributes.lua'];
+                matches = content.match(boolString);
+                expect(matches).to.equal(null);
+            });
+
+            it('should not quote false boolean values', function() {
+                var files = {},
+                    content,
+                    matches;
+
+                plugin.setAttribute(node, 'debug', false);
+                plugin.createAttributeFile(node, files);
+                content = files['attributes.lua'];
+                matches = content.match(boolString);
+                expect(matches).to.equal(null);
+            });
+        });
+    });
 });

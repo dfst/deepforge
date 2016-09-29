@@ -1130,8 +1130,8 @@ define([
     };
 
     ExecuteJob.prototype.createAttributeFile = function (node, files) {
-        var skip = ['code'],
-            numRegex = /^\d+\.?\d*((e|e-)\d+)?$/,
+        var skip = ['code', 'stdout', 'execFiles', 'jobId', 'secret'],
+            numOrBool = /^(-?\d+\.?\d*((e|e-)\d+)?|(true|false))$/,
             table;
 
         this.logger.info('Creating attributes file...');
@@ -1139,7 +1139,7 @@ define([
             .filter(attr => skip.indexOf(attr) === -1)
             .map(name => {
                 var value = this.getAttribute(node, name);
-                if (!numRegex.test(value)) {
+                if (!numOrBool.test(value)) {
                     value = `"${value}"`;
                 }
                 return [name, value];
