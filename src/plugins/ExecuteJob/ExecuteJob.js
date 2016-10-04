@@ -11,6 +11,7 @@ define([
     'deepforge/plugin/PtrCodeGen',
     'deepforge/api/JobLogsClient',
     'deepforge/api/JobOriginClient',
+    'deepforge/api/ExecPulseClient',
     'deepforge/Constants',
     'deepforge/utils',
     './templates/index',
@@ -27,6 +28,7 @@ define([
     PtrCodeGen,
     JobLogsClient,
     JobOriginClient,
+    ExecPulseClient,
     CONSTANTS,
     utils,
     Templates,
@@ -96,6 +98,7 @@ define([
 
         this.logManager = new JobLogsClient(params);
         this.originManager = new JobOriginClient(params);
+        this.pulseClient = new ExecPulseClient(params);
 
         this.executor = new ExecutorClient({
             logger: this.logger,
@@ -1289,18 +1292,20 @@ define([
     };
 
     ExecuteJob.prototype.updateExecHeartBeat = function () {
-        var time = Date.now();
-
-        superagent.post(this.currentRunId)
-            .send({hash: this.currentRunId})
-            .end(err => {
-                if (err) {
-                    this.logger.error(`heartbeat failed: ${err}`);
-                }
-
+        var time = Date.now(),
+            next = function() {
                 if (this._beating) {
                     setTimeout(this.updateExecHeartBeat.bind(this),
                         ExecuteJob.HEARTBEAT_INTERVAL - (Date.now() - time));
+                }
+            };
+
+        this.pulseClient.update(this.currentRunId)
+            .then(() => next())
+            .catch(err => {
+                if (err) {
+                    this.logger.error(`heartbeat failed: ${err}`);
+                    next();
                 }
             });
     };

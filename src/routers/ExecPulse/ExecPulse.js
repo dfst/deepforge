@@ -7,7 +7,6 @@
 
 var express = require('express'),
     MONGO_COLLECTION = 'ExecPulse',
-    utils = require('../utils'),
     mongo,
     storage,
     router = express.Router();
@@ -29,7 +28,6 @@ var express = require('express'),
 function initialize(middlewareOpts) {
     var logger = middlewareOpts.logger.fork('ExecPulse'),
         ensureAuthenticated = middlewareOpts.ensureAuthenticated,
-        REQUIRED_FIELDS = ['hash', 'timestamp'],
         STALE_THRESHOLD = 5000;
 
     storage = require('../storage')(logger, middlewareOpts.gmeConfig);
@@ -44,6 +42,10 @@ function initialize(middlewareOpts) {
     // Use ensureAuthenticated if the routes require authentication. (Can be set explicitly for each route.)
     router.use('*', ensureAuthenticated);
 
+    router.get('/', function (req, res) {
+        res.send('Execution pulse info is located here...');
+    });
+
     router.get('/:hash', function (req, res) {
         var params = req.body;
         // Check if the given job has a stale heartbeat
@@ -57,7 +59,7 @@ function initialize(middlewareOpts) {
             .then(job => {
                 var current = Date.now();
                 if (job) {
-                    return res.send((current - job.timestamp) > STALE_THRESHOLD);
+                    return res.send((current - job.timestamp) < STALE_THRESHOLD);
                 }
                 return res.sendStatus(404);
             });

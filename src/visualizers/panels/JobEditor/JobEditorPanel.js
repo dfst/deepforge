@@ -10,11 +10,15 @@ define([
     'panels/TilingViz/TilingVizPanel',
     'panels/OutputViewer/OutputViewerPanel',
     'panels/OperationCodeEditor/OperationCodeEditorPanel',
+    'deepforge/api/ExecPulseClient',
+    'deepforge/viz/Execute',
     'js/Constants'
 ], function (
     TilingViz,
     OutputViewer,
     OperationCodeEditor,
+    ExecPulseClient,
+    Execute,
     CONSTANTS
 ) {
     'use strict';
@@ -23,11 +27,19 @@ define([
 
     JobEditorPanel = function (layoutManager, params) {
         TilingViz.call(this, layoutManager, params);
+        Execute.call(this, this._client, this.logger);
         this.readOnly = false;
+        this.pulseClient = new ExecPulseClient({
+            logger: this.logger
+        });
     };
 
     //inherit from PanelBaseWithHeader
-    _.extend(JobEditorPanel.prototype, TilingViz.prototype);
+    _.extend(
+        JobEditorPanel.prototype,
+        Execute.prototype,
+        TilingViz.prototype
+    );
 
     JobEditorPanel.prototype.getPanels = function () {
         if (this.readOnly) {
@@ -88,6 +100,20 @@ define([
             // update the OutputViewer controller
             var i = this._panels.length;
             this._panels[i-1].control.selectedObjectChanged(nodeId);
+            // Check if the job needs to be reconnected
+            this.checkExecutionConnection(node);
+        }
+    };
+
+    JobEditorPanel.prototype.checkExecutionConnection = function (job) {
+        var hash = job.getAttribute('jobId');
+        if (hash) {
+            this.pulseClient.check(hash)
+                .then(beating => {
+                    if (!beating) {  // rescusitate
+                        this.executeJob(job);
+                    }
+                });
         }
     };
 
