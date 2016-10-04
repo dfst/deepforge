@@ -99,9 +99,11 @@ define([
      * @param {function(string, plugin.PluginResult)} callback - the result callback
      */
     ExecutePipeline.prototype.main = function (callback) {
-        var startPromise;
+        var startPromise,
+            rand = Math.floor(Math.random()*10000);
 
         // TODO: Detect if resuming execution
+        this.currentRunId = `Pipeline_${this.commitHash}_${Date.now()}_${rand}`;
         this.initRun();
         if (this.core.isTypeOf(this.activeNode, this.META.Pipeline)) {
             // If starting with a pipeline, we will create an Execution first
@@ -212,6 +214,7 @@ define([
         this.logger.info('Setting all jobs status to "pending"');
         this.logger.debug(`Making a commit from ${this.currentHash}`);
         this.setAttribute(this.activeNode, 'startTime', Date.now());
+        this.setAttribute(this.activeNode, 'runId', this.currentRunId);
         this.core.delAttribute(this.activeNode, 'endTime');
         return this.save(`Initializing ${this.pipelineName} for execution`);
     };

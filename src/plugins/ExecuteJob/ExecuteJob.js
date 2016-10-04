@@ -15,6 +15,7 @@ define([
     'deepforge/utils',
     './templates/index',
     'q',
+    'superagent',
     'underscore'
 ], function (
     assert,
@@ -30,6 +31,7 @@ define([
     utils,
     Templates,
     Q,
+    superagent,
     _
 ) {
     'use strict';
@@ -75,6 +77,7 @@ define([
      */
     ExecuteJob.metadata = pluginMetadata;
     ExecuteJob.UPDATE_INTERVAL = 1500;
+    ExecuteJob.HEARTBEAT_INTERVAL = 2500;
 
     // Prototypical inheritance from PluginBase.
     ExecuteJob.prototype = Object.create(PluginBase.prototype);
@@ -129,7 +132,6 @@ define([
             this.setAttribute(execNode, 'status', 'running');
         }
 
-        // TODO: Detect if resuming execution
         this._callback = callback;
         this.currentForkName = null;
         this.isResuming(this.activeNode)
@@ -137,10 +139,16 @@ define([
                 this._resumed = resuming;
                 return this.prepare();
             })
-            .then(() => this._resumed ?
-                this.resumeJob(this.activeNode) :
-                this.executeJob(this.activeNode)
-            );
+            .then(() => {
+                if (this._resumed) {
+                    this.currentRunId = this.getAttribute(this.activeNode, 'jobId');
+                    this.resumeJob(this.activeNode);
+                } else {
+                    this.currentRunId = null;  // will be set after exec files created
+                    this.executeJob(this.activeNode);
+                }
+                this.startExecHeartBeat();
+            });
     };
 
     ExecuteJob.prototype.isResuming = function (job) {
@@ -498,10 +506,6 @@ define([
                     msg = `"${name}" execution has forked to "${result.forkName}"`;
                     this.currentForkName = result.forkName;
                     this.logManager.fork(result.forkName);
-
-                    // TODO: Update the execpulse
-                    // if it forks, the ui may automatically start the execution again
-                    // on the original branch...
                     this.sendNotification(msg);
                 } else if (result.status === STORAGE_CONSTANTS.MERGED) {
                     this.logger.debug('Merged changes. About to update plugin nodes');
@@ -922,6 +926,9 @@ define([
                 if (info.secret) {  // o.w. it is a cached job!
                     this.setAttribute(job, 'secret', info.secret);
                 }
+                if (!this.currentRunId) {
+                    this.currentRunId = info.hash;
+                }
                 return this.recordJobOrigin(hash, job);
             })
             .then(() => this.watchOperation(hash, opNode, job))
@@ -1272,14 +1279,38 @@ define([
         return this.getAttribute(execNode, 'status') === 'canceled';
     };
 
+    ExecuteJob.prototype.startExecHeartBeat = function () {
+        this._beating = true;
+        this.updateExecHeartBeat();
+    };
+
+    ExecuteJob.prototype.stopExecHeartBeat = function () {
+        this._beating = false;
+    };
+
+    ExecuteJob.prototype.updateExecHeartBeat = function () {
+        var time = Date.now();
+
+        superagent.post(this.currentRunId)
+            .send({hash: this.currentRunId})
+            .end(err => {
+                if (err) {
+                    this.logger.error(`heartbeat failed: ${err}`);
+                }
+
+                if (this._beating) {
+                    setTimeout(this.updateExecHeartBeat.bind(this),
+                        ExecuteJob.HEARTBEAT_INTERVAL - (Date.now() - time));
+                }
+            });
+    };
+
     ExecuteJob.prototype.watchOperation = function (hash, op, job) {
         var jobId = this.core.getPath(job),
             opId = this.core.getPath(op),
             info,
             secret,
             name = this.getAttribute(job, 'name');
-
-        // TODO: Update the heartbeat...
 
         // If canceled, stop the operation
         if (this.canceled || this.isExecutionCanceled()) {

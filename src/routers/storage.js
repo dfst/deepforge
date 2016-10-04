@@ -3,11 +3,10 @@
 var mongodb = require('mongodb'),
     connection;
 
-module.exports = function(gmeConfig) {
+module.exports = function(logger, gmeConfig) {
     if (!connection) {
         connection = mongodb.MongoClient.connect(gmeConfig.mongo.uri, gmeConfig.mongo.options)
             .then(db => {
-                mongo = db.collection(MONGO_COLLECTION);
                 logger.debug('Connected to mongo!');
                 return db;
             })

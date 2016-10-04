@@ -1,5 +1,5 @@
 /*jshint node:true, mocha:true*/
-describe.only('ExecPulse', function() {
+describe('ExecPulse', function() {
     var testFixture = require('../../globals'),  // TODO: May need to change this if not created from webgme-cli
         superagent = testFixture.superagent,
         expect = testFixture.expect,

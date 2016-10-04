@@ -8,6 +8,8 @@
 var express = require('express'),
     MONGO_COLLECTION = 'ExecPulse',
     utils = require('../utils'),
+    mongo,
+    storage,
     router = express.Router();
 
 /**
@@ -27,13 +29,11 @@ var express = require('express'),
 function initialize(middlewareOpts) {
     var logger = middlewareOpts.logger.fork('ExecPulse'),
         ensureAuthenticated = middlewareOpts.ensureAuthenticated,
-        storage = require('../storage')(middlewareOpts.gmeConfig),
-        REQUIRED_FIELDS = ['hash', 'project', 'nodeId', 'branch', 'timestamp'],
-        STALE_THRESHOLD = 5000,
-        mongo;
+        REQUIRED_FIELDS = ['hash', 'timestamp'],
+        STALE_THRESHOLD = 5000;
 
+    storage = require('../storage')(logger, middlewareOpts.gmeConfig);
     logger.debug('initializing ...');
-    storage.then(db => mongo = db.collection(MONGO_COLLECTION));
 
     // Ensure authenticated can be used only after this rule.
     router.use('*', function (req, res, next) {
@@ -44,17 +44,13 @@ function initialize(middlewareOpts) {
     // Use ensureAuthenticated if the routes require authentication. (Can be set explicitly for each route.)
     router.use('*', ensureAuthenticated);
 
-    router.get('/running', function (req, res) {
+    router.get('/:hash', function (req, res) {
         var params = req.body;
         // Check if the given job has a stale heartbeat
         // Searching just w/ jobHash works for ExecuteJob but
         // will not work for ExecutePipeline...
-        if (!req.body.hash) {
-            // Must have project, branch and nodeId
-            var missing = utils.getMissingField(params, ['project', 'branch', 'nodeId']);
-            if (!missing) {
-                return res.status(400).send(`Missing required field: ${missing} (or hash)`);
-            }
+        if (req.body.hash) {
+            return res.status(400).send('Missing hash');
         }
 
         mongo.findOne(params)
@@ -67,20 +63,16 @@ function initialize(middlewareOpts) {
             });
     });
 
-    router.post('/:jobHash', function (req, res) {
+    router.post('/:hash', function (req, res) {
         var timestamp = Date.now(),
             job = {
-                hash: req.params.jobHash,
-                project: req.body.project,
-                branch: req.body.branch,
-                nodeId: req.body.nodeId,
+                hash: req.params.hash,
                 timestamp: timestamp
             };
 
         // Validate the input
-        var missing = utils.getMissingField(job, REQUIRED_FIELDS);
-        if (missing) {
-            return res.status(400).send(`Missing required field: ${missing}`);
+        if (!job.hash) {
+            return res.status(400).send('Missing hash');
         }
 
         // Delete the given job from the database
@@ -88,9 +80,9 @@ function initialize(middlewareOpts) {
             .then(() => res.sendStatus(204));
     });
 
-    router.delete('/:jobHash', function (req, res/*, next*/) {
+    router.delete('/:hash', function (req, res) {
         // Delete the given job from the database
-        return mongo.findOneAndDelete({hash: req.params.jobHash})
+        return mongo.findOneAndDelete({hash: req.params.hash})
             .then(() => res.sendStatus(204));
     });
 
@@ -102,7 +94,10 @@ function initialize(middlewareOpts) {
  * @param {function} callback
  */
 function start(callback) {
-    callback();
+    storage.then(db => {
+        mongo = db.collection(MONGO_COLLECTION);
+        callback();
+    });
 }
 
 /**

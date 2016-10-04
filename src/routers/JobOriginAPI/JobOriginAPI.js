@@ -11,7 +11,9 @@ var express = require('express'),
     MONGO_COLLECTION = 'JobOrigins',
     Q = require('q'),
     utils = require('../utils'),
-    router = express.Router();
+    mongo,
+    router = express.Router(),
+    storage;
 
 /**
  * Called when the server is created but before it starts to listening to incoming requests.
@@ -32,13 +34,11 @@ function initialize(middlewareOpts) {
     var logger = middlewareOpts.logger.fork('JobOriginAPI'),
         gmeConfig = middlewareOpts.gmeConfig,
         ensureAuthenticated = middlewareOpts.ensureAuthenticated,
-        REQUIRED_FIELDS = ['hash', 'project', 'execution', 'job', 'nodeId', 'branch'],
-        mongo,
-        storage = require('../storage')(gmeConfig);
+        REQUIRED_FIELDS = ['hash', 'project', 'execution', 'job', 'nodeId', 'branch'];
+
+    storage = require('../storage')(logger, gmeConfig);
 
     logger.debug('initializing ...');
-    storage.then(db => mongo = db.collection(MONGO_COLLECTION));
-
     // Ensure authenticated can be used only after this rule.
     router.use('*', function (req, res, next) {
         // This header ensures that any failures with authentication won't redirect.
@@ -85,7 +85,7 @@ function initialize(middlewareOpts) {
 
         // Check that none of the fields are undefined
         var missing = utils.getMissingField(jobInfo, REQUIRED_FIELDS);
-        if (!missing) {
+        if (missing) {
             return res.status(400).send(`Missing required field: ${missing}`);
         }
 
@@ -132,7 +132,11 @@ function initialize(middlewareOpts) {
  * @param {function} callback
  */
 function start(callback) {
-    callback();
+    storage.then(db => {
+        mongo = db.collection(MONGO_COLLECTION);
+        callback();
+    });
+
 }
 
 /**

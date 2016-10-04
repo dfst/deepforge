@@ -5,7 +5,7 @@ var testFixture = require('../../globals'),
     server = testFixture.WebGME.standaloneServer(gmeConfig),
     mntPt = 'job/origins';
 
-describe('JobOriginAPI', function() {
+describe.only('JobOriginAPI', function() {
     var hashes = {},
         getUrl = function(hash) {
             return [
