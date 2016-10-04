@@ -1,4 +1,4 @@
-/* globals define, $, _ */
+/* globals define, $ */
 define([
     'q',
     'superagent',
@@ -29,8 +29,9 @@ define([
         this.jobsDict = {};
         this.jobs = {};
         this.active = false;
+        this.logger = logger.fork('WorkerDialog');
         this.originManager = new JobOriginClient({
-            logger: logger
+            logger: this.logger
         });
     };
 
@@ -76,7 +77,7 @@ define([
                 setTimeout(this.update.bind(this), 1000);
             }
         })
-        .catch(err => console.error('Update failed:', err));
+        .catch(err => this.logger.error('Update failed:', err));
     };
 
     WorkerDialog.prototype.updateWorkers = function(workerDict) {
@@ -146,9 +147,10 @@ define([
     };
 
     WorkerDialog.prototype.setNoJobsMessage = function(visible) {
-        var visibility = visible ? 'inherit' : 'none';
+        var visibility = visible ? 'inherit' : 'none',
+            wasVisible = !this._isShowingJobs;
 
-        if (visible !== !this._isShowingJobs) {
+        if (visible !== wasVisible) {
             this.$noJobs.css('display', visibility);
             this._isShowingJobs = !visible;
         }
