@@ -61,7 +61,7 @@ function initialize(middlewareOpts) {
                 if (job) {
                     return res.send((current - job.timestamp) < STALE_THRESHOLD);
                 }
-                return res.status(404).send(false);
+                return res.status(200).send(false);
             });
     });
 
