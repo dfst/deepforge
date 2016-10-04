@@ -25,6 +25,7 @@ define([
     var WorkerDialog = function(logger) {
         this.workerDict = {};
         this.workers = {};
+        this.runningWorkers = [];
         this.jobsDict = {};
         this.jobs = {};
         this.active = false;
@@ -84,6 +85,7 @@ define([
             visibleWorkers = false,
             i;
 
+        this.runningWorkers = [];
         for (i = ids.length; i--;) {
             this.updateWorker(workerDict[ids[i]]);
             visibleWorkers = true;
@@ -116,6 +118,10 @@ define([
         if (!this.workers[worker.clientId]) {
             this._table.append(row);
             this.workers[worker.clientId] = row;
+        }
+
+        if (worker.status === 'RUNNING') {
+            this.runningWorkers.push(worker);
         }
     };
 
@@ -180,14 +186,36 @@ define([
             });
     };
 
+    WorkerDialog.prototype.getWorkerWithJob = function(jobId) {
+        var jobs;
+
+        for (var i = this.runningWorkers.length; i--;) {
+            jobs = this.runningWorkers[i].jobs;
+            for (var j = jobs.length; j--;) {
+                if (jobs[j].hash === jobId) {
+                    return this.runningWorkers[i].clientId;
+                }
+            }
+        }
+
+        return 'unknown';
+    };
+
     WorkerDialog.prototype.updateJobItem = function(jobId) {
         var job = this.jobs[jobId] || $(WorkerJobItem),
             info = this.jobsDict[jobId],
             createdTime = new Date(info.createTime).getTime(),
-            clazz = utils.ClassForJobStatus[info.status.toLowerCase()];
+            clazz = utils.ClassForJobStatus[info.status.toLowerCase()],
+            status = info.status;
 
-        job.find('.status').text(info.status);
         job[0].className = `job-tag ${clazz}`;
+
+        // Add the worker id if running
+        if (info.status.toLowerCase() === 'running') {
+            var workerId = this.getWorkerWithJob(jobId);
+            status += ' (' + workerId + ')';
+        }
+        job.find('.status').text(status);
 
         if (!this.jobs[jobId]) {
             job.find('.job-id').text('Loading');
