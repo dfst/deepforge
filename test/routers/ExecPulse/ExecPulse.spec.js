@@ -14,14 +14,8 @@ describe('ExecPulse', function() {
             ].join('/');
         },
         HASH_COUNT = 1,
-        getJob = function() {
-            var id = `jobhash_${HASH_COUNT++}`;
-            return {
-                hash: id,
-                nodeId: `/a/b/${HASH_COUNT}`,
-                project: 'guest+hello',
-                branch: 'master'
-            };
+        getHash = function() {
+            return `jobhash_${HASH_COUNT++}`;
         };
 
     before(function(done) {
@@ -33,9 +27,8 @@ describe('ExecPulse', function() {
     });
 
     it('should record heartbeat', function(done) {
-        var job = getJob();
-        superagent.post(urlFor(job.hash))
-            .send(job)
+        var hash = getHash();
+        superagent.post(urlFor(hash))
             .end(function(err, res) {
                 expect(res.statusCode).to.equal(201);
                 done();
@@ -43,8 +36,8 @@ describe('ExecPulse', function() {
     });
 
     it('should delete /:jobHash', function(done) {
-        var job = getJob();
-        superagent.delete(urlFor(job.hash))
+        var hash = getHash();
+        superagent.delete(urlFor(hash))
             .end(function(err, res) {
                 expect(res.statusCode).to.equal(204);
                 done();
@@ -52,8 +45,29 @@ describe('ExecPulse', function() {
     });
 
     // Check if job is still running
-    // TODO
+    it('should check that the job is running', function(done) {
+        var hash = getHash();
+        superagent.post(urlFor(hash))
+            .end(function(err, res) {
+                expect(res.statusCode).to.equal(201);
+                superagent.get(urlFor(hash)).end((err, res) => {
+                    expect(res.text).to.equal('true');
+                    done();
+                });
+            });
+    });
 
-    // Update timestamp on heartbeat
-    // TODO
+    it('should not report running after deletion', function(done) {
+        var hash = getHash();
+        superagent.post(urlFor(hash))
+            .end(function(err, res) {
+                expect(res.statusCode).to.equal(201);
+                superagent.delete(urlFor(hash)).end(() => {
+                    superagent.get(urlFor(hash)).end((err, res) => {
+                        expect(res.text).to.equal('false');
+                        done();
+                    });
+                });
+            });
+    });
 });

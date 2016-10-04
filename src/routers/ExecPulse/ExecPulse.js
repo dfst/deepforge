@@ -47,21 +47,21 @@ function initialize(middlewareOpts) {
     });
 
     router.get('/:hash', function (req, res) {
-        var params = req.body;
         // Check if the given job has a stale heartbeat
         // Searching just w/ jobHash works for ExecuteJob but
         // will not work for ExecutePipeline...
-        if (req.body.hash) {
+        if (!req.params.hash) {
             return res.status(400).send('Missing hash');
         }
 
-        mongo.findOne(params)
+        logger.debug('getting pulse of ', req.params.hash);
+        mongo.findOne({hash: req.params.hash})
             .then(job => {
                 var current = Date.now();
                 if (job) {
                     return res.send((current - job.timestamp) < STALE_THRESHOLD);
                 }
-                return res.sendStatus(404);
+                return res.status(404).send(false);
             });
     });
 
@@ -73,13 +73,14 @@ function initialize(middlewareOpts) {
             };
 
         // Validate the input
+        logger.debug('Received heartbeat for ', job.hash);
         if (!job.hash) {
             return res.status(400).send('Missing hash');
         }
 
         // Delete the given job from the database
         mongo.update({hash: job.hash}, job, {upsert: true})
-            .then(() => res.sendStatus(204));
+            .then(() => res.sendStatus(201));
     });
 
     router.delete('/:hash', function (req, res) {
