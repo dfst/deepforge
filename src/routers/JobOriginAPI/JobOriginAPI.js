@@ -91,7 +91,7 @@ function initialize(middlewareOpts) {
             };
 
         // Check that none of the fields are undefined
-        console.log(`Storing job info for ${hash}`);
+        logger.debug(`Storing job info for ${hash}`);
         var fields = REQUIRED_FIELDS;
         for (var i = fields.length; i--;) {
             if (!jobInfo[fields[i]]) {
@@ -124,7 +124,7 @@ function initialize(middlewareOpts) {
 
         return mongo.findOneAndUpdate({hash: hash}, {$set: {branch: req.body.branch}})
             .then(() => {
-                console.log('Finished updateOne!');
+                logger.debug('Finished updateOne!');
                 res.sendStatus(200);
             })
             .catch(err => {

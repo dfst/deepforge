@@ -1,4 +1,4 @@
-/*globals define, angular, _, $, WebGMEGlobal*/
+/*globals define, angular, _,*/
 /*jshint browser: true*/
 
 define([
