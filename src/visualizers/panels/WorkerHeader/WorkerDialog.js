@@ -37,7 +37,9 @@ define([
         this._dialog = $(WorkerHtml);
         this._table = this._dialog.find('.worker-list');
         this.$noJobs = this._dialog.find('.no-jobs-msg');
-        this._isShowingJobs = true;
+        this.$noWorkers = this._dialog.find('.no-workers-msg');
+        this._isShowingJobs = false;
+        this._isShowingWorkers = true;
         this._queue = this._dialog.find('.job-queue-list');
         this._dialog.modal('show');
         this._dialog.on('hidden.bs.modal', () => this.active = false);
@@ -79,12 +81,15 @@ define([
     WorkerDialog.prototype.updateWorkers = function(workerDict) {
         var ids = Object.keys(workerDict),
             oldWorkerIds,
+            visibleWorkers = false,
             i;
 
         for (i = ids.length; i--;) {
             this.updateWorker(workerDict[ids[i]]);
+            visibleWorkers = true;
             delete this.workerDict[ids[i]];
         }
+        this.toggleNoWorkersMsg(!visibleWorkers);
 
         // Clear old workers
         oldWorkerIds = Object.keys(this.workerDict);
@@ -96,10 +101,14 @@ define([
     };
 
     WorkerDialog.prototype.updateWorker = function(worker) {
-        var row = this.workers[worker.clientId] || $(WorkerTemplate);
+        var row = this.workers[worker.clientId] || $(WorkerTemplate),
+            clazz;
 
         worker.lastSeen = utils.getDisplayTime(worker.lastSeen*1000);
         worker.status = worker.jobs.length ? 'RUNNING' : 'READY';
+
+        clazz = worker.status === 'RUNNING' ? 'warning' : 'success';
+        row[0].className = clazz;
 
         row.find('.lastSeen').text(worker.lastSeen);
         row.find('.clientId').text(worker.clientId);
@@ -117,25 +126,34 @@ define([
 
     WorkerDialog.prototype.updateJobs = function(jobsDict) {
         var allJobIds = Object.keys(jobsDict),
-            isVisible = false,
+            hasJobs = false,
             id;
 
         this.jobsDict = jobsDict;
         for (var i = allJobIds.length; i--;) {
             id = allJobIds[i];
             if (this.jobs[id] || !this.isFinished(id)) {
-                isVisible = this.updateJobItem(id) || isVisible;
+                hasJobs = this.updateJobItem(id) || hasJobs;
             }
         }
-        this.setJobQueueVisibility(isVisible);  // hide if no queue
+        this.setNoJobsMessage(!hasJobs);  // hide if no queue
     };
 
-    WorkerDialog.prototype.setJobQueueVisibility = function(visible) {
-        var visibility = !visible ? 'inherit' : 'none';
+    WorkerDialog.prototype.setNoJobsMessage = function(visible) {
+        var visibility = visible ? 'inherit' : 'none';
 
-        if (visible !== this._isShowingJobs) {
+        if (visible !== !this._isShowingJobs) {
             this.$noJobs.css('display', visibility);
-            this._isShowingJobs = visible;
+            this._isShowingJobs = !visible;
+        }
+    };
+
+    WorkerDialog.prototype.toggleNoWorkersMsg = function(visible) {
+        var visibility = visible ? 'inherit' : 'none';
+
+        if (visible !== this._isShowingWorkers) {
+            this.$noWorkers.css('display', visibility);
+            this._isShowingWorkers = visible;
         }
     };
 

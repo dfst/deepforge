@@ -8,6 +8,7 @@
             </div>
             <div class="modal-body">
                 <div>
+                    <div class="queue-title">Connected Workers</div>
                     <table class="table table-projects">
                         <thead>
                             <tr class="with-children">
@@ -29,11 +30,12 @@
                             </tr>-->
                         </thead>
                         <tbody class="worker-list">
+                            <tr><td class="no-workers-msg">No Connected Workers...</td></tr>
                         </tbody>
                     </table>
                 </div>
                 <div class="job-queue">
-                    <div class="job-queue-title">Job Queue:</div>
+                    <div class="queue-title">Job Queue</div>
                     <table class="table table-projects">
                         <thead>
                             <tr class="with-children">
@@ -48,7 +50,7 @@
                             <!--</tr>-->
                         </thead>
                         <tbody class="job-queue-list">
-                            <tr class="no-jobs-msg">No jobs</tr>
+                            <tr><td class="no-jobs-msg">No Running Jobs...</td></tr>
                         </tbody>
                     </table>
                 </div>

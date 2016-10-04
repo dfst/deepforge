@@ -5,7 +5,7 @@
 // if the job is running, get the logs from the log-storage
 define([
     'q',
-    'deepforge/JobLogsClient',
+    'deepforge/api/JobLogsClient',
     'js/Constants',
     'deepforge/Constants',
     'panels/TextEditor/TextEditorControl'
