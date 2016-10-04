@@ -101,6 +101,7 @@ define([
     ExecutePipeline.prototype.main = function (callback) {
         var startPromise;
 
+        // TODO: Detect if resuming execution
         this.initRun();
         if (this.core.isTypeOf(this.activeNode, this.META.Pipeline)) {
             // If starting with a pipeline, we will create an Execution first

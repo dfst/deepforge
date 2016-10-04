@@ -87,10 +87,18 @@ define([
                 port: this.gmeConfig.server.port,
                 branchName: this.branchName,
                 projectId: this.projectId
-            };
+            },
+            isHttps = typeof window === 'undefined' ? false :
+                window.location.protocol !== 'http:';
 
         this.logManager = new JobLogsClient(params);
         this.originManager = new JobOriginClient(params);
+
+        this.executor = new ExecutorClient({
+            logger: this.logger,
+            serverPort: this.gmeConfig.server.port,
+            httpsecure: isHttps
+        });
         return result;
     };
 
@@ -121,10 +129,59 @@ define([
             this.setAttribute(execNode, 'status', 'running');
         }
 
+        // TODO: Detect if resuming execution
         this._callback = callback;
         this.currentForkName = null;
-        this.prepare()
-            .then(() => this.executeJob(this.activeNode));
+        this.isResuming(this.activeNode)
+            .then(resuming => {
+                this._resumed = resuming;
+                return this.prepare();
+            })
+            .then(() => this._resumed ?
+                this.resumeJob(this.activeNode) :
+                this.executeJob(this.activeNode)
+            );
+    };
+
+    ExecuteJob.prototype.isResuming = function (job) {
+        job = job || this.activeNode;
+        var deferred = Q.defer(),
+            status = this.getAttribute(job, 'status'),
+            jobId;
+
+        // TODO: Check if we are resuming the given job
+        if (status === 'running') {
+            jobId = this.getAttribute(job, 'jobId');
+            this.executor.getInfo(jobId)
+                .then(info => {
+                    if (info.status === 'CREATED' || info.status === 'RUNNING') {
+                        // Verify that plugin is running
+                        // TODO
+                    } else {  // Check if the job is finished
+                        deferred.resolve(true);
+                    }
+                });
+        } else {
+            deferred.resolve(false);
+        }
+        return deferred.promise;
+    };
+
+    ExecuteJob.prototype.resumeJob = function (job) {
+        var hash = this.getAttribute(job, 'jobId'),
+            name = this.getAttribute(job, 'name'),
+            id = this.core.getPath(job);
+
+        this.logger.info(`Resuming job ${name} (${id})`);
+        if (!hash) {
+            var msg = `Cannot resume ${name} (${id}). Missing jobId.`;
+            this.logger.error(msg);
+            // FIXME: This may not work w/ the ExecPipeline
+            return this._callback(msg);
+        }
+
+        return this.getOperation(job)
+            .then(opNode => this.watchOperation(hash, opNode, job));
     };
 
     ExecuteJob.prototype.updateForkName = function (basename) {
@@ -441,6 +498,10 @@ define([
                     msg = `"${name}" execution has forked to "${result.forkName}"`;
                     this.currentForkName = result.forkName;
                     this.logManager.fork(result.forkName);
+
+                    // TODO: Update the execpulse
+                    // if it forks, the ui may automatically start the execution again
+                    // on the original branch...
                     this.sendNotification(msg);
                 } else if (result.status === STORAGE_CONSTANTS.MERGED) {
                     this.logger.debug('Merged changes. About to update plugin nodes');
@@ -543,6 +604,7 @@ define([
             child,
             i;
 
+        // TODO: Update if resuming execution
         this.lastAppliedCmd[nodeId] = 0;
         this._oldMetadataByName[nodeId] = {};
         this._markForDeletion[nodeId] = {};
@@ -842,14 +904,7 @@ define([
 
     ExecuteJob.prototype.executeDistOperation = function (job, opNode, hash) {
         var name = this.getAttribute(opNode, 'name'),
-            jobId = this.core.getPath(job),
-            isHttps = typeof window === 'undefined' ? false :
-                window.location.protocol !== 'http:',
-            executor = new ExecutorClient({
-                logger: this.logger,
-                serverPort: this.gmeConfig.server.port,
-                httpsecure: isHttps
-            });
+            jobId = this.core.getPath(job);
 
         this.logger.info(`Executing operation "${name}"`);
 
@@ -861,7 +916,7 @@ define([
         this.logger.info(`Setting ${jobId} status to "queued" (${this.currentHash})`);
         this.logger.debug(`Making a commit from ${this.currentHash}`);
         this.save(`Queued "${name}" operation in ${this.pipelineName}`)
-            .then(() => executor.createJob({hash}))
+            .then(() => this.executor.createJob({hash}))
             .then(info => {
                 this.setAttribute(job, 'jobId', info.hash);
                 if (info.secret) {  // o.w. it is a cached job!
@@ -869,7 +924,7 @@ define([
                 }
                 return this.recordJobOrigin(hash, job);
             })
-            .then(() => this.watchOperation(executor, hash, opNode, job))
+            .then(() => this.watchOperation(hash, opNode, job))
             .catch(err => this.logger.error(`Could not execute "${name}": ${err}`));
 
     };
@@ -1217,25 +1272,27 @@ define([
         return this.getAttribute(execNode, 'status') === 'canceled';
     };
 
-    ExecuteJob.prototype.watchOperation = function (executor, hash, op, job) {
+    ExecuteJob.prototype.watchOperation = function (hash, op, job) {
         var jobId = this.core.getPath(job),
             opId = this.core.getPath(op),
             info,
             secret,
             name = this.getAttribute(job, 'name');
 
+        // TODO: Update the heartbeat...
+
         // If canceled, stop the operation
         if (this.canceled || this.isExecutionCanceled()) {
             secret = this.getAttribute(job, 'secret');
             if (secret) {
-                executor.cancelJob(hash, secret);
+                this.executor.cancelJob(hash, secret);
                 this.delAttribute(job, 'secret');
                 this.canceled = true;
                 return this.onOperationCanceled(op);
             }
         }
 
-        return executor.getInfo(hash)
+        return this.executor.getInfo(hash)
             .then(_info => {  // Update the job's stdout
                 var actualLine,  // on executing job
                     currentLine = this.outputLineCount[jobId];
@@ -1244,7 +1301,7 @@ define([
                 actualLine = info.outputNumber;
                 if (actualLine !== null && actualLine >= currentLine) {
                     this.outputLineCount[jobId] = actualLine + 1;
-                    return executor.getOutput(hash, currentLine, actualLine+1)
+                    return this.executor.getOutput(hash, currentLine, actualLine+1)
                         .then(outputLines => {
                             var stdout = this.getAttribute(job, 'stdout'),
                                 output = outputLines.map(o => o.output).join(''),
@@ -1293,11 +1350,11 @@ define([
                         var delta = Date.now() - time;
                             
                         if (delta > ExecuteJob.UPDATE_INTERVAL) {
-                            return this.watchOperation(executor, hash, op, job);
+                            return this.watchOperation(hash, op, job);
                         }
 
                         setTimeout(
-                            this.watchOperation.bind(this, executor, hash, op, job),
+                            this.watchOperation.bind(this, hash, op, job),
                             ExecuteJob.UPDATE_INTERVAL - delta
                         );
                     });

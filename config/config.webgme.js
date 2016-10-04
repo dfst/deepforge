@@ -33,6 +33,7 @@ config.visualization.panelPaths.push(__dirname + '/../src/visualizers/panels');
 
 config.rest.components['execution/logs'] = __dirname + '/../src/routers/JobLogsAPI/JobLogsAPI.js';
 config.rest.components['job/origins'] = __dirname + '/../src/routers/JobOriginAPI/JobOriginAPI.js';
+config.rest.components['execution/pulse'] = __dirname + '/../src/routers/ExecPulse/ExecPulse.js';
 
 // Visualizer descriptors
 config.visualization.visualizerDescriptors.push(__dirname + '/../src/visualizers/Visualizers.json');

@@ -10,8 +10,8 @@
 var express = require('express'),
     MONGO_COLLECTION = 'JobOrigins',
     Q = require('q'),
-    router = express.Router(),
-    mongodb = require('mongodb');
+    utils = require('../utils'),
+    router = express.Router();
 
 /**
  * Called when the server is created but before it starts to listening to incoming requests.
@@ -33,9 +33,11 @@ function initialize(middlewareOpts) {
         gmeConfig = middlewareOpts.gmeConfig,
         ensureAuthenticated = middlewareOpts.ensureAuthenticated,
         REQUIRED_FIELDS = ['hash', 'project', 'execution', 'job', 'nodeId', 'branch'],
-        mongo;
+        mongo,
+        storage = require('../storage')(gmeConfig);
 
     logger.debug('initializing ...');
+    storage.then(db => mongo = db.collection(MONGO_COLLECTION));
 
     // Ensure authenticated can be used only after this rule.
     router.use('*', function (req, res, next) {
@@ -48,15 +50,6 @@ function initialize(middlewareOpts) {
     router.use('*', ensureAuthenticated);
 
     // Connect to mongo...
-    Q.nfcall(mongodb.MongoClient.connect, gmeConfig.mongo.uri, gmeConfig.mongo.options)
-        .then(db => {
-            mongo = db.collection(MONGO_COLLECTION);
-            logger.debug('Connected to mongo!');
-        })
-        .catch(err => {
-            logger.error(`Could not connect to mongo: ${err}`);
-            throw err;
-        });
 
     router.get('/:jobHash', function (req, res/*, next*/) {
         var hash = req.params.jobHash,
@@ -91,14 +84,12 @@ function initialize(middlewareOpts) {
             };
 
         // Check that none of the fields are undefined
-        logger.debug(`Storing job info for ${hash}`);
-        var fields = REQUIRED_FIELDS;
-        for (var i = fields.length; i--;) {
-            if (!jobInfo[fields[i]]) {
-                return res.status(400).send(`Missing required field: ${fields[i]}`);
-            }
+        var missing = utils.getMissingField(jobInfo, REQUIRED_FIELDS);
+        if (!missing) {
+            return res.status(400).send(`Missing required field: ${missing}`);
         }
 
+        logger.debug(`Storing job info for ${hash}`);
         return mongo.insertOne(jobInfo)
             .then(() => res.sendStatus(201))
             .catch(err => {

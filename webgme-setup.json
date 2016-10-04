@@ -300,6 +300,11 @@
       "JobOriginAPI": {
         "src": "src/routers/JobOriginAPI",
         "mount": "job/origins"
+      },
+      "ExecPulse": {
+        "src": "src/routers/ExecPulse",
+        "test": "test/routers/ExecPulse",
+        "mount": "execution/pulse"
       }
     }
   },

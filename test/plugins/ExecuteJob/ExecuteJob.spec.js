@@ -349,4 +349,18 @@ describe('ExecuteJob', function () {
             });
         });
     });
+
+    describe('resuming jobs', function() {
+            beforeEach(preparePlugin);
+
+            it('should detect running job', function(done) {
+                // TODO
+                //done();
+            });
+
+            it('should watch job is resuming', function(done) {
+                // TODO
+                //done();
+            });
+    });
 });
