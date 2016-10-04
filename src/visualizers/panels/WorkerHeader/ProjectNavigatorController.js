@@ -77,7 +77,7 @@ define([
                         },
                         {
                             id: 'manageWorkers',
-                            label: 'Manage workers ...',
+                            label: 'View workers ...',
                             iconClass: 'glyphicon glyphicon-cloud',
                             action: manageWorkers
                         }
