@@ -137,9 +137,11 @@ define([
 
         this._callback = callback;
         this.currentForkName = null;
+        console.log('CHECKING FOR RESUMING');
         this.isResuming(this.activeNode)
             .then(resuming => {
                 this._resumed = resuming;
+                console.log('resuming?', resuming);
                 return this.prepare();
             })
             .then(() => {
@@ -167,7 +169,10 @@ define([
                 .then(info => {
                     if (info.status === 'CREATED' || info.status === 'RUNNING') {
                         // Verify that plugin is running
-                        // TODO
+                        this.pulseClient.check(jobId)
+                            .then(alive => {
+                                deferred.resolve(!alive);
+                            });
                     } else {  // Check if the job is finished
                         deferred.resolve(true);
                     }
@@ -1293,7 +1298,7 @@ define([
 
     ExecuteJob.prototype.updateExecHeartBeat = function () {
         var time = Date.now(),
-            next = function() {
+            next = () => {
                 if (this._beating) {
                     setTimeout(this.updateExecHeartBeat.bind(this),
                         ExecuteJob.HEARTBEAT_INTERVAL - (Date.now() - time));

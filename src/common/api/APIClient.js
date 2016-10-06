@@ -51,7 +51,7 @@ define([
         var deferred = Q.defer(),
             req = superagent[method](this.getUrl(jobId));
 
-        this.logger.info(`sending ${method} request to ${this.getUrl(jobId)}`);
+        this.logger.debug(`sending ${method} request to ${this.getUrl(jobId)}`);
         if (this.token) {
             req.set('Authorization', 'Bearer ' + this.token);
         }
