@@ -111,7 +111,11 @@ define([
             this.pulseClient.check(hash)
                 .then(beating => {
                     if (!beating) {  // rescusitate
-                        this.executeJob(job);
+                        //this.executeJob(job);
+                        this.runExecutionPlugin('ExecuteJob', {
+                            useSecondary: true,
+                            node: job
+                        });
                     }
                 });
         }

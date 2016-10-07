@@ -7,6 +7,7 @@
 
 var express = require('express'),
     MONGO_COLLECTION = 'ExecPulse',
+    CONSTANTS = require('../../common/Constants').PULSE,
     mongo,
     storage,
     router = express.Router();
@@ -47,9 +48,8 @@ function initialize(middlewareOpts) {
     });
 
     router.get('/:hash', function (req, res) {
-        // Check if the given job has a stale heartbeat
-        // Searching just w/ jobHash works for ExecuteJob but
-        // will not work for ExecutePipeline...
+        // Check if the given job is alive (has a valid heartbeat).
+        // If the data doesn't exist, then it is considered alive
         if (!req.params.hash) {
             return res.status(400).send('Missing hash');
         }
@@ -57,11 +57,14 @@ function initialize(middlewareOpts) {
         logger.debug('getting pulse of ', req.params.hash);
         mongo.findOne({hash: req.params.hash})
             .then(job => {
-                var current = Date.now();
+                var current = Date.now(),
+                    result = CONSTANTS.DOESNT_EXIST;
+
                 if (job) {
-                    return res.send((current - job.timestamp) < STALE_THRESHOLD);
+                    result = (current - job.timestamp) < STALE_THRESHOLD ?
+                        CONSTANTS.ALIVE : CONSTANTS.DEAD;
                 }
-                return res.status(200).send(false);
+                return res.status(200).send(result);
             });
     });
 
