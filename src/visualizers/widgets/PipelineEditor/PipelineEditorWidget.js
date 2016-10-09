@@ -207,27 +207,6 @@ define([
     PipelineEditorWidget.prototype.refreshExtras =
         PipelineEditorWidget.prototype.updateEmptyMsg;
 
-    PipelineEditorWidget.prototype.refreshConnections = function() {
-        // Update the connections to they first update their start/end points
-        var connIds = Object.keys(this.connections),
-            src,
-            dst,
-            conn;
-
-        for (var i = connIds.length; i--;) {
-            conn = this.connections[connIds[i]];
-
-            // Update the start/end point
-            src = this.items[conn.src];
-            conn.setStartPoint(src.getPortLocation(conn.srcPort));
-
-            dst = this.items[conn.dst];
-            conn.setEndPoint(dst.getPortLocation(conn.dstPort, true));
-            
-            conn.redraw();
-        }
-    };
-
     //////////////////// Action Overrides ////////////////////
 
     PipelineEditorWidget.prototype.onAddItemSelected = function(item, selected) {
@@ -441,7 +420,7 @@ define([
         this.updateThumbnail(svg.outerHTML);
     }, 1000);
 
-    // Screen refreshing...
+    // Changing the layout to klayjs
     PipelineEditorWidget.prototype.refreshScreen = function() {
         if (!this.active) {
             return;
@@ -450,17 +429,12 @@ define([
         // WRITE UPDATES
         // Update the locations of all the nodes
 
-        var position,
-            graph;
-
-        graph = {
+        var graph = {
             id: 'root',
             properties: {
                 direction: 'DOWN',
                 'de.cau.cs.kieler.spacing': 25,
-                'de.cau.cs.kieler.edgeRouting': 'ORTHOGONAL'//,
-                //'de.cau.cs.kieler.algorithm': 'TREE'
-                //'de.cau.cs.kieler.klay.layered.nodeLayering': 'LONGEST_PATH'
+                'de.cau.cs.kieler.edgeRouting': 'ORTHOGONAL'
                 //'de.cau.cs.kieler.klay.layered.nodePlace': 'INTERACTIVE'
             },
             edges: [],
@@ -471,7 +445,6 @@ define([
             var item = this.items[itemId],
                 ports;
 
-            console.log(`>>> item position is (${item.x}, ${item.y}) w/ dims of ${item.width}, ${item.height}`);
             ports = item.inputs.map(p => this._getPortInfo(item, p, true))
                 .concat(item.outputs.map(p => this._getPortInfo(item, p)));
             return {
@@ -528,6 +501,32 @@ define([
             x: position.x,
             y: position.y
         };
+    };
+
+    PipelineEditorWidget.prototype.applyLayout = function (graph) {
+        var id,
+            item,
+            lItem,  // layout item
+            i;
+
+        for (i = graph.children.length; i--;) {
+            // update the x, y
+            lItem = graph.children[i];
+            id = lItem.id;
+            item = this.items[id];
+            item.x = lItem.x + item.width/2;
+            item.y = lItem.y + item.height/2;
+        }
+
+        for (i = graph.edges.length; i--;) {
+            // update the connection.points
+            lItem = graph.edges[i];
+            id = lItem.id;
+            item = this.connections[id];
+            item.points = lItem.bendPoints || [];
+            item.points.unshift(lItem.sourcePoint);
+            item.points.push(lItem.targetPoint);
+        }
     };
 
     return PipelineEditorWidget;
