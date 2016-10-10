@@ -63,18 +63,28 @@ define([
     };
 
     JobLogsClient.prototype.getUrl = function(jobId) {
+        var url = this.url;
+            
+        if (typeof jobId !== 'string') {
+            url = this.url + jobId.route;
+            jobId = jobId.jobId;
+        }
+
         return [
-            this.url,
+            url,
             encodeURIComponent(this.project),
             encodeURIComponent(this.branch),
             encodeURIComponent(jobId)
         ].join('/');
     };
 
-    JobLogsClient.prototype.appendTo = function(jobId, text) {
+    JobLogsClient.prototype.appendTo = function(jobId, text, count) {
         this._modifiedJobs.push(jobId);
         this.logger.info(`Appending logs to ${jobId}`);
-        return this._request('patch', jobId, {patch: text});
+        return this._request('patch', jobId, {
+            patch: text,
+            lineCount: count
+        });
     };
 
     JobLogsClient.prototype.getLog = function(jobId) {
@@ -86,6 +96,12 @@ define([
     JobLogsClient.prototype.deleteLog = function(jobId) {
         this.logger.info(`Deleting logs for ${jobId}`);
         return this._request('delete', jobId);
+    };
+
+    JobLogsClient.prototype.getLineCount = function(jobId) {
+        this.logger.info(`Getting line count for ${jobId}`);
+        return this._request('get', {jobId: jobId, route: '/lineCount'})
+            .then(res => parseInt(res.text));
     };
 
     return JobLogsClient;

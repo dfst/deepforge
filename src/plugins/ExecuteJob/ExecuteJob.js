@@ -196,7 +196,15 @@ define([
             return this._callback(msg);
         }
 
-        return this.getOperation(job)
+        return this.logManager.getLineCount(id)
+            .then(count => {
+                if (count === -1) {
+                    this.logger.warn(`No line count found for ${id}. Setting count to 0`);
+                    count = 0;
+                }
+                this.outputLineCount[id] = count;
+                return this.getOperation(job);
+            })
             .then(opNode => this.watchOperation(hash, opNode, job));
     };
 
@@ -1336,13 +1344,24 @@ define([
         return this.executor.getInfo(hash)
             .then(_info => {  // Update the job's stdout
                 var actualLine,  // on executing job
-                    currentLine = this.outputLineCount[jobId];
+                    currentLine = this.outputLineCount[jobId],
+                    prep = Q();
+
+                // If currentLine is undefined, we should clear the current logs
+                // and just refresh them all
+                // FIXME: However, this will result in all metadata commands getting
+                // replayed... We should store the current line info somewhere...
+                if (currentLine === undefined) {
+                    currentLine = 0;
+                    prep = this.logManager.deleteLog(jobId);
+                }
 
                 info = _info;
                 actualLine = info.outputNumber;
                 if (actualLine !== null && actualLine >= currentLine) {
                     this.outputLineCount[jobId] = actualLine + 1;
-                    return this.executor.getOutput(hash, currentLine, actualLine+1)
+                    return prep
+                        .then(() => this.executor.getOutput(hash, currentLine, actualLine+1))
                         .then(outputLines => {
                             var stdout = this.getAttribute(job, 'stdout'),
                                 output = outputLines.map(o => o.output).join(''),
@@ -1364,7 +1383,7 @@ define([
                             if (output) {
                                 // Send notification to all clients watching the branch
                                 next = next
-                                    .then(() => this.logManager.appendTo(jobId, output))
+                                    .then(() => this.logManager.appendTo(jobId, output, this.outputLineCount[jobId]))
                                     .then(() => this.notifyStdoutUpdate(jobId));
                             }
                             if (result.hasMetadata) {

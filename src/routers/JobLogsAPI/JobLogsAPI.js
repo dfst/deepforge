@@ -4,7 +4,10 @@
 
 var express = require('express'),
     JobLogManager = require('./JobLogManager'),
-    router = express.Router();
+    MONGO_COLLECTION = 'JobLogsMetadata',
+    mongo,
+    router = express.Router(),
+    storage;
 
 /**
  * Called when the server is created but before it starts to listening to incoming requests.
@@ -27,6 +30,7 @@ function initialize(middlewareOpts) {
         logManager = new JobLogManager(logger, gmeConfig);
 
     logger.debug('initializing ...');
+    storage = require('../storage')(logger, gmeConfig);
 
     // Ensure authenticated can be used only after this rule.
     router.use('*', function (req, res, next) {
@@ -46,16 +50,40 @@ function initialize(middlewareOpts) {
         });
     });
 
+    router.get('/lineCount/:project/:branch/:job', function (req, res/*, next*/) {
+        return mongo.findOne(req.params)
+            .then(info => {
+                var lineCount = info ? info.lineCount : -1;
+                return res.status(200).send(lineCount.toString());
+            });
+    });
+
     router.patch('/:project/:branch/:job', function (req, res/*, next*/) {
         var logs = req.body.patch;
         logger.info(`Received append request for ${req.params.job} in ${req.params.project}`);
-        logManager.appendTo(req.params, logs)
-            .then(() => res.send('Append successful'))
+        return logManager.appendTo(req.params, logs)
+            .then(() => {
+                if (req.body.lineCount !== undefined) {
+                    var info = {
+                        project: req.params.project,
+                        branch: req.params.branch,
+                        job: req.params.job,
+                        lineCount: req.body.lineCount
+                    };
+                    console.log('lineCount is', req.body.lineCount);
+                    return mongo.update(req.params, info, {upsert: true})
+                        .then(() => res.send('Append successful'));
+                } else {
+                    res.send('Append successful');
+                }
+            })
             .catch(err => logger.error(`Append failed: ${err}`));
     });
 
     router.delete('/:project/:branch/:job', function (req, res/*, next*/) {
-        logManager.delete(req.params).then(() => res.send('delete successful'));
+        logManager.delete(req.params)
+            .then(() => mongo.findOneAndDelete(req.params))
+            .then(() => res.status(204).send('delete successful'));
     });
 
     router.post('/migrate/:project/:srcBranch/:dstBranch', function (req, res/*, next*/) {
@@ -73,7 +101,11 @@ function initialize(middlewareOpts) {
  * @param {function} callback
  */
 function start(callback) {
-    callback();
+    storage.then(db => {
+        mongo = db.collection(MONGO_COLLECTION);
+        callback();
+    });
+
 }
 
 /**

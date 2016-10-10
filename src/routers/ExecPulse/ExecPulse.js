@@ -64,7 +64,7 @@ function initialize(middlewareOpts) {
                     result = (current - job.timestamp) < STALE_THRESHOLD ?
                         CONSTANTS.ALIVE : CONSTANTS.DEAD;
                 }
-                return res.status(200).send(result);
+                return res.status(200).send(result.toString());
             });
     });
 
