@@ -42,10 +42,10 @@ detect_profile() {
 detect_profile
 
 set_node_version() {
-    # Install nodejs v6.2.0
-    echo "Installing NodeJS v6.2.0"
-    nvm install v6.2.0
-    nvm alias default v6.2.0
+    # Install nodejs v6.2.1
+    echo "Installing NodeJS v6.2.1"
+    nvm install v6.2.1
+    nvm alias default v6.2.1
 
     # Install npm@2
     npm install npm@2 -g
