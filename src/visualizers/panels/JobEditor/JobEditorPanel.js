@@ -10,14 +10,12 @@ define([
     'panels/TilingViz/TilingVizPanel',
     'panels/OutputViewer/OutputViewerPanel',
     'panels/OperationCodeEditor/OperationCodeEditorPanel',
-    'deepforge/api/ExecPulseClient',
     'deepforge/viz/Execute',
     'js/Constants'
 ], function (
     TilingViz,
     OutputViewer,
     OperationCodeEditor,
-    ExecPulseClient,
     Execute,
     CONSTANTS
 ) {
@@ -29,9 +27,6 @@ define([
         TilingViz.call(this, layoutManager, params);
         Execute.call(this, this._client, this.logger);
         this.readOnly = false;
-        this.pulseClient = new ExecPulseClient({
-            logger: this.logger
-        });
     };
 
     //inherit from PanelBaseWithHeader
@@ -101,23 +96,7 @@ define([
             var i = this._panels.length;
             this._panels[i-1].control.selectedObjectChanged(nodeId);
             // Check if the job needs to be reconnected
-            this.checkExecutionConnection(node);
-        }
-    };
-
-    JobEditorPanel.prototype.checkExecutionConnection = function (job) {
-        var hash = job.getAttribute('jobId');
-        if (hash) {
-            this.pulseClient.check(hash)
-                .then(beating => {
-                    if (!beating) {  // rescusitate
-                        //this.executeJob(job);
-                        this.runExecutionPlugin('ExecuteJob', {
-                            useSecondary: true,
-                            node: job
-                        });
-                    }
-                });
+            this.checkJobExecution(node);
         }
     };
 

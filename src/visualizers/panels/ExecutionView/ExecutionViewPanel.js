@@ -73,7 +73,7 @@ define([
     ExecutionViewPanel.prototype.onReadOnlyChanged = function (isReadOnly) {
         //apply parent's onReadOnlyChanged
         PanelBaseWithHeader.prototype.onReadOnlyChanged.call(this, isReadOnly);
-
+        this.control.readOnly = isReadOnly;
     };
 
     ExecutionViewPanel.prototype.onResize = function (width, height) {

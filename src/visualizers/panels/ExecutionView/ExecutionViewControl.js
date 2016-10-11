@@ -6,12 +6,14 @@ define([
     'deepforge/Constants',
     'panels/EasyDAG/EasyDAGControl',
     'deepforge/viz/PipelineControl',
+    'deepforge/viz/Execute',
     'underscore'
 ], function (
     GME_CONSTANTS,
     CONSTANTS,
     EasyDAGControl,
     PipelineControl,
+    Execute,
     _
 ) {
 
@@ -21,15 +23,18 @@ define([
 
     ExecutionViewControl = function (options) {
         EasyDAGControl.call(this, options);
+        Execute.call(this, this._client, this._logger);
         this.addedNodes = {};
         this.originTerritory = {};
         this.originTerritoryId = null;
+        this.readOnly = false;
     };
 
     _.extend(
         ExecutionViewControl.prototype,
         EasyDAGControl.prototype,
-        PipelineControl.prototype
+        PipelineControl.prototype,
+        Execute.prototype
     );
 
     /* * * * * * * * Visualizer content update callbacks * * * * * * * */
@@ -75,6 +80,9 @@ define([
                 if (this.originTerritoryId) {
                     this._client.removeUI(this.originTerritoryId);
                 }
+            }
+            if (!this.readOnly) {
+                this.checkPipelineExecution(this._client.getNode(id));
             }
         }
     };
