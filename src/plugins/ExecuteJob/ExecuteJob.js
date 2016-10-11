@@ -162,7 +162,6 @@ define([
             status = this.getAttribute(job, 'status'),
             jobId;
 
-        // TODO: Check if we are resuming the given job
         if (status === 'running') {
             jobId = this.getAttribute(job, 'jobId');
             this.executor.getInfo(jobId)
@@ -201,7 +200,12 @@ define([
                 if (count === -1) {
                     this.logger.warn(`No line count found for ${id}. Setting count to 0`);
                     count = 0;
+                    return this.logManager.deleteLog(id)
+                        .then(() => count);
                 }
+                return count;
+            })
+            .then(count => {
                 this.outputLineCount[id] = count;
                 return this.getOperation(job);
             })
@@ -1346,15 +1350,6 @@ define([
                 var actualLine,  // on executing job
                     currentLine = this.outputLineCount[jobId],
                     prep = Q();
-
-                // If currentLine is undefined, we should clear the current logs
-                // and just refresh them all
-                // FIXME: However, this will result in all metadata commands getting
-                // replayed... We should store the current line info somewhere...
-                if (currentLine === undefined) {
-                    currentLine = 0;
-                    prep = this.logManager.deleteLog(jobId);
-                }
 
                 info = _info;
                 actualLine = info.outputNumber;

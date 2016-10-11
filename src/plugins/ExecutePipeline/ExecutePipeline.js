@@ -6,6 +6,7 @@ define([
     'plugin/ExecuteJob/ExecuteJob/ExecuteJob',
     'common/storage/constants',
     'common/core/constants',
+    'deepforge/Constants',
     'q',
     'text!./metadata.json',
     'underscore'
@@ -13,6 +14,7 @@ define([
     CreateExecution,
     ExecuteJob,
     STORAGE_CONSTANTS,
+    GME_CONSTANTS,
     CONSTANTS,
     Q,
     pluginMetadata,
@@ -100,10 +102,8 @@ define([
      */
     ExecutePipeline.prototype.main = function (callback) {
         var startPromise,
-            rand = Math.floor(Math.random()*10000);
+            runId;
 
-        // TODO: Detect if resuming execution
-        this.currentRunId = `Pipeline_${this.commitHash}_${Date.now()}_${rand}`;
         this.initRun();
         if (this.core.isTypeOf(this.activeNode, this.META.Pipeline)) {
             // If starting with a pipeline, we will create an Execution first
@@ -134,11 +134,70 @@ define([
             this.logger.debug('Parsing execution for job inter-dependencies');
             this.parsePipeline(children);  // record deps, etc
 
-            this.logger.debug('Clearing old results');
-            return this.clearResults();
+            // Detect if resuming execution
+            runId = this.getAttribute(this.activeNode, 'runId');
+            if (runId) {
+                this.pulseClient.check(runId).then(status => {
+                    // If it is dead (not unknown!), then resume
+                    if (status === CONSTANTS.PULSE.DEAD) {
+                        this.currentRunId = runId;
+                        return this.resumePipeline();
+                    }
+                    return this.startPipeline();
+                });
+            } else {
+                return this.startPipeline();
+            }
+
         })
-        .then(() => this.executePipeline())
         .fail(e => this.logger.error(e));
+    };
+
+    ExecutePipeline.prototype.resumePipeline = function () {
+        var nodes = Object.keys(this.nodes).map(id => this.nodes[id]),
+            allJobs = nodes.filter(node => this.core.isTypeOf(node, this.META.Job)),
+            jobs = {
+                success: [],
+                running: [],
+                pending: []
+            };
+
+        this.logger.info(`Resuming pipeline execution: ${this.currentRunId}`);
+
+        // Get all completed jobs' operations and update records for these
+        for (var i = allJobs.length; i--;) {
+            status = this.getAttribute(allJobs[i], 'status');
+            if (!jobs[status]) {
+                jobs[status] = [];
+            }
+            jobs[status].push(allJobs[i]);
+        }
+
+        // What about metadata?
+        // TODO
+        return Q.all(jobs.success.map(job => this.getOperation(job)))
+            .then(ops => ops.forEach(op => this.updateJobCompletionRecords(op)))
+            .then(() => {
+                // Resume all running jobs
+                if (jobs.running.length) {
+                    jobs.running.forEach(job => this.resumeJob(job));
+                } else if (this.completedCount === this.totalCount) {
+                    this.onPipelineComplete();
+                } else {
+                    // If none are running, try to start the next ones
+                    this.executeReadyOperations();
+                }
+            });
+    };
+
+    ExecutePipeline.prototype.startPipeline = function () {
+        var rand = Math.floor(Math.random()*10000);
+
+        this.logger.debug('Clearing old results');
+        this.currentRunId = `Pipeline_${this.commitHash}_${Date.now()}_${rand}`;
+        return this.clearResults()
+            .then(() => this.executePipeline())
+            .fail(e => this.logger.error(e));
     };
 
     // Override 'save' to prevent race conditions while saving
@@ -292,10 +351,10 @@ define([
     };
 
     ExecutePipeline.prototype.getSiblingIdContaining = function (nodeId) {
-        var parentId = this.core.getPath(this.activeNode) + CONSTANTS.PATH_SEP,
+        var parentId = this.core.getPath(this.activeNode) + GME_CONSTANTS.PATH_SEP,
             relid = nodeId.replace(parentId, '');
 
-        return parentId + relid.split(CONSTANTS.PATH_SEP).shift();
+        return parentId + relid.split(GME_CONSTANTS.PATH_SEP).shift();
     };
 
     ExecutePipeline.prototype.executePipeline = function() {
@@ -353,31 +412,33 @@ define([
             msg += 'finished!';
         }
 
-        this.isDeleted().then(isDeleted => {
-            if (!isDeleted) {
+        return this.pulseClient.clear(this.currentRunId)
+            .then(() => this.isDeleted())
+            .then(isDeleted => {
+                if (!isDeleted) {
 
-                this.logger.debug(`Pipeline "${name}" complete!`);
-                this.setAttribute(this.activeNode, 'endTime', Date.now());
-                this.setAttribute(this.activeNode, 'status',
-                    (this.pipelineError ? 'failed' :
-                    (this.canceled ? 'canceled' : 'success')
-                    )
-                );
+                    this.logger.debug(`Pipeline "${name}" complete!`);
+                    this.setAttribute(this.activeNode, 'endTime', Date.now());
+                    this.setAttribute(this.activeNode, 'status',
+                        (this.pipelineError ? 'failed' :
+                        (this.canceled ? 'canceled' : 'success')
+                        )
+                    );
 
-                this._finished = true;
-                this.resultMsg(msg);
-                this.save('Pipeline execution finished')
-                    .then(() => {
-                        this.result.setSuccess(!this.pipelineError);
-                        this._callback(this.pipelineError || null, this.result);
-                    })
-                    .fail(e => this.logger.error(e));
-            } else {  // deleted!
-                this.logger.debug('Execution has been deleted!');
-                this.result.setSuccess(!this.pipelineError);
-                this._callback(this.pipelineError || null, this.result);
-            }
-        });
+                    this._finished = true;
+                    this.resultMsg(msg);
+                    this.save('Pipeline execution finished')
+                        .then(() => {
+                            this.result.setSuccess(!this.pipelineError);
+                            this._callback(this.pipelineError || null, this.result);
+                        })
+                        .fail(e => this.logger.error(e));
+                } else {  // deleted!
+                    this.logger.debug('Execution has been deleted!');
+                    this.result.setSuccess(!this.pipelineError);
+                    this._callback(this.pipelineError || null, this.result);
+                }
+            });
 
     };
 
@@ -436,10 +497,9 @@ define([
 
     ExecutePipeline.prototype.onOperationComplete = function (opNode) {
         var name = this.getAttribute(opNode, 'name'),
-            nextPortIds = this.getOperationOutputIds(opNode),
             jNode = this.core.getParent(opNode),
-            resultPorts,
             jobId = this.core.getPath(jNode),
+            counts,
             hasReadyOps;
 
         // Set the operation to 'success'!
@@ -452,35 +512,9 @@ define([
         this.save(`Operation "${name}" in ${this.pipelineName} completed successfully`)
             .then(() => {
 
-                // Transport the data from the outputs to any connected inputs
-                //   - Get all the connections from each outputId
-                //   - Get the corresponding dst outputs
-                //   - Use these new ids for checking 'hasReadyOps'
-                resultPorts = nextPortIds.map(id => this.inputPortsFor[id])
-                    .reduce((l1, l2) => l1.concat(l2), []);
+                counts = this.updateJobCompletionRecords(opNode);
+                hasReadyOps = counts.indexOf(0) > -1;
 
-                resultPorts
-                    .map((id, i) => [this.nodes[id], this.nodes[nextPortIds[i]]])
-                    .forEach(pair => {  // [ resultPort, nextPort ]
-                        var result = pair[0],
-                            next = pair[1],
-                            hash = this.getAttribute(result, 'data');
-                        
-                        this.logger.info(`forwarding data (${hash}) from ${this.core.getPath(result)} ` +
-                            `to ${this.core.getPath(next)}`);
-                        this.setAttribute(next, 'data', hash);
-                        this.logger.info(`Setting ${jobId} data to ${hash}`);
-                    });
-
-                // For all the nextPortIds, decrement the corresponding operation's incoming counts
-                hasReadyOps = nextPortIds.map(id => this.getSiblingIdContaining(id))
-                    .reduce((l1, l2) => l1.concat(l2), [])
-
-                    // decrement the incoming counts for each operation id
-                    .map(opId => --this.incomingCounts[opId])
-                    .indexOf(0) > -1;
-
-                this.completedCount++;
                 this.logger.debug(`Operation "${name}" completed. ` + 
                     `${this.totalCount - this.completedCount} remaining.`);
                 if (hasReadyOps) {
@@ -491,9 +525,45 @@ define([
             });
     };
 
+    ExecutePipeline.prototype.updateJobCompletionRecords = function (opNode) {
+        var nextPortIds = this.getOperationOutputIds(opNode);
+
+        // Transport the data from the outputs to any connected inputs
+        //   - Get all the connections from each outputId
+        //   - Get the corresponding dst outputs
+        //   - Use these new ids for checking 'hasReadyOps'
+
+        resultPorts = nextPortIds.map(id => this.inputPortsFor[id])  // dst -> src port
+            .reduce((l1, l2) => l1.concat(l2), []);
+
+        resultPorts
+            .map((id, i) => [this.nodes[id], this.nodes[nextPortIds[i]]])
+            .forEach(pair => {  // [ resultPort, nextPort ]
+                var result = pair[0],
+                    next = pair[1],
+                    hash = this.getAttribute(result, 'data');
+                
+                this.logger.info(`forwarding data (${hash}) from ${this.core.getPath(result)} ` +
+                    `to ${this.core.getPath(next)}`);
+                this.setAttribute(next, 'data', hash);
+                this.logger.info(`Setting ${jobId} data to ${hash}`);
+            });
+
+        // For all the nextPortIds, decrement the corresponding operation's incoming counts
+        counts = nextPortIds.map(id => this.getSiblingIdContaining(id))
+            .reduce((l1, l2) => l1.concat(l2), [])
+
+            // decrement the incoming counts for each operation id
+            .map(opId => --this.incomingCounts[opId]);
+
+        this.completedCount++;
+        return counts;
+    };
+
     ExecutePipeline.prototype.getOperationOutputIds = function(node) {
         var jobId = this.getSiblingIdContaining(this.core.getPath(node));
 
+        // Map the job to it's output ports
         return this.outputsOf[jobId] || [];
     };
 
