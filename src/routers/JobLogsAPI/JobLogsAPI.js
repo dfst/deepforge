@@ -70,7 +70,7 @@ function initialize(middlewareOpts) {
                         job: req.params.job,
                         lineCount: req.body.lineCount
                     };
-                    console.log('lineCount is', req.body.lineCount);
+                    logger.debug('lineCount is', req.body.lineCount);
                     return mongo.update(req.params, info, {upsert: true})
                         .then(() => res.send('Append successful'));
                 } else {
