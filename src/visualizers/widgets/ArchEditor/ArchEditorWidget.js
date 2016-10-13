@@ -28,6 +28,7 @@ define([
     ArchEditorWidget = function (logger, container) {
         EasyDAGWidget.call(this, logger, container);
         this.$el.addClass(WIDGET_CLASS);
+        this._emptyMsg = 'Click to add a new layer';
     };
 
     _.extend(ArchEditorWidget.prototype, EasyDAGWidget.prototype);
