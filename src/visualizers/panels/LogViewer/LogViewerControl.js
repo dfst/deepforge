@@ -82,7 +82,14 @@ define([
     };
 
     LogViewerControl.prototype._getRunningLogs = function (id) {
-        var logManager = new JobLogsClient({
+        var logManager;
+
+        if (!this._client.getActiveBranchName() || !this._client.getActiveProjectId()) {
+            // Logs are only stored for a given branch
+            return Q().then(() => '');
+        }
+
+        logManager = new JobLogsClient({
             logger: this._logger,
             projectId: this._client.getActiveProjectId(),
             branchName: this._client.getActiveBranchName()
