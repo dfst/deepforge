@@ -3,7 +3,6 @@
 
 define([
     'common/util/assert',
-    'common/storage/constants',
     'text!./metadata.json',
     'executor/ExecutorClient',
     'plugin/PluginBase',
@@ -12,15 +11,16 @@ define([
     'deepforge/api/JobLogsClient',
     'deepforge/api/JobOriginClient',
     'deepforge/api/ExecPulseClient',
+    './ExecuteJob.Files',
+    './ExecuteJob.Metadata',
+    './ExecuteJob.SafeSave',
     'deepforge/Constants',
     'deepforge/utils',
-    './templates/index',
     'q',
     'superagent',
     'underscore'
 ], function (
     assert,
-    STORAGE_CONSTANTS,
     pluginMetadata,
     ExecutorClient,
     PluginBase,
@@ -29,9 +29,13 @@ define([
     JobLogsClient,
     JobOriginClient,
     ExecPulseClient,
+
+    ExecuteJobFiles,
+    ExecuteJobMetadata,
+    ExecuteJobSafeSave,
+
     CONSTANTS,
     utils,
-    Templates,
     Q,
     superagent,
     _
@@ -41,9 +45,7 @@ define([
     pluginMetadata = JSON.parse(pluginMetadata);
 
     var OUTPUT_INTERVAL = 1500,
-        STDOUT_FILE = 'job_stdout.txt',
-        CREATE_PREFIX = 'created_node_',
-        INDEX = 1;
+        STDOUT_FILE = 'job_stdout.txt';
 
     /**
      * Initializes a new instance of ExecuteJob.
@@ -137,7 +139,6 @@ define([
 
         this._callback = callback;
         this.currentForkName = null;
-        console.log('CHECKING FOR RESUMING');
         this.isResuming(this.activeNode)
             .then(resuming => {
                 this._resumed = resuming;
@@ -228,354 +229,6 @@ define([
             this.forkName = name;
         });
     };
-
-    //////////////////////////// Safe Save ////////////////////////////
-    ExecuteJob.prototype.getCreateId = function () {
-        return CREATE_PREFIX + (++INDEX);
-    };
-
-    ExecuteJob.prototype.isCreateId = function (id) {
-        return (typeof id === 'string') && (id.indexOf(CREATE_PREFIX) === 0);
-    };
-
-    ExecuteJob.prototype.createNode = function (baseType, parent) {
-        var id = this.getCreateId(),
-            parentId = this.isCreateId(parent) ? parent : this.core.getPath(parent);
-
-        this.logger.info(`Creating ${id} of type ${baseType} in ${parentId}`);
-        assert(this.META[baseType], `Cannot create node w/ unrecognized type: ${baseType}`);
-        this.creations[id] = {
-            base: baseType,
-            parent: parentId
-        };
-        return id;
-    };
-
-    ExecuteJob.prototype.deleteNode = function (nodeId) {
-        this.deletions.push(nodeId);
-    };
-
-    ExecuteJob.prototype.delAttribute = function (node, attr) {
-        return this.setAttribute(node, attr, null);
-    };
-
-    ExecuteJob.prototype.setAttribute = function (node, attr, value) {
-        var nodeId;
-
-        if (this.isCreateId(node)) {
-            nodeId = node;
-        } else {
-            nodeId = this.core.getPath(node);
-            assert(typeof nodeId === 'string', `Cannot set attribute of ${nodeId}`);
-        }
-
-        if (value !== null) {
-            this.logger.info(`Setting ${attr} of ${nodeId} to ${value}`);
-        } else {
-            this.logger.info(`Deleting ${attr} of ${nodeId}`);
-        }
-
-        if (!this.changes[nodeId]) {
-            this.changes[nodeId] = {};
-        }
-        this.changes[nodeId][attr] = value;
-    };
-
-    ExecuteJob.prototype.getAttribute = function (node, attr) {
-        var nodeId;
-
-        assert(this.deletions.indexOf(nodeId) === -1,
-            `Cannot get ${attr} from deleted node ${nodeId}`);
-
-        // Check if it was newly created
-        if (this.isCreateId(node)) {
-            nodeId = node;
-            assert(this.creations[nodeId], `Creation node not updated: ${nodeId}`);
-            node = this.META[this.creations[nodeId].base];
-        } else {
-            nodeId = this.core.getPath(node);
-        }
-
-        // Check the most recent changes, then the currentChanges, then the model
-        var value = this._getValueFrom(nodeId, attr, node, this.changes) ||
-            this._getValueFrom(nodeId, attr, node, this.currentChanges);
-
-        if (value) {
-            return value;
-        }
-
-        return this.core.getAttribute(node, attr);
-    };
-
-    ExecuteJob.prototype._getValueFrom = function (nodeId, attr, node, changes) {
-        var base;
-        if (changes[nodeId] && changes[nodeId][attr] !== undefined) {
-            // If deleted the attribute, get the default (inherited) value
-            if (changes[nodeId][attr] === null) {
-                base = this.isCreateId(nodeId) ? node : this.core.getBase(node);
-                return this.getAttribute(base, attr);
-            }
-            return changes[nodeId][attr];
-        }
-    };
-
-    ExecuteJob.prototype._applyNodeChanges = function (node, changes) {
-        var attr,
-            value;
-
-        this.logger.info(`About to apply changes for ${this.core.getPath(node)}`);
-        for (var i = changes.length; i--;) {
-            attr = changes[i][0];
-            value = changes[i][1];
-            if (value !== null) {
-                this.logger.info(`Setting ${attr} to ${value} (${this.core.getPath(node)})`);
-                this.core.setAttribute(node, attr, value);
-            } else {
-                this.core.delAttribute(node, attr);
-            }
-        }
-        return node;
-    };
-
-    ExecuteJob.prototype.applyModelChanges = function () {
-        return this.applyCreations()
-            .then(() => this.applyChanges())
-            .then(() => this.applyDeletions());
-    };
-
-    ExecuteJob.prototype.applyChanges = function () {
-        var nodeIds = Object.keys(this.changes),
-            attrs,
-            value,
-            changes,
-            promises = [],
-            changesFor = {},
-            id,
-            promise;
-
-        this.logger.info('Collecting changes to apply in commit');
-
-        for (var i = nodeIds.length; i--;) {
-            changes = [];
-            attrs = Object.keys(this.changes[nodeIds[i]]);
-            for (var a = attrs.length; a--;) {
-                value = this.changes[nodeIds[i]][attrs[a]];
-                changes.push([attrs[a], value]);
-            }
-            changesFor[nodeIds[i]] = changes;
-
-            assert(changes, `changes are invalid for ${nodeIds[i]}: ${changes}`);
-            assert(!this.isCreateId(nodeIds[i]),
-                `Creation id not resolved to actual id: ${nodeIds[i]}`);
-            promise = this.core.loadByPath(this.rootNode, nodeIds[i]);
-            promises.push(promise);
-        }
-
-        this.currentChanges = this.changes;
-        this.changes = {};
-        // Need to differentiate between read/write changes.
-        this.logger.info(`About to apply changes for ${promises.length} nodes`);
-        return Q.all(promises)
-            .then(nodes => {
-                for (var i = nodes.length; i--;) {
-                    id = this.core.getPath(nodes[i]);
-                    assert(nodes[i], `node is ${nodes[i]} (${nodeIds[i]})`);
-                    this._applyNodeChanges(nodes[i], changesFor[id]);
-                }
-
-                // Local model is now up-to-date. No longer need currentChanges
-                this.currentChanges = {};
-            });
-    };
-
-    ExecuteJob.prototype.applyCreations = function () {
-        var nodeIds = Object.keys(this.creations),
-            tiers = this.createCreationTiers(nodeIds),
-            creations = this.creations,
-            newIds = {},
-            promise = Q(),
-            tier;
-
-        this.logger.info('Applying node creations');
-        for (var i = 0; i < tiers.length; i++) {
-            tier = tiers[i];
-            // Chain the promises, loading each tier sequentially
-            promise = promise.then(this.applyCreationTier.bind(this, creations, newIds, tier));
-        }
-
-        this.creations = {};
-        return promise;
-    };
-
-    ExecuteJob.prototype.applyCreationTier = function (creations, newIds, tier) {
-        var promises = [],
-            parentId,
-            node;
-
-        for (var j = tier.length; j--;) {
-            node = creations[tier[j]];
-            assert(node, `Could not find create info for ${tier[j]}`);
-            parentId = newIds[node.parent] || node.parent;
-            promises.push(this.applyCreation(tier[j], node.base, parentId));
-        }
-        return Q.all(promises).then(nodes => {
-            // Record the newIds so they can be used to resolve creation ids
-            // in subsequent tiers
-            for (var i = tier.length; i--;) {
-                newIds[tier[i]] = this.core.getPath(nodes[i]);
-            }
-        });
-    };
-
-    // Figure out the dependencies between nodes to create.
-    // eg, if newId1 is to be created in newId2, then newId2 will
-    // be in an earlier tier than newId1. Essentially a topo-sort
-    // on a tree structure
-    ExecuteJob.prototype.createCreationTiers = function (nodeIds) {
-        var tiers = [],
-            prevTier = {},
-            tier = {},
-            id,
-            prevLen,
-            i;
-
-        // Create first tier (created inside existing nodes)
-        for (i = nodeIds.length; i--;) {
-            id = nodeIds[i];
-            if (!this.isCreateId(this.creations[id].parent)) {
-                tier[id] = true;
-                nodeIds.splice(i, 1);
-            }
-        }
-        prevTier = tier;
-        tiers.push(Object.keys(tier));
-
-        // Now, each tier consists of the nodes to be created inside a
-        // node from the previous tier
-        while (nodeIds.length) {
-            prevLen = nodeIds.length;
-            tier = {};
-            for (i = nodeIds.length; i--;) {
-                id = nodeIds[i];
-                if (prevTier[this.creations[id].parent]) {
-                    tier[id] = true;
-                    nodeIds.splice(i, 1);
-                }
-            }
-            prevTier = tier;
-            tiers.push(Object.keys(tier));
-            // Every iteration should find at least one node
-            assert(prevLen > nodeIds.length,
-                `Created empty create tier! Remaining: ${nodeIds.join(', ')}`);
-        }
-
-        return tiers;
-    };
-
-    ExecuteJob.prototype.applyCreation = function (tmpId, baseType, parentId) {
-        var base = this.META[baseType],
-            nodeId,
-            id;
-
-        this.logger.info(`Applying creation of ${tmpId} (${baseType}) in ${parentId}`);
-
-        assert(!this.isCreateId(parentId),
-            `Did not resolve parent id: ${parentId} for ${tmpId}`);
-        assert(base, `Invalid base type: ${baseType}`);
-        return this.core.loadByPath(this.rootNode, parentId)
-            .then(parent => this.core.createNode({base, parent}))
-            .then(node => {  // Update the _metadata records
-                id = this.createIdToMetadataId[tmpId];
-                delete this.createIdToMetadataId[tmpId];
-                this._metadata[id] = node;
-
-                // Update creations
-                nodeId = this.core.getPath(node);
-                if (this.changes[tmpId]) {
-                    assert(!this.changes[nodeId],
-                        `Newly created node cannot already have changes! (${nodeId})`);
-                    this.changes[nodeId] = this.changes[tmpId];
-                    delete this.changes[tmpId];
-                }
-                return node;
-            });
-    };
-
-    ExecuteJob.prototype.applyDeletions = function () {
-        var deletions = this.deletions;
-
-        this.deletions = [];
-        return Q.all(deletions.map(id => this.core.loadByPath(this.rootNode, id)))
-            .then(nodes => {
-                for (var i = nodes.length; i--;) {
-                    this.core.deleteNode(nodes[i]);
-                }
-            });
-    };
-
-    // Override 'save' to notify the user on fork
-    ExecuteJob.prototype.save = function (msg) {
-        var name = this.getAttribute(this.activeNode, 'name');
-
-        return this.updateForkName(name)
-            .then(() => this.applyModelChanges())
-            .then(() => PluginBase.prototype.save.call(this, msg))
-            .then(result => {
-                this.logger.info(`Save finished w/ status: ${result.status}`);
-                if (result.status === STORAGE_CONSTANTS.FORKED) {
-                    msg = `"${name}" execution has forked to "${result.forkName}"`;
-                    this.currentForkName = result.forkName;
-                    this.logManager.fork(result.forkName);
-                    this.sendNotification(msg);
-                } else if (result.status === STORAGE_CONSTANTS.MERGED) {
-                    this.logger.debug('Merged changes. About to update plugin nodes');
-                    return this.updateNodes();
-                }
-            });
-    };
-
-    ExecuteJob.prototype.updateNodes = function (hash) {
-        var activeId = this.core.getPath(this.activeNode);
-
-        hash = hash || this.currentHash;
-        return Q.ninvoke(this.project, 'loadObject', hash)
-            .then(commitObject => {
-                return this.core.loadRoot(commitObject.root);
-            })
-            .then(rootObject => {
-                this.rootNode = rootObject;
-                return this.core.loadByPath(rootObject,activeId);
-            })
-            .then(activeObject => this.activeNode = activeObject)
-            .then(() => {
-                var metaNames = Object.keys(this.META);
-
-                return Q.all(metaNames.map(name => this.updateMetaNode(name)));
-            })
-            .then(() => {
-                var mdNodes,
-                    mdIds;
-
-                mdIds = Object.keys(this._metadata)
-                    .filter(id => !this.isCreateId(this._metadata[id]));
-
-                mdNodes = mdIds.map(id => this.core.getPath(this._metadata[id]))
-                    .map(nodeId => this.core.loadByPath(this.rootNode, nodeId));
-
-                return Q.all(mdNodes).then(nodes => {
-                    for (var i = nodes.length; i--;) {
-                        this._metadata[mdIds[i]] = nodes[i];
-                    }
-                });
-            });
-    };
-
-    ExecuteJob.prototype.updateMetaNode = function (name) {
-        var id = this.core.getPath(this.META[name]);
-        return this.core.loadByPath(this.rootNode, id).then(node => this.META[name] = node);
-    };
-
-    //////////////////////////// END Safe Save ////////////////////////////
 
     ExecuteJob.prototype.getConnections = function (nodes) {
         var conns = [];
@@ -865,7 +518,6 @@ define([
                         ptrFiles = Object.keys(files.ptrAssets),
                         file;
 
-                    files['start.js'] = _.template(Templates.START)(CONSTANTS);
                     delete files.ptrAssets;
                     fileList = Object.keys(files).concat(ptrFiles);
 
@@ -969,323 +621,6 @@ define([
         return this.originManager.record(hash, info);
     };
 
-    ExecuteJob.prototype.createOperationFiles = function (node) {
-        var files = {};
-        // For each operation, generate the output files:
-        //   inputs/<arg-name>/init.lua  (respective data deserializer)
-        //   pointers/<name>/init.lua  (result of running the main plugin on pointer target - may need a rename)
-        //   outputs/<name>/  (make dirs for each of the outputs)
-        //   outputs/init.lua  (serializers for data outputs)
-        //
-        //   attributes.lua (returns lua table of operation attributes)
-        //   init.lua (main file -> calls main and serializes outputs)
-        //   <name>.lua (entry point -> calls main operation code)
-
-        // add the given files
-        this.logger.info('About to create dist execution files');
-        return this.createEntryFile(node, files)
-            .then(() => this.createClasses(node, files))
-            .then(() => this.createCustomLayers(node, files))
-            .then(() => this.createInputs(node, files))
-            .then(() => this.createOutputs(node, files))
-            .then(() => this.createMainFile(node, files))
-            .then(() => {
-                this.createAttributeFile(node, files);
-                return Q.ninvoke(this, 'createPointers', node, files);
-            });
-    };
-
-    ExecuteJob.prototype.createEntryFile = function (node, files) {
-        this.logger.info('Creating entry files...');
-        return this.getOutputs(node)
-            .then(outputs => {
-                var name = this.getAttribute(node, 'name'),
-                    content = {};
-
-                // inputs and outputs
-                content.name = name;
-                content.outputs = outputs;
-
-                files['init.lua'] = _.template(Templates.ENTRY)(content);
-
-                // Create the deepforge file
-                files['deepforge.lua'] = _.template(Templates.DEEPFORGE)(CONSTANTS);
-            });
-    };
-
-    ExecuteJob.prototype.createClasses = function (node, files) {
-        var metaDict = this.core.getAllMetaNodes(this.rootNode),
-            isClass,
-            metanodes,
-            classNodes,
-            inheritanceLvl = {},
-            code;
-
-        this.logger.info('Creating custom layer file...');
-        metanodes = Object.keys(metaDict).map(id => metaDict[id]);
-        isClass = this.getTypeDictFor('Complex', metanodes);
-
-        classNodes = metanodes.filter(node => {
-            var base = this.core.getBase(node),
-                baseId = this.core.getPath(base),
-                count = 1;
-
-            // Count the sets back to a class node
-            while (base) {
-                if (isClass[baseId]) {
-                    inheritanceLvl[this.core.getPath(node)] = count;
-                    return true;
-                }
-                base = this.core.getBase(base);
-                baseId = this.core.getPath(base);
-                count++;
-            }
-
-            return false;
-        });
-
-        // Get the code definitions for each
-        // Sort by levels of inheritance...
-        code = classNodes.sort((a, b) => {
-            var aId = this.core.getPath(a),
-                bId = this.core.getPath(b);
-
-            return inheritanceLvl[aId] > inheritanceLvl[bId];
-        }).map(node =>
-            `require './${this.getAttribute(node, 'name')}.lua'`
-        ).join('\n');
-
-        // Create the class files
-        classNodes.forEach(node => {
-            var name = this.getAttribute(node, 'name');
-            files[`classes/${name}.lua`] = this.getAttribute(node, 'code');
-        });
-
-        // Create the custom layers file
-        files['classes/init.lua'] = code;
-    };
-
-    ExecuteJob.prototype.getTypeDictFor = function (name, metanodes) {
-        var isType = {};
-        // Get all the custom layers
-        for (var i = metanodes.length; i--;) {
-            if (this.getAttribute(metanodes[i], 'name') === name) {
-                isType[this.core.getPath(metanodes[i])] = true;
-            }
-        }
-        return isType;
-    };
-
-    ExecuteJob.prototype.createCustomLayers = function (node, files) {
-        var metaDict = this.core.getAllMetaNodes(this.rootNode),
-            isCustomLayer,
-            metanodes,
-            customLayers,
-            code;
-
-        this.logger.info('Creating custom layer file...');
-        metanodes = Object.keys(metaDict).map(id => metaDict[id]);
-        isCustomLayer = this.getTypeDictFor('CustomLayer', metanodes);
-
-        customLayers = metanodes.filter(node =>
-            this.core.getMixinPaths(node).some(id => isCustomLayer[id]));
-
-        // Get the code definitions for each
-        code = 'require \'nn\'\n\n' + customLayers
-            .map(node => this.getAttribute(node, 'code')).join('\n');
-
-        // Create the custom layers file
-        files['custom-layers.lua'] = code;
-    };
-
-    ExecuteJob.prototype.createInputs = function (node, files) {
-        var tplContents,
-            inputs;
-
-        this.logger.info('Retrieving inputs and deserialize fns...');
-        return this.getInputs(node)
-            .then(allInputs => {
-                // For each input, match the connection with the input name
-                //   [ name, type ] => [ name, type, node ]
-                //
-                // For each input,
-                //  - create the deserializer
-                //  - put it in inputs/<name>/init.lua
-                //  - copy the data asset to /inputs/<name>/init.lua
-                inputs = allInputs
-                    .filter(pair => !!this.getAttribute(pair[2], 'data'));  // remove empty inputs
-
-                files.inputAssets = {};  // data assets
-                return Q.all(inputs.map(pair => {
-                    var name = pair[0],
-                        node = pair[2],
-                        nodeId = this.core.getPath(node),
-                        fromNodeId;
-
-                    // Get the deserialize function. First, try to get it from
-                    // the source method (this guarantees that the correct
-                    // deserialize method is used despite any auto-upcasting
-                    fromNodeId = this.inputPortsFor[nodeId][0] || nodeId;
-
-                    return this.core.loadByPath(this.rootNode, fromNodeId)
-                        .then(fromNode => {
-                            var deserFn,
-                                base,
-                                className;
-
-                            deserFn = this.getAttribute(fromNode, 'deserialize');
-
-                            if (this.isMetaTypeOf(node, this.META.Complex)) {
-                                // Complex objects are expected to define their own
-                                // (static) deserialize factory method
-                                base = this.core.getMetaType(node);
-                                className = this.getAttribute(base, 'name');
-                                deserFn = `return ${className}.deserialize(path)`;
-                            }
-
-                            return {
-                                name: name,
-                                code: deserFn
-                            };
-                        });
-                }));
-            })
-            .then(_tplContents => {
-                tplContents = _tplContents;
-                var hashes = inputs.map(pair => {
-                    var hash = this.getAttribute(pair[2], 'data');
-                    files.inputAssets[pair[0]] = hash;
-                    return {
-                        hash: hash,
-                        name: pair[0]
-                    };
-                });
-
-                return Q.all(hashes.map(pair => 
-                    this.blobClient.getMetadata(pair.hash)
-                        .fail(err => this.onBlobRetrievalFail(node, pair.name, err))));
-            })
-            .then(metadatas => {
-                // Create the deserializer
-                tplContents.forEach((ctnt, i) => {
-                    // Get the name of the given asset
-                    ctnt.filename = metadatas[i].name;
-                    files['inputs/' + ctnt.name + '/init.lua'] = _.template(Templates.DESERIALIZE)(ctnt);
-                });
-                return files;
-            });
-    };
-
-    ExecuteJob.prototype.createOutputs = function (node, files) {
-        // For each of the output types, grab their serialization functions and
-        // create the `outputs/init.lua` file
-        this.logger.info('Creating outputs/init.lua...');
-        return this.getOutputs(node)
-            .then(outputs => {
-                var outputTypes = outputs
-                // Get the serialize functions for each
-                    .map(tuple => {
-                        var node = tuple[2],
-                            serFn = this.getAttribute(node, 'serialize');
-
-                        if (this.isMetaTypeOf(node, this.META.Complex)) {
-                            // Complex objects are expected to define their own
-                            // serialize methods
-                            serFn = 'if data ~= nil then data:serialize(path) end';
-                        }
-
-                        return [tuple[1], serFn];
-                    });
-
-                files['outputs/init.lua'] = _.template(Templates.SERIALIZE)({types: outputTypes});
-            });
-    };
-
-    ExecuteJob.prototype.createMainFile = function (node, files) {
-        this.logger.info('Creating main file...');
-        return this.getInputs(node)
-            .then(inputs => {
-                var name = this.getAttribute(node, 'name'),
-                    code = this.getAttribute(node, 'code'),
-                    pointers = this.core.getPointerNames(node).filter(ptr => ptr !== 'base'),
-                    content = {
-                        name: name
-                    };
-
-                // Get input data arguments
-                content.inputs = inputs
-                    .map(pair => [pair[0], !this.getAttribute(pair[2], 'data')]);  // remove empty inputs
-
-                // Defined variables for each pointers
-                content.pointers = pointers
-                    .map(id => [id, this.core.getPointerPath(node, id) === null]);
-
-                // Add remaining code
-                content.code = code;
-
-                files['main.lua'] = _.template(Templates.MAIN)(content);
-
-                // Set the line offset
-                var lineOffset = this.getLineOffset(files['main.lua'], code);
-                this.setAttribute(node, CONSTANTS.LINE_OFFSET, lineOffset);
-            });
-    };
-
-    ExecuteJob.prototype.getLineOffset = function (main, snippet) {
-        var i = main.indexOf(snippet),
-            lines = main.substring(0, i).match(/\n/g);
-
-        return lines ? lines.length : 0;
-    };
-
-    ExecuteJob.prototype.createAttributeFile = function (node, files) {
-        var skip = ['code', 'stdout', 'execFiles', 'jobId', 'secret'],
-            numOrBool = /^(-?\d+\.?\d*((e|e-)\d+)?|(true|false))$/,
-            table;
-
-        this.logger.info('Creating attributes file...');
-        table = '{\n\t' + this.core.getAttributeNames(node)
-            .filter(attr => skip.indexOf(attr) === -1)
-            .map(name => {
-                var value = this.getAttribute(node, name);
-                if (!numOrBool.test(value)) {
-                    value = `"${value}"`;
-                }
-                return [name, value];
-            })
-            .map(pair => pair.join(' = '))
-            .join(',\n\t') + '\n}';
-
-        files['attributes.lua'] = `-- attributes of ${this.getAttribute(node, 'name')}\nreturn ${table}`;
-    };
-
-    ExecuteJob.prototype.createPointers = function (node, files, cb) {
-        var pointers,
-            nIds;
-
-        this.logger.info('Creating pointers file...');
-        pointers = this.core.getPointerNames(node)
-            .filter(name => name !== 'base')
-            .filter(id => this.core.getPointerPath(node, id) !== null);
-
-        nIds = pointers.map(p => this.core.getPointerPath(node, p));
-        files.ptrAssets = {};
-        Q.all(
-            nIds.map(nId => this.getPtrCodeHash(nId))
-        )
-        .then(resultHashes => {
-            var name = this.getAttribute(node, 'name');
-            this.logger.info(`Pointer generation for ${name} FINISHED!`);
-            resultHashes.forEach((hash, index) => {
-                files.ptrAssets[`pointers/${pointers[index]}/init.lua`] = hash;
-            });
-            return cb(null, files);
-        })
-        .fail(e => {
-            this.logger.error(`Could not generate pointer files for ${this.getAttribute(node, 'name')}: ${e.toString()}`);
-            return cb(e);
-        });
-    };
 
     ExecuteJob.prototype.notifyStdoutUpdate = function (nodeId) {
         this.sendNotification({
@@ -1535,6 +870,9 @@ define([
 
     _.extend(
         ExecuteJob.prototype,
+        ExecuteJobFiles.prototype,
+        ExecuteJobMetadata.prototype,
+        ExecuteJobSafeSave.prototype,
         PtrCodeGen.prototype,
         LocalExecutor.prototype
     );
@@ -1585,116 +923,6 @@ define([
             stdout: result.join('\n'),
             hasMetadata: hasMetadata
         };
-    };
-
-    ExecuteJob.prototype[CONSTANTS.GRAPH_CREATE] = function (job, id) {
-        var graph,
-            name = Array.prototype.slice.call(arguments, 2).join(' '),
-            jobId = this.core.getPath(job);
-
-        id = jobId + '/' + id;
-        this.logger.info(`Creating graph ${id} named ${name}`);
-
-        // Check if the graph already exists
-        graph = this._getExistingMetadata(jobId, 'Graph', name);
-        if (!graph) {
-            graph = this.createNode('Graph', job);
-
-            if (name) {
-                this.setAttribute(graph, 'name', name);
-            }
-            this.createIdToMetadataId[graph] = id;
-        }
-
-        this._metadata[id] = graph;
-    };
-
-    ExecuteJob.prototype[CONSTANTS.GRAPH_PLOT] = function (job, id, x, y) {
-        var jobId = this.core.getPath(job),
-            nonNum = /[^\d-\.]*/g,
-            line,
-            points;
-            
-
-        id = jobId + '/' + id;
-        this.logger.info(`Adding point ${x}, ${y} to ${id}`);
-        line = this._metadata[id];
-        if (!line) {
-            this.logger.warn(`Can't add point to non-existent line: ${id}`);
-            return;
-        }
-
-        // Clean the points by removing and special characters
-        x = x.replace(nonNum, '');
-        y = y.replace(nonNum, '');
-        points = this.getAttribute(line, 'points');
-        points += `${x},${y};`;
-        this.setAttribute(line, 'points', points);
-    };
-
-    ExecuteJob.prototype[CONSTANTS.GRAPH_CREATE_LINE] = function (job, graphId, id) {
-        var jobId = this.core.getPath(job),
-            graph = this._metadata[jobId + '/' + graphId],
-            name = Array.prototype.slice.call(arguments, 3).join(' '),
-            line;
-
-        // Create a 'line' node in the given Graph metadata node
-        name = name.replace(/\s+$/, '');
-        line = this.createNode('Line', graph);
-        this.setAttribute(line, 'name', name);
-        this._metadata[jobId + '/' + id] = line;
-        this.createIdToMetadataId[line] = jobId + '/' + id;
-    };
-
-    ExecuteJob.prototype[CONSTANTS.IMAGE.BASIC] =
-    ExecuteJob.prototype[CONSTANTS.IMAGE.UPDATE] =
-    ExecuteJob.prototype[CONSTANTS.IMAGE.CREATE] = function (job, hash, imgId) {
-        var name = Array.prototype.slice.call(arguments, 3).join(' '),
-            imageNode = this._getImageNode(job, imgId, name);
-
-        this.setAttribute(imageNode, 'data', hash);
-    };
-
-    ExecuteJob.prototype[CONSTANTS.IMAGE.NAME] = function (job, imgId) {
-        var name = Array.prototype.slice.call(arguments, 2).join(' '),
-            imageNode = this._getImageNode(job, imgId, name);
-
-        this.setAttribute(imageNode, 'name', name);
-    };
-
-    ExecuteJob.prototype._getImageNode = function (job, imgId, name) {
-        var jobId = this.core.getPath(job),
-            id = jobId + '/IMAGE/' + imgId,
-            imageNode = this._metadata[id];  // Look for the metadata imageNode
-
-        if (!imageNode) {
-
-            // Check if the imageNode already exists
-            imageNode = this._getExistingMetadata(jobId, 'Image', name);
-            if (!imageNode) {
-                this.logger.info(`Creating image ${id} named ${name}`);
-                imageNode = this.createNode('Image', job);
-                this.setAttribute(imageNode, 'name', name);
-                this.createIdToMetadataId[imageNode] = id;
-            }
-            this._metadata[id] = imageNode;
-        }
-        return imageNode;
-    };
-
-    ExecuteJob.prototype._getExistingMetadata = function (jobId, type, name) {
-        var oldMetadata = this._oldMetadataByName[jobId] &&
-            this._oldMetadataByName[jobId][type],
-            node,
-            id;
-
-        if (oldMetadata && oldMetadata[name]) {
-            id = oldMetadata[name];
-            node = this._markForDeletion[jobId][id];
-            delete this._markForDeletion[jobId][id];
-        }
-
-        return node || null;
     };
 
     return ExecuteJob;
