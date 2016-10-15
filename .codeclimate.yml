@@ -34,3 +34,4 @@ exclude_paths:
 - src/visualizers/widgets/TextEditor/lib/
 - src/visualizers/widgets/PipelineIndex/styles/PipelineIndex.css
 - src/visualizers/widgets/LineGraph/lib/
+- src/visualizers/widgets/PipelineEditor/klay.js

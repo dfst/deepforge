@@ -4,7 +4,7 @@
 [![Join the chat at https://gitter.im/dfst/deepforge](https://badges.gitter.im/dfst/deepforge.svg)](https://gitter.im/dfst/deepforge?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Stories in Ready](https://badge.waffle.io/dfst/deepforge.png?label=ready&title=Ready)](https://waffle.io/dfst/deepforge)
 
-**Notice**: DeepForge is still a work in progress and is also lacking significant documentation! That being said, any contributions and/or feedback is greatly appreciated (and feel free to always ask any questions on the gitter)!
+**Notice**: DeepForge is still a work in progress and in beta! That being said, any contributions and/or feedback is greatly appreciated. If you have any questions, check out the [wiki](https://github.com/dfst/deepforge/wiki/) or drop me a line on the gitter!
 
 # DeepForge
 DeepForge is an open-source visual development environment for deep learning. Currently, it supports Convolutional Neural Networks, RNNs and LSTMs as well as the creation of custom layers. Additional features include:

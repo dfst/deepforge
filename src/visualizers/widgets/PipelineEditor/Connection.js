@@ -17,16 +17,5 @@ define([
 
     _.extend(Connection.prototype, EasyDAGConn.prototype);
 
-    Connection.prototype.setStartPoint = function(point) {
-        // Update 'this.points' to start at the given point
-        this.points[0] = point;
-    };
-
-    Connection.prototype.setEndPoint = function(point) {
-        // Update 'this.points' to end at the given point
-        var last = this.points.length-1;
-        this.points[last] = point;
-    };
-
     return Connection;
 });

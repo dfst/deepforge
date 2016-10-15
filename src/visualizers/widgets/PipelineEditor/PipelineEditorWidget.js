@@ -1,4 +1,4 @@
-/*globals WebGMEGlobal, $, define*/
+/*globals WebGMEGlobal, $, define, $klay*/
 /*jshint browser: true*/
 
 define([
@@ -12,6 +12,7 @@ define([
     './Connection',
     './SelectionManager',
     'underscore',
+    './klay',
     'css!./styles/PipelineEditorWidget.css'
 ], function (
     CONSTANTS,
@@ -186,9 +187,6 @@ define([
             this.showPorts(match.nodeId, match.portIds, isOutput)
         );
 
-        // Show the 'add' button
-        // TODO
-
         this.PORT_STATE = STATE.CONNECTING;
     };
 
@@ -208,27 +206,6 @@ define([
     // No extra buttons - just the empty message!
     PipelineEditorWidget.prototype.refreshExtras =
         PipelineEditorWidget.prototype.updateEmptyMsg;
-
-    PipelineEditorWidget.prototype.refreshConnections = function() {
-        // Update the connections to they first update their start/end points
-        var connIds = Object.keys(this.connections),
-            src,
-            dst,
-            conn;
-
-        for (var i = connIds.length; i--;) {
-            conn = this.connections[connIds[i]];
-
-            // Update the start/end point
-            src = this.items[conn.src];
-            conn.setStartPoint(src.getPortLocation(conn.srcPort));
-
-            dst = this.items[conn.dst];
-            conn.setEndPoint(dst.getPortLocation(conn.dstPort, true));
-            
-            conn.redraw();
-        }
-    };
 
     //////////////////// Action Overrides ////////////////////
 
@@ -442,6 +419,115 @@ define([
 
         this.updateThumbnail(svg.outerHTML);
     }, 1000);
+
+    // Changing the layout to klayjs
+    PipelineEditorWidget.prototype.refreshScreen = function() {
+        if (!this.active) {
+            return;
+        }
+
+        // WRITE UPDATES
+        // Update the locations of all the nodes
+
+        var graph = {
+            id: 'root',
+            properties: {
+                direction: 'DOWN',
+                'de.cau.cs.kieler.spacing': 25,
+                'de.cau.cs.kieler.edgeRouting': 'ORTHOGONAL'
+                //'de.cau.cs.kieler.klay.layered.nodePlace': 'INTERACTIVE'
+            },
+            edges: [],
+            children: []
+        };
+
+        graph.children = Object.keys(this.items).map(itemId => {
+            var item = this.items[itemId],
+                ports;
+
+            ports = item.inputs.map(p => this._getPortInfo(item, p, true))
+                .concat(item.outputs.map(p => this._getPortInfo(item, p)));
+            return {
+                id: itemId,
+                height: item.height,
+                width: item.width,
+                ports: ports,
+                properties: {
+                    'de.cau.cs.kieler.portConstraints': 'FIXED_POS'
+                }
+            };
+        });
+
+        graph.edges = Object.keys(this.connections).map(connId => {
+            var conn = this.connections[connId];
+            return {
+                id: connId,
+                source: conn.src,
+                target: conn.dst,
+                sourcePort: conn.srcPort,
+                targetPort: conn.dstPort
+            };
+        });
+
+        $klay.layout({
+            graph: graph,
+            success: graph => {
+                this.resultGraph = graph;
+                this.queueFns([
+                    this.applyLayout.bind(this, graph),
+                    this.updateTranslation.bind(this),
+                    this.refreshItems.bind(this),
+                    this.refreshConnections.bind(this),
+                    this.selectionManager.redraw.bind(this.selectionManager),
+                    this.updateContainerWidth.bind(this),
+                    this.refreshExtras.bind(this)
+                ]);
+            }
+        });
+    };
+
+    PipelineEditorWidget.prototype._getPortInfo = function(item, port, isInput) {
+        var position = item.decorator.getPortLocation(port.id, isInput),
+            side = isInput ? 'NORTH' : 'SOUTH';
+
+        position.y += (item.height/2) - 1;
+        return {
+            id: port.id,
+            width: 1,  // Ports are rendered outside the node in this library;
+            height: 1,  // we want it to look like it goes right up to the node
+            properties: {
+                'de.cau.cs.kieler.portSide': side
+            },
+            x: position.x,
+            y: position.y
+        };
+    };
+
+    PipelineEditorWidget.prototype.applyLayout = function (graph) {
+        var id,
+            item,
+            lItem,  // layout item
+            i;
+
+        for (i = graph.children.length; i--;) {
+            // update the x, y
+            lItem = graph.children[i];
+            id = lItem.id;
+            item = this.items[id];
+            item.x = lItem.x + item.width/2;
+            item.y = lItem.y + item.height/2;
+        }
+
+        for (i = graph.edges.length; i--;) {
+            // update the connection.points
+            lItem = graph.edges[i];
+            id = lItem.id;
+            item = this.connections[id];
+            item.points = lItem.bendPoints || [];
+            item.points.unshift(lItem.sourcePoint);
+            item.points.push(lItem.targetPoint);
+        }
+    };
 
     return PipelineEditorWidget;
 });
