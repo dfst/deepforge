@@ -141,6 +141,7 @@ define([
                     // If it is dead (not unknown!), then resume
                     if (status === CONSTANTS.PULSE.DEAD) {
                         this.currentRunId = runId;
+                        this.startExecHeartBeat();
                         return this.resumePipeline();
                     }
                     return this.startPipeline();
@@ -191,10 +192,12 @@ define([
     };
 
     ExecutePipeline.prototype.startPipeline = function () {
-        var rand = Math.floor(Math.random()*10000);
+        var rand = Math.floor(Math.random()*10000),
+            commit = this.commitHash.replace('#', '');
 
         this.logger.debug('Clearing old results');
-        this.currentRunId = `Pipeline_${this.commitHash}_${Date.now()}_${rand}`;
+        this.currentRunId = `Pipeline_${commit}_${Date.now()}_${rand}`;
+        this.startExecHeartBeat();
         return this.clearResults()
             .then(() => this.executePipeline())
             .fail(e => this.logger.error(e));

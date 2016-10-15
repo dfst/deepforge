@@ -59,6 +59,7 @@ define([
         PluginBase.call(this);
         this.pluginMetadata = pluginMetadata;
         this._metadata = {};
+        this._beating = null;
 
         // Metadata updating
         this._markForDeletion = {};  // id -> node
@@ -148,12 +149,12 @@ define([
             .then(() => {
                 if (this._resumed) {
                     this.currentRunId = this.getAttribute(this.activeNode, 'jobId');
+                    this.startExecHeartBeat();
                     this.resumeJob(this.activeNode);
                 } else {
                     this.currentRunId = null;  // will be set after exec files created
                     this.executeJob(this.activeNode);
                 }
-                this.startExecHeartBeat();
             });
     };
 
@@ -600,6 +601,9 @@ define([
                 }
                 if (!this.currentRunId) {
                     this.currentRunId = info.hash;
+                    if (this._beating === null) {
+                        this.startExecHeartBeat();
+                    }
                 }
                 return this.recordJobOrigin(hash, job);
             })
