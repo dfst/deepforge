@@ -40,7 +40,7 @@
         PULSE: {
             DEAD: 0,
             ALIVE: 1,
-            DOESNT_EXIST: 3
+            DOESNT_EXIST: 2
         },
 
         // Job stdout update
