@@ -44,7 +44,15 @@ function initialize(middlewareOpts) {
     router.use('*', ensureAuthenticated);
 
     router.get('/', function (req, res) {
-        res.send('Execution pulse info is located here...');
+        mongo.find().toArray((err, all) => {
+            if (err) {
+                return res.status(500).send(err);
+            }
+            res.json(all.map(entry => {
+                delete entry._id;
+                return entry;
+            }));
+        });
     });
 
     router.get('/:hash', function (req, res) {
