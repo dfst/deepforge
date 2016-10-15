@@ -102,15 +102,9 @@ define([
             .fail(err => this.logger.error(`Job cancel failed: ${err}`));
     };
 
-    Execute.prototype.stopJob = function(job, silent) {
-        var jobId;
-
-        job = job || this.client.getNode(this._currentNodeId);
-        jobId = job.getId();
-
-        this.silentStopJob(job);
-
+    Execute.prototype._setJobStopped = function(jobId, silent) {
         if (!silent) {
+            var name = this.client.getNode(jobId).getAttribute('name');
             this.client.startTransaction(`Stopping "${name}" job`);
         }
 
@@ -121,6 +115,16 @@ define([
         if (!silent) {
             this.client.completeTransaction();
         }
+    };
+
+    Execute.prototype.stopJob = function(job, silent) {
+        var jobId;
+
+        job = job || this.client.getNode(this._currentNodeId);
+        jobId = job.getId();
+
+        this.silentStopJob(job);
+        this._setJobStopped(jobId, silent);
     };
 
 
@@ -165,14 +169,17 @@ define([
     };
 
     Execute.prototype._stopExecution = function(execNode, inTransaction) {
-        var msg = `Canceling ${execNode.getAttribute('name')} execution`;
+        var msg = `Canceling ${execNode.getAttribute('name')} execution`,
+            jobIds;
 
         if (!inTransaction) {
             this.client.startTransaction(msg);
         }
 
-        this._silentStopExecution(execNode);
+        jobIds = this._silentStopExecution(execNode);
+
         this.client.setAttributes(execNode.getId(), 'status', 'canceled');
+        jobIds.forEach(jobId => this._setJobStopped(jobId, true));
 
         if (!inTransaction) {
             this.client.completeTransaction();
@@ -180,11 +187,13 @@ define([
     };
 
     Execute.prototype._silentStopExecution = function(execNode) {
-        var jobIds = execNode.getChildrenIds();
+        var runningJobIds = execNode.getChildrenIds()
+            .map(id => this.client.getNode(id))
+            .filter(job => this.isRunning(job));  // get running jobs
 
-        jobIds.map(id => this.client.getNode(id))
-            .filter(job => this.isRunning(job))  // get running jobs
-            .forEach(job => this.silentStopJob(job));  // stop them
+        runningJobIds.forEach(job => this.silentStopJob(job));  // stop them
+
+        return runningJobIds;
     };
 
     return Execute;
