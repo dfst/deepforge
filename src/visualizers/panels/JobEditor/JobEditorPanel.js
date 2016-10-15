@@ -96,7 +96,9 @@ define([
             var i = this._panels.length;
             this._panels[i-1].control.selectedObjectChanged(nodeId);
             // Check if the job needs to be reconnected
-            this.checkJobExecution(node);
+            if (!this.isReadOnly()) {
+                this.checkJobExecution(node);
+            }
         }
     };
 
