@@ -415,33 +415,31 @@ define([
             msg += 'finished!';
         }
 
-        return this.pulseClient.clear(this.currentRunId)
-            .then(() => this.isDeleted())
-            .then(isDeleted => {
-                if (!isDeleted) {
+        return this.isDeleted().then(isDeleted => {
+            if (!isDeleted) {
 
-                    this.logger.debug(`Pipeline "${name}" complete!`);
-                    this.setAttribute(this.activeNode, 'endTime', Date.now());
-                    this.setAttribute(this.activeNode, 'status',
-                        (this.pipelineError ? 'failed' :
-                        (this.canceled ? 'canceled' : 'success')
-                        )
-                    );
+                this.logger.debug(`Pipeline "${name}" complete!`);
+                this.setAttribute(this.activeNode, 'endTime', Date.now());
+                this.setAttribute(this.activeNode, 'status',
+                    (this.pipelineError ? 'failed' :
+                    (this.canceled ? 'canceled' : 'success')
+                    )
+                );
 
-                    this._finished = true;
-                    this.resultMsg(msg);
-                    this.save('Pipeline execution finished')
-                        .then(() => {
-                            this.result.setSuccess(!this.pipelineError);
-                            this._callback(this.pipelineError || null, this.result);
-                        })
-                        .fail(e => this.logger.error(e));
-                } else {  // deleted!
-                    this.logger.debug('Execution has been deleted!');
-                    this.result.setSuccess(!this.pipelineError);
-                    this._callback(this.pipelineError || null, this.result);
-                }
-            });
+                this._finished = true;
+                this.resultMsg(msg);
+                this.save('Pipeline execution finished')
+                    .then(() => {
+                        this.result.setSuccess(!this.pipelineError);
+                        this._callback(this.pipelineError || null, this.result);
+                    })
+                    .fail(e => this.logger.error(e));
+            } else {  // deleted!
+                this.logger.debug('Execution has been deleted!');
+                this.result.setSuccess(!this.pipelineError);
+                this._callback(this.pipelineError || null, this.result);
+            }
+        });
 
     };
 
