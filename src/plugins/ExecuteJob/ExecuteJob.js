@@ -143,7 +143,6 @@ define([
         this.isResuming(this.activeNode)
             .then(resuming => {
                 this._resumed = resuming;
-                console.log('resuming?', resuming);
                 return this.prepare();
             })
             .then(() => {
@@ -166,17 +165,9 @@ define([
 
         if (status === 'running') {
             jobId = this.getAttribute(job, 'jobId');
-            this.executor.getInfo(jobId)
-                .then(info => {
-                    if (info.status === 'CREATED' || info.status === 'RUNNING') {
-                        // Verify that plugin is running
-                        this.pulseClient.check(jobId)
-                            .then(alive => {
-                                deferred.resolve(!alive);
-                            });
-                    } else {  // Check if the job is finished
-                        deferred.resolve(true);
-                    }
+            this.pulseClient.check(jobId)
+                .then(alive => {
+                    deferred.resolve(alive !== CONSTANTS.PULSE.ALIVE);
                 });
         } else {
             deferred.resolve(false);

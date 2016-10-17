@@ -6,15 +6,20 @@ var testFixture = require('../../globals');
 describe('ExecuteJob', function () {
     var gmeConfig = testFixture.getGmeConfig(),
         expect = testFixture.expect,
+        Q = testFixture.Q,
         logger = testFixture.logger.fork('ExecuteJob'),
         PluginCliManager = testFixture.WebGME.PluginCliManager,
         projectName = 'testProject',
         pluginName = 'ExecuteJob',
         manager = new PluginCliManager(null, logger, gmeConfig),
+        PULSE = require('../../../src/common/Constants').PULSE,
         project,
         gmeAuth,
         storage,
-        commitHash;
+        commitHash,
+        nopPromise = () => {
+            return Q();
+        };
 
     before(function (done) {
         this.timeout(10000);
@@ -350,17 +355,63 @@ describe('ExecuteJob', function () {
         });
     });
 
-    describe.skip('resuming jobs', function() {
-            beforeEach(preparePlugin);
-
-            it('should detect running job', function(done) {
-                // TODO
-                //done();
+    describe.only('resuming jobs', function() {
+        var mockPluginForJobStatus = function(gmeStatus, pulse, job, shouldResume, done) {
+            plugin.setAttribute(node, 'status', gmeStatus);
+            // Mocks:
+            //  - The jobId should return 'SUCCESS'
+            //  - prepare should basically nop
+            //  - Should call 'resumeJob'
+            plugin.prepare = nopPromise;
+            plugin.executor.getInfo = () => Q().then(() => {
+                return {
+                    status: job
+                };
             });
+            plugin.pulseClient.check = () => Q().then(() => pulse);
 
-            it('should watch job is resuming', function(done) {
-                // TODO
-                //done();
+            plugin.pulseClient.update = nopPromise;
+            plugin.resumeJob = () => done(shouldResume ? null : 'Should not resume job!');
+            plugin.executeJob = () => done(shouldResume ? 'Should resume job!' : null);
+                
+            plugin.main();
+        };
+
+        beforeEach(preparePlugin);
+
+        // test using a table of gme status|pulse status|job status|should resume?
+        var names = ['gme', 'pulse', 'job', 'expected to resume'],
+            title;
+
+        // gme status, pulse status, job status, should resume
+        [
+            // Should restart if the pulse is not found & job was created
+            ['running', PULSE.DEAD, 'RUNNING', true],
+            ['running', PULSE.DEAD, 'CREATED', true],
+            ['running', PULSE.DEAD, 'SUCCESS', true],
+            ['running', PULSE.DEAD, 'CANCELED', true],
+
+            // Should not restart if the plugin is alive
+            ['running', PULSE.ALIVE, 'RUNNING', false],
+            ['running', PULSE.ALIVE, 'CREATED', false],
+            ['running', PULSE.ALIVE, 'SUCCESS', false],
+            ['running', PULSE.ALIVE, 'CANCELED', false],
+
+            // Should not restart if the ui is not 'running'
+            // TODO
+
+            // Should restart if the pulse is not found
+            ['running', PULSE.DOESNT_EXIST, 'RUNNING', true],
+            ['running', PULSE.DOESNT_EXIST, 'CREATED', true],
+            ['running', PULSE.DOESNT_EXIST, 'SUCCESS', true],
+            ['running', PULSE.DOESNT_EXIST, 'CANCELED', true]
+        ].forEach(row => {
+            title = names.map((v, i) => `${v}: ${row[i]}`).join(' | ');
+            it(title, function(done) {
+                row.push(done);
+                mockPluginForJobStatus.apply(null, row);
             });
+        });
+
     });
 });
