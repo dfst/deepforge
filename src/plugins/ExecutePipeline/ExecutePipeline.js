@@ -125,7 +125,12 @@ define([
         startPromise
         .then(() => this.core.loadSubTree(this.activeNode))
         .then(subtree => {
-            var children = subtree
+            var children,
+                currentlyRunning;
+
+            currentlyRunning = this.getAttribute(this.activeNode, 'status') === 'running';
+
+            children = subtree
                 .filter(n => this.core.getParent(n) === this.activeNode);
 
             this.pipelineName = this.getAttribute(this.activeNode, 'name');
@@ -136,7 +141,7 @@ define([
 
             // Detect if resuming execution
             runId = this.getAttribute(this.activeNode, 'runId');
-            if (runId) {
+            if (runId && currentlyRunning) {
                 this.pulseClient.check(runId).then(status => {
                     // If it is dead (not unknown!), then resume
                     if (status === CONSTANTS.PULSE.DEAD) {
