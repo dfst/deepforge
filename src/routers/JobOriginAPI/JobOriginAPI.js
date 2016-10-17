@@ -51,6 +51,18 @@ function initialize(middlewareOpts) {
 
     // Connect to mongo...
 
+    router.get('/', function (req, res) {
+        mongo.find().toArray((err, all) => {
+            if (err) {
+                return res.status(500).send(err);
+            }
+            res.json(all.map(entry => {
+                delete entry._id;
+                return entry;
+            }));
+        });
+    });
+
     router.get('/:jobHash', function (req, res/*, next*/) {
         var hash = req.params.jobHash,
             jobInfo = {};
