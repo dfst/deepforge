@@ -356,19 +356,17 @@ describe('ExecuteJob', function () {
     });
 
     describe.only('resuming jobs', function() {
-        var mockPluginForJobStatus = function(gmeStatus, pulse, job, shouldResume, done) {
+        var mockPluginForJobStatus = function(gmeStatus, pulse, originBranch, shouldResume, done) {
             plugin.setAttribute(node, 'status', gmeStatus);
             // Mocks:
             //  - The jobId should return 'SUCCESS'
             //  - prepare should basically nop
             //  - Should call 'resumeJob'
             plugin.prepare = nopPromise;
-            plugin.executor.getInfo = () => Q().then(() => {
-                return {
-                    status: job
-                };
-            });
             plugin.pulseClient.check = () => Q().then(() => pulse);
+            plugin.originManager.getOrigin = () => Q().then(() => {
+                return {branch: originBranch};
+            });
 
             plugin.pulseClient.update = nopPromise;
             plugin.resumeJob = () => done(shouldResume ? null : 'Should not resume job!');
@@ -385,26 +383,21 @@ describe('ExecuteJob', function () {
 
         // gme status, pulse status, job status, should resume
         [
-            // Should restart if the pulse is not found & job was created
-            ['running', PULSE.DEAD, 'RUNNING', true],
-            ['running', PULSE.DEAD, 'CREATED', true],
-            ['running', PULSE.DEAD, 'SUCCESS', true],
-            ['running', PULSE.DEAD, 'CANCELED', true],
-
-            // Should not restart if the plugin is alive
-            ['running', PULSE.ALIVE, 'RUNNING', false],
-            ['running', PULSE.ALIVE, 'CREATED', false],
-            ['running', PULSE.ALIVE, 'SUCCESS', false],
-            ['running', PULSE.ALIVE, 'CANCELED', false],
-
-            // Should not restart if the ui is not 'running'
-            // TODO
+            // Should restart if running and the pulse is not found
+            ['running', PULSE.DEAD, 'test', true],
 
             // Should restart if the pulse is not found
-            ['running', PULSE.DOESNT_EXIST, 'RUNNING', true],
-            ['running', PULSE.DOESNT_EXIST, 'CREATED', true],
-            ['running', PULSE.DOESNT_EXIST, 'SUCCESS', true],
-            ['running', PULSE.DOESNT_EXIST, 'CANCELED', true]
+            ['running', PULSE.DOESNT_EXIST, 'test', true],
+
+            // Should not restart if the plugin is alive
+            ['running', PULSE.ALIVE, 'test', false],
+
+            // Should not restart if the ui is not 'running'
+            ['failed', PULSE.DOESNT_EXIST, 'test', false],
+
+            // Should not restart if on incorrect branch (wrt origin branch)
+            ['running', PULSE.DOESNT_EXIST, 'master', false]
+
         ].forEach(row => {
             title = names.map((v, i) => `${v}: ${row[i]}`).join(' | ');
             it(title, function(done) {

@@ -165,9 +165,18 @@ define([
 
         if (status === 'running') {
             jobId = this.getAttribute(job, 'jobId');
-            this.pulseClient.check(jobId)
-                .then(alive => {
-                    deferred.resolve(alive !== CONSTANTS.PULSE.ALIVE);
+            // Check if on the origin branch
+            this.originManager.getOrigin(jobId)
+                .then(origin => {
+                    if (this.branchName === origin.branch) {
+                        // Check if plugin is no longer running
+                        return this.pulseClient.check(jobId)
+                            .then(alive => {
+                                deferred.resolve(alive !== CONSTANTS.PULSE.ALIVE);
+                            });
+                    } else {
+                        deferred.resolve(false);
+                    }
                 });
         } else {
             deferred.resolve(false);
