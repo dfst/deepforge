@@ -178,6 +178,7 @@ define([
             allJobs = nodes.filter(node => this.core.isTypeOf(node, this.META.Job)),
             jobs = {
                 success: [],
+                failed: [],
                 running: [],
                 pending: []
             };
@@ -192,6 +193,11 @@ define([
             }
             jobs[status].push(allJobs[i]);
         }
+
+        // Remove finished jobs from incomingCounts
+        jobs.success.concat(jobs.failed)
+            .map(job => this.core.getPath(job))
+            .forEach(id => delete this.incomingCounts[id]);
 
         // What about metadata?
         // TODO
@@ -426,6 +432,7 @@ define([
         }
 
         return this.isDeleted().then(isDeleted => {
+            this.stopExecHeartBeat();
             if (!isDeleted) {
 
                 this.logger.debug(`Pipeline "${name}" complete!`);

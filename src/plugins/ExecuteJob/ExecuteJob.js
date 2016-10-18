@@ -414,6 +414,7 @@ define([
             .then(() => this.save(msg))
             .then(() => {
                 this.result.setSuccess(!err);
+                this.stopExecHeartBeat();
                 this._callback(err, this.result);
             })
             .catch(err => {
