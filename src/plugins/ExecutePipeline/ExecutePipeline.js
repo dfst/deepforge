@@ -125,10 +125,7 @@ define([
         startPromise
             .then(() => this.core.loadSubTree(this.activeNode))
             .then(subtree => {
-                var children,
-                    currentlyRunning;
-
-                currentlyRunning = this.getAttribute(this.activeNode, 'status') === 'running';
+                var children;
 
                 children = subtree
                     .filter(n => this.core.getParent(n) === this.activeNode);
@@ -161,10 +158,10 @@ define([
             runId = this.getAttribute(this.activeNode, 'runId');
 
         if (runId && currentlyRunning) {
+            // Verify that it is on the correct branch
             return this.originManager.getOrigin(runId)
                 .then(origin => {
-                    if (origin.branch === this.branchName) {
-                    // FIXME: Verify that it is on the correct branch
+                    if (origin && origin.branch === this.branchName) {
                         return this.pulseClient.check(runId)
                             // If it is dead (not unknown!), then resume
                             .then(status => status === CONSTANTS.PULSE.DEAD);
@@ -198,17 +195,19 @@ define([
 
         // What about metadata?
         // TODO
-        return Q.all(jobs.success.map(job => this.getOperation(job)))
+        return Q.all(allJobs.map(job => this.recordOldMetadata(job, true)))
+            .then(() => Q.all(jobs.success.map(job => this.getOperation(job))))
             .then(ops => ops.forEach(op => this.updateJobCompletionRecords(op)))
             .then(() => {
                 // Resume all running jobs
+                // I need to call recordOldMetadata for each - regardless of whether or not they are running
                 if (jobs.running.length) {
-                    jobs.running.forEach(job => this.resumeJob(job));
+                    return Q.all(jobs.running.map(job =>this.resumeJob(job)));
                 } else if (this.completedCount === this.totalCount) {
-                    this.onPipelineComplete();
+                    return this.onPipelineComplete();
                 } else {
                     // If none are running, try to start the next ones
-                    this.executeReadyOperations();
+                    return this.executeReadyOperations();
                 }
             });
     };
@@ -223,7 +222,7 @@ define([
         // Record the execution origin
         this.originManager.record(this.currentRunId, {
             nodeId: this.core.getPath(this.activeNode),
-            job: null,
+            job: 'N/A',
             execution: this.getAttribute(this.activeNode, 'name')
         });
 
@@ -538,7 +537,9 @@ define([
     };
 
     ExecutePipeline.prototype.updateJobCompletionRecords = function (opNode) {
-        var nextPortIds = this.getOperationOutputIds(opNode);
+        var nextPortIds = this.getOperationOutputIds(opNode),
+            resultPorts,
+            counts;
 
         // Transport the data from the outputs to any connected inputs
         //   - Get all the connections from each outputId
@@ -558,7 +559,7 @@ define([
                 this.logger.info(`forwarding data (${hash}) from ${this.core.getPath(result)} ` +
                     `to ${this.core.getPath(next)}`);
                 this.setAttribute(next, 'data', hash);
-                this.logger.info(`Setting ${jobId} data to ${hash}`);
+                //this.logger.info(`Setting ${jobId} data to ${hash}`);
             });
 
         // For all the nextPortIds, decrement the corresponding operation's incoming counts

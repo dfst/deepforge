@@ -274,7 +274,7 @@ define([
             .then(() => this.recordOldMetadata(this.activeNode));
     };
 
-    ExecuteJob.prototype.recordOldMetadata = function (job) {
+    ExecuteJob.prototype.recordOldMetadata = function (job, isResuming) {
         var nodeId = this.core.getPath(job),
             name,
             id,
@@ -284,7 +284,8 @@ define([
             child,
             i;
 
-        // TODO: Update if resuming execution
+        // If we are resuming the pipeline, we will not be deleting any metadata
+        // TODO
         this.lastAppliedCmd[nodeId] = 0;
         this._oldMetadataByName[nodeId] = {};
         this._markForDeletion[nodeId] = {};
@@ -299,7 +300,9 @@ define([
                         base = this.core.getBase(child);
                         type = this.getAttribute(base, 'name');
 
-                        this._markForDeletion[nodeId][id] = child;
+                        if (!isResuming) {
+                            this._markForDeletion[nodeId][id] = child;
+                        }
                         // namespace by metadata type
                         if (!this._oldMetadataByName[nodeId][type]) {
                             this._oldMetadataByName[nodeId][type] = {};
@@ -315,8 +318,10 @@ define([
 
                 // make the deletion ids relative to the job node
                 this.logger.debug(`About to delete ${idsToDelete.length}: ${idsToDelete.join(', ')}`);
-                for (i = idsToDelete.length; i--;) {
-                    this.deleteNode(idsToDelete[i]);
+                if (!isResuming) {
+                    for (i = idsToDelete.length; i--;) {
+                        this.deleteNode(idsToDelete[i]);
+                    }
                 }
             });
     };
@@ -817,7 +822,7 @@ define([
         // Create an array of [name, node]
         // For now, just match by type. Later we may use ports for input/outputs
         // Store the results in the outgoing ports
-        this.getOutputs(node)
+        return this.getOutputs(node)
             .then(outputPorts => {
                 outputs = outputPorts.map(tuple => [tuple[0], tuple[2]]);
                 outputs.forEach(output => outputMap[output[0]] = output[1]);

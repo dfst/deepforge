@@ -6,10 +6,7 @@
 
 'use strict';
 var testFixture = require('../../globals'),
-    spawn = require('child_process').spawn,
-    path = testFixture.path,
-    projectRoot = path.join(__dirname, '..', '..', '..'),
-    SEED_DIR = path.join(testFixture.DF_SEED_DIR, 'devPipelineTests');
+    path = testFixture.path;
 
 describe('ExecutePipeline', function () {
     this.timeout(5000);
@@ -34,13 +31,6 @@ describe('ExecutePipeline', function () {
         };
 
     before(function (done) {
-        //process.env.PORT = gmeConfig.server.port;
-        //server = spawn('npm', ['run', 'local'], {
-            //cwd: projectRoot
-        //});
-        //server.stdout.on('data', data => process.stdout.write('server:\t' + data));
-        //server.stderr.on('data', data => process.stderr.write('server:\t' + data));
-
         testFixture.clearDBAndGetGMEAuth(gmeConfig, projectName)
             .then(function (gmeAuth_) {
                 gmeAuth = gmeAuth_;
@@ -76,7 +66,7 @@ describe('ExecutePipeline', function () {
             .nodeify(done);
     });
 
-    it('should execute single job', function (done) {
+    it.skip('should execute single job', function (done) {
         var context = {
             project: project,
             commitHash: commitHash,
@@ -100,7 +90,7 @@ describe('ExecutePipeline', function () {
 
     // TODO: Add more tests!
     // Also, should find a good way to mock the Executor framework
-    it('should run plugin w/ references', function (done) {
+    it.skip('should run plugin w/ references', function (done) {
         var pluginConfig = {},
             context = {
                 project: project,
@@ -141,7 +131,7 @@ describe('ExecutePipeline', function () {
             .nodeify(done);
     };
 
-    describe.only('resuming tests', function() {
+    describe('resuming tests', function() {
         beforeEach(preparePlugin);
 
         it('should record origin on start', function (done) {
@@ -175,7 +165,7 @@ describe('ExecutePipeline', function () {
             plugin.prepare = nopPromise;
             plugin.pulseClient.check = () => Q().then(() => pulse);
             plugin.originManager.getOrigin = () => Q().then(() => {
-                return {branch: originBranch};
+                return originBranch && {branch: originBranch};
             });
 
             plugin.pulseClient.update = nopPromise;
@@ -201,6 +191,9 @@ describe('ExecutePipeline', function () {
 
             // Should not restart if missing runId
             [null, 'running', PULSE.DEAD, 'test', false],
+
+            // Should not restart if missing origin
+            [null, 'running', PULSE.DEAD, null, false],
 
             // Should not restart if on incorrect branch (wrt origin branch)
             ['someId', 'running', PULSE.DEAD, 'master', false]
