@@ -265,6 +265,7 @@
     var findTorchClass = function(ast){ 
         var torchClassArgs,  // args for `torch.class(...)`
             name = '',
+            alias,
             baseType,
             params,
             setters = {},
@@ -283,6 +284,7 @@
                     name = torchClassArgs[0];
                     if(name !== ''){
                         name = name.replace('nn.', '');
+                        alias = func.names[0] || name;
                         if (torchClassArgs.length > 1) {
                             baseType = torchClassArgs[1].replace('nn.', '');
                         }
@@ -302,7 +304,7 @@
                 attrName;
 
             // Record the setter functions
-            if (isSetterMethod(curr, parent, name)) {
+            if (isSetterMethod(curr, parent, alias)) {
                 firstLine = curr.block.stats[0];
                 // just use the attribute attrName for now...
                 attrName = getSettingAttrName(firstLine);
@@ -316,7 +318,7 @@
                 } else {
                     setters[attrName] = schema;
                 }
-            } else if (isInitFn(curr, name)) {  // Record the defaults
+            } else if (isInitFn(curr, alias)) {  // Record the defaults
                 paramDefs = getAttrsAndVals(curr);
                 attrDefs = getClassAttrDefs(curr);
                 types = inferParamTypes(curr, paramDefs);
