@@ -1,6 +1,7 @@
 /*jshint node:true, mocha:true*/
 describe('ExecPulse', function() {
     var testFixture = require('../../globals'),  // TODO: May need to change this if not created from webgme-cli
+        PULSE = require('../../../src/common/Constants').PULSE,
         superagent = testFixture.superagent,
         expect = testFixture.expect,
         gmeConfig = testFixture.getGmeConfig(),
@@ -51,7 +52,7 @@ describe('ExecPulse', function() {
             .end(function(err, res) {
                 expect(res.statusCode).to.equal(201);
                 superagent.get(urlFor(hash)).end((err, res) => {
-                    expect(res.text).to.equal('true');
+                    expect(res.text).to.equal(PULSE.ALIVE.toString());
                     done();
                 });
             });
@@ -64,7 +65,7 @@ describe('ExecPulse', function() {
                 expect(res.statusCode).to.equal(201);
                 superagent.delete(urlFor(hash)).end(() => {
                     superagent.get(urlFor(hash)).end((err, res) => {
-                        expect(res.text).to.equal('false');
+                        expect(res.text).to.equal(PULSE.DOESNT_EXIST.toString());
                         done();
                     });
                 });
