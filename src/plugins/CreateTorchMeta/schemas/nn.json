@@ -65,7 +65,14 @@
       "affine"
     ],
     "setters": {},
-    "defaults": {},
+    "types": {
+      "eps": "number",
+      "momentum": "number"
+    },
+    "defaults": {
+      "momentum": 0.1,
+      "eps": 0.00001
+    },
     "type": "Misc"
   },
   {
@@ -76,6 +83,35 @@
       "inputSize2",
       "outputSize",
       "bias"
+    ],
+    "setters": {},
+    "types": {},
+    "defaults": {},
+    "type": "Misc"
+  },
+  {
+    "name": "Bottle",
+    "baseType": "Container",
+    "params": [
+      "module",
+      "nInputDim",
+      "nOutputDim"
+    ],
+    "setters": {},
+    "types": {
+      "nInputDim": "number",
+      "module": "nn.Module"
+    },
+    "defaults": {
+      "nInputDim": 2
+    },
+    "type": "Misc"
+  },
+  {
+    "name": "CAdd",
+    "baseType": "Module",
+    "params": [
+      "params"
     ],
     "setters": {},
     "types": {},
@@ -95,6 +131,24 @@
   },
   {
     "name": "CDivTable",
+    "baseType": "Module",
+    "params": [],
+    "setters": {},
+    "types": {},
+    "defaults": {},
+    "type": "Misc"
+  },
+  {
+    "name": "CMaxTable",
+    "baseType": "Module",
+    "params": [],
+    "setters": {},
+    "types": {},
+    "defaults": {},
+    "type": "Misc"
+  },
+  {
+    "name": "CMinTable",
     "baseType": "Module",
     "params": [],
     "setters": {},
@@ -296,13 +350,16 @@
     "params": [
       "p",
       "v1",
-      "inplace"
+      "inplace",
+      "stochasticInference"
     ],
     "setters": {},
     "types": {
-      "p": "number"
+      "p": "number",
+      "stochasticInference": "boolean"
     },
     "defaults": {
+      "stochasticInference": false,
       "p": 0.5
     },
     "type": "Simple"
@@ -357,8 +414,11 @@
   {
     "name": "GradientReversal",
     "baseType": "Module",
-    "params": [],
+    "params": [
+      "lambda"
+    ],
     "setters": {},
+    "types": {},
     "defaults": {},
     "type": "Misc"
   },
@@ -382,7 +442,8 @@
     "baseType": "Module",
     "params": [
       "min_value",
-      "max_value"
+      "max_value",
+      "inplace"
     ],
     "setters": {},
     "types": {
@@ -508,9 +569,7 @@
   {
     "name": "Log",
     "baseType": "Module",
-    "params": [
-      "inputSize"
-    ],
+    "params": [],
     "setters": {},
     "types": {},
     "defaults": {},
@@ -901,6 +960,17 @@
     "type": "Misc"
   },
   {
+    "name": "PixelShuffle",
+    "baseType": "Module",
+    "params": [
+      "upscaleFactor"
+    ],
+    "setters": {},
+    "types": {},
+    "defaults": {},
+    "type": "Misc"
+  },
+  {
     "name": "Power",
     "baseType": "Module",
     "params": [
@@ -933,6 +1003,17 @@
     "baseType": "Threshold",
     "params": [
       "p"
+    ],
+    "setters": {},
+    "types": {},
+    "defaults": {},
+    "type": "Transfer"
+  },
+  {
+    "name": "ReLU6",
+    "baseType": "Module",
+    "params": [
+      "inplace"
     ],
     "setters": {},
     "types": {},
@@ -1157,6 +1238,18 @@
     "type": "Convolution"
   },
   {
+    "name": "SpatialClassNLLCriterion",
+    "baseType": "Criterion",
+    "params": [
+      "weights",
+      "sizeAverage"
+    ],
+    "setters": {},
+    "types": {},
+    "defaults": {},
+    "type": "Criterion"
+  },
+  {
     "name": "SpatialContrastiveNormalization",
     "baseType": "Module",
     "params": [
@@ -1280,6 +1373,56 @@
     "type": "Convolution"
   },
   {
+    "name": "SpatialDilatedConvolution",
+    "baseType": "SpatialConvolution",
+    "params": [
+      "nInputPlane",
+      "nOutputPlane",
+      "kW",
+      "kH",
+      "dW",
+      "dH",
+      "padW",
+      "padH",
+      "dilationW",
+      "dilationH"
+    ],
+    "setters": {},
+    "types": {
+      "dilationW": "number",
+      "dilationH": "number"
+    },
+    "defaults": {
+      "dilationH": 1,
+      "dilationW": 1
+    },
+    "type": "Convolution"
+  },
+  {
+    "name": "SpatialDilatedMaxPooling",
+    "baseType": "SpatialMaxPooling",
+    "params": [
+      "kW",
+      "kH",
+      "dW",
+      "dH",
+      "padW",
+      "padH",
+      "dilationW",
+      "dilationH"
+    ],
+    "setters": {},
+    "types": {
+      "dilationW": "number",
+      "dilationH": "number"
+    },
+    "defaults": {
+      "dilationH": 1,
+      "dilationW": 1
+    },
+    "type": "Misc"
+  },
+  {
     "name": "SpatialDivisiveNormalization",
     "baseType": "Module",
     "params": [
@@ -1301,13 +1444,16 @@
     "name": "SpatialDropout",
     "baseType": "Module",
     "params": [
-      "p"
+      "p",
+      "stochasticInference"
     ],
     "setters": {},
     "types": {
-      "p": "number"
+      "p": "number",
+      "stochasticInference": "boolean"
     },
     "defaults": {
+      "stochasticInference": false,
       "p": 0.5
     },
     "type": "Convolution"
@@ -1386,6 +1532,14 @@
     "types": {},
     "defaults": {},
     "type": "Convolution"
+  },
+  {
+    "name": "SpatialLogSoftMax",
+    "baseType": "Module",
+    "params": [],
+    "setters": {},
+    "defaults": {},
+    "type": "Misc"
   },
   {
     "name": "SpatialMaxPooling",
@@ -1496,6 +1650,17 @@
       "nInputPlane": 1
     },
     "type": "Convolution"
+  },
+  {
+    "name": "SpatialUpSamplingBilinear",
+    "baseType": "Module",
+    "params": [
+      "params"
+    ],
+    "setters": {},
+    "types": {},
+    "defaults": {},
+    "type": "Misc"
   },
   {
     "name": "SpatialUpSamplingNearest",
@@ -1626,6 +1791,22 @@
     "types": {},
     "defaults": {},
     "type": "Convolution"
+  },
+  {
+    "name": "TemporalDynamicKMaxPooling",
+    "baseType": "Module",
+    "params": [
+      "minK",
+      "factor"
+    ],
+    "setters": {},
+    "types": {
+      "factor": "number"
+    },
+    "defaults": {
+      "factor": 0
+    },
+    "type": "Misc"
   },
   {
     "name": "TemporalMaxPooling",
@@ -1764,16 +1945,81 @@
     "type": "Convolution"
   },
   {
-    "name": "VolumetricDropout",
-    "baseType": "Module",
+    "name": "VolumetricDilatedConvolution",
+    "baseType": "VolumetricConvolution",
     "params": [
-      "p"
+      "nInputPlane",
+      "nOutputPlane",
+      "kT",
+      "kW",
+      "kH",
+      "dT",
+      "dW",
+      "dH",
+      "padT",
+      "padW",
+      "padH",
+      "dilationT",
+      "dilationW",
+      "dilationH"
     ],
     "setters": {},
     "types": {
-      "p": "number"
+      "dilationT": "number",
+      "dilationW": "number",
+      "dilationH": "number"
     },
     "defaults": {
+      "dilationH": 1,
+      "dilationW": 1,
+      "dilationT": 1
+    },
+    "type": "Misc"
+  },
+  {
+    "name": "VolumetricDilatedMaxPooling",
+    "baseType": "VolumetricMaxPooling",
+    "params": [
+      "kT",
+      "kW",
+      "kH",
+      "dT",
+      "dW",
+      "dH",
+      "padT",
+      "padW",
+      "padH",
+      "dilationT",
+      "dilationW",
+      "dilationH"
+    ],
+    "setters": {},
+    "types": {
+      "dilationT": "number",
+      "dilationW": "number",
+      "dilationH": "number"
+    },
+    "defaults": {
+      "dilationH": 1,
+      "dilationW": 1,
+      "dilationT": 1
+    },
+    "type": "Misc"
+  },
+  {
+    "name": "VolumetricDropout",
+    "baseType": "Module",
+    "params": [
+      "p",
+      "stochasticInference"
+    ],
+    "setters": {},
+    "types": {
+      "p": "number",
+      "stochasticInference": "boolean"
+    },
+    "defaults": {
+      "stochasticInference": false,
       "p": 0.5
     },
     "type": "Convolution"
@@ -1863,6 +2109,22 @@
     },
     "defaults": {},
     "type": "Convolution"
+  },
+  {
+    "name": "VolumetricReplicationPadding",
+    "baseType": "Module",
+    "params": [
+      "pleft",
+      "pright",
+      "ptop",
+      "pbottom",
+      "pfront",
+      "pback"
+    ],
+    "setters": {},
+    "types": {},
+    "defaults": {},
+    "type": "Misc"
   },
   {
     "name": "WeightedEuclidean",
