@@ -355,13 +355,13 @@ describe('ExecuteJob', function () {
         });
     });
 
-    describe.only('resuming jobs', function() {
+    describe('resuming jobs', function() {
         var mockPluginForJobStatus = function(gmeStatus, pulse, originBranch, shouldResume, done) {
             plugin.setAttribute(node, 'status', gmeStatus);
             // Mocks:
-            //  - The jobId should return 'SUCCESS'
             //  - prepare should basically nop
-            //  - Should call 'resumeJob'
+            //  - Should call 'resumeJob' or 'executeJob'
+            //  - should return origin branch
             plugin.prepare = nopPromise;
             plugin.pulseClient.check = () => Q().then(() => pulse);
             plugin.originManager.getOrigin = () => Q().then(() => {
@@ -378,7 +378,7 @@ describe('ExecuteJob', function () {
         beforeEach(preparePlugin);
 
         // test using a table of gme status|pulse status|job status|should resume?
-        var names = ['gme', 'pulse', 'job', 'expected to resume'],
+        var names = ['gme', 'pulse', 'origin branch', 'expected to resume'],
             title;
 
         // gme status, pulse status, job status, should resume

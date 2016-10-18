@@ -33,9 +33,9 @@ define([
     var ExecutePipeline = function () {
         // Call base class' constructor.
         CreateExecution.call(this);
+        ExecuteJob.call(this);
         this.pluginMetadata = pluginMetadata;
 
-        this._currentSave = Q();
         this.changes = {};
         this.currentChanges = {};  // read-only changes being applied
         this.creations = {};
@@ -123,40 +123,57 @@ define([
         this.currentForkName = null;
 
         startPromise
-        .then(() => this.core.loadSubTree(this.activeNode))
-        .then(subtree => {
-            var children,
-                currentlyRunning;
+            .then(() => this.core.loadSubTree(this.activeNode))
+            .then(subtree => {
+                var children,
+                    currentlyRunning;
 
-            currentlyRunning = this.getAttribute(this.activeNode, 'status') === 'running';
+                currentlyRunning = this.getAttribute(this.activeNode, 'status') === 'running';
 
-            children = subtree
-                .filter(n => this.core.getParent(n) === this.activeNode);
+                children = subtree
+                    .filter(n => this.core.getParent(n) === this.activeNode);
 
-            this.pipelineName = this.getAttribute(this.activeNode, 'name');
-            this.logger.debug(`Loaded subtree of ${this.pipelineName}. About to build cache`);
-            this.buildCache(subtree);
-            this.logger.debug('Parsing execution for job inter-dependencies');
-            this.parsePipeline(children);  // record deps, etc
+                this.pipelineName = this.getAttribute(this.activeNode, 'name');
+                this.forkNameBase = this.pipelineName;
+                this.logger.debug(`Loaded subtree of ${this.pipelineName}. About to build cache`);
+                this.buildCache(subtree);
+                this.logger.debug('Parsing execution for job inter-dependencies');
+                this.parsePipeline(children);  // record deps, etc
 
-            // Detect if resuming execution
-            runId = this.getAttribute(this.activeNode, 'runId');
-            if (runId && currentlyRunning) {
-                this.pulseClient.check(runId).then(status => {
-                    // If it is dead (not unknown!), then resume
-                    if (status === CONSTANTS.PULSE.DEAD) {
+                // Detect if resuming execution
+                runId = this.getAttribute(this.activeNode, 'runId');
+                return this.isResuming().then(resuming => {
+                    console.log('RESUMING:', resuming);
+                    if (resuming) {
                         this.currentRunId = runId;
                         this.startExecHeartBeat();
                         return this.resumePipeline();
                     }
                     return this.startPipeline();
                 });
-            } else {
-                return this.startPipeline();
-            }
 
-        })
-        .fail(e => this.logger.error(e));
+            })
+            .fail(e => this.logger.error(e));
+    };
+
+    ExecutePipeline.prototype.isResuming = function () {
+        var currentlyRunning = this.getAttribute(this.activeNode, 'status') === 'running',
+            runId = this.getAttribute(this.activeNode, 'runId');
+
+        if (runId && currentlyRunning) {
+            return this.originManager.getOrigin(runId)
+                .then(origin => {
+                    if (origin.branch === this.branchName) {
+                    // FIXME: Verify that it is on the correct branch
+                        return this.pulseClient.check(runId)
+                            // If it is dead (not unknown!), then resume
+                            .then(status => status === CONSTANTS.PULSE.DEAD);
+                    } else {
+                        return false;
+                    }
+                });
+        }
+        return Q().then(() => false);
     };
 
     ExecutePipeline.prototype.resumePipeline = function () {
@@ -202,35 +219,24 @@ define([
 
         this.logger.debug('Clearing old results');
         this.currentRunId = `Pipeline_${commit}_${Date.now()}_${rand}`;
+
+        // Record the execution origin
+        this.originManager.record(this.currentRunId, {
+            nodeId: this.core.getPath(this.activeNode),
+            job: null,
+            execution: this.getAttribute(this.activeNode, 'name')
+        });
+
         this.startExecHeartBeat();
         return this.clearResults()
             .then(() => this.executePipeline())
             .fail(e => this.logger.error(e));
     };
 
-    // Override 'save' to prevent race conditions while saving
-    ExecutePipeline.prototype.save = function (msg) {
-        // When 'save'  is called, it should still finish any current save op
-        // before continuing
-        this._currentSave = this._currentSave
-            .then(() => this.updateForkName(this.pipelineName))
-            .then(() => this.applyModelChanges())
-            .then(() => CreateExecution.prototype.save.call(this, msg))
-            .then(result => {
-                var msg;
-                if (result.status === STORAGE_CONSTANTS.FORKED) {
-                    this.currentForkName = result.forkName;
-                    this.logManager.fork(result.forkName);
-                    msg = `"${this.pipelineName}" execution has forked to "${result.forkName}"`;
-                    this.sendNotification(msg);
-                } else if (result.status === STORAGE_CONSTANTS.MERGED) {
-                    this.logger.debug('Merged changes. About to update plugin nodes');
-                    return this.updateNodes();
-                }
-
-            });
-
-        return this._currentSave;
+    ExecutePipeline.prototype.onSaveForked = function (forkName) {
+        // Update the origin on fork
+        this.originManager.fork(this.currentRunId, forkName);
+        return ExecuteJob.prototype.onSaveForked.call(this, forkName);
     };
 
     ExecutePipeline.prototype.updateNodes = function (hash) {

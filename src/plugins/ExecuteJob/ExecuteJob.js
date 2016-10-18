@@ -57,6 +57,7 @@ define([
     var ExecuteJob = function () {
         // Call base class' constructor.
         PluginBase.call(this);
+        ExecuteJobSafeSave.call(this);
         this.pluginMetadata = pluginMetadata;
         this._metadata = {};
         this._beating = null;
@@ -140,6 +141,7 @@ define([
 
         this._callback = callback;
         this.currentForkName = null;
+        this.forkNameBase = this.getAttribute(this.activeNode, 'name');
         this.isResuming(this.activeNode)
             .then(resuming => {
                 this._resumed = resuming;
@@ -622,6 +624,7 @@ define([
             job: this.getAttribute(job, 'name'),
             execution: this.getAttribute(execNode, 'name')
         };
+        this.runningJobHashes.push(hash);
         return this.originManager.record(hash, info);
     };
 
@@ -752,6 +755,14 @@ define([
                             ExecuteJob.UPDATE_INTERVAL - delta
                         );
                     });
+                }
+
+                // Record that the job hash is no longer running
+                var i = this.runningJobHashes.indexOf(hash);
+                if (i !== -1) {
+                    this.runningJobHashes.splice(i, 1);
+                } else {
+                    this.logger.warn(`Could not find running job hash ${hash}`);
                 }
 
                 if (info.status === 'CANCELED') {

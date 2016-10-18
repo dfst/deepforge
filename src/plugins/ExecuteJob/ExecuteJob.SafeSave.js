@@ -14,7 +14,11 @@ define([
     var CREATE_PREFIX = 'created_node_',
         INDEX = 1;
 
-    var ExecuteJob = function() {};
+    var ExecuteJob = function() {
+        this.forkNameBase = null;
+        this.runningJobHashes = [];
+        this._currentSave = Q();
+    };
 
     ExecuteJob.prototype.getCreateId = function () {
         return CREATE_PREFIX + (++INDEX);
@@ -301,23 +305,31 @@ define([
 
     // Override 'save' to notify the user on fork
     ExecuteJob.prototype.save = function (msg) {
-        var name = this.getAttribute(this.activeNode, 'name');
-
-        return this.updateForkName(name)
+        this._currentSave = this._currentSave
+            .then(() => this.updateForkName(this.forkNameBase))
             .then(() => this.applyModelChanges())
             .then(() => PluginBase.prototype.save.call(this, msg))
             .then(result => {
                 this.logger.info(`Save finished w/ status: ${result.status}`);
                 if (result.status === STORAGE_CONSTANTS.FORKED) {
-                    msg = `"${name}" execution has forked to "${result.forkName}"`;
-                    this.currentForkName = result.forkName;
-                    this.logManager.fork(result.forkName);
-                    this.sendNotification(msg);
+                    return this.onSaveForked(result.forkName);
                 } else if (result.status === STORAGE_CONSTANTS.MERGED) {
                     this.logger.debug('Merged changes. About to update plugin nodes');
                     return this.updateNodes();
                 }
             });
+
+        return this._currentSave;
+    };
+
+    ExecuteJob.prototype.onSaveForked = function (forkName) {
+        var name = this.getAttribute(this.activeNode, 'name'),
+            msg = `"${name}" execution has forked to "${forkName}"`;
+        this.currentForkName = forkName;
+
+        this.logManager.fork(forkName);
+        this.runningJobHashes.forEach(jobId => this.originManager.fork(jobId, forkName));
+        this.sendNotification(msg);
     };
 
     ExecuteJob.prototype.updateNodes = function (hash) {
