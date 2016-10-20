@@ -195,7 +195,7 @@ define([
         }
 
         // Remove finished jobs from incomingCounts
-        jobs.success.concat(jobs.failed)
+        jobs.success.concat(jobs.failed, jobs.running)
             .map(job => this.core.getPath(job))
             .forEach(id => delete this.incomingCounts[id]);
 
@@ -208,7 +208,7 @@ define([
                 // Resume all running jobs
                 // I need to call recordOldMetadata for each - regardless of whether or not they are running
                 if (jobs.running.length) {
-                    return Q.all(jobs.running.map(job =>this.resumeJob(job)));
+                    return Q.all(jobs.running.map(job => this.resumeJob(job)));
                 } else if (this.completedCount === this.totalCount) {
                     return this.onPipelineComplete();
                 } else {
