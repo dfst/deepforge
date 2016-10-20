@@ -4,12 +4,14 @@ define([
     'q',
     'executor/ExecutorClient',
     'deepforge/api/ExecPulseClient',
+    'deepforge/api/JobOriginClient',
     'deepforge/Constants',
     'panel/FloatingActionButton/styles/Materialize'
 ], function(
     Q,
     ExecutorClient,
     ExecPulseClient,
+    JobOriginClient,
     CONSTANTS,
     Materialize
 ) {
@@ -25,6 +27,7 @@ define([
             serverPort: WebGMEGlobal.gmeConfig.server.port,
             httpsecure: window.location.protocol === 'https:'
         });
+        this.originManager = new JobOriginClient({logger: this.logger});
     };
 
     Execute.prototype.executeJob = function(node) {
@@ -225,9 +228,13 @@ define([
             return this.pulseClient.check(jobId)
                 .then(status => {
                     if (status !== CONSTANTS.PULSE.DOESNT_EXIST) {
-                        this.runExecutionPlugin('ExecuteJob', {
-                            useSecondary: true,
-                            node: job
+                        return this._onOriginBranch(jobId).then(onBranch => {
+                            if (onBranch) {
+                                this.runExecutionPlugin('ExecuteJob', {
+                                    useSecondary: true,
+                                    node: job
+                                });
+                            }
                         });
                     } else {
                         this.logger.warn(`Could not restart job: ${job.getId()}`);
@@ -235,6 +242,17 @@ define([
                 });
         }
         return Q();
+    };
+
+    Execute.prototype._onOriginBranch = function (hash) {
+        return this.originManager.getOrigin(hash)
+            .then(origin => {
+                var currentBranch = this.client.getActiveBranchName();
+                if (origin && origin.branch) {
+                    return origin.branch === currentBranch;
+                }
+                return false;
+            });
     };
 
     Execute.prototype.checkPipelineExecution = function (pipeline) {
@@ -246,9 +264,14 @@ define([
             return this.pulseClient.check(runId)
                 .then(status => {
                     if (status === CONSTANTS.PULSE.DEAD) {
-                        this.runExecutionPlugin('ExecutePipeline', {
-                            useSecondary: true,
-                            node: pipeline
+                        // Check the origin branch
+                        return this._onOriginBranch(runId).then(onBranch => {
+                            if (onBranch) {
+                                this.runExecutionPlugin('ExecutePipeline', {
+                                    useSecondary: true,
+                                    node: pipeline
+                                });
+                            }
                         });
                     }
                     // only try to start if the pulse info doesn't exist

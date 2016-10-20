@@ -764,6 +764,7 @@ define([
                 }
 
                 // Record that the job hash is no longer running
+                this.logger.info(`Job "${name}" has finished (${info.status})`);
                 var i = this.runningJobHashes.indexOf(hash);
                 if (i !== -1) {
                     this.runningJobHashes.splice(i, 1);
