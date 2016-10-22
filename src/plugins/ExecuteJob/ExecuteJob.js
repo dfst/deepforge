@@ -728,8 +728,12 @@ define([
                             // TODO: Should I add info about the lastAppliedCmd?
                             if (output) {
                                 // Send notification to all clients watching the branch
+                                var metadata = {
+                                    lineCount: this.outputLineCount[jobId],
+                                    cmdCount: this.lastAppliedCmd[jobId]
+                                };
                                 next = next
-                                    .then(() => this.logManager.appendTo(jobId, output, this.outputLineCount[jobId]))
+                                    .then(() => this.logManager.appendTo(jobId, output, metadata))
                                     .then(() => this.notifyStdoutUpdate(jobId));
                             }
                             if (result.hasMetadata) {
