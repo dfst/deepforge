@@ -231,7 +231,6 @@ define([
                         return this._onOriginBranch(jobId).then(onBranch => {
                             if (onBranch) {
                                 this.runExecutionPlugin('ExecuteJob', {
-                                    useSecondary: true,
                                     node: job
                                 });
                             }
@@ -268,7 +267,6 @@ define([
                         return this._onOriginBranch(runId).then(onBranch => {
                             if (onBranch) {
                                 this.runExecutionPlugin('ExecutePipeline', {
-                                    useSecondary: true,
                                     node: pipeline
                                 });
                             }
