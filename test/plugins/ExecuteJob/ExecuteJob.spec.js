@@ -123,7 +123,7 @@ describe('ExecuteJob', function () {
 
         it('should get correct attribute (from new node) before updating nodes', function(done) {
             // Run setAttribute on some node
-            var graphTmp = plugin.createNode('pipeline.Graph', node),
+            var graphTmp = plugin.createNode('Graph', node),
                 newVal = 'testGraph',
                 id = 'testId';
 
@@ -177,7 +177,7 @@ describe('ExecuteJob', function () {
 
         it('should update _metadata after applying changes', function(done) {
             // Run setAttribute on some node
-            var graphTmp = plugin.createNode('pipeline.Graph', node),
+            var graphTmp = plugin.createNode('Graph', node),
                 id = 'testId';
 
             plugin._metadata[id] = graphTmp;
@@ -212,7 +212,7 @@ describe('ExecuteJob', function () {
         // it has been saved/created
         it('should get changed attribute', function(done) {
             // Run setAttribute on some node
-            var graphTmp = plugin.createNode('pipeline.Graph', node),
+            var graphTmp = plugin.createNode('Graph', node),
                 id = 'testId';
 
             plugin._metadata[id] = node;
@@ -232,7 +232,7 @@ describe('ExecuteJob', function () {
 
         it('should get inherited attribute', function(done) {
             // Run setAttribute on some node
-            var graphTmp = plugin.createNode('pipeline.Graph', node),
+            var graphTmp = plugin.createNode('Graph', node),
                 id = 'testId',
                 val;
 
