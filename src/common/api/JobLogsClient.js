@@ -11,6 +11,11 @@ define([
     'use strict';
 
     // Wrap the ability to read, update, and delete logs using the JobLogsAPI
+    var METADATA_FIELDS = [
+        'lineCount',
+        'cmdCount',
+        'createdIds'
+    ];
     var JobLogsClient = function(params) {
         params = params || {};
 
@@ -78,12 +83,18 @@ define([
         ].join('/');
     };
 
+    var hasRequiredFields = function(md) {
+        return METADATA_FIELDS.reduce((passing, nextField) => {
+            return passing && md.hasOwnProperty(nextField);
+        }, true);
+    };
+
     JobLogsClient.prototype.appendTo = function(jobId, text, metadata) {
         this._modifiedJobs.push(jobId);
         this.logger.info(`Appending logs to ${jobId}`);
 
-        if (metadata && !(metadata.hasOwnProperty('lineCount') && metadata.hasOwnProperty('cmdCount'))) {
-            throw Error('"lineCount" and "cmdCount" required');
+        if (metadata && !hasRequiredFields(metadata)) {
+            throw Error(`Required metadata fields: ${METADATA_FIELDS.join(', ')}`);
         }
         metadata = metadata || {};
         metadata.patch = text;

@@ -423,7 +423,6 @@ describe('ExecuteJob', function () {
                     expect(plugin.deletions.length).to.equal(0);
                 })
                 .nodeify(done);
-            // TODO
         });
 
         // should not mark any nodes for deletion during `prepare` if resuming

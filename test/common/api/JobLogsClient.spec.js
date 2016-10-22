@@ -140,10 +140,11 @@ describe('JobLogsClient', function() {
     describe('metadata', function() {
         var lineCount = 10,
             cmdCount = 2,
+            createdIds = ['4/q/k/2'],
             jobId = '/4/q/k';
 
         before(function(done) {
-            logClient.appendTo(jobId, firstLog, {lineCount, cmdCount})
+            logClient.appendTo(jobId, firstLog, {lineCount, cmdCount, createdIds})
                 .nodeify(done);
         });
 
@@ -152,6 +153,7 @@ describe('JobLogsClient', function() {
                 .then(metadata => {
                     expect(metadata.lineCount).to.equal(lineCount);
                     expect(metadata.cmdCount).to.equal(cmdCount);
+                    expect(metadata.createdIds).to.contain('4/q/k/2');
                 })
                 .nodeify(done);
         });

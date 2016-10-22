@@ -112,6 +112,7 @@ define([
             id = oldMetadata[name];
             node = this._markForDeletion[jobId][id];
             delete this._markForDeletion[jobId][id];
+            this.createdMetadataIds[jobId].push(id);  // used for resuming jobs
         }
 
         return node || null;

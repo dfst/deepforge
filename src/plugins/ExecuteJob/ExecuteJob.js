@@ -66,6 +66,7 @@ define([
         this._markForDeletion = {};  // id -> node
         this._oldMetadataByName = {};  // name -> id
         this.lastAppliedCmd = {};
+        this.createdMetadataIds = {};
         this.canceled = false;
 
         this.changes = {};
@@ -203,6 +204,8 @@ define([
             .then(metadata => {
                 var count = metadata.lineCount;
                 this.lastAppliedCmd[id] = metadata.cmdCount || 0;
+                this.createdMetadataIds = metadata.createdIds;
+
                 if (count === -1) {
                     this.logger.warn(`No line count found for ${id}. Setting count to 0`);
                     count = 0;
@@ -288,6 +291,7 @@ define([
 
         // If we are resuming the pipeline, we will not be deleting any metadata
         this.lastAppliedCmd[nodeId] = 0;
+        this.createdMetadataIds[nodeId] = [];
         this._oldMetadataByName[nodeId] = {};
         this._markForDeletion[nodeId] = {};
         return this.core.loadChildren(job)
@@ -301,9 +305,7 @@ define([
                         base = this.core.getBase(child);
                         type = this.getAttribute(base, 'name');
 
-                        if (!isResuming) {
-                            this._markForDeletion[nodeId][id] = child;
-                        }
+                        this._markForDeletion[nodeId][id] = child;
                         // namespace by metadata type
                         if (!this._oldMetadataByName[nodeId][type]) {
                             this._oldMetadataByName[nodeId][type] = {};
@@ -329,15 +331,19 @@ define([
 
     ExecuteJob.prototype.clearOldMetadata = function (job) {
         var nodeId = this.core.getPath(job),
-            nodeIds = Object.keys(this._markForDeletion[nodeId]),
+            nodeIds,
             node;
 
+        // Remove created nodes left over from resumed job
+        this.createdMetadataIds[nodeId].forEach(id => delete this._markForDeletion[nodeId][id]);
+        nodeIds = Object.keys(this._markForDeletion[nodeId]);
         this.logger.debug(`About to delete ${nodeIds.length}: ${nodeIds.join(', ')}`);
         for (var i = nodeIds.length; i--;) {
             node = this._markForDeletion[nodeId][nodeIds[i]];
             this.deleteNode(this.core.getPath(node));
         }
         delete this.lastAppliedCmd[nodeId];
+        delete this.createdMetadataIds[nodeId];
         delete this._markForDeletion[nodeId];
 
         this.delAttribute(job, 'jobId');
@@ -728,6 +734,7 @@ define([
                                 // Send notification to all clients watching the branch
                                 var metadata = {
                                     lineCount: this.outputLineCount[jobId],
+                                    createdIds: this.createdMetadataIds[jobId],
                                     cmdCount: this.lastAppliedCmd[jobId]
                                 };
                                 next = next

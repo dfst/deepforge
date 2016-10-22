@@ -54,10 +54,12 @@ function initialize(middlewareOpts) {
         return mongo.findOne(req.params)
             .then(info => {
                 var lineCount = info ? info.lineCount : -1,
-                    cmdCount = info ? info.cmdCount : 0;
+                    cmdCount = info ? info.cmdCount : 0,
+                    createdIds = info ? info.createdIds : [];
 
                 return res.json({
                     lineCount: lineCount,
+                    createdIds: createdIds,
                     cmdCount: cmdCount
                 });
             });
@@ -68,15 +70,16 @@ function initialize(middlewareOpts) {
         logger.info(`Received append request for ${req.params.job} in ${req.params.project}`);
         return logManager.appendTo(req.params, logs)
             .then(() => {
-                if (req.body.lineCount || req.body.cmdCount) {
+                if (req.body.lineCount || req.body.cmdCount || req.body.createdIds) {
                     var info = {
                         project: req.params.project,
                         branch: req.params.branch,
                         job: req.params.job,
-                        lineCount: req.body.lineCount,
-                        cmdCount: req.body.cmdCount
+                        lineCount: req.body.lineCount || -1,
+                        createdIds: req.body.createdIds || [],
+                        cmdCount: req.body.cmdCount || 0
                     };
-                    logger.debug('lineCount is', req.body.lineCount);
+                    logger.debug('metadata is', info);
                     return mongo.update(req.params, info, {upsert: true})
                         .then(() => res.send('Append successful'));
                 } else {
