@@ -299,7 +299,7 @@ define([
             .then(() => this.recordOldMetadata(this.activeNode, isResuming));
     };
 
-    ExecuteJob.prototype.recordOldMetadata = function (job, isResuming) {
+    ExecuteJob.prototype.recordOldMetadata = function (job) {
         var nodeId = this.core.getPath(job),
             name,
             id,

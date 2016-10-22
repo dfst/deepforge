@@ -1,15 +1,9 @@
 /*jshint node:true*/
 
-/**
- * This is an API to record the executor job hash to originating project, execution and job
- */
-
 'use strict';
 
-// This contains
 var express = require('express'),
     MONGO_COLLECTION = 'JobOrigins',
-    Q = require('q'),
     utils = require('../utils'),
     mongo,
     router = express.Router(),

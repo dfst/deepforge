@@ -175,6 +175,7 @@ define([
     ExecutePipeline.prototype.resumePipeline = function () {
         var nodes = Object.keys(this.nodes).map(id => this.nodes[id]),
             allJobs = nodes.filter(node => this.core.isTypeOf(node, this.META.Job)),
+            status,
             jobs = {
                 success: [],
                 failed: [],
