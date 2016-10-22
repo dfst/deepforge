@@ -140,7 +140,6 @@ define([
                 // Detect if resuming execution
                 runId = this.getAttribute(this.activeNode, 'runId');
                 return this.isResuming().then(resuming => {
-                    console.log('RESUMING:', resuming);
                     if (resuming) {
                         this.currentRunId = runId;
                         this.startExecHeartBeat();
@@ -191,7 +190,13 @@ define([
             if (!jobs[status]) {
                 jobs[status] = [];
             }
-            jobs[status].push(allJobs[i]);
+
+            // If any running jobs are missing jobIds, set them to pending
+            if (status === 'running' && !this.canResumeJob(allJobs[i])) {
+                jobs.pending.push(allJobs[i]);
+            } else {
+                jobs[status].push(allJobs[i]);
+            }
         }
 
         // Remove finished jobs from incomingCounts
@@ -199,15 +204,12 @@ define([
             .map(job => this.core.getPath(job))
             .forEach(id => delete this.incomingCounts[id]);
 
-        // What about metadata?
-        // TODO
         return Q.all(allJobs.map(job => this.recordOldMetadata(job, true)))
             .then(() => Q.all(jobs.success.map(job => this.getOperation(job))))
             .then(ops => ops.forEach(op => this.updateJobCompletionRecords(op)))
             .then(() => {
-                // Resume all running jobs
-                // I need to call recordOldMetadata for each - regardless of whether or not they are running
-                if (jobs.running.length) {
+                
+                if (jobs.running.length) {  // Resume all running jobs
                     return Q.all(jobs.running.map(job => this.resumeJob(job)));
                 } else if (this.completedCount === this.totalCount) {
                     return this.onPipelineComplete();
@@ -215,7 +217,8 @@ define([
                     // If none are running, try to start the next ones
                     return this.executeReadyOperations();
                 }
-            });
+            })
+            .fail(err => this._callback(err));
     };
 
     ExecutePipeline.prototype.startPipeline = function () {

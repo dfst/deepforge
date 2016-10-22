@@ -359,6 +359,7 @@ describe('ExecuteJob', function () {
     describe('resume detection', function() {
         var mockPluginForJobStatus = function(gmeStatus, pulse, originBranch, shouldResume, done) {
             plugin.setAttribute(node, 'status', gmeStatus);
+            plugin.setAttribute(node, 'jobId', 'asdfaa');
             // Mocks:
             //  - prepare should basically nop
             //  - Should call 'resumeJob' or 'executeJob'
@@ -408,11 +409,11 @@ describe('ExecuteJob', function () {
         });
     });
 
-    describe('preparing resume', function() {
+    describe('preparing', function() {
         beforeEach(preparePlugin);
 
         // should not delete child nodes during 'prepare' if resuming
-        it('should not delete child metadata nodes', function(done) {
+        it('should delete child metadata nodes', function(done) {
             // Create a metadata node w/ a child
             var graphId = plugin.createNode('Graph', plugin.activeNode);
             plugin.createNode('Line', graphId);
@@ -420,13 +421,13 @@ describe('ExecuteJob', function () {
             plugin.save()
                 .then(() => plugin.prepare(true))
                 .then(() => {
-                    expect(plugin.deletions.length).to.equal(0);
+                    expect(plugin.deletions.length).to.equal(1);
                 })
                 .nodeify(done);
         });
 
         // should not mark any nodes for deletion during `prepare` if resuming
-        it('should not mark nodes for deletion if resume', function(done) {
+        it('should mark nodes for deletion', function(done) {
             var jobId = plugin.core.getPath(plugin.activeNode),
                 deleteIds;
 
@@ -437,9 +438,24 @@ describe('ExecuteJob', function () {
                 .then(() => plugin.prepare(true))
                 .then(() => {
                     deleteIds = Object.keys(plugin._markForDeletion[jobId]);
-                    expect(deleteIds.length).to.equal(0);
+                    expect(deleteIds.length).to.equal(1);
                 })
                 .nodeify(done);
+        });
+    });
+
+    describe('resume errors', function() {
+        beforeEach(preparePlugin);
+
+        it('should handle error if missing jobId', function(done) {
+            // Remove jobId
+            plugin.delAttribute(plugin.activeNode, 'runId');
+            plugin.startExecHeartBeat = () => {};
+            plugin.isResuming = () => Q(true);
+            plugin.main(function(err) {
+                expect(err).to.not.equal(null);
+                done();
+            });
         });
     });
 });

@@ -152,12 +152,22 @@ define([
                 if (this._resumed) {
                     this.currentRunId = this.getAttribute(this.activeNode, 'jobId');
                     this.startExecHeartBeat();
-                    this.resumeJob(this.activeNode);
+                    if (this.canResumeJob(this.activeNode)) {
+                        return this.resumeJob(this.activeNode);
+                    } else {
+                        var name = this.getAttribute(this.activeNode, 'name'),
+                            id = this.core.getPath(this.activeNode),
+                            msg = `Cannot resume ${name} (${id}). Missing jobId.`;
+
+                        this.logger.error(msg);
+                        return callback(msg);
+                    }
                 } else {
                     this.currentRunId = null;  // will be set after exec files created
-                    this.executeJob(this.activeNode);
+                    return this.executeJob(this.activeNode);
                 }
-            });
+            })
+            .catch(err => this._callback(err));
     };
 
     ExecuteJob.prototype.isResuming = function (job) {
@@ -187,26 +197,21 @@ define([
         return deferred.promise;
     };
 
+    ExecuteJob.prototype.canResumeJob = function (job) {
+        return !!this.getAttribute(job, 'jobId');
+    };
+
     ExecuteJob.prototype.resumeJob = function (job) {
         var hash = this.getAttribute(job, 'jobId'),
             name = this.getAttribute(job, 'name'),
-            id = this.core.getPath(job);
+            id = this.core.getPath(job),
+            msg;
 
         this.logger.info(`Resuming job ${name} (${id})`);
-        if (!hash) {
-            var msg = `Cannot resume ${name} (${id}). Missing jobId.`;
-            this.logger.error(msg);
-            // FIXME: This may not work w/ the ExecPipeline
-            // Should I throw the error?
-            return this._callback(msg);
-        }
 
         return this.logManager.getMetadata(id)
             .then(metadata => {
                 var count = metadata.lineCount;
-                // Need to remove the old metadata info...
-                // this.lastAppliedCmd[id] = metadata.cmdCount || 0;
-                // this.createdMetadataIds = metadata.createdIds;
 
                 if (count === -1) {
                     this.logger.warn(`No line count found for ${id}. Setting count to 0`);
@@ -224,8 +229,7 @@ define([
                 var stdout = output.map(o => o.output).join(''),
                     result = this.processStdout(job, stdout),
                     name = this.getAttribute(job, 'name'),
-                    promise = Q(),
-                    msg;
+                    promise = Q();
 
 
                 if (result.hasMetadata) {
@@ -747,9 +751,7 @@ define([
                             if (output) {
                                 // Send notification to all clients watching the branch
                                 var metadata = {
-                                    lineCount: this.outputLineCount[jobId],
-                                    createdIds: this.createdMetadataIds[jobId],
-                                    cmdCount: this.lastAppliedCmd[jobId]
+                                    lineCount: this.outputLineCount[jobId]
                                 };
                                 next = next
                                     .then(() => this.logManager.appendTo(jobId, output, metadata))
