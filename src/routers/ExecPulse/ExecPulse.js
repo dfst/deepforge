@@ -29,7 +29,7 @@ var express = require('express'),
 function initialize(middlewareOpts) {
     var logger = middlewareOpts.logger.fork('ExecPulse'),
         ensureAuthenticated = middlewareOpts.ensureAuthenticated,
-        STALE_THRESHOLD = 5000;
+        STALE_THRESHOLD = 7500;
 
     storage = require('../storage')(logger, middlewareOpts.gmeConfig);
     logger.debug('initializing ...');
