@@ -152,8 +152,6 @@ describe('JobLogsClient', function() {
             logClient.getMetadata(jobId)
                 .then(metadata => {
                     expect(metadata.lineCount).to.equal(lineCount);
-                    expect(metadata.cmdCount).to.equal(cmdCount);
-                    expect(metadata.createdIds).to.contain('4/q/k/2');
                 })
                 .nodeify(done);
         });

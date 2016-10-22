@@ -53,14 +53,10 @@ function initialize(middlewareOpts) {
     router.get('/metadata/:project/:branch/:job', function (req, res/*, next*/) {
         return mongo.findOne(req.params)
             .then(info => {
-                var lineCount = info ? info.lineCount : -1,
-                    cmdCount = info ? info.cmdCount : 0,
-                    createdIds = info ? info.createdIds : [];
+                var lineCount = info ? info.lineCount : -1;
 
                 return res.json({
-                    lineCount: lineCount,
-                    createdIds: createdIds,
-                    cmdCount: cmdCount
+                    lineCount: lineCount
                 });
             });
     });

@@ -12,9 +12,7 @@ define([
 
     // Wrap the ability to read, update, and delete logs using the JobLogsAPI
     var METADATA_FIELDS = [
-        'lineCount',
-        'cmdCount',
-        'createdIds'
+        'lineCount'
     ];
     var JobLogsClient = function(params) {
         params = params || {};
