@@ -145,7 +145,7 @@ define([
         this.isResuming(this.activeNode)
             .then(resuming => {
                 this._resumed = resuming;
-                return this.prepare();
+                return this.prepare(resuming);
             })
             .then(() => {
                 if (this._resumed) {
@@ -247,7 +247,7 @@ define([
         return conns;
     };
 
-    ExecuteJob.prototype.prepare = function () {
+    ExecuteJob.prototype.prepare = function (isResuming) {
         var dstPortId,
             srcPortId,
             conns,
@@ -273,7 +273,7 @@ define([
                     }
                 }
             })
-            .then(() => this.recordOldMetadata(this.activeNode));
+            .then(() => this.recordOldMetadata(this.activeNode, isResuming));
     };
 
     ExecuteJob.prototype.recordOldMetadata = function (job, isResuming) {
@@ -287,7 +287,6 @@ define([
             i;
 
         // If we are resuming the pipeline, we will not be deleting any metadata
-        // TODO
         this.lastAppliedCmd[nodeId] = 0;
         this._oldMetadataByName[nodeId] = {};
         this._markForDeletion[nodeId] = {};
@@ -725,7 +724,6 @@ define([
                             result = this.processStdout(job, output, true);
                             output = result.stdout;
 
-                            // TODO: Should I add info about the lastAppliedCmd?
                             if (output) {
                                 // Send notification to all clients watching the branch
                                 var metadata = {

@@ -81,6 +81,7 @@ describe('ExecuteJob', function () {
             var context = {
                 project: project,
                 commitHash: commitHash,
+                namespace: 'pipeline',
                 branchName: 'test',
                 activeNode: '/K/R/p'  // hello world job
             };
@@ -355,7 +356,7 @@ describe('ExecuteJob', function () {
         });
     });
 
-    describe('resuming jobs', function() {
+    describe('resume detection', function() {
         var mockPluginForJobStatus = function(gmeStatus, pulse, originBranch, shouldResume, done) {
             plugin.setAttribute(node, 'status', gmeStatus);
             // Mocks:
@@ -405,6 +406,41 @@ describe('ExecuteJob', function () {
                 mockPluginForJobStatus.apply(null, row);
             });
         });
+    });
 
+    describe('preparing resume', function() {
+        beforeEach(preparePlugin);
+
+        // should not delete child nodes during 'prepare' if resuming
+        it('should not delete child metadata nodes', function(done) {
+            // Create a metadata node w/ a child
+            var graphId = plugin.createNode('Graph', plugin.activeNode);
+            plugin.createNode('Line', graphId);
+
+            plugin.save()
+                .then(() => plugin.prepare(true))
+                .then(() => {
+                    expect(plugin.deletions.length).to.equal(0);
+                })
+                .nodeify(done);
+            // TODO
+        });
+
+        // should not mark any nodes for deletion during `prepare` if resuming
+        it('should not mark nodes for deletion if resume', function(done) {
+            var jobId = plugin.core.getPath(plugin.activeNode),
+                deleteIds;
+
+            // Create a metadata node
+            plugin.createNode('Graph', plugin.activeNode);
+
+            plugin.save()
+                .then(() => plugin.prepare(true))
+                .then(() => {
+                    deleteIds = Object.keys(plugin._markForDeletion[jobId]);
+                    expect(deleteIds.length).to.equal(0);
+                })
+                .nodeify(done);
+        });
     });
 });

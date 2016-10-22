@@ -104,8 +104,7 @@ define([
     };
 
     ExecuteJob.prototype._getExistingMetadata = function (jobId, type, name) {
-        var oldMetadata = this._oldMetadataByName[jobId] &&
-            this._oldMetadataByName[jobId][type],
+        var oldMetadata = this._oldMetadataByName[jobId] && this._oldMetadataByName[jobId][type],
             node,
             id;
 

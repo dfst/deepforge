@@ -88,8 +88,6 @@ describe('ExecutePipeline', function () {
         });
     });
 
-    // TODO: Add more tests!
-    // Also, should find a good way to mock the Executor framework
     it.skip('should run plugin w/ references', function (done) {
         var pluginConfig = {},
             context = {
