@@ -197,14 +197,16 @@ define([
             var msg = `Cannot resume ${name} (${id}). Missing jobId.`;
             this.logger.error(msg);
             // FIXME: This may not work w/ the ExecPipeline
+            // Should I throw the error?
             return this._callback(msg);
         }
 
         return this.logManager.getMetadata(id)
             .then(metadata => {
                 var count = metadata.lineCount;
-                this.lastAppliedCmd[id] = metadata.cmdCount || 0;
-                this.createdMetadataIds = metadata.createdIds;
+                // Need to remove the old metadata info...
+                // this.lastAppliedCmd[id] = metadata.cmdCount || 0;
+                // this.createdMetadataIds = metadata.createdIds;
 
                 if (count === -1) {
                     this.logger.warn(`No line count found for ${id}. Setting count to 0`);
@@ -214,9 +216,23 @@ define([
                 }
                 return count;
             })
-            .then(count => {
+            .then(count => {  // update line count (to inform logClient appendTo)
                 this.outputLineCount[id] = count;
-                return this.getOperation(job);
+                return this.executor.getOutput(hash, 0, count);
+            })
+            .then(output => {  // parse the stdout to update the job metadata
+                var stdout = output.map(o => o.output).join(''),
+                    result = this.processStdout(job, stdout),
+                    name = this.getAttribute(job, 'name'),
+                    promise = Q(),
+                    msg;
+
+
+                if (result.hasMetadata) {
+                    msg = `Updated graph/image output for ${name}`;
+                    promise = this.save(msg);
+                }
+                return promise.then(() => this.getOperation(job));
             })
             .then(opNode => this.watchOperation(hash, opNode, job));
     };
@@ -321,10 +337,8 @@ define([
 
                 // make the deletion ids relative to the job node
                 this.logger.debug(`About to delete ${idsToDelete.length}: ${idsToDelete.join(', ')}`);
-                if (!isResuming) {
-                    for (i = idsToDelete.length; i--;) {
-                        this.deleteNode(idsToDelete[i]);
-                    }
+                for (i = idsToDelete.length; i--;) {
+                    this.deleteNode(idsToDelete[i]);
                 }
             });
     };
