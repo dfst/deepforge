@@ -199,8 +199,10 @@ define([
             return this._callback(msg);
         }
 
-        return this.logManager.getLineCount(id)
-            .then(count => {
+        return this.logManager.getMetadata(id)
+            .then(metadata => {
+                var count = metadata.lineCount;
+                this.lastAppliedCmd[id] = metadata.cmdCount || 0;
                 if (count === -1) {
                     this.logger.warn(`No line count found for ${id}. Setting count to 0`);
                     count = 0;
@@ -723,6 +725,7 @@ define([
                             result = this.processStdout(job, output, true);
                             output = result.stdout;
 
+                            // TODO: Should I add info about the lastAppliedCmd?
                             if (output) {
                                 // Send notification to all clients watching the branch
                                 next = next

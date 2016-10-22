@@ -78,13 +78,16 @@ define([
         ].join('/');
     };
 
-    JobLogsClient.prototype.appendTo = function(jobId, text, count) {
+    JobLogsClient.prototype.appendTo = function(jobId, text, metadata) {
         this._modifiedJobs.push(jobId);
         this.logger.info(`Appending logs to ${jobId}`);
-        return this._request('patch', jobId, {
-            patch: text,
-            lineCount: count
-        });
+
+        if (metadata && !(metadata.hasOwnProperty('lineCount') && metadata.hasOwnProperty('cmdCount'))) {
+            throw Error('"lineCount" and "cmdCount" required');
+        }
+        metadata = metadata || {};
+        metadata.patch = text;
+        return this._request('patch', jobId, metadata);
     };
 
     JobLogsClient.prototype.getLog = function(jobId) {
@@ -98,10 +101,10 @@ define([
         return this._request('delete', jobId);
     };
 
-    JobLogsClient.prototype.getLineCount = function(jobId) {
+    JobLogsClient.prototype.getMetadata = function(jobId) {
         this.logger.info(`Getting line count for ${jobId}`);
-        return this._request('get', {jobId: jobId, route: '/lineCount'})
-            .then(res => parseInt(res.text));
+        return this._request('get', {jobId: jobId, route: '/metadata'})
+            .then(res => JSON.parse(res.text));
     };
 
     return JobLogsClient;

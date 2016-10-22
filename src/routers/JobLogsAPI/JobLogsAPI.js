@@ -50,11 +50,16 @@ function initialize(middlewareOpts) {
         });
     });
 
-    router.get('/lineCount/:project/:branch/:job', function (req, res/*, next*/) {
+    router.get('/metadata/:project/:branch/:job', function (req, res/*, next*/) {
         return mongo.findOne(req.params)
             .then(info => {
-                var lineCount = info ? info.lineCount : -1;
-                return res.status(200).send(lineCount.toString());
+                var lineCount = info ? info.lineCount : -1,
+                    cmdCount = info ? info.cmdCount : 0;
+
+                return res.json({
+                    lineCount: lineCount,
+                    cmdCount: cmdCount
+                });
             });
     });
 
@@ -63,12 +68,13 @@ function initialize(middlewareOpts) {
         logger.info(`Received append request for ${req.params.job} in ${req.params.project}`);
         return logManager.appendTo(req.params, logs)
             .then(() => {
-                if (req.body.lineCount !== undefined) {
+                if (req.body.lineCount || req.body.cmdCount) {
                     var info = {
                         project: req.params.project,
                         branch: req.params.branch,
                         job: req.params.job,
-                        lineCount: req.body.lineCount
+                        lineCount: req.body.lineCount,
+                        cmdCount: req.body.cmdCount
                     };
                     logger.debug('lineCount is', req.body.lineCount);
                     return mongo.update(req.params, info, {upsert: true})

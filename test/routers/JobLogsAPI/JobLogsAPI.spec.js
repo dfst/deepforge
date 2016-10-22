@@ -98,7 +98,7 @@ describe('JobLogsAPI', function() {
         it('should delete the file from job-logs directory', function(done) {
             superagent.delete(delUrl)
                 .end(function (err, res) {
-                    expect(res.status).equal(200, err);
+                    expect(res.status).equal(204, err);
                     superagent.get(delUrl)
                         .end(function (err, res) {
                             expect(res.status).equal(200, err);

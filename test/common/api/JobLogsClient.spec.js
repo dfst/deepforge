@@ -109,7 +109,7 @@ describe('JobLogsClient', function() {
         });
 
         describe('new logs', function() {
-            it('should not edit old job logs', function() {
+            it('should not edit old job logs', function(done) {
                 var c2 = new JobLogsClient({
                     logger: logger,
                     origin: server.getUrl(),
@@ -122,7 +122,7 @@ describe('JobLogsClient', function() {
                 });
             });
 
-            it('should write new logs', function() {
+            it('should write new logs', function(done) {
                 client.appendTo(jId, 'moreStuff')
                     .then(() => client.getLog(jId))
                     .then(log => {
@@ -130,9 +130,31 @@ describe('JobLogsClient', function() {
                         done();
                     });
             });
+
         });
 
         // TODO: Test that, on a fork, the logClient will copy all the current jobs to 
         // the new fork name
+    });
+
+    describe('metadata', function() {
+        var lineCount = 10,
+            cmdCount = 2,
+            jobId = '/4/q/k';
+
+        before(function(done) {
+            logClient.appendTo(jobId, firstLog, {lineCount, cmdCount})
+                .nodeify(done);
+        });
+
+        it('should store the lineCount, cmdCount', function(done) {
+            logClient.getMetadata(jobId)
+                .then(metadata => {
+                    expect(metadata.lineCount).to.equal(lineCount);
+                    expect(metadata.cmdCount).to.equal(cmdCount);
+                })
+                .nodeify(done);
+        });
+
     });
 });
