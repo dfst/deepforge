@@ -32,7 +32,6 @@ define([
         this.logger = logger.fork('Widget');
         this.$el = container;
         this.$el.addClass(WIDGET_CLASS);
-        this.toggleIndex = 0;
         this.initialize();
         this.logger.debug('ctor finished');
         this._closed = true;
@@ -50,7 +49,7 @@ define([
             this[varName] = this.$nav.find(`.${category}-icon`);
             this[varName].on('click', () => {
                 console.log('about to show ' + category);
-                // TODO
+                this.setEmbeddedPanel(category);
             });
         });
 

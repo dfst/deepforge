@@ -10,7 +10,8 @@ define([
     './MainViewControl',
     'panels/PipelineIndex/PipelineIndexPanel',
     'panels/ExecutionIndex/ExecutionIndexPanel',
-    'deepforge/globals'
+    'deepforge/globals',
+    'q'
 ], function (
     PanelBaseWithHeader,
     IActivePanel,
@@ -18,11 +19,18 @@ define([
     MainViewControl,
     PipelineIndexPanel,
     ExecutionIndexPanel,
-    DeepForge
+    DeepForge,
+    Q
 ) {
     'use strict';
 
-    var MainViewPanel;
+    var MainViewPanel,
+        CATEGORY_TO_PLACE = {
+            pipelines: 'MyPipelines',
+            executions: 'MyPipelines',
+            architectures: 'MyArchitectures',
+            artifacts: 'MyArtifacts'
+        };
 
     MainViewPanel = function (layoutManager, params) {
         var options = {};
@@ -44,7 +52,6 @@ define([
             PipelineIndexPanel,
             ExecutionIndexPanel
         ];
-        this.nextPanelIndex = 0;
         this._lm = layoutManager;
         this._params = params;
         this.$el.append(this.$nav);
@@ -62,39 +69,22 @@ define([
         this.setTitle('');
 
         this.widget = new MainViewWidget(this.logger, this.$nav);
+        this.widget.updateLibraries = this.updateLibraries.bind(this);
+        this.widget.checkLibUpdates = this.checkLibUpdates.bind(this);
+        this.widget.setEmbeddedPanel = this.setEmbeddedPanel.bind(this);
 
-        this.control = new MainViewControl({
-            logger: this.logger,
-            client: this._client,
-            embedded: this._embedded,
-            widget: this.widget
-        });
-
-        this.control.toggleEmbeddedPanel = this.toggleEmbeddedPanel.bind(this);
-        var selectedObjectChanged = this.control.selectedObjectChanged;
-        this.control.selectedObjectChanged = id => {
-            this.getEmbeddedNode().then(nodeId =>
-                this.embeddedPanel.control.selectedObjectChanged(nodeId));
-            selectedObjectChanged.call(this.control, id);
-        };
-
-        this.toggleEmbeddedPanel(true);
+        this.setEmbeddedPanel('pipelines');
         this.onActivate();
     };
 
-    MainViewPanel.prototype.getEmbeddedNode = function() {
-        if (this.nextPanelIndex === 1) {
-            return DeepForge.places.MyPipelines();
-        } else {
-            return DeepForge.places.MyExecutions();
-        }
-    };
-
-    MainViewPanel.prototype.toggleEmbeddedPanel = function (silent) {
+    MainViewPanel.prototype.setEmbeddedPanel = function (category, silent) {
         // TODO: Change this to toggle specific views
-        var Panel = this.embeddedPanels[this.nextPanelIndex];
-        this.nextPanelIndex = (this.nextPanelIndex + 1) % this.embeddedPanels.length;
+        var Panel = this.embeddedPanels[0],
+            // TODO: Get the panel to use...
+            placeName = CATEGORY_TO_PLACE[category];
 
+
+        // TODO: Highlight the current toggled panel
         if (this.embeddedPanel) {  // Remove current
             this.embeddedPanel.destroy();
             this.$embedded.remove();
@@ -108,8 +98,9 @@ define([
         // Call on Resize and selectedObjectChanged
         this.onResize(this.width, this.height);
         if (!silent) {
-            this.getEmbeddedNode().then(nodeId =>
-                this.embeddedPanel.control.selectedObjectChanged(nodeId));
+            DeepForge.places[placeName]().then(nodeId => {
+            console.log('new nodeId is', nodeId);
+                this.embeddedPanel.control.selectedObjectChanged(nodeId)});
         }
     };
 
@@ -142,7 +133,6 @@ define([
 
     /* * * * * * * * Visualizer life cycle callbacks * * * * * * * */
     MainViewPanel.prototype.destroy = function () {
-        this.control.destroy();
         this.widget.destroy();
 
         PanelBaseWithHeader.prototype.destroy.call(this);
@@ -152,16 +142,37 @@ define([
 
     MainViewPanel.prototype.onActivate = function () {
         this.widget.onActivate();
-        this.control.onActivate();
         WebGMEGlobal.KeyboardManager.setListener(this.widget);
         WebGMEGlobal.Toolbar.refresh();
     };
 
     MainViewPanel.prototype.onDeactivate = function () {
         this.widget.onDeactivate();
-        this.control.onDeactivate();
         WebGMEGlobal.KeyboardManager.setListener(undefined);
         WebGMEGlobal.Toolbar.refresh();
+    };
+
+    /* * * * * * * * Library Updates * * * * * * * */
+
+    MainViewPanel.prototype.getProjectName = function () {
+        return this._client.getActiveProjectId().split('+')[1];
+    };
+
+    MainViewPanel.prototype.checkLibUpdates = function () {
+        var pluginId = 'CheckLibraries',
+            context = this._client.getCurrentPluginContext(pluginId);
+
+        return Q.ninvoke(this._client, 'runServerPlugin', pluginId, context)
+            .then(res => {
+                return res.messages.map(msg => msg.message.split(' '));
+            });
+    };
+
+    MainViewPanel.prototype.updateLibraries = function (libraries) {
+        var promises = libraries
+            .map(lib => Q.ninvoke(this._client, 'updateLibrary', lib[0], lib[1]));
+
+        return Q.all(promises);
     };
 
     return MainViewPanel;
