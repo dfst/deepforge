@@ -31,6 +31,14 @@ define([
             architectures: 'MyArchitectures',
             artifacts: 'MyArtifacts'
         },
+        CATEGORY_TO_VIZ = {
+            pipelines: 'PipelineIndex',
+            executions: 'ExecutionIndex',
+            //architectures: 'ArchitectureIndex',
+            architectures: 'PipelineIndex',
+            //artifacts: 'ArtifactIndex'
+            artifacts: 'ModelEditor'
+        },
         VisualizerPathFor = {};
 
     JSON.parse(VisualizersText).forEach(viz => VisualizerPathFor[viz.id] = viz.panel);
@@ -75,23 +83,8 @@ define([
         this.onActivate();
     };
 
-    MainViewPanel.prototype.getPanelId = function (category, nodeId) {
-        var node;
-        if (category === 'executions') {
-            // Return the Execution view of the Pipelines
-            return 'ExecutionIndex';
-        }
-
-        node = this._client.getNode(nodeId);
-        if (node) {
-            return node.getRegistry('validVisualizers').split(' ')[0];
-        }
-
-        return 'PipelineIndex';
-    };
-
-    MainViewPanel.prototype.getPanelPath = function (category, nodeId) {
-        return VisualizerPathFor[this.getPanelId(category, nodeId)];
+    MainViewPanel.prototype.getPanelPath = function (category) {
+        return VisualizerPathFor[CATEGORY_TO_VIZ[category]];
     };
 
     MainViewPanel.prototype.getPanel = function (category, nodeId) {
@@ -111,7 +104,6 @@ define([
     };
 
     MainViewPanel.prototype.setEmbeddedPanel = function (category, silent) {
-        // TODO: Change this to toggle specific views
         var placeName = CATEGORY_TO_PLACE[category],
             nodeId;
 
