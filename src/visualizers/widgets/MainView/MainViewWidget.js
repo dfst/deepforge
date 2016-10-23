@@ -7,7 +7,8 @@ define([
     'text!./NavBar.html',
     'text!./ListItem.ejs',
     'underscore',
-    'css!./styles/MainViewWidget.css'
+    'css!./styles/MainViewWidget.css',
+    'css!./lib/font/css/open-iconic-bootstrap.min.css'
 ], function (
     Materialize,
     DeepForge,
@@ -20,9 +21,11 @@ define([
     var MainViewWidget,
         WIDGET_CLASS = 'main-view',
         CreateListItem = _.template(ListItem),
-        ToggleLabels = [
-            'Executions',
-            'Pipelines'
+        CATEGORIES = [
+            'pipelines',
+            'executions',
+            'architectures',
+            'artifacts'
         ];
 
     MainViewWidget = function (logger, container) {
@@ -32,6 +35,7 @@ define([
         this.toggleIndex = 0;
         this.initialize();
         this.logger.debug('ctor finished');
+        this._closed = true;
     };
 
     MainViewWidget.prototype.initialize = function () {
@@ -39,33 +43,16 @@ define([
         this.$nav = $(NavBarHTML);
         this.$el.append(this.$nav);
 
+        // TODO: Remove toggle stuff
         // Execution support
-        this.$toggle = this.$nav.find('#toggle-main');
-        this.$toggleLabel = this.$nav.find('.toggle-label');
-        this.$toggle.on('click', () => {
-            if (this._closed) {  // shouldn't be clicked when closed (but it is possible)
-                return;
-            }
-            this.toggleEmbeddedPanel();
-            // Update the toggle name
-            this.toggleIndex = (this.toggleIndex + 1) % 2;
-            this.$toggleLabel.text(ToggleLabels[this.toggleIndex]);
+        CATEGORIES.forEach(category => {
+            var varName = `$${category}Icon`;
+            this[varName] = this.$nav.find(`.${category}-icon`);
+            this[varName].on('click', () => {
+                console.log('about to show ' + category);
+                // TODO
+            });
         });
-
-        this.$archlist = this.$nav.find('#arch-list-content');
-        this.$artifacts = this.$nav.find('#artifact-list-content');
-
-        // opening, closing
-        this._closed = true;
-        this.$nav.find('.side-nav-control').on('click', this.controlClicked.bind(this));
-        this.$nav.on('transitionend', this.onChanged.bind(this));
-
-        // action buttons
-        this.$nav.on('click', '#create-artifact', DeepForge.create.Artifact);
-        this.$nav.on('click', '#create-arch', DeepForge.create.Architecture);
-        this.$nav.on('click', '.select-node', this.onNodeClick.bind(this));
-        this.$nav.on('click', '.del-node', this.onDelNodeClick.bind(this));
-        this.$nav.on('click', '.dl-node', this.onDownloadNodeClick.bind(this));
 
         this.htmlFor = {};
 
@@ -127,16 +114,6 @@ define([
         }
     };
 
-    MainViewWidget.prototype.controlClicked = function () {
-        this._closed = !this._closed;
-        if (this._closed) {
-            this.$nav.addClass('hide-list');
-            this.$nav.addClass('closed');
-        } else {  // remove the 'closed' class
-            this.$nav.removeClass('closed');
-        }
-    };
-
     MainViewWidget.prototype.onWidgetContainerResize = function () {
         var rect = this.$el[0].getBoundingClientRect(),
             top = rect.top;
@@ -147,87 +124,6 @@ define([
 
         if (this._closed) {
             this._closedWidth = this.$nav.width();
-        }
-    };
-
-    MainViewWidget.prototype.createNode = function(desc) {
-        // Create the architecture list item
-        var li;
-
-        desc.download = false;
-        li = $(CreateListItem(desc));
-        this.htmlFor[desc.id] = li;
-        return li;
-    };
-
-    MainViewWidget.prototype.addArch = function(desc) {
-        var html = this.createNode(desc);
-        this.$archlist.append(html);
-    };
-
-    MainViewWidget.prototype.addArtifact = function(desc) {
-        var html = this.createNode(desc);
-        this.$artifacts.append(html);
-    };
-
-    MainViewWidget.prototype.onDelNodeClick = function(event) {
-        var id = this.getElementId(event.target);
-        event.stopPropagation();
-        if (id) {
-            this.deleteNode(id);
-        }
-    };
-
-    MainViewWidget.prototype.onDownloadNodeClick = function(event) {
-        var id = this.getElementId(event.target),
-            url;
-
-        event.stopPropagation();
-        if (id) {
-            url = this.dataUrlFor(id);
-            if (url) {
-                this._download(url);
-            }
-        }
-    };
-
-    MainViewWidget.prototype._download = function(url) {
-        var anchor = document.createElement('a');
-        anchor.setAttribute('href', url);
-        anchor.setAttribute('target', '_self');
-        anchor.click();
-    };
-
-    MainViewWidget.prototype.onNodeClick = function(event) {
-        var id = this.getElementId(event.target);
-        event.stopPropagation();
-        if (id) {
-            WebGMEGlobal.State.registerActiveObject(id);
-        }
-    };
-
-    MainViewWidget.prototype.getElementId = function(element) {
-        while(!element.getAttribute('data-id') && element.parentNode) {
-            element = element.parentNode;
-        }
-        return element.getAttribute('data-id');
-    };
-
-    MainViewWidget.prototype.removeNode = function(id) {
-        if (this.htmlFor[id]) {
-            this.htmlFor[id].remove();
-            delete this.htmlFor[id];
-        }
-    };
-
-    MainViewWidget.prototype.updateNode = function (desc) {
-        var oldHtml = this.htmlFor[desc.id],
-            node;
-
-        if (oldHtml) {
-            node = this.createNode(desc);
-            node.insertAfter(oldHtml);
-            oldHtml.remove();
         }
     };
 

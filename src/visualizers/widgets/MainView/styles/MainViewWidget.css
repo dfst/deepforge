@@ -4,8 +4,20 @@
 
 .main-view .side-nav-control {
   padding-right: 1em;
+  padding-left: 1em;
   padding-top: 1em;
   line-height: inherit !important;
+}
+
+.main-view .side-nav-icon {
+  padding-left: 1em;
+  padding-top: 1em;
+  line-height: inherit !important;
+}
+
+.main-view .side-nav-icon span {
+  color: #757575;
+  font-size: 16px;
 }
 
 .main-view .side-nav-control span {

@@ -91,6 +91,7 @@ define([
     };
 
     MainViewPanel.prototype.toggleEmbeddedPanel = function (silent) {
+        // TODO: Change this to toggle specific views
         var Panel = this.embeddedPanels[this.nextPanelIndex];
         this.nextPanelIndex = (this.nextPanelIndex + 1) % this.embeddedPanels.length;
 
