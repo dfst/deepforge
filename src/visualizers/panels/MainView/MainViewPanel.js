@@ -6,21 +6,21 @@
 define([
     'js/PanelBase/PanelBaseWithHeader',
     'js/PanelManager/IActivePanel',
+    'panels/AutoViz/AutoVizPanel',
     'widgets/MainView/MainViewWidget',
     './MainViewControl',
-    'panels/PipelineIndex/PipelineIndexPanel',
-    'panels/ExecutionIndex/ExecutionIndexPanel',
     'deepforge/globals',
-    'q'
+    'q',
+    'text!/api/visualizers'
 ], function (
     PanelBaseWithHeader,
     IActivePanel,
+    AutoVizPanel,
     MainViewWidget,
     MainViewControl,
-    PipelineIndexPanel,
-    ExecutionIndexPanel,
     DeepForge,
-    Q
+    Q,
+    VisualizersText
 ) {
     'use strict';
 
@@ -30,8 +30,10 @@ define([
             executions: 'MyPipelines',
             architectures: 'MyArchitectures',
             artifacts: 'MyArtifacts'
-        };
+        },
+        VisualizerPathFor = {};
 
+    JSON.parse(VisualizersText).forEach(viz => VisualizerPathFor[viz.id] = viz.panel);
     MainViewPanel = function (layoutManager, params) {
         var options = {};
         //set properties from options
@@ -48,26 +50,22 @@ define([
         this.$nav = $('<div>', {id: 'nav-container'});
         this.$el.css({padding: 0});
 
-        this.embeddedPanels = [
-            PipelineIndexPanel,
-            ExecutionIndexPanel
-        ];
         this._lm = layoutManager;
         this._params = params;
         this.$el.append(this.$nav);
+        this._panels = {};
         this._initialize();
 
         this.logger.debug('ctor finished');
     };
 
-    //inherit from PanelBaseWithHeader
-    _.extend(MainViewPanel.prototype, PanelBaseWithHeader.prototype);
-    _.extend(MainViewPanel.prototype, IActivePanel.prototype);
+    _.extend(
+        MainViewPanel.prototype,
+        PanelBaseWithHeader.prototype,
+        IActivePanel.prototype
+    );
 
     MainViewPanel.prototype._initialize = function () {
-        //set Widget title
-        this.setTitle('');
-
         this.widget = new MainViewWidget(this.logger, this.$nav);
         this.widget.updateLibraries = this.updateLibraries.bind(this);
         this.widget.checkLibUpdates = this.checkLibUpdates.bind(this);
@@ -77,31 +75,71 @@ define([
         this.onActivate();
     };
 
+    MainViewPanel.prototype.getPanelId = function (category, nodeId) {
+        var node;
+        if (category === 'executions') {
+            // Return the Execution view of the Pipelines
+            return 'ExecutionIndex';
+        }
+
+        node = this._client.getNode(nodeId);
+        if (node) {
+            return node.getRegistry('validVisualizers').split(' ')[0];
+        }
+
+        return 'PipelineIndex';
+    };
+
+    MainViewPanel.prototype.getPanelPath = function (category, nodeId) {
+        return VisualizerPathFor[this.getPanelId(category, nodeId)];
+    };
+
+    MainViewPanel.prototype.getPanel = function (category, nodeId) {
+        var deferred = Q.defer(),
+            panelPath = this.getPanelPath(category, nodeId);
+
+        if (this._panels[panelPath]) {
+            deferred.resolve(this._panels[panelPath]);
+        } else {
+            require([panelPath], Panel => {
+                this._panels[panelPath] = Panel;
+                deferred.resolve(Panel);
+            });
+        }
+
+        return deferred.promise;
+    };
+
     MainViewPanel.prototype.setEmbeddedPanel = function (category, silent) {
         // TODO: Change this to toggle specific views
-        var Panel = this.embeddedPanels[0],
-            // TODO: Get the panel to use...
-            placeName = CATEGORY_TO_PLACE[category];
+        var placeName = CATEGORY_TO_PLACE[category],
+            nodeId;
 
+        DeepForge.places[placeName]()
+            .then(_nodeId => {
+                nodeId = _nodeId;
+                console.log('new nodeId is', nodeId);
+                return this.getPanel(category, nodeId);
+            })
+            .then(Panel => {
 
-        // TODO: Highlight the current toggled panel
-        if (this.embeddedPanel) {  // Remove current
-            this.embeddedPanel.destroy();
-            this.$embedded.remove();
-        }
+                // TODO: Highlight the current toggled panel
+                if (this.embeddedPanel) {  // Remove current
+                    this.embeddedPanel.destroy();
+                    this.$embedded.remove();
+                }
 
-        this.embeddedPanel = new Panel(this._lm, this._params);
-        this.$embedded = this.embeddedPanel.$el;
-        this.$embedded.addClass('main-view-embedded');
-        this.$el.append(this.$embedded);
+                this.embeddedPanel = new Panel(this._lm, this._params);
+                this.$embedded = this.embeddedPanel.$el;
+                this.$embedded.addClass('main-view-embedded');
+                this.$el.append(this.$embedded);
 
-        // Call on Resize and selectedObjectChanged
-        this.onResize(this.width, this.height);
-        if (!silent) {
-            DeepForge.places[placeName]().then(nodeId => {
-            console.log('new nodeId is', nodeId);
-                this.embeddedPanel.control.selectedObjectChanged(nodeId)});
-        }
+                // Call on Resize and selectedObjectChanged
+                this.onResize(this.width, this.height);
+                if (!silent) {
+                    this.embeddedPanel.control.selectedObjectChanged(nodeId);
+                }
+            });
     };
 
     /* OVERRIDE FROM WIDGET-WITH-HEADER */
@@ -120,13 +158,15 @@ define([
         this.widget.onWidgetContainerResize(width, height);
         navWidth = this.widget.width();
         embeddedWidth = width-navWidth;
-        this.$embedded.css({
-            width: embeddedWidth,
-            height: height,
-            left: navWidth,
-            margin: 'inherit'
-        });
-        this.embeddedPanel.onResize(embeddedWidth, height);
+        if (this.embeddedPanel) {
+            this.$embedded.css({
+                width: embeddedWidth,
+                height: height,
+                left: navWidth,
+                margin: 'inherit'
+            });
+            this.embeddedPanel.onResize(embeddedWidth, height);
+        }
         this.width = width;
         this.height = height;
     };
