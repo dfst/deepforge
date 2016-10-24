@@ -8,7 +8,6 @@ define([
     'js/PanelManager/IActivePanel',
     'panels/AutoViz/AutoVizPanel',
     'widgets/MainView/MainViewWidget',
-    './MainViewControl',
     'deepforge/globals',
     'q',
     'text!/api/visualizers'
@@ -17,7 +16,6 @@ define([
     IActivePanel,
     AutoVizPanel,
     MainViewWidget,
-    MainViewControl,
     DeepForge,
     Q,
     VisualizersText
@@ -75,6 +73,7 @@ define([
 
     MainViewPanel.prototype._initialize = function () {
         this.widget = new MainViewWidget(this.logger, this.$nav);
+        this.widget.getProjectName = this.getProjectName.bind(this);
         this.widget.updateLibraries = this.updateLibraries.bind(this);
         this.widget.checkLibUpdates = this.checkLibUpdates.bind(this);
         this.widget.setEmbeddedPanel = this.setEmbeddedPanel.bind(this);
