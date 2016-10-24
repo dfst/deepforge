@@ -3,7 +3,7 @@
 
 define([
     'deepforge/globals',
-    'widgets/EasyDAG/EasyDAGWidget',
+    'deepforge/viz/widgets/Thumbnail',
     'widgets/EasyDAG/AddNodeDialog',
     './SelectionManager',
     './Layer',
@@ -12,7 +12,7 @@ define([
     'css!./styles/ArchEditorWidget.css'
 ], function (
     DeepForge,
-    EasyDAGWidget,
+    ThumbnailWidget,
     AddNodeDialog,
     SelectionManager,
     Layer,
@@ -26,12 +26,12 @@ define([
         WIDGET_CLASS = 'arch-editor';
 
     ArchEditorWidget = function (logger, container) {
-        EasyDAGWidget.call(this, logger, container);
+        ThumbnailWidget.call(this, logger, container);
         this.$el.addClass(WIDGET_CLASS);
         this._emptyMsg = 'Click to add a new layer';
     };
 
-    _.extend(ArchEditorWidget.prototype, EasyDAGWidget.prototype);
+    _.extend(ArchEditorWidget.prototype, ThumbnailWidget.prototype);
 
     ArchEditorWidget.prototype.ItemClass = Layer;
     ArchEditorWidget.prototype.SelectionManager = SelectionManager;

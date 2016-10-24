@@ -4,14 +4,14 @@
 define([
     'deepforge/Constants',
     'deepforge/globals',
-    'panels/EasyDAG/EasyDAGControl',
+    'deepforge/viz/panels/ThumbnailControl',
     'js/NodePropertyNames',
     'js/Utils/ComponentSettings',
     'underscore'
 ], function (
     Constants,
     DeepForge,
-    EasyDAGControl,
+    ThumbnailControl,
     nodePropertyNames,
     ComponentSettings,
     _
@@ -32,12 +32,12 @@ define([
         };
 
     ArchEditorControl = function (options) {
-        EasyDAGControl.call(this, options);
+        ThumbnailControl.call(this, options);
         this._config = DEFAULT_CONFIG;
         ComponentSettings.resolveWithWebGMEGlobal(this._config, this.getComponentId());
     };
 
-    _.extend(ArchEditorControl.prototype, EasyDAGControl.prototype);
+    _.extend(ArchEditorControl.prototype, ThumbnailControl.prototype);
 
     ArchEditorControl.prototype.TERRITORY_RULE = {children: 1};
     ArchEditorControl.prototype.DEFAULT_DECORATOR = 'LayerDecorator';
@@ -46,7 +46,7 @@ define([
     };
 
     ArchEditorControl.prototype.selectedObjectChanged = function(id) {
-        EasyDAGControl.prototype.selectedObjectChanged.call(this, id);
+        ThumbnailControl.prototype.selectedObjectChanged.call(this, id);
 
         DeepForge.last.Architecture = id;
         if (typeof id === 'string') {
@@ -56,7 +56,7 @@ define([
     };
 
     ArchEditorControl.prototype._getObjectDescriptor = function(id) {
-        var desc = EasyDAGControl.prototype._getObjectDescriptor.call(this, id);
+        var desc = ThumbnailControl.prototype._getObjectDescriptor.call(this, id);
 
         // Filter attributes
         if (!desc.isConnection) {
@@ -172,7 +172,7 @@ define([
 
     // Widget extensions
     ArchEditorControl.prototype._initWidgetEventHandlers = function() {
-        EasyDAGControl.prototype._initWidgetEventHandlers.call(this);
+        ThumbnailControl.prototype._initWidgetEventHandlers.call(this);
         this._widget.getCreateNewDecorator = this.getCreateNewDecorator.bind(this);
     };
 

@@ -4,7 +4,7 @@
 define([
     'deepforge/Constants',
     'js/Constants',
-    'panels/EasyDAG/EasyDAGControl',
+    'deepforge/viz/panels/ThumbnailControl',
     'deepforge/viz/PipelineControl',
     'deepforge/viz/Execute',
     'deepforge/globals',
@@ -15,7 +15,7 @@ define([
 ], function (
     CONSTANTS,
     GME_CONSTANTS,
-    EasyDAGControl,
+    ThumbnailControl,
     PipelineControl,
     Execute,
     DeepForge,
@@ -40,7 +40,7 @@ define([
     DECORATORS[CONSTANTS.OP.INPUT] = 'ArtifactOpDecorator';
 
     PipelineEditorControl = function (options) {
-        EasyDAGControl.call(this, options);
+        ThumbnailControl.call(this, options);
         Execute.call(this, this._client, this._logger);
         this.addedIds = {};
         this.executionTerritory = {};
@@ -52,7 +52,7 @@ define([
 
     _.extend(
         PipelineEditorControl.prototype,
-        EasyDAGControl.prototype,
+        ThumbnailControl.prototype,
         PipelineControl.prototype,
         Execute.prototype
     );
@@ -138,12 +138,11 @@ define([
     };
 
     PipelineEditorControl.prototype._initWidgetEventHandlers = function () {
-        EasyDAGControl.prototype._initWidgetEventHandlers.call(this);
+        ThumbnailControl.prototype._initWidgetEventHandlers.call(this);
         this._widget.getExistingPortMatches = this.getExistingPortMatches.bind(this);
         this._widget.createConnection = this.createConnection.bind(this);
         this._widget.removeConnection = this.removeConnection.bind(this);
         this._widget.getDecorator = this.getDecorator.bind(this);
-        this._widget.updateThumbnail = this.updateThumbnail.bind(this);
     };
 
     PipelineEditorControl.prototype.isContainedInActive = function (gmeId) {
@@ -159,7 +158,7 @@ define([
             this.addedIds[desc.id] = true;
             // Validate any connections
             if (this.isValid(desc)) {
-                return EasyDAGControl.prototype._onLoad.call(this, gmeId);
+                return ThumbnailControl.prototype._onLoad.call(this, gmeId);
             }
         } else if (desc.parentId !== null &&
             this.isContainedInActive(desc.parentId) && desc.isDataPort) {
@@ -198,7 +197,7 @@ define([
 
         if(this.addedIds[gmeId]) {
             delete this.addedIds[gmeId];
-            return EasyDAGControl.prototype._onUnload.call(this, gmeId);
+            return ThumbnailControl.prototype._onUnload.call(this, gmeId);
         }
     };
 
@@ -587,7 +586,7 @@ define([
         if (this.executionUI) {
             this._client.removeUI(this, this.executionEvents.bind(this));
         }
-        EasyDAGControl.prototype._detachClientEventListeners.call(this);
+        ThumbnailControl.prototype._detachClientEventListeners.call(this);
     };
 
     ////////////////////// Execution Support END //////////////////////
@@ -637,28 +636,6 @@ define([
         }
     };
 
-    PipelineEditorControl.prototype.updateThumbnail = function (svg) {
-        var node = this._client.getNode(this._currentNodeId),
-            name,
-            attrs,
-            currentThumbnail,
-            attrName = 'thumbnail',
-            msg;
-
-        if (node) {  // may have been deleted
-            name = node.getAttribute('name');
-            attrs = node.getValidAttributeNames();
-            currentThumbnail = node.getAttribute(attrName);
-            msg = `Updating pipeline thumbnail for "${name}"`;
-
-            if (attrs.indexOf(attrName) > -1 && currentThumbnail !== svg) {
-                this._client.startTransaction(msg);
-                this._client.setAttributes(this._currentNodeId, attrName, svg);
-                this._client.completeTransaction();
-            }
-        }
-    };
-
     ////////////////////// Criterion Support //////////////////////
     PipelineEditorControl.prototype._getValidTargetsFor = function (id, ptr) {
         // Check if the pointer is a Criterion pointer -> if so, only show the meta types
@@ -681,7 +658,7 @@ define([
                 };
             });
         } else {
-            return EasyDAGControl.prototype._getValidTargetsFor.apply(this, arguments);
+            return ThumbnailControl.prototype._getValidTargetsFor.apply(this, arguments);
         }
     };
 
