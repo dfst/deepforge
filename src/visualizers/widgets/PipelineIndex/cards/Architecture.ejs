@@ -1,0 +1,17 @@
+<div class="col s6 m3 l2">
+    <div class="pipeline card" data-id="<%= id %>" style="overflow: hidden;">
+        <div class="center preview card-image waves-effect waves-block waves-light">
+        </div>
+        <div class="card-content">
+            <span data-id="<%= id %>" class="card-title activator grey-text text-darken-4 pipeline-name"><%= name %></span>
+        </div>
+        <div class="card-reveal" style="display: none; transform: translateY(0px);">
+            <span class="card-title grey-text text-darken-4">"<%= name %>" Executions<i class="material-icons right">close</i></span>
+            <p></p>
+        </div>
+        <div class="card-action">
+            <a class="open-pipeline" href="#">Open</a>
+            <a class="delete-pipeline" data-id="<%= id %>" href="#">Delete</a>
+        </div>
+    </div>
+</div>

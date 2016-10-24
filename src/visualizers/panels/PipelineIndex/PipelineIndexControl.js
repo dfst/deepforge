@@ -102,20 +102,20 @@ define([
     // This next function retrieves the relevant node information for the widget
     PipelineIndexControl.prototype._getObjectDescriptor = function (nodeId) {
         var node = this._client.getNode(nodeId),
+            base,
             objDescriptor;
 
         if (node) {
+            base = this._client.getNode(node.getBaseId());
             objDescriptor = {
-                id: undefined,
-                name: undefined,
-                parentId: undefined,
+                id: node.getId(),
+                name: node.getAttribute(nodePropertyNames.Attributes.name),
+                parentId: node.getParentId(),
                 thumbnail: node.getAttribute('thumbnail'),
+                type: base.getAttribute('name'),
                 executionCount: node.getMemberIds('executions').length
             };
 
-            objDescriptor.id = node.getId();
-            objDescriptor.name = node.getAttribute(nodePropertyNames.Attributes.name);
-            objDescriptor.parentId = node.getParentId();
         }
 
         return objDescriptor;
