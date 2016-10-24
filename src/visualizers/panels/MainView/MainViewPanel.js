@@ -110,12 +110,10 @@ define([
         DeepForge.places[placeName]()
             .then(_nodeId => {
                 nodeId = _nodeId;
-                console.log('new nodeId is', nodeId);
                 return this.getPanel(category, nodeId);
             })
             .then(Panel => {
 
-                // TODO: Highlight the current toggled panel
                 if (this.embeddedPanel) {  // Remove current
                     this.embeddedPanel.destroy();
                     this.$embedded.remove();

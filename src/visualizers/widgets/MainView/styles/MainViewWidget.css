@@ -10,8 +10,9 @@
 }
 
 .main-view .side-nav-icon {
-  padding-left: 1em;
-  padding-top: 1em;
+  padding-left: 1.1em;
+  padding-top: 0.75em;
+  padding-bottom: 0.5em;
   line-height: inherit !important;
 }
 

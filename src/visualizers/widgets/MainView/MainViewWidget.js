@@ -20,7 +20,6 @@ define([
 
     var MainViewWidget,
         WIDGET_CLASS = 'main-view',
-        CreateListItem = _.template(ListItem),
         CATEGORIES = [
             'pipelines',
             'executions',
@@ -35,6 +34,7 @@ define([
         this.initialize();
         this.logger.debug('ctor finished');
         this._closed = true;
+        this._currentSelection = '$pipelinesIcon';
     };
 
     MainViewWidget.prototype.initialize = function () {
@@ -42,14 +42,16 @@ define([
         this.$nav = $(NavBarHTML);
         this.$el.append(this.$nav);
 
-        // TODO: Remove toggle stuff
         // Execution support
         CATEGORIES.forEach(category => {
             var varName = `$${category}Icon`;
             this[varName] = this.$nav.find(`.${category}-icon`);
             this[varName].on('click', () => {
-                console.log('about to show ' + category);
                 this.setEmbeddedPanel(category);
+                // Remove the 'active' class from the current
+                this[this._currentSelection].removeClass('active');
+                this[varName].addClass('active');
+                this._currentSelection = varName;
             });
         });
 
