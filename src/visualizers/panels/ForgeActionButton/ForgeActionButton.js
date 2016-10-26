@@ -356,7 +356,7 @@ define([
         if (nodeId) {
             this.client.startTransaction(msg);
             this.client.delMoreNodes([nodeId]);
-            this.client.completeTransaction(msg);
+            this.client.completeTransaction();
         }
     };
 
