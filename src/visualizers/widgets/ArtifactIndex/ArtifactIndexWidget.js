@@ -43,12 +43,13 @@ define([
         if (desc && desc.parentId === this.currentNode) {
             var node = new ModelItem(this.$list, desc);
             this.nodes[desc.id] = node;
-            node.$delete.on('click', (event) => { this.onModelDeleteClicked(desc.id);
+            node.$delete.on('click', event => {
+                this.onNodeDeleteClicked(desc.id);
                 event.stopPropagation();
                 event.preventDefault();
             });
-            node.$el.on('click', (event) => {
-                this.onModelClick(desc.id);
+            node.$el.on('click', event => {
+                this.onNodeClick(desc.id);
                 event.stopPropagation();
                 event.preventDefault();
             });

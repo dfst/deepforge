@@ -27,9 +27,18 @@ define([
     };
 
     ArtifactIndexControl.prototype._initWidgetEventHandlers = function () {
-        this._widget.onNodeClick = function (id) {
+        this._widget.onNodeClick = id => {
             // Change the current active object
             WebGMEGlobal.State.registerActiveObject(id);
+        };
+
+        this._widget.onNodeDeleteClicked = id => {
+            var name = this._client.getNode(id).getAttribute('name'),
+                msg = `Deleted "${name}" artifact (${id}) --`;
+
+            this._client.startTransaction(msg);
+            this._client.delMoreNodes([id]);
+            this._client.completeTransaction();
         };
     };
 
