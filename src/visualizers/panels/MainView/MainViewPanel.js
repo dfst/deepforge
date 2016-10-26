@@ -35,7 +35,7 @@ define([
             //architectures: 'ArchitectureIndex',
             architectures: 'PipelineIndex',
             //artifacts: 'ArtifactIndex'
-            artifacts: 'ModelEditor'
+            artifacts: 'ArtifactIndex'
         },
         VisualizerPathFor = {};
 

@@ -237,6 +237,13 @@
         "panel": "src/visualizers/panels/WorkerHeader",
         "secondary": false,
         "widget": "src/visualizers/widgets/WorkerHeader"
+      },
+      "ArtifactIndex": {
+        "src": "panels/ArtifactIndex/ArtifactIndexPanel",
+        "title": "ArtifactIndex",
+        "panel": "src/visualizers/panels/ArtifactIndex",
+        "secondary": false,
+        "widget": "src/visualizers/widgets/ArtifactIndex"
       }
     },
     "addons": {},
