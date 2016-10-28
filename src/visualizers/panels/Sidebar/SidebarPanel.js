@@ -2,12 +2,14 @@
 /*jshint browser: true*/
 
 define([
+    'js/Constants',
     'js/PanelBase/PanelBase',
     'panels/AutoViz/AutoVizPanel',
     'widgets/Sidebar/SidebarWidget',
     'deepforge/globals',
     'q'
 ], function (
+    CONSTANTS,
     PanelBase,
     AutoVizPanel,
     SidebarWidget,
@@ -59,6 +61,29 @@ define([
             .then(nodeId => WebGMEGlobal.State.registerActiveObject(nodeId));
     };
 
+    SidebarPanel.prototype.selectedObjectChanged = function (nodeId) {
+        var categories,
+            category,
+            place;
+
+        if (typeof nodeId === 'string') {
+            categories = Object.keys(CATEGORY_TO_PLACE);
+            
+            Q.all(categories.map(category => {
+                place = CATEGORY_TO_PLACE[category];
+                return DeepForge.places[place]();
+            }))
+            .then(nodeIdPrefixes => {
+                for (var i = nodeIdPrefixes.length; i--;) {
+                    if (nodeId.indexOf(nodeIdPrefixes[i]) > -1) {
+                        category = categories[i];
+                        return this.widget.highlight(category);
+                    }
+                }
+            });
+        }
+    };
+
     /* OVERRIDE FROM WIDGET-WITH-HEADER */
     SidebarPanel.prototype.onResize = function (width, height) {
         var navWidth,
@@ -88,13 +113,19 @@ define([
         WebGMEGlobal.Toolbar.refresh();
     };
 
+    SidebarPanel.prototype._stateActiveObjectChanged = function (model, activeObjectId) {
+        this.selectedObjectChanged(activeObjectId);
+    };
+
     SidebarPanel.prototype.onActivate = function () {
+        WebGMEGlobal.State.on('change:' + CONSTANTS.STATE_ACTIVE_OBJECT, this._stateActiveObjectChanged, this);
         this.widget.onActivate();
         WebGMEGlobal.KeyboardManager.setListener(this.widget);
         WebGMEGlobal.Toolbar.refresh();
     };
 
     SidebarPanel.prototype.onDeactivate = function () {
+        WebGMEGlobal.State.off('change:' + CONSTANTS.STATE_ACTIVE_OBJECT, this._stateActiveObjectChanged);
         this.widget.onDeactivate();
         WebGMEGlobal.KeyboardManager.setListener(undefined);
         WebGMEGlobal.Toolbar.refresh();

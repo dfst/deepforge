@@ -43,10 +43,7 @@ define([
             this[varName] = this.$nav.find(`.${category}-icon`);
             this[varName].on('click', () => {
                 this.setEmbeddedPanel(category);
-                // Remove the 'active' class from the current
-                this[this._currentSelection].removeClass('active');
-                this[varName].addClass('active');
-                this._currentSelection = varName;
+                this.highlight(category);
             });
         });
 
@@ -54,6 +51,14 @@ define([
 
         // TODO: Change this to check when a project is opened
         setTimeout(() => this.checkLibraries(), 1000);
+    };
+
+    SidebarWidget.prototype.highlight = function (category) {
+        var varName = `$${category}Icon`;
+        // Remove the 'active' class from the current
+        this[this._currentSelection].removeClass('active');
+        this[varName].addClass('active');
+        this._currentSelection = varName;
     };
 
     SidebarWidget.prototype.checkLibraries = function () {
