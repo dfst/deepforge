@@ -1,0 +1,28 @@
+{
+  "panels": [
+    {
+      "id": "Header",
+      "panel": "Header/HeaderPanel",
+      "container": "header",
+      "DEBUG_ONLY": false
+    },
+    {
+      "id": "Footer",
+      "panel": "FooterControls/FooterControlsPanel",
+      "container": "footer",
+      "DEBUG_ONLY": false
+    },
+    {
+      "id": "PartBrowserPanel",
+      "panel": "PartBrowser/PartBrowserPanel",
+      "container": "toolbox",
+      "DEBUG_ONLY": false
+    },
+    {
+      "id": "ModelEditor",
+      "panel": "ModelEditor/ModelEditorPanel",
+      "container": "center",
+      "DEBUG_ONLY": false
+    }
+  ]
+}

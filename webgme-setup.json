@@ -54,7 +54,12 @@
         "test": "test/plugins/UpdateLibrarySeed"
       }
     },
-    "layouts": {},
+    "layouts": {
+      "SideBarLayout": {
+        "src": "src/layouts/SideBarLayout",
+        "enabled": true
+      }
+    },
     "visualizers": {
       "ArchEditor": {
         "src": "panels/ArchEditor/ArchEditorPanel",
@@ -326,7 +331,7 @@
       "CHFLayout": {
         "project": "webgme-chflayout",
         "path": "node_modules/webgme-chflayout/src/layouts/CHFLayout",
-        "enabled": true
+        "enabled": false
       }
     },
     "visualizers": {
