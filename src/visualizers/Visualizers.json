@@ -72,6 +72,30 @@
     "DEBUG_ONLY": false
   },
   {
+    "id": "ArchitectureIndex",
+    "title": "ArchitectureIndex",
+    "panel": "panels/PipelineIndex/PipelineIndexPanel",
+    "DEBUG_ONLY": false
+  },
+  {
+    "id": "OperationIndex",
+    "title": "OperationIndex",
+    "panel": "js/Panels/ModelEditor/ModelEditorPanel",
+    "DEBUG_ONLY": false
+  },
+  {
+    "id": "LayerIndex",
+    "title": "LayerIndex",
+    "panel": "js/Panels/ModelEditor/ModelEditorPanel",
+    "DEBUG_ONLY": false
+  },
+  {
+    "id": "DataTypeIndex",
+    "title": "DataTypeIndex",
+    "panel": "js/Panels/ModelEditor/ModelEditorPanel",
+    "DEBUG_ONLY": false
+  },
+  {
     "id": "JobEditor",
     "title": "JobEditor",
     "panel": "panels/JobEditor/JobEditorPanel",
