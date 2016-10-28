@@ -31,8 +31,8 @@
   },
   {
     "id": "RootViz",
-    "title": "MainView",
-    "panel": "panels/MainView/MainViewPanel",
+    "title": "ForwardViz",
+    "panel": "panels/ForwardViz/ForwardVizPanel",
     "DEBUG_ONLY": false
   },
   {
@@ -141,6 +141,12 @@
     "id": "ArchIndex",
     "title": "ArchIndex",
     "panel": "panels/ArchIndex/ArchIndexPanel",
+    "DEBUG_ONLY": false
+  },
+  {
+    "id": "ForwardViz",
+    "title": "ForwardViz",
+    "panel": "panels/ForwardViz/ForwardVizPanel",
     "DEBUG_ONLY": false
   }
 ]

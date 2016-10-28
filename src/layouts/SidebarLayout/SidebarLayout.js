@@ -1,24 +1,24 @@
 /*globals define, */
 define([
     'layout/CHFLayout/CHFLayout/CHFLayout',
-    'text!./templates/SideBarLayout.html',
-    'css!./SideBarLayout.css'
+    'text!./templates/SidebarLayout.html',
+    'css!./SidebarLayout.css'
 ], function(
     CHFLayout,
     SidebarTemplate
 ) {
     'use strict';
     
-    var SideBarLayout = function(params) {
+    var SidebarLayout = function(params) {
         params = params || {};
         params.template = SidebarTemplate;
         CHFLayout.call(this, params);
     };
 
-    SideBarLayout.prototype = Object.create(CHFLayout.prototype);
+    SidebarLayout.prototype = Object.create(CHFLayout.prototype);
 
-    SideBarLayout.prototype.getComponentId = function () {
-        return 'SideBarLayout';
+    SidebarLayout.prototype.getComponentId = function () {
+        return 'SidebarLayout';
     };
 
     /**
@@ -26,7 +26,7 @@ define([
      *
      * @return {undefined}
      */
-    SideBarLayout.prototype.init = function() {
+    SidebarLayout.prototype.init = function() {
         CHFLayout.prototype.init.apply(this, arguments);
         this._sidebarPanel = this._body.find('div.ui-layout-sidebar');
         this._centerPanel = this._body.find('div.layout-center');
@@ -40,7 +40,7 @@ define([
      * @param {String} container
      * @return {undefined}
      */
-    SideBarLayout.prototype.addToContainer = function(panel, container) {
+    SidebarLayout.prototype.addToContainer = function(panel, container) {
         if (container === 'sidebar') {
             this._sidebarPanel.append(panel.$pEl);
         } else {
@@ -48,5 +48,5 @@ define([
         }
     };
 
-    return SideBarLayout;
+    return SidebarLayout;
 });

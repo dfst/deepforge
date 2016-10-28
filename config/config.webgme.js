@@ -59,7 +59,7 @@ config.requirejsPaths = {
   'widgets/FloatingActionButton': './node_modules/webgme-fab/src/visualizers/widgets/FloatingActionButton'
 };
 
-config.visualization.layout.default = 'SideBarLayout';
+config.visualization.layout.default = 'SidebarLayout';
 config.mongo.uri = 'mongodb://127.0.0.1:27017/deepforge';
 validateConfig(config);
 module.exports = config;

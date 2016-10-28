@@ -43,7 +43,7 @@
         "rootMenuClass": "deepforge-logo",
         "rootDisplayName": "DeepForge"
     },
-    "SideBarLayout": {
+    "SidebarLayout": {
         "panels": [
             {
                 "id": "WorkerHeader",
@@ -64,8 +64,8 @@
                 "DEBUG_ONLY": false
             },
             {
-                "id": "SideBar",
-                "panel": "MainView/MainViewPanel",
+                "id": "Sidebar",
+                "panel": "Sidebar/SidebarPanel",
                 "container": "sidebar",
                 "DEBUG_ONLY": false
             },

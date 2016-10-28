@@ -4,19 +4,19 @@
 define([
     'js/PanelBase/PanelBase',
     'panels/AutoViz/AutoVizPanel',
-    'widgets/MainView/MainViewWidget',
+    'widgets/Sidebar/SidebarWidget',
     'deepforge/globals',
     'q'
 ], function (
     PanelBase,
     AutoVizPanel,
-    MainViewWidget,
+    SidebarWidget,
     DeepForge,
     Q
 ) {
     'use strict';
 
-    var MainViewPanel,
+    var SidebarPanel,
         CATEGORY_TO_PLACE = {
             pipelines: 'MyPipelines',
             executions: 'MyExecutions',
@@ -24,7 +24,7 @@ define([
             artifacts: 'MyArtifacts'
         };
 
-    MainViewPanel = function (layoutManager, params) {
+    SidebarPanel = function (layoutManager, params) {
         var opts = {};
         opts[PanelBase.OPTIONS.LOGGER_INSTANCE_NAME] = 'SidebarPanel';
         PanelBase.call(this, opts);
@@ -40,9 +40,9 @@ define([
         this.logger.debug('ctor finished');
     };
 
-    MainViewPanel.prototype = Object.create(PanelBase.prototype);
-    MainViewPanel.prototype._initialize = function () {
-        this.widget = new MainViewWidget(this.logger, this.$el);
+    SidebarPanel.prototype = Object.create(PanelBase.prototype);
+    SidebarPanel.prototype._initialize = function () {
+        this.widget = new SidebarWidget(this.logger, this.$el);
         this.widget.getProjectName = this.getProjectName.bind(this);
         this.widget.updateLibraries = this.updateLibraries.bind(this);
         this.widget.checkLibUpdates = this.checkLibUpdates.bind(this);
@@ -52,7 +52,7 @@ define([
         this.onActivate();
     };
 
-    MainViewPanel.prototype.setEmbeddedPanel = function (category) {
+    SidebarPanel.prototype.setEmbeddedPanel = function (category) {
         var placeName = CATEGORY_TO_PLACE[category];
 
         return DeepForge.places[placeName]()
@@ -60,12 +60,11 @@ define([
     };
 
     /* OVERRIDE FROM WIDGET-WITH-HEADER */
-    MainViewPanel.prototype.onResize = function (width, height) {
+    SidebarPanel.prototype.onResize = function (width, height) {
         var navWidth,
             embeddedWidth;
 
         this.logger.debug('onResize --> width: ' + width + ', height: ' + height);
-        this.widget.onWidgetContainerResize(width, height);
         navWidth = this.widget.width();
         embeddedWidth = width-navWidth;
         if (this.embeddedPanel) {
@@ -82,20 +81,20 @@ define([
     };
 
     /* * * * * * * * Visualizer life cycle callbacks * * * * * * * */
-    MainViewPanel.prototype.destroy = function () {
+    SidebarPanel.prototype.destroy = function () {
         this.widget.destroy();
         this.$el.remove();
         WebGMEGlobal.KeyboardManager.setListener(undefined);
         WebGMEGlobal.Toolbar.refresh();
     };
 
-    MainViewPanel.prototype.onActivate = function () {
+    SidebarPanel.prototype.onActivate = function () {
         this.widget.onActivate();
         WebGMEGlobal.KeyboardManager.setListener(this.widget);
         WebGMEGlobal.Toolbar.refresh();
     };
 
-    MainViewPanel.prototype.onDeactivate = function () {
+    SidebarPanel.prototype.onDeactivate = function () {
         this.widget.onDeactivate();
         WebGMEGlobal.KeyboardManager.setListener(undefined);
         WebGMEGlobal.Toolbar.refresh();
@@ -103,12 +102,12 @@ define([
 
     /* * * * * * * * Library Updates * * * * * * * */
 
-    MainViewPanel.prototype.getProjectName = function () {
+    SidebarPanel.prototype.getProjectName = function () {
         var projectId = this._client.getActiveProjectId();
         return projectId && projectId.split('+')[1];
     };
 
-    MainViewPanel.prototype.checkLibUpdates = function () {
+    SidebarPanel.prototype.checkLibUpdates = function () {
         var pluginId = 'CheckLibraries',
             context = this._client.getCurrentPluginContext(pluginId);
 
@@ -118,12 +117,12 @@ define([
             });
     };
 
-    MainViewPanel.prototype.updateLibraries = function (libraries) {
+    SidebarPanel.prototype.updateLibraries = function (libraries) {
         var promises = libraries
             .map(lib => Q.ninvoke(this._client, 'updateLibrary', lib[0], lib[1]));
 
         return Q.all(promises);
     };
 
-    return MainViewPanel;
+    return SidebarPanel;
 });

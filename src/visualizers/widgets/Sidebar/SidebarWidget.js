@@ -1,24 +1,20 @@
-/*globals $, WebGMEGlobal,define */
+/*globals $, define */
 /*jshint browser: true*/
 
 define([
     'panel/FloatingActionButton/styles/Materialize',
     'deepforge/globals',
     'text!./NavBar.html',
-    'text!./ListItem.ejs',
-    'underscore',
-    'css!./styles/MainViewWidget.css',
+    'css!./styles/SidebarWidget.css',
     'css!./lib/font/css/open-iconic-bootstrap.min.css'
 ], function (
     Materialize,
     DeepForge,
-    NavBarHTML,
-    ListItem,
-    _
+    NavBarHTML
 ) {
     'use strict';
 
-    var MainViewWidget,
+    var SidebarWidget,
         WIDGET_CLASS = 'main-view',
         CATEGORIES = [
             'pipelines',
@@ -27,17 +23,16 @@ define([
             'artifacts'
         ];
 
-    MainViewWidget = function (logger, container) {
+    SidebarWidget = function (logger, container) {
         this.logger = logger.fork('Widget');
         this.$el = container;
         this.$el.addClass(WIDGET_CLASS);
         this.initialize();
         this.logger.debug('ctor finished');
-        this._closed = true;
         this._currentSelection = '$pipelinesIcon';
     };
 
-    MainViewWidget.prototype.initialize = function () {
+    SidebarWidget.prototype.initialize = function () {
         // Create the nav bar
         this.$nav = $(NavBarHTML);
         this.$el.append(this.$nav);
@@ -61,7 +56,7 @@ define([
         setTimeout(() => this.checkLibraries(), 1000);
     };
 
-    MainViewWidget.prototype.checkLibraries = function () {
+    SidebarWidget.prototype.checkLibraries = function () {
 
         if (!this.getProjectName()) {
             return;
@@ -108,44 +103,21 @@ define([
             .fail(err => Materialize.toast(`Library update check failed: ${err}`, 2000));
     };
 
-    MainViewWidget.prototype.width = function () {
+    SidebarWidget.prototype.width = function () {
         return this._closedWidth;
     };
 
-    MainViewWidget.prototype.onChanged = function () {
-        if (!this._closed) {  // add the text back
-            this.$nav.removeClass('hide-list');
-        } else {
-            this._closedWidth = this.$nav.width();
-        }
-    };
-
-    MainViewWidget.prototype.onWidgetContainerResize = function () {
-        var FOOTER_HEIGHT = 27;
-        var rect = this.$el[0].getBoundingClientRect();
-
-        //debugger;
-        //// position myself below the north panel and above the south panel
-        //this.$nav.css({
-            //height: height + 'px'
-        //});
-
-        //if (this._closed) {
-            //this._closedWidth = this.$nav.width();
-        //}
-    };
-
     /* * * * * * * * Visualizer life cycle callbacks * * * * * * * */
-    MainViewWidget.prototype.destroy = function () {
+    SidebarWidget.prototype.destroy = function () {
     };
 
-    MainViewWidget.prototype.onActivate = function () {
-        this.logger.debug('MainViewWidget has been activated');
+    SidebarWidget.prototype.onActivate = function () {
+        this.logger.debug('SidebarWidget has been activated');
     };
 
-    MainViewWidget.prototype.onDeactivate = function () {
-        this.logger.debug('MainViewWidget has been deactivated');
+    SidebarWidget.prototype.onDeactivate = function () {
+        this.logger.debug('SidebarWidget has been deactivated');
     };
 
-    return MainViewWidget;
+    return SidebarWidget;
 });

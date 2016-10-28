@@ -55,8 +55,8 @@
       }
     },
     "layouts": {
-      "SideBarLayout": {
-        "src": "src/layouts/SideBarLayout",
+      "SidebarLayout": {
+        "src": "src/layouts/SidebarLayout",
         "enabled": true
       }
     },
@@ -194,12 +194,12 @@
         "secondary": false,
         "widget": "src/visualizers/widgets/PipelineIndex"
       },
-      "MainView": {
-        "src": "panels/MainView/MainViewPanel",
-        "title": "MainView",
-        "panel": "src/visualizers/panels/MainView",
+      "Sidebar": {
+        "src": "panels/Sidebar/SidebarPanel",
+        "title": "Sidebar",
+        "panel": "src/visualizers/panels/Sidebar",
         "secondary": false,
-        "widget": "src/visualizers/widgets/MainView"
+        "widget": "src/visualizers/widgets/Sidebar"
       },
       "JobEditor": {
         "src": "panels/JobEditor/JobEditorPanel",
@@ -256,6 +256,13 @@
         "panel": "src/visualizers/panels/ArchIndex",
         "secondary": false,
         "widget": "src/visualizers/widgets/ArchIndex"
+      },
+      "ForwardViz": {
+        "src": "panels/ForwardViz/ForwardVizPanel",
+        "title": "ForwardViz",
+        "panel": "src/visualizers/panels/ForwardViz",
+        "secondary": false,
+        "widget": "src/visualizers/widgets/ForwardViz"
       }
     },
     "addons": {},
