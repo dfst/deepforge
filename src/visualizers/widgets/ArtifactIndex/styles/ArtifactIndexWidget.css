@@ -2,3 +2,7 @@
   background-color: #eee !important;
   outline: none;
 }
+
+.artifact-index .data-download {
+    color: inherit;
+}

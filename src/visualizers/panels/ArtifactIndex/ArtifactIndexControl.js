@@ -2,8 +2,10 @@
 /*jshint browser: true*/
 
 define([
+    'blob/BlobClient',
     'js/Constants'
 ], function (
+    BlobClient,
     CONSTANTS
 ) {
 
@@ -14,6 +16,9 @@ define([
     ArtifactIndexControl = function (options) {
 
         this._logger = options.logger.fork('Control');
+        this.blobClient = new BlobClient({
+            logger: this._logger.fork('BlobClient')
+        });
 
         this._client = options.client;
 
@@ -74,20 +79,45 @@ define([
     ArtifactIndexControl.prototype._getObjectDescriptor = function (nodeId) {
         var node = this._client.getNode(nodeId),
             base,
+            hash,
             objDescriptor;
 
         if (node) {
             base = this._client.getNode(node.getBaseId());
+            hash = node.getAttribute('data');
             objDescriptor = {
                 id: node.getId(),
                 type: base ? base.getAttribute('name') : 'n/a',
                 name: node.getAttribute('name'),
-                data: node.getAttribute('data'),
+                dataURL: this.blobClient.getDownloadURL(hash),
                 parentId: node.getParentId()
             };
         }
 
-        return objDescriptor;
+        return this.blobClient.getMetadata(hash)
+            .then(metadata => {
+                objDescriptor.size = this._humanFileSize(metadata.size);
+                return objDescriptor;
+            });
+    };
+
+    ArtifactIndexControl.prototype._humanFileSize = function (bytes, si) {
+        var thresh = si ? 1000 : 1024,
+            units = si ?
+                ['kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'] :
+                ['KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB'],
+            u = -1;
+
+        if (bytes < thresh) {
+            return bytes + ' B';
+        }
+
+        do {
+            bytes = bytes / thresh;
+            u += 1;
+        } while (bytes >= thresh);
+
+        return bytes.toFixed(1) + ' ' + units[u];
     };
 
     /* * * * * * * * Node Event Handling * * * * * * * */
@@ -119,13 +149,11 @@ define([
     };
 
     ArtifactIndexControl.prototype._onLoad = function (gmeId) {
-        var description = this._getObjectDescriptor(gmeId);
-        this._widget.addNode(description);
+        this._getObjectDescriptor(gmeId).then(desc => this._widget.addNode(desc));
     };
 
     ArtifactIndexControl.prototype._onUpdate = function (gmeId) {
-        var description = this._getObjectDescriptor(gmeId);
-        this._widget.updateNode(description);
+        this._getObjectDescriptor(gmeId).then(desc => this._widget.updateNode(desc));
     };
 
     ArtifactIndexControl.prototype._onUnload = function (gmeId) {

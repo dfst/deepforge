@@ -28,8 +28,8 @@ define([
         this.$type.text(node.type || 'unknown');
 
         // TODO: Get the size from the metadata...
-        this.$size.text(node.data || 'unknown');
-        this.$download.text(node.status);
+        this.$size.text(node.size || 'unknown');
+        this.$download.attr('href', node.dataURL);
     };
 
     ModelItem.prototype.remove = function() {

@@ -48,6 +48,7 @@ define([
                 event.stopPropagation();
                 event.preventDefault();
             });
+            node.$download.on('click', event => event.stopPropagation());
             node.$el.on('click', event => {
                 this.onNodeClick(desc.id);
                 event.stopPropagation();
