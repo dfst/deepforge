@@ -5,7 +5,7 @@ define([
     'js/PanelBase/PanelBaseWithHeader',
     'js/PanelManager/IActivePanel',
     'widgets/ArchIndex/ArchIndexWidget',
-    'panels/PipelineIndex/PipelineIndexControl'  // FIXME: make this generic
+    'panels/PipelineIndex/PipelineIndexControl'
 ], function (
     PanelBaseWithHeader,
     IActivePanel,
@@ -26,6 +26,7 @@ define([
         PanelBaseWithHeader.apply(this, [options, layoutManager]);
 
         this._client = params.client;
+        this._embedded = params.embedded;
 
         //initialize UI
         this._initialize();
@@ -53,6 +54,7 @@ define([
         this.control = new ArchIndexControl({
             logger: this.logger,
             client: this._client,
+            embedded: this._embedded,
             widget: this.widget
         });
 
