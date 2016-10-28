@@ -1,19 +1,17 @@
-/*globals define, $, _, WebGMEGlobal*/
+/*globals define, $, WebGMEGlobal*/
 /*jshint browser: true*/
 
 // The main panel shows the PipelineIndex w/ a bar on the left for viewing architectures
 // and pipelines
 define([
-    'js/PanelBase/PanelBaseWithHeader',
-    'js/PanelManager/IActivePanel',
+    'js/PanelBase/PanelBase',
     'panels/AutoViz/AutoVizPanel',
     'widgets/MainView/MainViewWidget',
     'deepforge/globals',
     'q',
     'text!/api/visualizers'
 ], function (
-    PanelBaseWithHeader,
-    IActivePanel,
+    PanelBase,
     AutoVizPanel,
     MainViewWidget,
     DeepForge,
@@ -40,39 +38,26 @@ define([
         VisualizerPathFor = {};
 
     JSON.parse(VisualizersText).forEach(viz => VisualizerPathFor[viz.id] = viz.panel);
-    MainViewPanel = function (layoutManager, params) {
-        var options = {};
-        //set properties from options
-        options[PanelBaseWithHeader.OPTIONS.LOGGER_INSTANCE_NAME] = 'MainViewPanel';
-        options[PanelBaseWithHeader.OPTIONS.FLOATING_TITLE] = true;
 
-        //call parent's constructor
-        PanelBaseWithHeader.apply(this, [options, layoutManager]);
+    MainViewPanel = function (layoutManager, params) {
+        var opts = {};
+        opts[PanelBase.OPTIONS.LOGGER_INSTANCE_NAME] = 'SidebarPanel';
+        PanelBase.call(this, opts);
 
         this._client = params.client;
         this._embedded = params.embedded;
 
-        //initialize UI
-        this.$nav = $('<div>', {id: 'nav-container'});
-        this.$el.css({padding: 0});
-
         this._lm = layoutManager;
         this._params = params;
-        this.$el.append(this.$nav);
         this._panels = {};
         this._initialize();
 
         this.logger.debug('ctor finished');
     };
 
-    _.extend(
-        MainViewPanel.prototype,
-        PanelBaseWithHeader.prototype,
-        IActivePanel.prototype
-    );
-
+    MainViewPanel.prototype = Object.create(PanelBase.prototype);
     MainViewPanel.prototype._initialize = function () {
-        this.widget = new MainViewWidget(this.logger, this.$nav);
+        this.widget = new MainViewWidget(this.logger, this.$el);
         this.widget.getProjectName = this.getProjectName.bind(this);
         this.widget.updateLibraries = this.updateLibraries.bind(this);
         this.widget.checkLibUpdates = this.checkLibUpdates.bind(this);
@@ -108,37 +93,32 @@ define([
 
         DeepForge.places[placeName]()
             .then(_nodeId => {
+                // TODO: Change this to simply change the activeNode
                 nodeId = _nodeId;
+                console.log('setting nodeId to', nodeId);
                 return this.getPanel(category, nodeId);
-            })
-            .then(Panel => {
-
-                if (this.embeddedPanel) {  // Remove current
-                    this.embeddedPanel.destroy();
-                    this.$embedded.remove();
-                }
-
-                this.embeddedPanel = new Panel(this._lm, this._params);
-                this.$embedded = this.embeddedPanel.$el;
-                this.$embedded.addClass('main-view-embedded');
-                this.$el.append(this.$embedded);
-
-                // Call on Resize and selectedObjectChanged
-                this.onResize(this.width, this.height);
-                if (!silent) {
-                    this.embeddedPanel.control.selectedObjectChanged(nodeId);
-                }
             });
+            //.then(Panel => {
+
+                //if (this.embeddedPanel) {  // Remove current
+                    //this.embeddedPanel.destroy();
+                    //this.$embedded.remove();
+                //}
+
+                //this.embeddedPanel = new Panel(this._lm, this._params);
+                //this.$embedded = this.embeddedPanel.$el;
+                //this.$embedded.addClass('main-view-embedded');
+                //this.$el.append(this.$embedded);
+
+                //// Call on Resize and selectedObjectChanged
+                //this.onResize(this.width, this.height);
+                //if (!silent) {
+                    //this.embeddedPanel.control.selectedObjectChanged(nodeId);
+                //}
+            //});
     };
 
     /* OVERRIDE FROM WIDGET-WITH-HEADER */
-    /* METHOD CALLED WHEN THE WIDGET'S READ-ONLY PROPERTY CHANGES */
-    MainViewPanel.prototype.onReadOnlyChanged = function (isReadOnly) {
-        //apply parent's onReadOnlyChanged
-        PanelBaseWithHeader.prototype.onReadOnlyChanged.call(this, isReadOnly);
-
-    };
-
     MainViewPanel.prototype.onResize = function (width, height) {
         var navWidth,
             embeddedWidth;
@@ -163,8 +143,7 @@ define([
     /* * * * * * * * Visualizer life cycle callbacks * * * * * * * */
     MainViewPanel.prototype.destroy = function () {
         this.widget.destroy();
-
-        PanelBaseWithHeader.prototype.destroy.call(this);
+        this.$el.remove();
         WebGMEGlobal.KeyboardManager.setListener(undefined);
         WebGMEGlobal.Toolbar.refresh();
     };
@@ -184,7 +163,8 @@ define([
     /* * * * * * * * Library Updates * * * * * * * */
 
     MainViewPanel.prototype.getProjectName = function () {
-        return this._client.getActiveProjectId().split('+')[1];
+        var projectId = this._client.getActiveProjectId();
+        return projectId && projectId.split('+')[1];
     };
 
     MainViewPanel.prototype.checkLibUpdates = function () {

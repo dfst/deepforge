@@ -57,10 +57,15 @@ define([
 
         this.htmlFor = {};
 
-        setTimeout(() => this.checkLibraries(), 100);
+        // TODO: Change this to check when a project is opened
+        setTimeout(() => this.checkLibraries(), 1000);
     };
 
     MainViewWidget.prototype.checkLibraries = function () {
+
+        if (!this.getProjectName()) {
+            return;
+        }
 
         this.checkLibUpdates()
             .then(updates => {
@@ -116,16 +121,18 @@ define([
     };
 
     MainViewWidget.prototype.onWidgetContainerResize = function () {
-        var rect = this.$el[0].getBoundingClientRect(),
-            top = rect.top;
+        var FOOTER_HEIGHT = 27;
+        var rect = this.$el[0].getBoundingClientRect();
 
-        this.$nav.css({
-            top: top + 'px'
-        });
+        //debugger;
+        //// position myself below the north panel and above the south panel
+        //this.$nav.css({
+            //height: height + 'px'
+        //});
 
-        if (this._closed) {
-            this._closedWidth = this.$nav.width();
-        }
+        //if (this._closed) {
+            //this._closedWidth = this.$nav.width();
+        //}
     };
 
     /* * * * * * * * Visualizer life cycle callbacks * * * * * * * */
