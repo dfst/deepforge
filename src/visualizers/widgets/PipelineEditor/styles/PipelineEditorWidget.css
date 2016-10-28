@@ -15,6 +15,7 @@
   position: absolute;
   min-width: 25em;
   margin-bottom: 0;
+  text-align: center;
 }
 
 .pipeline-editor .execution-header {
