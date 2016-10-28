@@ -161,7 +161,6 @@
   bottom: 27px; /* footer height */
   margin: 0;
   background-color: #fff;
-  z-index: 999;
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
   overflow-y: auto;
