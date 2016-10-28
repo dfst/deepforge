@@ -89,6 +89,7 @@ define([
                 id: node.getId(),
                 type: base ? base.getAttribute('name') : 'n/a',
                 name: node.getAttribute('name'),
+                createdAt: node.getAttribute('createdAt'),
                 dataURL: this.blobClient.getDownloadURL(hash),
                 parentId: node.getParentId()
             };

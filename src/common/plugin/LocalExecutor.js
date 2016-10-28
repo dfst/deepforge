@@ -148,11 +148,14 @@ define([
                 // get the input node
                 if (dataNodes.length !== 0) {
                     var newNodes = this.core.copyNodes(dataNodes, parentNode),
-                        newName = this.core.getOwnAttribute(node, 'saveName');
+                        newName = this.core.getOwnAttribute(node, 'saveName'),
+                        createdAt = Date.now();
+
                     if (newName) {
-                        newNodes.forEach(node =>
-                            this.setAttribute(node, 'name', newName)
-                        );
+                        newNodes.forEach(node => {
+                            this.setAttribute(node, 'name', newName);
+                            this.setAttribute(node, 'createdAt', createdAt);
+                        });
                     }
                     var hashes = dataNodes.map(n => this.getAttribute(n, 'data'));
                     this.logger.info(`saving hashes: ${hashes.map(h => `"${h}"`)}`);

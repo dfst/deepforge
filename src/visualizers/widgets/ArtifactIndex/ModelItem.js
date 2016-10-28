@@ -1,7 +1,9 @@
 /*globals define, $*/
 define([
+    'deepforge/viz/Utils',
     'text!./ModelRow.html'
 ], function(
+    Utils,
     ROW_HTML
 ) {
     'use strict';
@@ -18,18 +20,19 @@ define([
         this.$name = this.$el.find('.name');
         this.$type = this.$el.find('.type');
         this.$size = this.$el.find('.size');
+        this.$createdAt = this.$el.find('.createdAt');
         this.$download = this.$el.find('.data-download');
         this.$delete = this.$el.find('.data-remove');
     };
 
     ModelItem.prototype.update = function(node) {
-        // Set the row fields and stuff
+        var date = node.createdAt ? Utils.getDisplayTime(node.createdAt) : 'unknown';
+
         this.$name.text(node.name);
         this.$type.text(node.type || 'unknown');
-
-        // TODO: Get the size from the metadata...
         this.$size.text(node.size || 'unknown');
         this.$download.attr('href', node.dataURL);
+        this.$createdAt.text(date);
     };
 
     ModelItem.prototype.remove = function() {
