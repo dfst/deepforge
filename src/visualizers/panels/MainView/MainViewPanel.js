@@ -1,4 +1,4 @@
-/*globals define, $, WebGMEGlobal*/
+/*globals define, WebGMEGlobal*/
 /*jshint browser: true*/
 
 // The main panel shows the PipelineIndex w/ a bar on the left for viewing architectures
@@ -8,36 +8,23 @@ define([
     'panels/AutoViz/AutoVizPanel',
     'widgets/MainView/MainViewWidget',
     'deepforge/globals',
-    'q',
-    'text!/api/visualizers'
+    'q'
 ], function (
     PanelBase,
     AutoVizPanel,
     MainViewWidget,
     DeepForge,
-    Q,
-    VisualizersText
+    Q
 ) {
     'use strict';
 
     var MainViewPanel,
         CATEGORY_TO_PLACE = {
             pipelines: 'MyPipelines',
-            executions: 'MyPipelines',
+            executions: 'MyExecutions',
             architectures: 'MyArchitectures',
             artifacts: 'MyArtifacts'
-        },
-        CATEGORY_TO_VIZ = {
-            pipelines: 'PipelineIndex',
-            executions: 'ExecutionIndex',
-            //architectures: 'ArchitectureIndex',
-            architectures: 'PipelineIndex',
-            //artifacts: 'ArtifactIndex'
-            artifacts: 'ArtifactIndex'
-        },
-        VisualizerPathFor = {};
-
-    JSON.parse(VisualizersText).forEach(viz => VisualizerPathFor[viz.id] = viz.panel);
+        };
 
     MainViewPanel = function (layoutManager, params) {
         var opts = {};
@@ -67,55 +54,11 @@ define([
         this.onActivate();
     };
 
-    MainViewPanel.prototype.getPanelPath = function (category) {
-        return VisualizerPathFor[CATEGORY_TO_VIZ[category]];
-    };
+    MainViewPanel.prototype.setEmbeddedPanel = function (category) {
+        var placeName = CATEGORY_TO_PLACE[category];
 
-    MainViewPanel.prototype.getPanel = function (category, nodeId) {
-        var deferred = Q.defer(),
-            panelPath = this.getPanelPath(category, nodeId);
-
-        if (this._panels[panelPath]) {
-            deferred.resolve(this._panels[panelPath]);
-        } else {
-            require([panelPath], Panel => {
-                this._panels[panelPath] = Panel;
-                deferred.resolve(Panel);
-            });
-        }
-
-        return deferred.promise;
-    };
-
-    MainViewPanel.prototype.setEmbeddedPanel = function (category, silent) {
-        var placeName = CATEGORY_TO_PLACE[category],
-            nodeId;
-
-        DeepForge.places[placeName]()
-            .then(_nodeId => {
-                // TODO: Change this to simply change the activeNode
-                nodeId = _nodeId;
-                console.log('setting nodeId to', nodeId);
-                return this.getPanel(category, nodeId);
-            });
-            //.then(Panel => {
-
-                //if (this.embeddedPanel) {  // Remove current
-                    //this.embeddedPanel.destroy();
-                    //this.$embedded.remove();
-                //}
-
-                //this.embeddedPanel = new Panel(this._lm, this._params);
-                //this.$embedded = this.embeddedPanel.$el;
-                //this.$embedded.addClass('main-view-embedded');
-                //this.$el.append(this.$embedded);
-
-                //// Call on Resize and selectedObjectChanged
-                //this.onResize(this.width, this.height);
-                //if (!silent) {
-                    //this.embeddedPanel.control.selectedObjectChanged(nodeId);
-                //}
-            //});
+        return DeepForge.places[placeName]()
+            .then(nodeId => WebGMEGlobal.State.registerActiveObject(nodeId));
     };
 
     /* OVERRIDE FROM WIDGET-WITH-HEADER */
