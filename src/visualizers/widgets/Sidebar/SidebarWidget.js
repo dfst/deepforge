@@ -48,9 +48,6 @@ define([
         });
 
         this.htmlFor = {};
-
-        // TODO: Change this to check when a project is opened
-        setTimeout(() => this.checkLibraries(), 1000);
     };
 
     SidebarWidget.prototype.highlight = function (category) {

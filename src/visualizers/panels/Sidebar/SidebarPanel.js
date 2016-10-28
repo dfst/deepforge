@@ -51,7 +51,14 @@ define([
         this.widget.setEmbeddedPanel = this.setEmbeddedPanel.bind(this);
 
         this.setEmbeddedPanel('pipelines');
+
         this.onActivate();
+    };
+
+    SidebarPanel.prototype._stateActiveBranchChanged = function (model, branchId) {
+        if (branchId) {
+            this.widget.checkLibraries();
+        }
     };
 
     SidebarPanel.prototype.setEmbeddedPanel = function (category) {
@@ -118,14 +125,20 @@ define([
     };
 
     SidebarPanel.prototype.onActivate = function () {
-        WebGMEGlobal.State.on('change:' + CONSTANTS.STATE_ACTIVE_OBJECT, this._stateActiveObjectChanged, this);
+        WebGMEGlobal.State.on('change:' + CONSTANTS.STATE_ACTIVE_OBJECT,
+            this._stateActiveObjectChanged, this);
+        WebGMEGlobal.State.on('change:' + CONSTANTS.STATE_ACTIVE_BRANCH_NAME,
+            this._stateActiveBranchChanged, this);
         this.widget.onActivate();
         WebGMEGlobal.KeyboardManager.setListener(this.widget);
         WebGMEGlobal.Toolbar.refresh();
     };
 
     SidebarPanel.prototype.onDeactivate = function () {
-        WebGMEGlobal.State.off('change:' + CONSTANTS.STATE_ACTIVE_OBJECT, this._stateActiveObjectChanged);
+        WebGMEGlobal.State.off('change:' + CONSTANTS.STATE_ACTIVE_OBJECT,
+            this._stateActiveObjectChanged);
+        WebGMEGlobal.State.off('change:' + CONSTANTS.STATE_ACTIVE_BRANCH_NAME,
+            this._stateActiveBranchChanged, this);
         this.widget.onDeactivate();
         WebGMEGlobal.KeyboardManager.setListener(undefined);
         WebGMEGlobal.Toolbar.refresh();
