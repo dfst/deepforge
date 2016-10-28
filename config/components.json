@@ -2,10 +2,19 @@
     "AutoViz": {
         "preloadIds": [
             "ArchEditor",
+            "ArchIndex",
+            "PipelineIndex",
             "PipelineEditor",
             "OperationEditor",
             "ExecutionView"
-        ]
+        ],
+        "visualizerOverrides": {
+            "": "ForwardViz",
+            "MyArtifacts": "ArtifactIndex",
+            "MyArchitectures": "ArchIndex",
+            "MyExecutions": "ExecutionIndex",
+            "MyPipelines": "PipelineIndex"
+        }
     },
     "ArchEditor": {
         "hotkeys": "none",
