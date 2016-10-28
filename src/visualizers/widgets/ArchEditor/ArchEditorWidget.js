@@ -23,7 +23,15 @@ define([
 
     var CREATE_ID = '__NEW_LAYER__',
         ArchEditorWidget,
-        WIDGET_CLASS = 'arch-editor';
+        WIDGET_CLASS = 'arch-editor',
+        LAYER_TAB_ORDER = [
+            'Simple',
+            'Transfer',
+            'Convolution',
+            'RNN',
+            'Containers',
+            'Misc'
+        ];
 
     ArchEditorWidget = function (logger, container) {
         ThumbnailWidget.call(this, logger, container);
@@ -49,6 +57,30 @@ define([
             .then(selected => this.onAddItemSelected(item, selected, reverse));
     };
 
+    ArchEditorWidget.prototype.getLayerCategoryTabs = function(types) {
+        var tabs = [],
+            allTabs = {},
+            tab,
+            i;
+
+        Object.keys(types).forEach(type => allTabs[type] = true);
+        delete allTabs.Criterion;
+
+        // Add the ordered tabs
+        for (i = LAYER_TAB_ORDER.length; i--;) {
+            tab = LAYER_TAB_ORDER[i];
+            if (allTabs[tab]) {
+                tabs.unshift(tab);
+                delete allTabs[tab];
+            }
+        }
+
+        // Add any remaining categories
+        Object.keys(allTabs).forEach(tab => tabs.unshift(tab));
+
+        return tabs;
+    };
+
     ArchEditorWidget.prototype.promptLayer = function(nodes) {
         var deferred = Q.defer(),
             types = {},
@@ -65,7 +97,7 @@ define([
         nodes = nodes.concat(createNews);
 
         // Sort by layer type
-        opts.tabs = Object.keys(types);
+        opts.tabs = this.getLayerCategoryTabs(types);
         opts.tabFilter = (tab, pair) => {
             return pair.node.layerType === tab;
         };
