@@ -29,6 +29,7 @@ define([
     SideBarLayout.prototype.init = function() {
         CHFLayout.prototype.init.apply(this, arguments);
         this._sidebarPanel = this._body.find('div.ui-layout-sidebar');
+        this._centerPanel = this._body.find('div.layout-center');
     };
 
     /**
