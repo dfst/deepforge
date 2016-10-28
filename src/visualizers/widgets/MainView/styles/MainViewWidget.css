@@ -158,6 +158,7 @@
 .main-view .side-nav {
   left: 0;
   top: 64px;
+  bottom: 27px; /* footer height */
   margin: 0;
   background-color: #fff;
   z-index: 999;
