@@ -40,9 +40,6 @@ Finally, start deepforge with `deepforge start`and navigate to [http://localhost
 
 Also, be sure to check out the other available features of the `deepforge` cli; it can be used to update, manage your torch installation, uninstall deepforge and run individual components!
 
-## Screenshot(s)
-
-
 ## Interested in contributing?
 Contributions are welcome! Either fork the project and submit some PR's or shoot me an email about getting more involved!
 
