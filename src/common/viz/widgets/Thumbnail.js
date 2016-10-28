@@ -1,4 +1,4 @@
-/* globals define */
+/* globals define, $, _ */
 define([
     'widgets/EasyDAG/EasyDAGWidget'
 ], function(

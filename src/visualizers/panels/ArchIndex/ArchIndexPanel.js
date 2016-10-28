@@ -46,7 +46,6 @@ define([
 
         this.widget = new ArchIndexWidget(this.logger, this.$el);
 
-        // TODO: Change the widget
         this.widget.setTitle = function (title) {
             self.setTitle(title);
         };
