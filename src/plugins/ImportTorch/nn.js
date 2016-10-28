@@ -41,6 +41,20 @@ define([
             return '{' + strings.join(', ') + '}';
         };
 
+        var getAttributeString = function(value, layerType) {
+            if (value instanceof lua.types.LuaTable) {
+                if (value.get('_node')) {
+                    throw Error(`Detected unsupported varargs (composed of layers) for ${layerType}`);
+                }
+                return stringify(value);
+            } else if ((typeof value) === 'object') {
+                // special lua.js object
+                value = value.valueOf();
+            }
+
+            return value;
+        };
+
         var allConnectedTo = function(current) {
             var connectedIds = {},
                 node,
@@ -104,7 +118,8 @@ define([
                 cntr,
                 layer,
                 cntrName,
-                value;
+                value,
+                i;
 
             if (this._cachedNode) {
                 // only generate a single node for each layer
@@ -117,7 +132,17 @@ define([
                 parent: parent
             });
 
-            for (var i = this._attrs.length; i--;) {
+            // merge all the last arguments into a single one (ie, assume the last
+            // attribute is varargs
+            if (this._attrs.length < this._values.length) {
+                i = this._attrs.length;
+                value = this._values.splice(i-1)
+                    .map(val => getAttributeString(val, this._base)).join(', ');
+                this._values.push(value);
+            }
+
+            // Add the attributes to the layer
+            for (i = this._attrs.length; i--;) {
                 name = this._attrs[i].name;
                 value = this._values[i];
 
