@@ -6,3 +6,7 @@
 .artifact-index .data-download {
     color: inherit;
 }
+
+.artifact-index .type {
+    font-style: italic;
+}
