@@ -249,6 +249,13 @@
         "panel": "src/visualizers/panels/ArtifactIndex",
         "secondary": false,
         "widget": "src/visualizers/widgets/ArtifactIndex"
+      },
+      "ArchIndex": {
+        "src": "panels/ArchIndex/ArchIndexPanel",
+        "title": "ArchIndex",
+        "panel": "src/visualizers/panels/ArchIndex",
+        "secondary": false,
+        "widget": "src/visualizers/widgets/ArchIndex"
       }
     },
     "addons": {},

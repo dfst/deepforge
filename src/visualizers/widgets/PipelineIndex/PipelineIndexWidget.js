@@ -62,6 +62,10 @@ define([
         });
     };
 
+    PipelineIndexWidget.prototype.getEmptyMsg = function() {
+        return EMPTY_MSG;
+    };
+
     PipelineIndexWidget.prototype.updateBackgroundText = function() {
         if (this.$backgroundText) {
             this.$backgroundText.remove();
@@ -70,7 +74,7 @@ define([
         // Add background text if empty
         if (Object.keys(this.cards).length === 0) {
             this.$backgroundText = $('<div>', {class: 'background-text'});
-            this.$backgroundText.text(EMPTY_MSG);
+            this.$backgroundText.text(this.getEmptyMsg());
             this.$el.append(this.$backgroundText);
         }
     };

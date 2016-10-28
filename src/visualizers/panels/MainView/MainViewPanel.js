@@ -1,8 +1,6 @@
 /*globals define, WebGMEGlobal*/
 /*jshint browser: true*/
 
-// The main panel shows the PipelineIndex w/ a bar on the left for viewing architectures
-// and pipelines
 define([
     'js/PanelBase/PanelBase',
     'panels/AutoViz/AutoVizPanel',
