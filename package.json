@@ -24,7 +24,7 @@
     "nodemon": "^1.9.2",
     "q": "1.4.1",
     "rimraf": "^2.4.0",
-    "webgme": "^2.0.0",
+    "webgme": "^2.6.0",
     "webgme-autoviz": "^2.2.0",
     "webgme-breadcrumbheader": "^2.1.1",
     "webgme-chflayout": "^2.0.0",
