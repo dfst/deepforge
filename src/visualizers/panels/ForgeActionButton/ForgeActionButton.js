@@ -178,7 +178,7 @@ define([
 
     ForgeActionButton.prototype.createNamedNode = function(baseId, isMeta) {
         var parentId = this._currentNodeId,
-            newId = this.client.createChild({parentId, baseId}),
+            newId = this.client.createNode({parentId, baseId}),
             basename = 'New' + this.client.getNode(baseId).getAttribute('name'),
             newName = this.getUniqueName(parentId, basename);
 

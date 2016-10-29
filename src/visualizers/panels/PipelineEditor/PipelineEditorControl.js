@@ -351,7 +351,7 @@ define([
 
         this._client.startTransaction(msg);
 
-        connId = this._client.createChild({
+        connId = this._client.createNode({
             parentId: this._currentNodeId,
             baseId: this.getConnectionId()
         });

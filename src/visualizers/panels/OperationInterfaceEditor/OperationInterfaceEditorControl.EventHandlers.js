@@ -204,7 +204,7 @@ define([
 
         msg = `Adding ${isInput ? 'input' : 'output'} "${dataName}" to ${name} interface`;
         this._client.startTransaction(msg);
-        var id = this._client.createChild({
+        var id = this._client.createNode({
             parentId: cntrId,
             baseId: typeId
         });
