@@ -32,18 +32,6 @@ define([
         this.$ports = this.$el.append('g')
             .attr('id', 'ports');
         this.$portTooltips = {};
-
-        // hovering
-        this.hovered = {
-            name: false,
-            port: false
-        };
-        this.$name.on('mouseenter', () => {
-            this.hovered.name = true;
-        });
-        this.$name.on('mouseout', () => {
-            this.hovered.name = false;
-        });
     };
 
     _.extend(OperationDecorator.prototype, DecoratorBase.prototype);
@@ -52,10 +40,6 @@ define([
     OperationDecorator.prototype.PORT_COLOR = {
         OPEN: '#90caf9',
         OCCUPIED: '#e57373'
-    };
-
-    OperationDecorator.prototype.isHovered = function() {
-        return this.hovered.name || this.hovered.port;
     };
 
     OperationDecorator.prototype.condense = function() {
@@ -87,16 +71,6 @@ define([
         this.onResize();
     };
 
-    // on hover, the decorator should show it's ports. It should
-    // TODO
-    OperationDecorator.prototype.onHover = function() {
-        this.hovered = true;
-    };
-
-    OperationDecorator.prototype.onUnhover = function() {
-        this.hovered = false;
-    };
-
     OperationDecorator.prototype.showPorts = function(ids, areInputs) {
         var allPorts = areInputs ? this._node.inputs : this._node.outputs,
             x = -this.width/2,
@@ -114,7 +88,6 @@ define([
     OperationDecorator.prototype.renderPort = function(port, x, y, isInput) {
         var color = this.PORT_COLOR.OPEN,
             portIcon = this.$ports.append('g'),
-            text,
             tooltip;
 
         // If the port is incoming and occupied, render it differently
@@ -128,7 +101,7 @@ define([
             .attr('r', 10)
             .attr('fill', color);
             
-        text = portIcon.append('text')
+        portIcon.append('text')
                 .attr('x', x)
                 .attr('y', y)
                 .attr('text-anchor', 'middle')
@@ -144,15 +117,8 @@ define([
         }
         tooltip = new Opentip(portIcon[0][0], PORT_TOOLTIP_OPTS);
         tooltip.setContent(port.name);
-        portIcon.on('mouseenter', () => {
-            this.hovered.port = true;
-            tooltip.show();
-        });
-        portIcon.on('mouseout', () => {
-            this.hovered.port = false;
-            tooltip.hide();
-        });
-        text.on('mouseenter', () => this.hovered.port = true);
+        portIcon.on('mouseenter', () => tooltip.show());
+        portIcon.on('mouseleave', () => tooltip.hide());
         this.$portTooltips[port.id] = tooltip;
     };
 

@@ -14,48 +14,12 @@ define([
         this.outputs = desc.outputs;
         this._visiblePorts = null;
 
-        this._lastMouseOver = -Infinity;
-        this._mouseExitDelay = 250;
         this._hovering = false;
-        this._hoverCheckId = null;
-        this.$el.on('mouseover', () => {
-            this._lastMouseOver = Date.now();
-            if (!this._hovering) {
-                this.onHover();
-            }
-            this._hovering = true;
-            if (this._hoverCheckId) {
-                clearTimeout(this._hoverCheckId);
-                this._hoverCheckId = null;
-            }
-        });
-        this.$el.on('mouseout', () => {
-            this._hoverCheckId = setTimeout(this.tryToUnhover.bind(this), this._mouseExitDelay);
-        });
+        this.$el.on('mouseenter', () => this.onHover());
+        this.$el.on('mouseleave', () => this._hovering && this.onUnhover());
     };
 
     _.extend(OperationNode.prototype, DAGItem.prototype);
-
-    OperationNode.prototype.tryToUnhover = function() {
-        var delay = Date.now() - this._lastMouseOver,
-            recheckTime;
-
-        if (this._hovering === false) {
-            return;
-        }
-
-        if (delay >= this._mouseExitDelay) {
-            // Check if the decorator is hovered
-            if (!this.decorator.isHovered()) {
-                return this.onUnhover();
-            } else {
-                recheckTime = this._mouseExitDelay;
-            }
-        } else {
-            recheckTime = this._mouseExitDelay - delay;
-        }
-        setTimeout(this.tryToUnhover.bind(this), recheckTime);
-    };
 
     OperationNode.prototype.setupDecoratorCallbacks = function() {
         DAGItem.prototype.setupDecoratorCallbacks.call(this);
@@ -125,6 +89,7 @@ define([
     OperationNode.prototype.onHover = function() {
         if (!this.isSelected() && this.canShowPorts()) {
             this.showPorts();
+            this._hovering = true;
         }
     };
 
