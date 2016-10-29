@@ -355,7 +355,7 @@ define([
         var nodeId = this._currentNodeId;
         if (nodeId) {
             this.client.startTransaction(msg);
-            this.client.delMoreNodes([nodeId]);
+            this.client.deleteNode(nodeId);
             this.client.completeTransaction();
         }
     };

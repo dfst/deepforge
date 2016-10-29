@@ -54,7 +54,7 @@ define([
                 }
 
                 this._client.startTransaction(msg);
-                this._client.delMoreNodes(ids);
+                this._client.deleteNodes(ids);
                 this._client.completeTransaction();
 
                 this._client.removeUI(delUI);

@@ -178,7 +178,7 @@ define([
 
                 this.invalidated[desc.id] = true;
                 this._client.startTransaction(msg);
-                this._client.delMoreNodes([desc.id]);
+                this._client.deleteNode(desc.id);
                 this._client.completeTransaction();
                 return false;
             }
@@ -282,7 +282,7 @@ define([
         msg = `Disconnecting ${names[0]} of ${names[1]} from ${names[2]} of ${names[3]}`;
 
         this._client.startTransaction(msg);
-        this._client.delMoreNodes([id]);
+        this._client.deleteNode(id);
         this._client.completeTransaction();
     };
 
@@ -627,11 +627,11 @@ define([
         this._deleteTag(name);  // Remove execution tag
         if (this.isRunning(node)) {
             this.silentStopExecution(id, true).then(() => {
-                this._client.delMoreNodes([id]);
+                this._client.deleteNode(id);
                 this._client.completeTransaction();
             });
         } else {
-            this._client.delMoreNodes([id]);
+            this._client.deleteNode(id);
             this._client.completeTransaction();
         }
     };

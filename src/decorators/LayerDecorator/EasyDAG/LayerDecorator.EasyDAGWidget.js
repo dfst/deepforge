@@ -95,7 +95,7 @@ define([
             // If the target is contained in the current node, delete it!
             if (currentId.indexOf(this._node.id) === 0) {
                 this.client.startTransaction(`Removing layer for ${ptr} of ${name}`);
-                this.client.delMoreNodes([currentId]);
+                this.client.deleteNode(currentId);
                 this.client.completeTransaction();
                 this.logger.info(`Removed ${ptr} and deleted target (${currentId})`);
             } else {

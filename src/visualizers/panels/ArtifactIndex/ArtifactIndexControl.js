@@ -44,7 +44,7 @@ define([
                 msg = `Deleted "${name}" artifact (${id}) --`;
 
             this._client.startTransaction(msg);
-            this._client.delMoreNodes([id]);
+            this._client.deleteNode(id);
             this._client.completeTransaction();
         };
     };
