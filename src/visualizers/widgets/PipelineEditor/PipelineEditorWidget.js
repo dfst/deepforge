@@ -39,6 +39,7 @@ define([
 
     PipelineEditorWidget = function (logger, container, execCntr) {
         ThumbnailWidget.call(this, logger, container);
+        this._emptyMsg = 'Click to add an operation';
         this.$el.addClass(WIDGET_CLASS);
         this.portIdToNode = {};
         this.PORT_STATE = STATE.DEFAULT;
