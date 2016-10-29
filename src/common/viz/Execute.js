@@ -118,8 +118,8 @@ define([
             this.client.startTransaction(`Stopping "${name}" job`);
         }
 
-        this.client.delAttributes(jobId, 'jobId');
-        this.client.delAttributes(jobId, 'secret');
+        this.client.delAttribute(jobId, 'jobId');
+        this.client.delAttribute(jobId, 'secret');
         this.client.setAttribute(jobId, 'status', 'canceled');
 
         if (!silent) {
