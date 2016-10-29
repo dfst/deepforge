@@ -98,7 +98,7 @@ define([
         var msg = `Renaming pipeline "${from}" -> "${to}"`;
         if (from !== to && !/^\s*$/.test(to)) {
             this._client.startTransaction(msg);
-            this._client.setAttributes(this._currentNodeId, 'name', to);
+            this._client.setAttribute(this._currentNodeId, 'name', to);
             this._client.completeTransaction();
         }
     };
@@ -355,8 +355,8 @@ define([
             parentId: this._currentNodeId,
             baseId: this.getConnectionId()
         });
-        this._client.makePointer(connId, CONN.SRC, srcId);
-        this._client.makePointer(connId, CONN.DST, dstId);
+        this._client.setPointer(connId, CONN.SRC, srcId);
+        this._client.setPointer(connId, CONN.DST, dstId);
 
         this._client.completeTransaction();
     };

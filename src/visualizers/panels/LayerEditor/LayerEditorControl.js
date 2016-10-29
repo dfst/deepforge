@@ -94,10 +94,10 @@ define([
         this._client.startTransaction(msg);
 
         TextEditorControl.prototype.saveTextFor.call(this, id, text, true);
-        this._client.setAttributes(id, 'name', layerSchema.name);
+        this._client.setAttribute(id, 'name', layerSchema.name);
 
         this._logger.debug(`Setting ctor args to ${ctorAttrs.join(',')}`);
-        this._client.setAttributes(id, Constants.CTOR_ARGS_ATTR, ctorAttrs.join(','));
+        this._client.setAttribute(id, Constants.CTOR_ARGS_ATTR, ctorAttrs.join(','));
 
         types = layerSchema.types || {};
         schema = this.getPointerMeta();
@@ -126,7 +126,7 @@ define([
             schema = utils.getSetterSchema(setterNames[i], layerSchema.setters, layerSchema.defaults);
             // Get setter attr schema
             if (schema.hasOwnProperty('default')) {
-                this._client.setAttributes(id, setterNames[i], schema.default);
+                this._client.setAttribute(id, setterNames[i], schema.default);
                 delete schema.default;
             }
             if (types[setterNames[i]]) {

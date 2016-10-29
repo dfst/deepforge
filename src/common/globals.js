@@ -72,7 +72,7 @@ define([
             client.setRegistry(newId, 'isAbstract', false);
         }
 
-        client.setAttributes(newId, 'name', newName);
+        client.setAttribute(newId, 'name', newName);
         return newId;
     };
 

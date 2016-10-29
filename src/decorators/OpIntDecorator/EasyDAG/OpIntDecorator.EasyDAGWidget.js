@@ -136,7 +136,7 @@ define([
         }
 
         this.client.setAttributeSchema(this._node.id, name, schema);
-        this.client.setAttributes(this._node.id, name, desc.defaultValue);
+        this.client.setAttribute(this._node.id, name, desc.defaultValue);
         this.client.completeTransaction();
     };
 

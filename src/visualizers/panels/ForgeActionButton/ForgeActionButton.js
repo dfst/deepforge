@@ -186,7 +186,7 @@ define([
         if (!isMeta) {
             newName = newName.substring(0, 1).toLowerCase() + newName.substring(1);
         }
-        this.client.setAttributes(newId, 'name', newName);
+        this.client.setAttribute(newId, 'name', newName);
         return newId;
     };
 

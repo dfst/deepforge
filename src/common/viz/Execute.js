@@ -120,7 +120,7 @@ define([
 
         this.client.delAttributes(jobId, 'jobId');
         this.client.delAttributes(jobId, 'secret');
-        this.client.setAttributes(jobId, 'status', 'canceled');
+        this.client.setAttribute(jobId, 'status', 'canceled');
 
         if (!silent) {
             this.client.completeTransaction();
@@ -188,7 +188,7 @@ define([
 
         jobIds = this._silentStopExecution(execNode);
 
-        this.client.setAttributes(execNode.getId(), 'status', 'canceled');
+        this.client.setAttribute(execNode.getId(), 'status', 'canceled');
         jobIds.forEach(jobId => this._setJobStopped(jobId, true));
 
         if (!inTransaction) {

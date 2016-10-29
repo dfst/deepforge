@@ -81,7 +81,7 @@ define([
             parentId: this._node.id,
             baseId: baseId
         });
-        this.client.setAttributes(tgtId, 'name', `${ptr} (${this._node.name})`);
+        this.client.setAttribute(tgtId, 'name', `${ptr} (${this._node.name})`);
         this.savePointer(ptr, tgtId);
         this.client.completeTransaction();
         WebGMEGlobal.State.registerActiveObject(tgtId);

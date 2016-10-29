@@ -68,7 +68,7 @@ define([
 
             if (oldName !== name && !/^\s*$/.test(name)) {
                 this._client.startTransaction(msg);
-                this._client.setAttributes(id, 'name', name);
+                this._client.setAttribute(id, 'name', name);
                 this._client.completeTransaction();
             }
         };

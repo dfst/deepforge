@@ -31,7 +31,7 @@ define([
 
             if (attrs.indexOf(attrName) > -1 && currentThumbnail !== svg) {
                 this._client.startTransaction(msg);
-                this._client.setAttributes(this._currentNodeId, attrName, svg);
+                this._client.setAttribute(this._currentNodeId, attrName, svg);
                 this._client.completeTransaction();
             }
         }

@@ -55,7 +55,7 @@ define([
         if (!inTransaction) {
             this._client.startTransaction(msg);
         }
-        this._client.setAttributes(id, this.ATTRIBUTE_NAME, text);
+        this._client.setAttribute(id, this.ATTRIBUTE_NAME, text);
         if (!inTransaction) {
             this._client.completeTransaction();
         }
@@ -67,7 +67,7 @@ define([
             msg = `Renaming ${oldName} -> ${name}`;
 
         this._client.startTransaction(msg);
-        this._client.setAttributes(this._currentNodeId, 'name', name);
+        this._client.setAttribute(this._currentNodeId, 'name', name);
         this._client.completeTransaction();
     };
 
