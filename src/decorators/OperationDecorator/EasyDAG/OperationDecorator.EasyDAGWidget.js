@@ -73,14 +73,15 @@ define([
 
     OperationDecorator.prototype.showPorts = function(ids, areInputs) {
         var allPorts = areInputs ? this._node.inputs : this._node.outputs,
-            ports = ids ? allPorts.filter(port => ids.indexOf(port.id) > -1) : allPorts,
             x = -this.width/2,
-            dx = this.width/(ports.length+1),
+            dx = this.width/(allPorts.length+1),
             y = areInputs ? 0 : this.height;  // (this.height/2);
 
-        ports.forEach(port => {
+        allPorts.forEach(port => {
             x += dx;
-            this.renderPort(port, x, y, areInputs);
+            if (!ids || ids.indexOf(port.id) > -1) {
+                this.renderPort(port, x, y, areInputs);
+            }
         });
     };
 

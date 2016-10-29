@@ -51,6 +51,7 @@ define([
     };
 
     _.extend(PipelineEditorWidget.prototype, ThumbnailWidget.prototype);
+
     PipelineEditorWidget.prototype.ItemClass = OperationNode;
     PipelineEditorWidget.prototype.SelectionManager = SelectionManager;
     PipelineEditorWidget.prototype.Connection = Connection;
@@ -176,12 +177,12 @@ define([
         
         // Hide all ports except 'id' on 'nodeId'
         this._selectedPort = id;
-        item.showPorts(id, !isOutput);
 
         // Get all existing potential port destinations for the id
         existingMatches.forEach(match =>
             this.showPorts(match.nodeId, match.portIds, isOutput)
         );
+        item.showPorts(id, !isOutput);
 
         this.PORT_STATE = STATE.CONNECTING;
     };
