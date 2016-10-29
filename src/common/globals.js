@@ -265,7 +265,7 @@ define([
         }
 
         dataBaseId = dataBase.getId();
-        dataTypes = metanodes.filter(n => client.isTypeOf(n.getId(), dataBaseId))
+        dataTypes = metanodes.filter(n => n.isTypeOf(dataBaseId))
             .filter(n => !n.getRegistry('isAbstract'))
             .map(node => node.getAttribute('name'));
 
