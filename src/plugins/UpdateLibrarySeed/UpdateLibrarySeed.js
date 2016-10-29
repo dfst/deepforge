@@ -84,19 +84,27 @@ define([
             .fail(err => callback(err, this.result));
     };
 
+    UpdateLibrarySeed.prototype.bumpVersion = function (rawVersion, releaseType) {
+        var vnames = ['major', 'minor', 'patch'],
+            bumpIndex = vnames.indexOf(releaseType),
+            version = rawVersion.split('.').map(num => parseInt(num));
+
+        version[bumpIndex]++;
+        // zero out the smaller numbers
+        while (++bumpIndex < version.length) {
+            version[bumpIndex] = 0;
+        }
+        return version.join('.');
+    };
+
     UpdateLibrarySeed.prototype.getLibraryVersion = function () {
         var version,
             config = this.getCurrentConfig(),
-            vnames = ['major', 'minor', 'patch'],
-            bumpIndex,
             newVersion;
 
-        version = (this.core.getAttribute(this.rootNode, 'version') || '0.0.0')
-            .split('.').map(num => parseInt(num));
-        bumpIndex = vnames.indexOf(config.releaseType);
-        version[bumpIndex]++;
+        version = (this.core.getAttribute(this.rootNode, 'version') || '0.0.0');
+        newVersion = this.bumpVersion(version, config.releaseType);
 
-        newVersion = version.join('.');
         this.core.setAttribute(this.rootNode, 'version', newVersion);
         return this.save(`Bumped version to ${newVersion}`).then(() => newVersion);
     };

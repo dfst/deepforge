@@ -3,13 +3,14 @@
 'use strict';
 var testFixture = require('../../globals');
 
-describe.skip('UpdateLibrarySeed', function () {
+describe('UpdateLibrarySeed', function () {
     var gmeConfig = testFixture.getGmeConfig(),
         expect = testFixture.expect,
         logger = testFixture.logger.fork('UpdateLibrarySeed'),
         PluginCliManager = testFixture.WebGME.PluginCliManager,
         projectName = 'testProject',
         pluginName = 'UpdateLibrarySeed',
+        manager = new PluginCliManager(null, logger, gmeConfig),
         project,
         gmeAuth,
         storage,
@@ -51,8 +52,7 @@ describe.skip('UpdateLibrarySeed', function () {
     });
 
     it('should run plugin and update the branch', function (done) {
-        var manager = new PluginCliManager(null, logger, gmeConfig),
-            pluginConfig = {
+        var pluginConfig = {
             },
             context = {
                 project: project,
@@ -72,5 +72,45 @@ describe.skip('UpdateLibrarySeed', function () {
                 })
                 .nodeify(done);
         });
+    });
+
+    var plugin,
+        preparePlugin = function(done) {
+            var context = {
+                project: project,
+                commitHash: commitHash,
+                branchName: 'test',
+                activeNode: '/1'
+            };
+
+            return manager.initializePlugin(pluginName)
+                .then(plugin_ => {
+                    plugin = plugin_;
+                    return manager.configurePlugin(plugin, {}, context);
+                })
+                .nodeify(done);
+        };
+
+    describe('version bump', function() {
+        before(preparePlugin);
+
+        [
+            ['0.0.0', '0.0.1', 'patch'],
+            ['0.0.0', '0.1.0', 'minor'],
+            ['0.0.0', '1.0.0', 'major'],
+            ['0.0.4', '0.1.0', 'minor'],
+            ['0.3.5', '1.0.0', 'major'],
+            ['2.3.5', '3.0.0', 'major']
+        ].forEach(testcase => {
+            var start = testcase[0],
+                end = testcase[1],
+                release = testcase[2];
+
+            it(`should bump ${start} -> ${end} (${release})`, function () {
+                var newVersion = plugin.bumpVersion(start, release);
+                expect(newVersion).to.equal(end);
+            });
+        });
+
     });
 });
