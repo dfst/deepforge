@@ -1,4 +1,4 @@
-/*globals define */
+/*globals define, d3 */
 define([
     'widgets/EasyDAG/DAGItem',
     'underscore'
@@ -25,8 +25,13 @@ define([
         DAGItem.prototype.setupDecoratorCallbacks.call(this);
         this.decorator.onPortClick = (id, portId, isSrc) => {
             var srcPort = this.inputs.find(port => port.id === portId);
+
+            d3.event.stopPropagation();
+            d3.event.preventDefault();
+
             if (srcPort && srcPort.connection) {
                 this.disconnectPort(portId, srcPort.connection);
+                this.hidePorts();
             } else {
                 this.connectPort(id, portId, isSrc);
             }

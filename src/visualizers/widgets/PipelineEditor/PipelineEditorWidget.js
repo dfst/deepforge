@@ -169,7 +169,7 @@ define([
         this._logger.info('port ' + id + ' has been clicked! (', isOutput, ')');
         if (this.PORT_STATE === STATE.DEFAULT) {
             this.srcPortToConnectArgs = arguments;
-            this.startPortConnection(nodeId, id, isOutput);
+            return this.startPortConnection(nodeId, id, isOutput);
         } else if (this._selectedPort !== id) {
             this._logger.info('connecting ' + this._selectedPort + ' to ' + id);
             var src = !isOutput ? this._selectedPort : id,
@@ -178,13 +178,13 @@ define([
             this.createConnection(src, dst);
         } else if (!this._selectedPort) {
             this._logger.error(`Invalid connection state: ${this.PORT_STATE} w/ ${this._selectedPort}`);
-            this.resetPortState();
         }
+
+        this.resetPortState();
     };
 
     PipelineEditorWidget.prototype.startPortConnection = function(nodeId, id, isOutput) {
-        var existingMatches = this.getExistingPortMatches(id, isOutput),
-            item = this.items[nodeId];
+        var existingMatches = this.getExistingPortMatches(id, isOutput);
         
         // Hide all ports except 'id' on 'nodeId'
         this._selectedPort = id;
@@ -193,7 +193,7 @@ define([
         existingMatches.forEach(match =>
             this.showPorts(match.nodeId, match.portIds, isOutput)
         );
-        item.showPorts(id, !isOutput);
+        this.showPorts(nodeId, id, !isOutput);
 
         this.PORT_STATE = STATE.CONNECTING;
     };
