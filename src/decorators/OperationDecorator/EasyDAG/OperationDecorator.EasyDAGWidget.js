@@ -34,12 +34,15 @@ define([
         this.$portTooltips = {};
 
         // hovering
-        this.hovered = false;
+        this.hovered = {
+            name: false,
+            port: false
+        };
         this.$name.on('mouseenter', () => {
-            this.hovered = true;
+            this.hovered.name = true;
         });
         this.$name.on('mouseout', () => {
-            this.hovered = false;
+            this.hovered.name = false;
         });
     };
 
@@ -49,6 +52,10 @@ define([
     OperationDecorator.prototype.PORT_COLOR = {
         OPEN: '#90caf9',
         OCCUPIED: '#e57373'
+    };
+
+    OperationDecorator.prototype.isHovered = function() {
+        return this.hovered.name || this.hovered.port;
     };
 
     OperationDecorator.prototype.condense = function() {
@@ -107,6 +114,7 @@ define([
     OperationDecorator.prototype.renderPort = function(port, x, y, isInput) {
         var color = this.PORT_COLOR.OPEN,
             portIcon = this.$ports.append('g'),
+            text,
             tooltip;
 
         // If the port is incoming and occupied, render it differently
@@ -120,7 +128,7 @@ define([
             .attr('r', 10)
             .attr('fill', color);
             
-        portIcon.append('text')
+        text = portIcon.append('text')
                 .attr('x', x)
                 .attr('y', y)
                 .attr('text-anchor', 'middle')
@@ -136,8 +144,15 @@ define([
         }
         tooltip = new Opentip(portIcon[0][0], PORT_TOOLTIP_OPTS);
         tooltip.setContent(port.name);
-        portIcon.on('mouseenter', () => tooltip.show());
-        portIcon.on('mouseout', () => tooltip.hide());
+        portIcon.on('mouseenter', () => {
+            this.hovered.port = true;
+            tooltip.show();
+        });
+        portIcon.on('mouseout', () => {
+            this.hovered.port = false;
+            tooltip.hide();
+        });
+        text.on('mouseenter', () => this.hovered.port = true);
         this.$portTooltips[port.id] = tooltip;
     };
 

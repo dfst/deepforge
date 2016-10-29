@@ -41,7 +41,7 @@ define([
 
         if (delay >= this._mouseExitDelay) {
             // Check if the decorator is hovered
-            if (!this.decorator.hovered) {
+            if (!this.decorator.isHovered()) {
                 return this.onUnhover();
             } else {
                 recheckTime = this._mouseExitDelay;
@@ -119,7 +119,6 @@ define([
 
     OperationNode.prototype.onHover = function() {
         if (!this.isSelected() && this.canShowPorts()) {
-            console.log('hovering!');
             this.showPorts();
         }
     };
@@ -130,7 +129,6 @@ define([
         //  - not creating a connection in the widget
         if (!this.isSelected() && this.canShowPorts()) {
             this.hidePorts();
-            console.log('unhovering!');
             this._hovering = false;
         }
     };
