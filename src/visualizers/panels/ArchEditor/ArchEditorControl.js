@@ -56,7 +56,8 @@ define([
     };
 
     ArchEditorControl.prototype._getObjectDescriptor = function(id) {
-        var desc = ThumbnailControl.prototype._getObjectDescriptor.call(this, id);
+        var node = this._client.getNode(id),
+            desc = ThumbnailControl.prototype._getObjectDescriptor.call(this, id);
 
         // Filter attributes
         if (!desc.isConnection) {
@@ -78,7 +79,7 @@ define([
 
             for (i = names.length; i--;) {
                 // check if it is a setter
-                schema = this._client.getAttributeSchema(id, names[i]);
+                schema = node.getAttributeMeta(names[i]);
                 if (names[i] === 'name' || schema.setterType) {
                     desc.attributes[names[i]] = allAttrs[names[i]];
                 }
@@ -87,8 +88,7 @@ define([
             // Add layer type (base class's base class)
             desc.layerType = null;
             if (desc.baseName) {
-                var node = this._client.getNode(id),
-                    base = this._client.getNode(node.getMetaTypeId()),
+                var base = this._client.getNode(node.getMetaTypeId()),
                     layerType = this._client.getNode(base.getBaseId()),
                     color;
 
