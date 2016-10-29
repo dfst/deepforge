@@ -69,7 +69,7 @@ define([
             return metaType.getAttribute('name') === 'Outputs';
         });
 
-        return this.client.createChild({
+        return this.client.createNode({
             baseId: baseId,
             parentId: outputCntrId
         });

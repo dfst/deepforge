@@ -77,7 +77,7 @@ define([
         // Create a nested "architecture" node and set the ptr target to it
         baseId = base.getId();
         this.client.startTransaction(msg);
-        tgtId = this.client.createChild({
+        tgtId = this.client.createNode({
             parentId: this._node.id,
             baseId: baseId
         });

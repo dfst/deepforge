@@ -57,7 +57,7 @@ define([
     };
 
     var createNamedNode = function(baseId, parentId, isMeta) {
-        var newId = client.createChild({parentId, baseId}),
+        var newId = client.createNode({parentId, baseId}),
             baseNode = client.getNode(baseId),
             basename = 'New' + baseNode.getAttribute('name'),
             newName = getUniqueName(parentId, basename);

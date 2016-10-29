@@ -132,11 +132,11 @@ define([
             if (types[setterNames[i]]) {
                 schema.type = types[setterNames[i]];
             }
-            this._client.setAttributeSchema(id, setterNames[i], schema);
+            this._client.setAttributeMeta(id, setterNames[i], schema);
         }
 
         ctorAttrs.forEach(attr =>
-            this._client.setAttributeSchema(id, attr, {
+            this._client.setAttributeMeta(id, attr, {
                 type: types[attr] || 'string'
             })
         );

@@ -65,7 +65,7 @@ define([
 
     PipelineControl.prototype.createNode = function(baseId) {
         var parentId = this._currentNodeId,
-            newNodeId = this._client.createChild({parentId, baseId});
+            newNodeId = this._client.createNode({parentId, baseId});
 
         return newNodeId;
     };
