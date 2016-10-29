@@ -32,7 +32,8 @@ define([
     _.extend(OperationNode.prototype, DAGItem.prototype);
 
     OperationNode.prototype.tryToUnhover = function() {
-        var delay = Date.now() - this._lastMouseOver;
+        var delay = Date.now() - this._lastMouseOver,
+            recheckTime;
 
         if (this._hovering === false) {
             return;
@@ -40,10 +41,15 @@ define([
 
         if (delay >= this._mouseExitDelay) {
             // Check if the decorator is hovered
-            this.onUnhover();
+            if (!this.decorator.hovered) {
+                return this.onUnhover();
+            } else {
+                recheckTime = this._mouseExitDelay;
+            }
         } else {
-            setTimeout(this.tryToUnhover.bind(this), this._mouseExitDelay - delay);
+            recheckTime = this._mouseExitDelay - delay;
         }
+        setTimeout(this.tryToUnhover.bind(this), recheckTime);
     };
 
     OperationNode.prototype.setupDecoratorCallbacks = function() {

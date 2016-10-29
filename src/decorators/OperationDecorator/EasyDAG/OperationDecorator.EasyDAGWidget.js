@@ -32,6 +32,15 @@ define([
         this.$ports = this.$el.append('g')
             .attr('id', 'ports');
         this.$portTooltips = {};
+
+        // hovering
+        this.hovered = false;
+        this.$name.on('mouseenter', () => {
+            this.hovered = true;
+        });
+        this.$name.on('mouseout', () => {
+            this.hovered = false;
+        });
     };
 
     _.extend(OperationDecorator.prototype, DecoratorBase.prototype);
