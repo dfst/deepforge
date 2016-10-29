@@ -6,9 +6,10 @@ var testFixture = require('../../globals');
 describe('UpdateLibrarySeed', function () {
     var gmeConfig = testFixture.getGmeConfig(),
         expect = testFixture.expect,
+        Q = testFixture.Q,
         logger = testFixture.logger.fork('UpdateLibrarySeed'),
         PluginCliManager = testFixture.WebGME.PluginCliManager,
-        projectName = 'testProject',
+        projectName = 'nn',
         pluginName = 'UpdateLibrarySeed',
         manager = new PluginCliManager(null, logger, gmeConfig),
         project,
@@ -26,7 +27,7 @@ describe('UpdateLibrarySeed', function () {
             })
             .then(function () {
                 var importParam = {
-                    projectSeed: testFixture.path.join(testFixture.SEED_DIR, 'EmptyProject.webgmex'),
+                    projectSeed: testFixture.path.join(testFixture.DF_SEED_DIR, 'nn', 'nn.webgmex'),
                     projectName: projectName,
                     branchName: 'master',
                     logger: logger,
@@ -51,29 +52,6 @@ describe('UpdateLibrarySeed', function () {
             .nodeify(done);
     });
 
-    it('should run plugin and update the branch', function (done) {
-        var pluginConfig = {
-            },
-            context = {
-                project: project,
-                commitHash: commitHash,
-                branchName: 'test',
-                activeNode: '/1'
-            };
-
-        manager.executePlugin(pluginName, pluginConfig, context, function (err, pluginResult) {
-            expect(err).to.equal(null);
-            expect(typeof pluginResult).to.equal('object');
-            expect(pluginResult.success).to.equal(true);
-
-            project.getBranchHash('test')
-                .then(function (branchHash) {
-                    expect(branchHash).to.not.equal(commitHash);
-                })
-                .nodeify(done);
-        });
-    });
-
     var plugin,
         preparePlugin = function(done) {
             var context = {
@@ -91,8 +69,25 @@ describe('UpdateLibrarySeed', function () {
                 .nodeify(done);
         };
 
+    beforeEach(preparePlugin);
+
+    it('should run plugin and update the branch', function (done) {
+        plugin.recordVersion = () => Q();
+        plugin.updateSeed = () => Q();
+        plugin.main(function (err, pluginResult) {
+            expect(err).to.equal(null);
+            expect(typeof pluginResult).to.equal('object');
+            expect(pluginResult.success).to.equal(true);
+
+            project.getBranchHash('test')
+                .then(function (branchHash) {
+                    expect(branchHash).to.not.equal(commitHash);
+                })
+                .nodeify(done);
+        });
+    });
+
     describe('version bump', function() {
-        before(preparePlugin);
 
         [
             ['0.0.0', '0.0.1', 'patch'],
