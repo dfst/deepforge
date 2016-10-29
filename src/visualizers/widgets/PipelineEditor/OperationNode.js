@@ -15,17 +15,22 @@ define([
         this._visiblePorts = null;
 
         this._lastMouseOver = -Infinity;
-        this._mouseExitDelay = 500;
+        this._mouseExitDelay = 250;
         this._hovering = false;
+        this._hoverCheckId = null;
         this.$el.on('mouseover', () => {
             this._lastMouseOver = Date.now();
             if (!this._hovering) {
                 this.onHover();
             }
             this._hovering = true;
+            if (this._hoverCheckId) {
+                clearTimeout(this._hoverCheckId);
+                this._hoverCheckId = null;
+            }
         });
         this.$el.on('mouseout', () => {
-            setTimeout(this.tryToUnhover.bind(this), this._mouseExitDelay);
+            this._hoverCheckId = setTimeout(this.tryToUnhover.bind(this), this._mouseExitDelay);
         });
     };
 
@@ -137,7 +142,6 @@ define([
         DAGItem.prototype.onSelect.call(this);
         if (this._hovering) {
             this._hovering = false;
-            console.log('setting hover to false!');
         }
 
         this.showPorts();
