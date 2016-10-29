@@ -109,30 +109,19 @@ define([
     };
 
     ////////////////////////// Layer Selection Logic //////////////////////////
-    ArchEditorControl.prototype._getValidInitialNodes = function() {
-        return this._client.getChildrenMeta(this._currentNodeId).items
-            // For now, anything is possible!
-            // FIXME
-            .map(info => this._getAllDescendentIds(info.id))
-            .reduce((prev, curr) => prev.concat(curr))
-            // Filter all abstract nodes
-            .filter(nodeId => {
-                return !this._client.getNode(nodeId).isAbstract();
-            })
-            .map(id => this._getObjectDescriptor(id))
-            .filter(obj => !obj.isConnection && obj.name !== 'Connection')
-            .filter(layer => layer.layerType !== 'Criterion');
-    };
-
-    ArchEditorControl.prototype._getValidSuccessorNodes =
+    ArchEditorControl.prototype.getValidSuccessors =
     ArchEditorControl.prototype._getValidInitialNodes =
     ArchEditorControl.prototype.getNonCriterionLayers = function() {
         // Return all (non-criterion) layer types
         var metanodes = this._client.getAllMetaNodes(),
             layerId,
+            connId,
+            conn,
             criterionId,
             allLayers = [],
             layers = [],
+            tgts,
+            j,
             i;
 
         for (i = metanodes.length; i--;) {
@@ -142,6 +131,7 @@ define([
             }
         }
 
+        // Remove all criterion layers and abstract layers
         for (i = metanodes.length; i--;) {
             if (layerId) {
                 if (!metanodes[i].isAbstract() && metanodes[i].isTypeOf(layerId)) {
@@ -149,16 +139,32 @@ define([
                     if (metanodes[i].getAttribute('name') === 'Criterion') {
                         criterionId = metanodes[i].getId();
                     } else {
-                        allLayers.push(metanodes[i].getId());
+                        allLayers.push(metanodes[i]);
+                    }
+                } else if (!connId && metanodes[i].getAttribute('name') === 'Connection') {  // Detect the layer connection type...
+                    tgts = this._client.getPointerMeta(metanodes[i].getId(), 'src').items;
+                    for (j = tgts.length; j--;) {
+                        if (tgts[j].id === layerId) {
+                            connId = metanodes[i].getId();
+                        }
                     }
                 }
             }
         }
 
+        if (!connId) {
+            this._logger.warn('Could not find a layer connector');
+            return [];
+        }
+        // Convert the layers into the correct format
+        conn = this._getObjectDescriptor(connId);
         // Remove all criterion layers and abstract layers
         for (i = allLayers.length; i--;) {
             if (!allLayers[i].isTypeOf(criterionId)) {
-                layers.push({node: this._getObjectDescriptor(allLayers[i].getId())});
+                layers.push({
+                    node: this._getObjectDescriptor(allLayers[i].getId()),
+                    conn: conn
+                });
             }
         }
 
