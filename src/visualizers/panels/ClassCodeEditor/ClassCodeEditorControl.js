@@ -137,7 +137,7 @@ define([
         }
 
         for (i = nameMatches.length; i--;) {
-            if (this._client.isTypeOf(nameMatches[i].getId(), classNode.getId())) {
+            if (nameMatches[i].isTypeOf(classNode.getId())) {
                 return nameMatches[i].getId();
             }
         }

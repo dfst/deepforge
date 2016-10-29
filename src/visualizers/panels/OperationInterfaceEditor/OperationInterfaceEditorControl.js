@@ -128,10 +128,10 @@ define([
             operation = metanodes.find(n => n.getAttribute('name') === 'Data');
 
         // Get all the meta nodes that are instances of Data
-        metanodes.map(n => n.getId())
-            .filter(nId => this._client.isTypeOf(nId, operation.getId()))
+        metanodes
+            .filter(node => node.isTypeOf(operation.getId()))
             // Add a rule for them
-            .forEach(opId => this._territories[opId] = {children: 0});
+            .forEach(op => this._territories[op.getId()] = {children: 0});
 
         this._client.updateTerritory(this._territoryId, this._territories);
     };

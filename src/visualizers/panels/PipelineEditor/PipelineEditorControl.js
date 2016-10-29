@@ -124,10 +124,10 @@ define([
             operation = metanodes.find(n => n.getAttribute('name') === 'Operation');
 
         // Get all the meta nodes that are instances of Operations
-        metanodes.map(n => n.getId())
-            .filter(nId => this._client.isTypeOf(nId, operation.getId()))
+        metanodes
+            .filter(n => n.isTypeOf(operation.getId()))
             // Add a rule for them
-            .forEach(opId => this._territories[opId] = this.TERRITORY_RULE);
+            .forEach(op => this._territories[op.getId()] = this.TERRITORY_RULE);
 
         // Add arch/artifact dir to the territory
         // loading more than necessary.... can restrict it in the future
@@ -238,8 +238,13 @@ define([
     PipelineEditorControl.prototype.getValidOutputs = function (inputId, outputs) {
         // Valid input if one of the isTypeOf(<output>, inputId)
         // for at least one output
-        var inputType = this._client.getNode(inputId).getMetaTypeId();
-        return outputs.filter(type => this._client.isTypeOf(type, inputType)).length;
+        var inputType = this._client.getNode(inputId).getMetaTypeId(),
+            node;
+
+        return outputs.filter(type => {
+            node = this._client.getNode(type);
+            return node.isTypeOf(inputType);
+        }).length;
     };
 
     PipelineEditorControl.prototype._getValidSuccessorNodes = function (nodeId) {
@@ -324,10 +329,13 @@ define([
                 return [
                     node.getId(),
                     dstPorts.filter(id => {
-                        var typeId = this._client.getNode(id).getMetaTypeId();
+                        var typeId = this._client.getNode(id).getMetaTypeId(),
+                            portTypeNode = this._client.getNode(portType),
+                            typeNode = this._client.getNode(typeId);
+
                         return isOutput ?
-                            this._client.isTypeOf(portType, typeId) :
-                            this._client.isTypeOf(typeId, portType);
+                            portTypeNode.isTypeOf(typeId) :
+                            typeNode.isTypeOf(portType);
                     })
                 ];
             };
@@ -368,14 +376,16 @@ define([
         // the dst operation
         var result = [],
             ipairs = inputs.map(id => [id, this._client.getNode(id).getMetaTypeId()]),
-            oType;
+            oType,
+            oTypeId;
 
         // For each output, get all possible (valid) input destinations
         outputs.forEach(outputId => {
-            oType = this._client.getNode(outputId).getMetaTypeId();
+            oTypeId = this._client.getNode(outputId).getMetaTypeId();
+            oType = this._client.getNode(oTypeId);
             result = result.concat(ipairs.filter(pair =>
                     // output type should be valid input type
-                    this._client.isTypeOf(oType, pair[1])
+                    oType.isTypeOf(pair[1])
                 )
                 .map(pair => [outputId, pair[0]])  // Get the input data id
             );
@@ -649,8 +659,8 @@ define([
         if (criterion) {
             // Get all criterion types
             criterionId = criterion.getId();
-            items = this._client.getAllMetaNodes().map(node => node.getId())
-                .filter(id => this._client.isTypeOf(id, criterionId));
+            items = this._client.getAllMetaNodes()
+                .filter(node => node.isTypeOf(criterionId));
 
             return items.map(id => {
                 return {
