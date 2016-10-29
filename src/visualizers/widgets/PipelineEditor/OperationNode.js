@@ -13,9 +13,38 @@ define([
         this.inputs = desc.inputs;
         this.outputs = desc.outputs;
         this._visiblePorts = null;
+
+        this._lastMouseOver = -Infinity;
+        this._mouseExitDelay = 500;
+        this._hovering = false;
+        this.$el.on('mouseover', () => {
+            this._lastMouseOver = Date.now();
+            if (!this._hovering) {
+                this.onHover();
+            }
+            this._hovering = true;
+        });
+        this.$el.on('mouseout', () => {
+            setTimeout(this.tryToUnhover.bind(this), this._mouseExitDelay);
+        });
     };
 
     _.extend(OperationNode.prototype, DAGItem.prototype);
+
+    OperationNode.prototype.tryToUnhover = function() {
+        var delay = Date.now() - this._lastMouseOver;
+
+        if (this._hovering === false) {
+            return;
+        }
+
+        if (delay >= this._mouseExitDelay) {
+            // Check if the decorator is hovered
+            this.onUnhover();
+        } else {
+            setTimeout(this.tryToUnhover.bind(this), this._mouseExitDelay - delay);
+        }
+    };
 
     OperationNode.prototype.setupDecoratorCallbacks = function() {
         DAGItem.prototype.setupDecoratorCallbacks.call(this);
@@ -82,13 +111,36 @@ define([
         // TODO
     };
 
+    OperationNode.prototype.onHover = function() {
+        if (!this.isSelected() && this.canShowPorts()) {
+            console.log('hovering!');
+            this.showPorts();
+        }
+    };
+
+    OperationNode.prototype.onUnhover = function() {
+        // Only fire these events if:
+        //  - not selected
+        //  - not creating a connection in the widget
+        if (!this.isSelected() && this.canShowPorts()) {
+            this.hidePorts();
+            console.log('unhovering!');
+            this._hovering = false;
+        }
+    };
+
     OperationNode.prototype.onSelect = function() {
-        this.decorator.onSelect();
+        DAGItem.prototype.onSelect.call(this);
+        if (this._hovering) {
+            this._hovering = false;
+            console.log('setting hover to false!');
+        }
+
         this.showPorts();
     };
 
     OperationNode.prototype.onDeselect = function() {
-        this.decorator.onDeselect();
+        DAGItem.prototype.onDeselect.call(this);
         this.hidePorts();
     };
 

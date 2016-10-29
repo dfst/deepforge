@@ -71,6 +71,16 @@ define([
         this.onResize();
     };
 
+    // on hover, the decorator should show it's ports. It should
+    // TODO
+    OperationDecorator.prototype.onHover = function() {
+        this.hovered = true;
+    };
+
+    OperationDecorator.prototype.onUnhover = function() {
+        this.hovered = false;
+    };
+
     OperationDecorator.prototype.showPorts = function(ids, areInputs) {
         var allPorts = areInputs ? this._node.inputs : this._node.outputs,
             x = -this.width/2,

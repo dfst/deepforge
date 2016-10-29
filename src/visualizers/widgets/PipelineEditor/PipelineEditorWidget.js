@@ -65,6 +65,13 @@ define([
             PipelineEditorWidget.prototype.connectPort.bind(this);
         this.ItemClass.prototype.disconnectPort =
             PipelineEditorWidget.prototype.disconnectPort.bind(this);
+
+        this.ItemClass.prototype.canShowPorts = () => {
+            // when the widget is connecting ports, the items
+            // will ignore hover event behaviors wrt showing
+            // ports
+            return !this.isConnectingPorts();
+        };
     };
 
     //////////////////// Port Support ////////////////////
@@ -102,7 +109,7 @@ define([
         }
 
         // If in a "connecting-port" state, refresh the port
-        if (this.PORT_STATE === STATE.CONNECTING) {
+        if (this.isConnectingPorts()) {
             this.PORT_STATE = STATE.DEFAULT;
             this.connectPort.apply(this, this.srcPortToConnectArgs);
         }
@@ -152,6 +159,10 @@ define([
 
     PipelineEditorWidget.prototype.disconnectPort = function(portId, connId) {
         this.removeConnection(connId);
+    };
+
+    PipelineEditorWidget.prototype.isConnectingPorts = function() {
+        return this.PORT_STATE === STATE.CONNECTING;
     };
 
     PipelineEditorWidget.prototype.connectPort = function(nodeId, id, isOutput) {
