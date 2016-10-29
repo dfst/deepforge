@@ -102,7 +102,7 @@ define([
             msg = `Deleting "${name}" attribute from "${opName}" operation`;
 
         this.client.startTransaction(msg);
-        this.client.removeAttributeSchema(this._node.id, name);
+        this.client.delAttributeMeta(this._node.id, name);
         this.client.delAttribute(this._node.id, name);
         this.client.completeTransaction();
     };
@@ -129,7 +129,7 @@ define([
 
         if (name !== desc.name) {  // Renaming attribute
             if (name) {
-                this.client.removeAttributeSchema(this._node.id, name);
+                this.client.delAttributeMeta(this._node.id, name);
                 this.client.delAttribute(this._node.id, name);
             }
             name = desc.name;

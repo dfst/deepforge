@@ -119,7 +119,7 @@ define([
         // Remove old attributes
         setterNames = Object.keys(layerSchema.setters);
         _.difference(currentAttrs, ctorAttrs, setterNames)
-            .forEach(attr => this._client.removeAttributeSchema(id, attr));
+            .forEach(attr => this._client.delAttributeMeta(id, attr));
 
         // Add setters
         for (i = setterNames.length; i--;) {
