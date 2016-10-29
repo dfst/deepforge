@@ -32,9 +32,11 @@ define([
     };
 
     ArtifactIndexControl.prototype._initWidgetEventHandlers = function () {
-        this._widget.onNodeClick = id => {
+        this._widget.onNodeClick = (/*id*/) => {
             // Change the current active object
-            WebGMEGlobal.State.registerActiveObject(id);
+            // This is currently disabled as there are not any good
+            // visualizers for the data types
+            // WebGMEGlobal.State.registerActiveObject(id);
         };
 
         this._widget.onNodeDeleteClicked = id => {
