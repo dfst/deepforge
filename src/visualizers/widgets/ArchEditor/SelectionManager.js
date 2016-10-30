@@ -26,6 +26,7 @@ define([
             btn = new Buttons.GoToBase({
                 $pEl: this.$selection,
                 context: this._widget,
+                title: 'Edit layer definition',
                 item: this.selectedItem,
                 disabled: disabled,
                 x: width,

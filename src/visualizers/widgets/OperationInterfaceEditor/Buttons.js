@@ -12,6 +12,7 @@ define([
 ) {
 
     var AddOutput = function(params) {
+        params.title = params.title || 'Add operation output';
         EasyDAGButtons.Add.call(this, params);
     };
 
@@ -35,6 +36,7 @@ define([
     };
 
     var AddInput = function(params) {
+        params.title = params.title || 'Add operation input';
         EasyDAGButtons.Add.call(this, params);
     };
     _.extend(AddInput.prototype, AddOutput.prototype);
@@ -45,6 +47,7 @@ define([
 
     // References
     var AddRef = function(params) {
+        params.title = params.title || 'Add pointer type';
         EasyDAGButtons.Add.call(this, params);
     };
 

@@ -33,6 +33,7 @@ define([
             new Buttons.GoToBase({
                 $pEl: this.$selection,
                 context: this._widget,
+                title: 'Edit operation definition',
                 item: this.selectedItem,
                 x: width,
                 y: 0
