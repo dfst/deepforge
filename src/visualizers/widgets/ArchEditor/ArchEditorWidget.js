@@ -3,6 +3,7 @@
 
 define([
     'deepforge/globals',
+    'widgets/EasyDAG/Buttons',
     'deepforge/viz/widgets/Thumbnail',
     'widgets/EasyDAG/AddNodeDialog',
     './SelectionManager',
@@ -12,6 +13,7 @@ define([
     'css!./styles/ArchEditorWidget.css'
 ], function (
     DeepForge,
+    Buttons,
     ThumbnailWidget,
     AddNodeDialog,
     SelectionManager,
@@ -43,6 +45,62 @@ define([
 
     ArchEditorWidget.prototype.ItemClass = Layer;
     ArchEditorWidget.prototype.SelectionManager = SelectionManager;
+
+    ArchEditorWidget.prototype.setupItemCallbacks = function() {
+        var widget = this;
+        ThumbnailWidget.prototype.setupItemCallbacks.apply(this, arguments);
+        // Add the hover button functions
+        this.ItemClass.prototype.showHoverButtons = function() {
+            var layer = this;
+            widget.showHoverButtons(layer);
+        };
+        this.ItemClass.prototype.hideHoverButtons = this.hideHoverButtons.bind(this);
+        this.ItemClass.prototype.isHoverAllowed = () => !this.isConnecting();
+    };
+
+    ArchEditorWidget.prototype.showHoverButtons = function(layer) {
+        var btn,
+            height = layer.height,
+            cx = layer.width/2;
+
+        if (this.$hoverBtns) {
+            this.hideHoverButtons();
+        }
+
+        this.$hoverBtns = layer.$el
+            .append('g')
+            .attr('class', 'hover-container');
+
+        btn = new Buttons.Connect.From({
+            context: this,
+            $pEl: this.$hoverBtns,
+            item: layer,
+            x: cx,
+            y: height
+        });
+
+        btn = new Buttons.Connect.To({
+            context: this,
+            $pEl: this.$hoverBtns,
+            item: layer,
+            x: cx,
+            y: 0
+        });
+
+        return btn;
+    };
+
+    ArchEditorWidget.prototype.hideHoverButtons = function() {
+        if (this.$hoverBtns) {
+            this.$hoverBtns.remove();
+            this.$hoverBtns = null;
+        }
+    };
+
+    ArchEditorWidget.prototype.startConnection = function () {
+        this.hideHoverButtons();
+        ThumbnailWidget.prototype.startConnection.apply(this, arguments);
+    };
 
     ArchEditorWidget.prototype.onCreateInitialNode = function() {
         var nodes = this.getValidInitialNodes();

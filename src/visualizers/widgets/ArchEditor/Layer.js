@@ -29,12 +29,35 @@ define([
         this.width = this.decorator.width;
         this.height = this.decorator.height;
 
+        this._hovering = false;
+        this.$el.on('mouseenter', () => this.onHover());
+        this.$el.on('mouseleave', () => this._hovering && this.onUnhover());
+
         this.initializeTooltips();
         // Set up decorator callbacks
         this.setupDecoratorCallbacks();
     };
 
     _.extend(Layer.prototype, DAGItem.prototype);
+
+    Layer.prototype.onHover = function() {
+        if (!this.isSelected() && this.isHoverAllowed()) {
+            this._hovering = true;
+            this.showHoverButtons();
+        }
+    };
+
+    Layer.prototype.onUnhover = function() {
+        this._hovering = false;
+        this.hideHoverButtons();
+    };
+
+    Layer.prototype.onSelect = function() {
+        DAGItem.prototype.onSelect.apply(this, arguments);
+        if (this._hovering) {
+            this.onUnhover();
+        }
+    };
 
     return Layer;
 });
