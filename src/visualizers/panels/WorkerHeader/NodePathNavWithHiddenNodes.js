@@ -6,6 +6,7 @@ define([
     CONSTANTS,
     NodePathNavigator
 ) {
+    var PATH_SEP = '/';
     var NodePathWithHidden = function() {
         NodePathNavigator.apply(this, arguments);
     };
@@ -15,14 +16,16 @@ define([
     NodePathWithHidden.prototype.getNodePath = function() {
         var nodeIds = NodePathNavigator.prototype.getNodePath.apply(this, arguments),
             lastRootChildIndex = -1,
+            pathSepRegex = new RegExp(PATH_SEP, 'g'),
             node,
             i;
 
         // Treat any nodeIds in the root object as the same node then remove them
         // Hide any nodeIds in the root object
         for (i = nodeIds.length; i-- && lastRootChildIndex === -1;) {
-            node = this.client.getNode(nodeIds[i]);
-            if (node.getParentId() === CONSTANTS.PROJECT_ROOT_ID) {
+            // Check for multiple '/' separators in the id (else it's a child of
+            // the root node)
+            if (nodeIds[i] && nodeIds[i].match(pathSepRegex).length === 1) {
                 lastRootChildIndex = i;
             }
         }
