@@ -17,7 +17,6 @@ define([
         var nodeIds = NodePathNavigator.prototype.getNodePath.apply(this, arguments),
             lastRootChildIndex = -1,
             pathSepRegex = new RegExp(PATH_SEP, 'g'),
-            node,
             i;
 
         // Treat any nodeIds in the root object as the same node then remove them
