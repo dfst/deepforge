@@ -50,8 +50,6 @@ define([
         this.widget.checkLibUpdates = this.checkLibUpdates.bind(this);
         this.widget.setEmbeddedPanel = this.setEmbeddedPanel.bind(this);
 
-        this.setEmbeddedPanel('pipelines');
-
         this.onActivate();
     };
 
