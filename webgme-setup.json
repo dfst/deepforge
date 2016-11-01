@@ -287,6 +287,9 @@
       },
       "LayerDecorator": {
         "src": "src/decorators/LayerDecorator"
+      },
+      "ContainerLayerDecorator": {
+        "src": "src/decorators/ContainerLayerDecorator"
       }
     },
     "seeds": {

@@ -23,7 +23,7 @@ define([
         DEFAULT_CONFIG = {
             DefaultColor: '#ffb74d',
             LayerColors: {
-                Containers: '#ffb74d',
+                Container: '#ffb74d',
                 Convolution: '#2196f3',
                 Simple: '#ff9100',
                 Transfer: '#80deea',
@@ -102,6 +102,14 @@ define([
                         color = this._config.DefaultColor;
                     }
                     desc.color = color;
+
+                    if (desc.layerType === 'Container') {
+                        desc.containedLayers = node.getMemberIds('addLayers');
+                        // TODO: Add the addLayers information here!
+                        // Set the decorator to ContainerLayerDecorator
+                        desc.Decorator = this._client.decoratorManager
+                            .getDecoratorForWidget('ContainerLayerDecorator', 'EasyDAG');
+                    }
                 }
             }
         }
