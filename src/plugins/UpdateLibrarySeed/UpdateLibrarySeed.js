@@ -124,6 +124,10 @@ define([
         this.logger.info(`Updating ${seedName} seed`);
         job.on('error', _err => {
             err = _err;
+            if (err.code === 'ENOENT') {
+                return deferred.reject('"webgme" command not found. Is webgme-cli installed on the server?');
+            }
+            return deferred.reject(err);
         });
 
         job.on('exit', code => {
