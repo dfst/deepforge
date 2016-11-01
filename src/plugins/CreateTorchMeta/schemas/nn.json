@@ -105,7 +105,7 @@
     "defaults": {
       "nInputDim": 2
     },
-    "type": "Misc"
+    "type": "Container"
   },
   {
     "name": "CAdd",
@@ -229,7 +229,7 @@
     "setters": {},
     "types": {},
     "defaults": {},
-    "type": "Containers"
+    "type": "Container"
   },
   {
     "name": "ConcatTable",
@@ -238,7 +238,7 @@
     "setters": {},
     "types": {},
     "defaults": {},
-    "type": "Misc"
+    "type": "Container"
   },
   {
     "name": "Contiguous",
@@ -924,7 +924,7 @@
     "setters": {},
     "types": {},
     "defaults": {},
-    "type": "Misc"
+    "type": "Container"
   },
   {
     "name": "ParallelCriterion",
@@ -944,7 +944,7 @@
     "setters": {},
     "types": {},
     "defaults": {},
-    "type": "Misc"
+    "type": "Container"
   },
   {
     "name": "PartialLinear",

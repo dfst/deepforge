@@ -31,7 +31,7 @@ define([
             'Transfer',
             'Convolution',
             'RNN',
-            'Containers',
+            'Container',
             'Misc'
         ];
 

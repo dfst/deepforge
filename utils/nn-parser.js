@@ -36,10 +36,17 @@ skipLayerList.forEach(name => SKIP_LAYERS[name] = true);
 catNames.forEach(cat =>  // create layer -> category dictionary
    categories[cat].forEach(lname => layerToCategory[lname] = cat)
 );
-var lookupType = function(name){
-    var layerType = layerToCategory[name];
+var lookupType = function(layer){
+    var layerType;
+
+    if (layer.baseType === 'Container') {
+        layerType = 'Container';
+    } else {
+        layerType = layerToCategory[layer.name];
+    }
+
     if (!layerType) {  // try to infer
-        layerType = name.indexOf('Criterion') > -1 && 'Criterion';
+        layerType = layer.name.indexOf('Criterion') > -1 && 'Criterion';
     }
     return layerType || 'Misc';
 };
@@ -55,7 +62,7 @@ fs.readdir(torchPath, function(err,files){
         .filter(layer => !!layer && layer.name);
 
     layers.forEach(layer => {
-        layer.type = lookupType(layer.name);
+        layer.type = lookupType(layer);
         layerByName[layer.name] = layer;
     });
 
