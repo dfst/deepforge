@@ -11,6 +11,7 @@
     }
 }(this, function() {
     return {
+        CONTAINED_LAYER_SET: 'addLayers',
         LINE_OFFSET: 'lineOffset',
 
         // DeepForge metadata creation in dist execution
@@ -37,6 +38,7 @@
             OUTPUT: 'Output'
         },
 
+        // Heartbeat constants (ExecPulse router)
         PULSE: {
             DEAD: 0,
             ALIVE: 1,

@@ -35,9 +35,10 @@ define([
             'Misc'
         ];
 
-    ArchEditorWidget = function (logger, container) {
-        ThumbnailWidget.call(this, logger, container);
-        this.$el.addClass(WIDGET_CLASS);
+    ArchEditorWidget = function () {
+        ThumbnailWidget.apply(this, arguments);
+        var clazz = this.$el.attr('class');
+        this.$el.attr('class', clazz + ' ' + WIDGET_CLASS);
         this._emptyMsg = 'Click to add a new layer';
     };
 

@@ -21,6 +21,7 @@ define([
     // Container layer nodes need to be able to nest the targets of their
     // 'addLayers' set in order inside of themselves when expanded
     ContainerLayerDecorator = function (options) {
+        this.nestedLayers = [];
         LayerDecorator.call(this, options);
     };
 
@@ -36,25 +37,35 @@ define([
         return LayerDecorator.prototype.expand.apply(this, arguments);
     };
 
-    ContainerLayerDecorator.prototype.getNestedEditor = function(id) {
-        var container = $('<div/>'),
-            widget = new ArchEditorWidget(this.logger.fork('ArchWidget'), container),
+    ContainerLayerDecorator.prototype.createNestedWidget = function(id) {
+        var widget,
             archEditor,
             nop = () => {};
 
+        this.$nested = this.$el.append('g')
+            .attr('class', 'nested-layers');
+        widget = new ArchEditorWidget({
+            logger: this.logger.fork('ArchWidget'),
+            svg: this.$nested
+        });
         widget.setTitle = () => {};
         archEditor = new ArchEditor({
-                logger: this.logger.fork('ArchControl'),
-                client: this.client,
-                embedded: true,
-                widget: widget
-            });
+            logger: this.logger.fork('ArchControl'),
+            client: this.client,
+            embedded: true,
+            widget: widget
+        });
         // hack :(
         archEditor.$btnModelHierarchyUp = {
             show: nop,
             hide: nop
         };
+        widget.active = true;
         archEditor.selectedObjectChanged(id);
+
+        // Add the nested widget to the visualizer
+        this.nestedLayers.push(archEditor);
+        //this.$body.append(widget.$svg);
         return archEditor;
     };
 
@@ -74,9 +85,7 @@ define([
         for (var i = events.length; i--;) {
             switch (events[i].etype) {
             case CONSTANTS.TERRITORY_EVENT_LOAD:
-                console.log('loading ', events[i].eid);
-                var editor = this.getNestedEditor(events[i].eid);
-                // TODO: Add the arch editor to the given node
+                var editor = this.createNestedWidget(events[i].eid);
                 break;
 
             case CONSTANTS.TERRITORY_EVENT_UNLOAD:
@@ -86,12 +95,16 @@ define([
         }
     };
 
+    ContainerLayerDecorator.prototype.destroyNested = function() {
+        this.nestedLayers.forEach(layer => layer.destroy());
+    };
 
     ContainerLayerDecorator.prototype.destroy = function() {
         LayerDecorator.prototype.destroy.call(this);
         if (this._nestedTerritoryUI) {
             this.client.removeUI(this._nestedTerritoryUI);
         }
+        this.destroyNested();
     };
 
     // TODO: Override 'expand' to add the set members and an 'add' button

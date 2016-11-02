@@ -104,8 +104,7 @@ define([
                     desc.color = color;
 
                     if (desc.layerType === 'Container') {
-                        desc.containedLayers = node.getMemberIds('addLayers');
-                        // TODO: Add the addLayers information here!
+                        desc.containedLayers = node.getMemberIds(Constants.CONTAINED_LAYER_SET);
                         // Set the decorator to ContainerLayerDecorator
                         desc.Decorator = this._client.decoratorManager
                             .getDecoratorForWidget('ContainerLayerDecorator', 'EasyDAG');
