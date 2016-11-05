@@ -1,0 +1,7 @@
+.nested-layers {
+    transform: scale(0.8);
+}
+
+.condense .nested-layers {
+  display: none;
+}
