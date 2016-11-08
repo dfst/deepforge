@@ -21,10 +21,11 @@ define([
 
     var ArchEditorControl,
         DEFAULT_CONFIG = {
-            DefaultColor: '#ffb74d',
+            DefaultColor: '#80cbc4',
             LayerColors: {
                 Container: '#ffb74d',
-                Convolution: '#2196f3',
+                NestedContainer: '#ffe0b2',
+                Convolution: '#42a5f5',
                 Simple: '#ff9100',
                 Transfer: '#80deea',
                 Misc: '#ce93d8'
@@ -47,6 +48,7 @@ define([
 
     ArchEditorControl.prototype.selectedObjectChanged = function(id) {
         ThumbnailControl.prototype.selectedObjectChanged.call(this, id);
+        this.nestedLevel = Math.floor(id.split('/').length/2) % 2;
 
         DeepForge.last.Architecture = id;
         if (typeof id === 'string') {
@@ -97,6 +99,9 @@ define([
                     desc.layerType = layerType.getAttribute(nodePropertyNames.Attributes.name);
 
                     color = this._config.LayerColors[desc.layerType];
+                    if (desc.layerType === 'Container' && this.nestedLevel) {
+                        color = this._config.LayerColors.NestedContainer;
+                    }
                     if (!color) {
                         this._logger.warn(`No color found for ${desc.layerType}`);
                         color = this._config.DefaultColor;
