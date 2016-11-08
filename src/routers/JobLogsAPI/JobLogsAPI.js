@@ -44,13 +44,17 @@ function initialize(middlewareOpts) {
 
     router.get('/:project/:branch/:job', function (req, res/*, next*/) {
         // Retrieve the job logs for the given job
-        logManager.getLog(req.params).then(log => {
-            res.set('Content-Type', 'text/plain');
-            res.send(log);
-        });
+        logger.info(`Requested logs for ${req.params.job} in ${req.params.project}`);
+        logManager.getLog(req.params)
+            .then(log => {
+                res.set('Content-Type', 'text/plain');
+                res.send(log);
+            })
+            .catch(err => logger.error(`Log retrieval failed: ${err}`));
     });
 
     router.get('/metadata/:project/:branch/:job', function (req, res/*, next*/) {
+        logger.info(`Requested metadata for ${req.params.job} in ${req.params.project}`);
         return mongo.findOne(req.params)
             .then(info => {
                 var lineCount = info ? info.lineCount : -1;
@@ -58,7 +62,8 @@ function initialize(middlewareOpts) {
                 return res.json({
                     lineCount: lineCount
                 });
-            });
+            })
+            .catch(err => logger.error(`Metadata retrieval failed: ${err}`));
     });
 
     router.patch('/:project/:branch/:job', function (req, res/*, next*/) {
@@ -86,16 +91,25 @@ function initialize(middlewareOpts) {
     });
 
     router.delete('/:project/:branch/:job', function (req, res/*, next*/) {
+        logger.info(`Request to delete logs for ${req.params.job} in ${req.params.project}`);
         logManager.delete(req.params)
             .then(() => mongo.findOneAndDelete(req.params))
-            .then(() => res.status(204).send('delete successful'));
+            .then(() => {
+                logger.info('Job log deletion successful!');
+                res.status(204).send('delete successful');
+            })
+            .catch(err => logger.error(`Job log deletion failed: ${err}`));
     });
 
     router.post('/migrate/:project/:srcBranch/:dstBranch', function (req, res/*, next*/) {
         var jobs = req.body.jobs;
+        logger.info(`Migrating logs from ${req.params.srcBranch} to ${req.params.dstBranch} in ${req.params.project}`);
         logManager.migrate(req.params, jobs)
-            .then(() => res.send('migration successful'))
-            .fail(err => logger.error(err));
+            .then(() => {
+                logger.info('Log migration successful!');
+                res.send('migration successful');
+            })
+            .fail(err => logger.error(`migration failed: ${err}`));
     });
 
     logger.debug('ready');
