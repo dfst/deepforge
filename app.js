@@ -7,6 +7,7 @@ var gmeConfig = require('./config'),
     rm_rf = require('rimraf'),
     myServer;
 
+process.chdir(__dirname);
 webgme.addToRequireJsPaths(gmeConfig);
 
 // Clear seed hash info
