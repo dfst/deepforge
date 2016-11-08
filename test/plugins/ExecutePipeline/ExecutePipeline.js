@@ -123,6 +123,7 @@ describe('ExecutePipeline', function () {
         return manager.initializePlugin(pluginName)
             .then(plugin_ => {
                 plugin = plugin_;
+                plugin.startExecHeartBeat = () => {};
                 return manager.configurePlugin(plugin, {}, context);
             })
             .then(() => node = plugin.activeNode)
