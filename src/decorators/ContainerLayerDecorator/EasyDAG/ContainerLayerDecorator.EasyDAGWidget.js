@@ -4,14 +4,12 @@
 define([
     'decorators/LayerDecorator/EasyDAG/LayerDecorator.EasyDAGWidget',
     'js/Constants',
-    'panels/ArchEditor/ArchEditorControl',
-    'widgets/ArchEditor/ArchEditorWidget',
+    './NestedLayer',
     'css!./ContainerLayerDecorator.EasyDAGWidget.css'
 ], function (
     LayerDecorator,
     CONSTANTS,
-    ArchEditor,
-    ArchEditorWidget
+    NestedLayer
 ) {
 
     'use strict';
@@ -32,10 +30,11 @@ define([
         this.$el.on('click', () => {
             if (this.expanded) {
                 Object.keys(this.nestedLayers).forEach(id => {
-                    this.nestedLayers[id]._widget.onBackgroundClick();
+                    this.nestedLayers[id].widget.onBackgroundClick();
                 });
             }
         });
+        this.onNestedRefresh = _.debounce(this.updateExpand.bind(this), 50);
     };
 
     _.extend(ContainerLayerDecorator.prototype, LayerDecorator.prototype);
@@ -86,9 +85,6 @@ define([
                 break;
             }
         }
-        // This is called too soon. FIXME
-        // This should probably be called right away then on the resize
-        // of the embedded widgets
         //if (this.expanded) {
             this._expand();
         //}
@@ -101,41 +97,20 @@ define([
     };
 
     ContainerLayerDecorator.prototype.createNestedWidget = function(id) {
-        var widget,
-            archEditor,
-            nop = () => {};
-
         if (!this.$nested) {
             this.$nested = this.$el.append('g')
                 .attr('class', 'nested-layers');
         }
 
-        widget = new ArchEditorWidget({
-            logger: this.logger.fork('ArchWidget'),
-            autoCenter: false,
-            svg: this.$nested
-        });
-        widget.setTitle =
-        widget.updateEmptyMsg = () => {};
-        widget.refreshExtras = _.debounce(this.updateExpand.bind(this), 50);
-
-        archEditor = new ArchEditor({
-            logger: this.logger.fork('ArchControl'),
+        this.nestedLayers[id] = new NestedLayer({
+            $container: this.$nested,
+            parent: this,
             client: this.client,
-            embedded: true,
-            widget: widget
+            logger: this.logger,
+            onRefresh: this.onNestedRefresh,
+            id: id
         });
-        // hack :(
-        archEditor.$btnModelHierarchyUp = {
-            show: nop,
-            hide: nop
-        };
-        widget.active = true;
-        archEditor.selectedObjectChanged(id);
-
-        // Add the nested widget to the visualizer
-        this.nestedLayers[id] = archEditor;
-        return archEditor;
+        return this.nestedLayers[id];
     };
 
     ContainerLayerDecorator.prototype.removeNestedWidget = function(id) {
@@ -195,7 +170,7 @@ define([
 
         // TODO: Sort these by their registry value
         for (i = 0; i < ids.length; i++) {
-            widget = this.nestedLayers[ids[i]]._widget;
+            widget = this.nestedLayers[ids[i]].widget;
             totalNestedWidth += widget.getSvgWidth() * ZOOM;
             maxNestedHeight = Math.max(widget.getSvgHeight() * ZOOM, maxNestedHeight);
         }
@@ -227,7 +202,7 @@ define([
         nestedMargin = (width - totalNestedWidth)/(ids.length + 1);
         x = nestedMargin - width/2;
         for (i = 0; i < ids.length; i++) {
-            widget = this.nestedLayers[ids[i]]._widget;
+            widget = this.nestedLayers[ids[i]].widget;
             widget.$el.attr('transform', `translate(${x}, ${y}) scale(${ZOOM})`);
             x += widget.getSvgWidth();
         }
