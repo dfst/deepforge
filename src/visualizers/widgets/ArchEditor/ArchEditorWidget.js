@@ -48,15 +48,18 @@ define([
     ArchEditorWidget.prototype.SelectionManager = SelectionManager;
 
     ArchEditorWidget.prototype.setupItemCallbacks = function() {
-        var widget = this;
         ThumbnailWidget.prototype.setupItemCallbacks.apply(this, arguments);
         // Add the hover button functions
         this.ItemClass.prototype.showHoverButtons = function() {
             var layer = this;
-            widget.showHoverButtons(layer);
+            this._widget.showHoverButtons(layer);
         };
-        this.ItemClass.prototype.hideHoverButtons = this.hideHoverButtons.bind(this);
-        this.ItemClass.prototype.isHoverAllowed = () => !this.isConnecting();
+        this.ItemClass.prototype.hideHoverButtons = function() {
+            this._widget.hideHoverButtons();
+        };
+        this.ItemClass.prototype.isHoverAllowed = function() {
+            return !this._widget.isConnecting();
+        };
     };
 
     ArchEditorWidget.prototype.showHoverButtons = function(layer) {

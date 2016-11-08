@@ -47,8 +47,8 @@ define([
     };
 
     ArchEditorControl.prototype.selectedObjectChanged = function(id) {
-        ThumbnailControl.prototype.selectedObjectChanged.call(this, id);
         this.nestedLevel = Math.floor(id.split('/').length/2) % 2;
+        ThumbnailControl.prototype.selectedObjectChanged.call(this, id);
 
         DeepForge.last.Architecture = id;
         if (typeof id === 'string') {
