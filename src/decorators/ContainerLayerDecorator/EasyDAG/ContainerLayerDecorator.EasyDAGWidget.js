@@ -27,6 +27,15 @@ define([
         LayerDecorator.call(this, options);
         this.$nested = this.$el.append('g')
             .attr('class', 'nested-layers');
+
+        // If clicked, deselect the given nested layer
+        this.$el.on('click', () => {
+            if (this.expanded) {
+                Object.keys(this.nestedLayers).forEach(id => {
+                    this.nestedLayers[id]._widget.onBackgroundClick();
+                });
+            }
+        });
     };
 
     _.extend(ContainerLayerDecorator.prototype, LayerDecorator.prototype);
@@ -215,10 +224,7 @@ define([
         }
 
         // Equally space the nested widgets
-        console.log('total width:', width);
-        console.log('nested width:', totalNestedWidth);
         nestedMargin = (width - totalNestedWidth)/(ids.length + 1);
-        console.log('nestedMarging:', nestedMargin);
         x = nestedMargin - width/2;
         for (i = 0; i < ids.length; i++) {
             widget = this.nestedLayers[ids[i]]._widget;
