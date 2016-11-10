@@ -102,12 +102,14 @@ define([
                 .attr('class', 'nested-layers');
         }
 
+        // TODO: Store the index
         this.nestedLayers[id] = new NestedLayer({
             $container: this.$nested,
             parent: this,
             client: this.client,
             logger: this.logger,
             onRefresh: this.onNestedRefresh,
+            index: this._node.containedLayers.indexOf(id),
             id: id
         });
         return this.nestedLayers[id];
