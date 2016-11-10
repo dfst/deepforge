@@ -97,6 +97,10 @@ define([
     };
 
     ContainerLayerDecorator.prototype.createNestedWidget = function(id) {
+        var index = this._node.containedLayers.indexOf(id),
+            len = this._node.containedLayers.length,
+            type = index === 0 ? NestedLayer.FIRST : (index === len-1 ? NestedLayer.LAST : null);
+
         if (!this.$nested) {
             this.$nested = this.$el.append('g')
                 .attr('class', 'nested-layers');
@@ -109,7 +113,7 @@ define([
             client: this.client,
             logger: this.logger,
             onRefresh: this.onNestedRefresh,
-            index: this._node.containedLayers.indexOf(id),
+            type: type,
             id: id
         });
         return this.nestedLayers[id];

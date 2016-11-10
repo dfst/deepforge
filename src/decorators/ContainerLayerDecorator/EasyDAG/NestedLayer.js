@@ -12,7 +12,7 @@ define([
 
         this._nodeId = opts.id;
         this._parent = opts.parent;
-        this.index = opts.index;
+        this.type = opts.type;
         this.logger = opts.logger;
 
         this.initHover();
@@ -45,6 +45,8 @@ define([
 
     };
 
+    NestedLayer.FIRST = 1;
+    NestedLayer.LAST = 1;
     NestedLayer.prototype.initHover = function() {
         var btnClass = 'button ';
 
@@ -59,15 +61,37 @@ define([
 
         this.$leftBtn = this.$hover.append('circle')
             .attr('r', 10)
-            .attr('class', btnClass + (this.index === 0 ? 'add-predecessor' : 'move-left'));
+            .attr('class', btnClass);
 
         this.$rightBtn = this.$hover.append('circle')
             .attr('r', 10)
-            .attr('class', btnClass + (this.index === 0 ? 'add-successor' : 'move-right'));
+            .attr('class', btnClass);
 
         // TODO: Add buttons
         this.$el.on('mouseenter', this.onHover.bind(this));
         this.$el.on('mouseleave', this.onUnhover.bind(this));
+        this.$leftBtn.on('click', this.clickLeft.bind(this));
+        this.$rightBtn.on('click', this.clickRight.bind(this));
+    };
+
+    NestedLayer.prototype.clickLeft = function() {
+        if (this.type === NestedLayer.FIRST) {
+            console.log('adding layer before this one');
+            // TODO: add layer before this one
+        } else {
+            console.log('swap the given layer with the previous one');
+            // TODO: swap the given layer with the previous one
+        }
+    };
+
+    NestedLayer.prototype.clickRight = function() {
+        if (this.type === NestedLayer.LAST) {
+            console.log('add layer after this one');
+            // TODO: add layer before this one
+        } else {
+            console.log('swap the given layer with the previous one');
+            // TODO: swap the given layer with the previous one
+        }
     };
 
     NestedLayer.prototype.onHover = function() {
