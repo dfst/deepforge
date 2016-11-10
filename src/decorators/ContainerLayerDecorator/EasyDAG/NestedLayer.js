@@ -81,11 +81,8 @@ define([
     };
 
     NestedLayer.prototype.onWidgetRefresh = function() {
-        var width = this.$content.attr('width'),
-            height = this.$content.attr('height');
-
-        this.$hover
-            .attr('transform', `translate(${-width/2})`);
+        var width = this.widget.getSvgWidth(),
+            height = this.widget.getSvgHeight();
 
         this.$outline
             .attr('width', width)

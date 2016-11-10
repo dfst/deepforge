@@ -204,8 +204,8 @@ define([
         nestedMargin = (width - totalNestedWidth)/(ids.length + 1);
         x = nestedMargin - width/2;
         for (i = 0; i < ids.length; i++) {
-            widget = this.nestedLayers[ids[i]].widget;
-            widget.$el.attr('transform', `translate(${x}, ${y}) scale(${ZOOM})`);
+            this.nestedLayers[ids[i]].$el
+                .attr('transform', `translate(${x}, ${y}) scale(${ZOOM})`);
             x += widget.getSvgWidth();
         }
 
