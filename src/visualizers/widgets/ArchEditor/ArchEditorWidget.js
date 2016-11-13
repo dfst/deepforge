@@ -60,6 +60,12 @@ define([
         this.ItemClass.prototype.isHoverAllowed = function() {
             return !this._widget.isConnecting();
         };
+
+        this.ItemClass.prototype.promptInitialLayer = function() {
+            var nodes = this._widget.getValidInitialNodes();
+            return this._widget.promptLayer(nodes)
+                .then(selected => selected.node.id);
+        };
     };
 
     ArchEditorWidget.prototype.showHoverButtons = function(layer) {

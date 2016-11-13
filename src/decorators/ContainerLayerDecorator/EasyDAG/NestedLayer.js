@@ -18,8 +18,8 @@ define([
         this.logger = opts.logger;
 
         this.refreshButtons = _.debounce(this.updateButtons.bind(this), 100);
-        this.initHover();
         this.$content = this.$el.append('g');
+        this.initHover();
 
         this.widget = new ArchEditorWidget({
             logger: this.logger.fork('ArchWidget'),
@@ -59,11 +59,11 @@ define([
         this.$hover = this.$el.append('g')
             .attr('class', 'hover-items');
 
-        this.$outline = this.$hover.append('rect')
-            .attr('class', 'hover-box')
-            .attr('fill-opacity', 0)
-            .attr('x', 0)
-            .attr('y', 0);
+        //this.$outline = this.$hover.append('rect')
+            //.attr('class', 'hover-box')
+            //.attr('fill-opacity', 0)
+            //.attr('x', 0)
+            //.attr('y', 0);
 
 
         this.$el.on('mouseenter', this.onHover.bind(this));
@@ -83,7 +83,6 @@ define([
         });
 
         this.$deleteBtn = new Buttons.DeleteOne({
-            context: this,
             hide: true,
             title: 'Delete',
             $pEl: this.$hover
@@ -91,9 +90,7 @@ define([
 
         this.$leftBtn._onClick = this.clickLeft.bind(this);
         this.$rightBtn._onClick = this.clickRight.bind(this);
-        this.$deleteBtn._onClick = function() {
-            this.onLastNodeRemoved();
-        };
+        this.$deleteBtn._onClick = () => this.onLastNodeRemoved();
 
         this.$leftHint = this.$leftBtn.$el.append('title');
         this.$rightHint = this.$rightBtn.$el.append('title');
@@ -124,6 +121,7 @@ define([
         } else {
             this.moveLayerForward();
         }
+        this.onUnhover();
     };
 
     NestedLayer.prototype.promptLayer = function() {
@@ -140,6 +138,7 @@ define([
         } else {
             this.moveLayerBackward();
         }
+        this.onUnhover();
     };
 
     NestedLayer.prototype.onHover = function() {
@@ -155,9 +154,9 @@ define([
         var width = this.widget.getSvgWidth(),
             height = this.widget.getSvgHeight();
 
-        this.$outline
-            .attr('width', width)
-            .attr('height', height);
+        //this.$outline
+            //.attr('width', width)
+            //.attr('height', height);
 
         this.$leftBtn.$el.attr('transform', `translate(0, ${height/2})`);
         this.$rightBtn.$el

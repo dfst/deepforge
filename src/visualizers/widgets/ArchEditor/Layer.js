@@ -25,6 +25,7 @@ define([
             node: desc,
             parentEl: this.$el
         });
+        this.decorator.promptLayer = this.promptInitialLayer.bind(this);
 
         this.width = this.decorator.width;
         this.height = this.decorator.height;

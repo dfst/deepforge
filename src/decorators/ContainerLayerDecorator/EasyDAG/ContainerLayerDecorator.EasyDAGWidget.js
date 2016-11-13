@@ -6,12 +6,14 @@ define([
     'js/Constants',
     'deepforge/Constants',
     './NestedLayer',
+    'widgets/EasyDAG/Buttons',
     'css!./ContainerLayerDecorator.EasyDAGWidget.css'
 ], function (
     LayerDecorator,
     GME_CONSTANTS,
     CONSTANTS,
-    NestedLayer
+    NestedLayer,
+    Buttons
 ) {
 
     'use strict';
@@ -40,52 +42,15 @@ define([
 
         // Add event handlers
         NestedLayer.prototype.addLayerBefore = function(layerId) {
-            return this.addLayer(layerId, true);
+            var decorator = this._parent,
+                index = decorator._node.containedLayers.indexOf(this.id);
+            return decorator.addLayerAt(layerId, index - 1);
         };
 
         NestedLayer.prototype.addLayerAfter = function(layerId) {
-            return this.addLayer(layerId);
-        };
-
-        NestedLayer.prototype.addLayer = function(baseId, infront) {
             var decorator = this._parent,
-                client = decorator.client,
-                parentId = decorator._node.id,
-                archNode,
-                index,
-                newId,
-                msg;
-
-            // Get the index of the given layer
-            index = decorator._node.containedLayers.indexOf(this.id);
-            if (infront) {
-                index--;
-            } else {
-                index++;
-            }
-            index = Math.max(index, 0);
-
-            archNode = client.getAllMetaNodes()
-                .find(node => node.getAttribute('name') === 'Architecture');
-
-            // Create a new Architecture node in the given node
-            msg = `Adding layer to ${decorator._node.name} at position ${index}`;
-            client.startTransaction(msg);
-
-            newId = client.createNode({
-                parentId: parentId,
-                baseId: archNode.getId()
-            });
-            // Create the selected layer
-            client.createNode({
-                parentId: newId,
-                baseId: baseId
-            });
-            client.addMember(parentId, newId, CONSTANTS.CONTAINED_LAYER_SET);
-            decorator._node.containedLayers.splice(index, 0, newId);
-            decorator._updateNestedIndices();
-
-            client.completeTransaction();
+                index = decorator._node.containedLayers.indexOf(this.id);
+            return decorator.addLayerAt(layerId, index + 1);
         };
 
         NestedLayer.prototype.isLast = function() {
@@ -153,6 +118,40 @@ define([
             );
         });
     };
+
+    ContainerLayerDecorator.prototype.addLayerAt = function(baseId, index) {
+        var client = this.client,
+            parentId = this._node.id,
+            archNode,
+            newId,
+            msg;
+
+        // Get the index of the given layer
+        index = Math.max(index, 0);
+
+        archNode = client.getAllMetaNodes()
+            .find(node => node.getAttribute('name') === 'Architecture');
+
+        // Create a new Architecture node in the given node
+        msg = `Adding layer to ${this._node.name} at position ${index}`;
+        client.startTransaction(msg);
+
+        newId = client.createNode({
+            parentId: parentId,
+            baseId: archNode.getId()
+        });
+        // Create the selected layer
+        client.createNode({
+            parentId: newId,
+            baseId: baseId
+        });
+        client.addMember(parentId, newId, CONSTANTS.CONTAINED_LAYER_SET);
+        this._node.containedLayers.splice(index, 0, newId);
+        this._updateNestedIndices();
+
+        client.completeTransaction();
+    };
+
 
     ContainerLayerDecorator.prototype.expand = function() {
         // Load the new territory
@@ -242,7 +241,6 @@ define([
         var isAnUpdate = this.expanded;
 
         // Add the attribute fields
-        y += y;
         this.clearFields();
         this.$attributes = this.$el.append('g')
             .attr('fill', '#222222');
@@ -264,15 +262,13 @@ define([
 
             // Attributes
             initialY = 25,
-            attrNames = Object.keys(this._attributes),
-            nameCount = (this.ptrNames.length + attrNames.length),
             isAnUpdate = this.expanded,
             NAME_MARGIN = 15,
             nestedMargin = 10,
             margin = 5,
             y = margin,
             x = margin,
-            dx, dy, i;
+            dy, i;
 
         y += initialY;
 
@@ -300,19 +296,16 @@ define([
 
         // Render attributes
         y = this._renderInfo(y, width);
-        // Get the height from the number of attributes
 
         // Shift name down
         this.$name.attr('y', 20);
-
+        maxNestedHeight = maxNestedHeight || CreateNestedBtn.SIZE * 2;
         // Update width, height
         rx = width/2;
         dy = y - margin - initialY;
         height = margin + this.dense.height + dy + maxNestedHeight;
 
-        if (maxNestedHeight) {
-            height += margin;
-        }
+        height += margin;
 
         // Equally space the nested widgets
         nestedMargin = (width - totalNestedWidth)/(ids.length + 1);
@@ -321,6 +314,20 @@ define([
             this.nestedLayers[ids[i]].$el
                 .attr('transform', `translate(${x}, ${y}) scale(${ZOOM})`);
             x += this.nestedLayers[ids[i]].widget.getSvgWidth() * ZOOM + nestedMargin;
+        }
+
+        if (this.$createNestedBtn) {
+            this.$createNestedBtn.remove();
+            this.$createNestedBtn = null;
+        }
+
+        if (ids.length === 0) {
+            // Add the 'create nested layer' button if no nested layers
+            this.$createNestedBtn = new CreateNestedBtn({
+                context: this,
+                $pEl: this.$el,
+                y: y + (height-y)/2
+            });
         }
 
         this.$body
@@ -348,10 +355,6 @@ define([
         }
     };
 
-    ContainerLayerDecorator.prototype.addNestedChildren = function() {
-        // TODO
-    };
-
     ContainerLayerDecorator.prototype.destroyNested = function() {
         Object.keys(this.nestedLayers).forEach(id => this.nestedLayers[id].destroy());
         this.nestedLayers = {};
@@ -371,8 +374,19 @@ define([
         this.destroyNested();
     };
 
-    // TODO: Override 'expand' to add the set members and an 'add' button
-    // Can I make a nested architecture editor and put it in this decorator?
-    // - Some events may need to be synchronized (exiting connection mode)
+    var CreateNestedBtn = function(params) {
+        params.title = 'Add nested layer';
+        Buttons.Add.call(this, params);
+    };
+
+    CreateNestedBtn.SIZE = Buttons.Add.SIZE;
+    CreateNestedBtn.prototype = Object.create(Buttons.Add.prototype);
+
+    CreateNestedBtn.prototype._onClick = function() {
+        // Call addLayerAfter and prompt for a layer
+        this.promptLayer()  // TODO: Add this in the ArchEditor
+            .then(layerId => this.addLayerAt(layerId, 0));
+    };
+
     return ContainerLayerDecorator;
 });
