@@ -153,10 +153,8 @@ define([
     };
 
 
-    ContainerLayerDecorator.prototype.expand = function() {
-        // Load the new territory
-        this.expanded = true;
-        this.$el.attr('class', 'centering-offset expand');
+    ContainerLayerDecorator.prototype.setAttributes = function() {
+        LayerDecorator.prototype.setAttributes.call(this);
         this.updateNestedTerritory();
     };
 
@@ -178,10 +176,6 @@ define([
     };
 
     ContainerLayerDecorator.prototype._containedEvents = function(events) {
-        if (!this.expanded) {
-            return;
-        }
-
         for (var i = events.length; i--;) {
             switch (events[i].etype) {
             case GME_CONSTANTS.TERRITORY_EVENT_LOAD:
@@ -195,9 +189,7 @@ define([
                 break;
             }
         }
-        //if (this.expanded) {
-            this._expand();
-        //}
+        this.updateExpand();
     };
 
     ContainerLayerDecorator.prototype.update = function() {
@@ -217,7 +209,7 @@ define([
 
     ContainerLayerDecorator.prototype.updateExpand = function() {
         if (this.expanded) {
-            this._expand();
+            this.expand();
         }
     };
 
@@ -266,7 +258,7 @@ define([
         return y;
     };
 
-    ContainerLayerDecorator.prototype._expand = function() {
+    ContainerLayerDecorator.prototype.expand = function() {
         // This should be rendered with the attributes
         var height,
             width,
@@ -282,6 +274,7 @@ define([
             i;
 
         // Shift name down
+        this.$el.attr('class', 'centering-offset expand');
         this.$name.attr('y', 20);
 
         // Add the nested children
