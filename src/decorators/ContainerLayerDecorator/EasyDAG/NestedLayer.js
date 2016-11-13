@@ -71,19 +71,30 @@ define([
 
         // Buttons
         this.$leftBtn = new Buttons.Add({
-            context: null,
+            hide: true,
             icon: this.isFirst() ? 'plus' : 'chevron-left',
             $pEl: this.$hover
         });
 
         this.$rightBtn = new Buttons.Add({
-            context: null,
+            hide: true,
             icon: this.isLast() ? 'plus' : 'chevron-right',
+            $pEl: this.$hover
+        });
+
+        this.$deleteBtn = new Buttons.DeleteOne({
+            context: this,
+            hide: true,
+            title: 'Delete',
             $pEl: this.$hover
         });
 
         this.$leftBtn._onClick = this.clickLeft.bind(this);
         this.$rightBtn._onClick = this.clickRight.bind(this);
+        this.$deleteBtn._onClick = function() {
+            this.onLastNodeRemoved();
+        };
+
         this.$leftHint = this.$leftBtn.$el.append('title');
         this.$rightHint = this.$rightBtn.$el.append('title');
         this.refreshButtons();
