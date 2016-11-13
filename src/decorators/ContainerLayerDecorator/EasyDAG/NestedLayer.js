@@ -1,3 +1,4 @@
+/*globals define, _ */
 define([
     'panels/ArchEditor/ArchEditorControl',
     'widgets/ArchEditor/ArchEditorWidget',
@@ -16,6 +17,7 @@ define([
         this._parent = opts.parent;
         this.logger = opts.logger;
 
+        this.refreshButtons = _.debounce(this.updateButtons.bind(this), 100);
         this.initHover();
         this.$content = this.$el.append('g');
 
@@ -51,7 +53,6 @@ define([
         };
         this.widget.active = true;
         this.control.selectedObjectChanged(this.id);
-
     };
 
     NestedLayer.prototype.initHover = function() {
@@ -83,13 +84,26 @@ define([
 
         this.$leftBtn._onClick = this.clickLeft.bind(this);
         this.$rightBtn._onClick = this.clickRight.bind(this);
+        this.$leftHint = this.$leftBtn.$el.append('title');
+        this.$rightHint = this.$rightBtn.$el.append('title');
+        this.refreshButtons();
     };
 
-    NestedLayer.prototype.refreshButtons = function() {
-        this.$leftBtn.icon = this.isFirst() ? 'plus' : 'chevron-left',
+    NestedLayer.prototype.updateButtons = function() {
+        this.$leftBtn.icon = this.isFirst() ? 'plus' : 'chevron-left';
         this.$rightBtn.icon = this.isLast() ? 'plus' : 'chevron-right';
-        this.$leftBtn._render();
-        this.$rightBtn._render();
+
+        this.$leftHint.text(this.isFirst() ?
+            'Add nested layer' :
+            'Move nested layer'
+        );
+        this.$rightHint.text(this.isLast() ?
+            'Add nested layer' :
+            'Move nested layer'
+        );
+
+        this.$leftBtn.render();
+        this.$rightBtn.render();
     };
 
     NestedLayer.prototype.clickLeft = function() {
