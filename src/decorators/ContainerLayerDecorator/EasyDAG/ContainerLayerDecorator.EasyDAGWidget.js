@@ -89,6 +89,15 @@ define([
             client.completeTransaction();
         };
 
+        NestedLayer.prototype.isLast = function() {
+            var index = this._parent._node.containedLayers.length - 1;
+            return this._parent._node.containedLayers[index] === this.id;
+        };
+
+        NestedLayer.prototype.isFirst = function() {
+            return this._parent._node.containedLayers[0] === this.id;
+        };
+
         NestedLayer.prototype.moveLayerForward = function() {
             return this.moveLayer(true);
         };
@@ -103,6 +112,7 @@ define([
                 client = decorator.client,
                 msg;
 
+            decorator._node.containedLayers.splice(index, 1);
             if (forward) {
                 index = Math.max(0, index - 1);
             } else {
@@ -205,6 +215,7 @@ define([
         // Update the order of the nested layers
         // TODO
         console.log('updated node!');
+        this.updateExpand();
     };
 
     ContainerLayerDecorator.prototype.updateExpand = function() {
@@ -214,10 +225,6 @@ define([
     };
 
     ContainerLayerDecorator.prototype.createNestedWidget = function(id) {
-        var index = this._node.containedLayers.indexOf(id),
-            len = this._node.containedLayers.length,
-            type = index === 0 ? NestedLayer.FIRST : (index === len-1 ? NestedLayer.LAST : null);
-
         if (!this.$nested) {
             this.$nested = this.$el.append('g')
                 .attr('class', 'nested-layers');
@@ -229,7 +236,6 @@ define([
             client: this.client,
             logger: this.logger,
             onRefresh: this.onNestedRefresh,
-            type: type,
             id: id
         });
         return this.nestedLayers[id];

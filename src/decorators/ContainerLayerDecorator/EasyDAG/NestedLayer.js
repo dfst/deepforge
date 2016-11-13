@@ -12,7 +12,6 @@ define([
 
         this.id = opts.id;
         this._parent = opts.parent;
-        this.type = opts.type;
         this.logger = opts.logger;
 
         this.initHover();
@@ -53,8 +52,6 @@ define([
 
     };
 
-    NestedLayer.FIRST = 1;
-    NestedLayer.LAST = 1;
     NestedLayer.prototype.initHover = function() {
         var btnClass = 'button ';
 
@@ -83,7 +80,7 @@ define([
     };
 
     NestedLayer.prototype.clickLeft = function() {
-        if (this.type === NestedLayer.FIRST) {
+        if (this.isFirst()) {
             this.promptLayer()
                 .then(layerId => this.addLayerBefore(layerId));
         } else {
@@ -99,7 +96,7 @@ define([
     };
 
     NestedLayer.prototype.clickRight = function() {
-        if (this.type === NestedLayer.LAST) {
+        if (this.isLast()) {
             this.promptLayer()
                 .then(layerId => this.addLayerAfter(layerId));
         } else {

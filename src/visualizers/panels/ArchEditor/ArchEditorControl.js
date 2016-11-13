@@ -118,7 +118,7 @@ define([
                                 );
                                 return [layerId, index];
                             })
-                            .sort((a, b) => a[1] < b[2] ? -1 : 1)
+                            .sort((a, b) => a[1] < b[1] ? -1 : 1)
                             .map(tuple => tuple[0]);
 
                         // Set the decorator to ContainerLayerDecorator
