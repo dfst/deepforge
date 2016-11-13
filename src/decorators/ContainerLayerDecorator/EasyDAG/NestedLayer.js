@@ -103,11 +103,11 @@ define([
 
         this.$leftHint.text(this.isFirst() ?
             'Add nested layer' :
-            'Move nested layer'
+            'Move nested layer left'
         );
         this.$rightHint.text(this.isLast() ?
             'Add nested layer' :
-            'Move nested layer'
+            'Move nested layer right'
         );
 
         this.$leftBtn.render();

@@ -267,7 +267,7 @@ define([
             initialY = 25,
             isAnUpdate = this.expanded,
             NAME_MARGIN = 15,
-            nestedMargin = 10,  // minimum
+            nestedMargin = 15,  // minimum
             margin = 5,
             y = margin + initialY,
             x = margin,
