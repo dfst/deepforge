@@ -76,18 +76,24 @@ define([
 
     NestedLayer.prototype.clickLeft = function() {
         if (this.type === NestedLayer.FIRST) {
-            var nodes = this.widget.getValidInitialNodes();
-
-            return this.widget.promptLayer(nodes)
-                .then(selected => this.addLayerBefore(selected.node.id));
+            this.promptLayer()
+                .then(layerId => this.addLayerBefore(layerId));
         } else {
             this.moveLayerForward();
         }
     };
 
+    NestedLayer.prototype.promptLayer = function() {
+        var nodes = this.widget.getValidInitialNodes();
+
+        return this.widget.promptLayer(nodes)
+            .then(selected => selected.node.id);
+    };
+
     NestedLayer.prototype.clickRight = function() {
         if (this.type === NestedLayer.LAST) {
-            this.addLayerAfter();
+            this.promptLayer()
+                .then(layerId => this.addLayerAfter(layerId));
         } else {
             this.moveLayerBackward();
         }

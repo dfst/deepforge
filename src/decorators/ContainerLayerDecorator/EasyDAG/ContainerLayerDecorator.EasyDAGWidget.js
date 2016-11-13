@@ -170,7 +170,9 @@ define([
         for (var i = events.length; i--;) {
             switch (events[i].etype) {
             case GME_CONSTANTS.TERRITORY_EVENT_LOAD:
-                this.createNestedWidget(events[i].eid);
+                if (!this.nestedLayers[events[i].eid]) {
+                    this.createNestedWidget(events[i].eid);
+                }
                 break;
 
             case GME_CONSTANTS.TERRITORY_EVENT_UPDATE:
@@ -270,15 +272,13 @@ define([
         //if (force || nameCount > 0) {
 
         y += initialY;
-        // TODO: Add the nested children
-        // this.addNestedChildren();
-        var ids = Object.keys(this.nestedLayers),
+
+        // Add the nested children
+        var ids = this._node.containedLayers.filter(id => this.nestedLayers[id]),
             totalNestedWidth = 0,
             maxNestedHeight = 0,
-            left,
             widget;
 
-        // TODO: Sort these by their registry value
         for (i = 0; i < ids.length; i++) {
             widget = this.nestedLayers[ids[i]].widget;
             totalNestedWidth += widget.getSvgWidth() * ZOOM;
@@ -314,7 +314,7 @@ define([
         for (i = 0; i < ids.length; i++) {
             this.nestedLayers[ids[i]].$el
                 .attr('transform', `translate(${x}, ${y}) scale(${ZOOM})`);
-            x += widget.getSvgWidth();
+            x += this.nestedLayers[ids[i]].widget.getSvgWidth() * ZOOM + nestedMargin;
         }
 
         this.$body
