@@ -20,8 +20,8 @@ define([
         ZOOM = 0.8,
         DECORATOR_ID = 'ContainerLayerDecorator';
 
-    // Container layer nodes need to be able to nest the targets of their
-    // 'addLayers' set in order inside of themselves when expanded
+    // Container layer nodes need to be able to nest the containedLayers
+    // in order inside of themselves when expanded
     ContainerLayerDecorator = function (options) {
         this.nestedLayers = {};
         LayerDecorator.call(this, options);
@@ -40,7 +40,6 @@ define([
 
         // Add event handlers
         NestedLayer.prototype.addLayerBefore = function(layerId) {
-            console.log('creating node of type:', layerId);
             return this.addLayer(layerId, true);
         };
 
@@ -182,7 +181,6 @@ define([
     };
 
     ContainerLayerDecorator.prototype._containedEvents = function(events) {
-        var updateOrder = false;
         if (!this.expanded) {
             return;
         }
@@ -193,11 +191,6 @@ define([
                 if (!this.nestedLayers[events[i].eid]) {
                     this.createNestedWidget(events[i].eid);
                 }
-                break;
-
-            case GME_CONSTANTS.TERRITORY_EVENT_UPDATE:
-                console.log('node updated!', events[i].eid);
-                updateOrder = true;
                 break;
 
             case GME_CONSTANTS.TERRITORY_EVENT_UNLOAD:
@@ -213,8 +206,6 @@ define([
     ContainerLayerDecorator.prototype.update = function() {
         LayerDecorator.prototype.update.apply(this, arguments);
         // Update the order of the nested layers
-        // TODO
-        console.log('updated node!');
         this.updateExpand();
     };
 
@@ -265,9 +256,7 @@ define([
         return y;
     };
 
-    ContainerLayerDecorator.prototype._expand = function(force) {
-        // TODO: render the expanded node; assume that the nested layers are loaded
-
+    ContainerLayerDecorator.prototype._expand = function() {
         // This should be rendered with the attributes
         var height,
             width,
@@ -285,9 +274,6 @@ define([
             x = margin,
             dx, dy, i;
 
-        // Only expand if the node has attributes to show
-        //if (force || nameCount > 0) {
-
         y += initialY;
 
         // Add the nested children
@@ -300,6 +286,9 @@ define([
             widget = this.nestedLayers[ids[i]].widget;
             totalNestedWidth += widget.getSvgWidth() * ZOOM;
             maxNestedHeight = Math.max(widget.getSvgHeight() * ZOOM, maxNestedHeight);
+
+            // Update the buttons (in case of reorder)
+            this.nestedLayers[ids[i]].refreshButtons();
         }
 
         width = Math.max(
@@ -342,7 +331,7 @@ define([
             .attr('ry', 0)
             .attr('width', width)
             .attr('height', height)
-            .each('end', (a1, a2) => {
+            .each('end', () => {
                 if (!isAnUpdate) {
                     this.$attributes.attr('opacity', 1);
                 }
@@ -357,9 +346,6 @@ define([
 
             this.onResize();
         }
-        //} else if (isAnUpdate) {
-            //this.condense();
-        //}
     };
 
     ContainerLayerDecorator.prototype.addNestedChildren = function() {

@@ -1,9 +1,11 @@
 define([
     'panels/ArchEditor/ArchEditorControl',
-    'widgets/ArchEditor/ArchEditorWidget'
+    'widgets/ArchEditor/ArchEditorWidget',
+    'widgets/EasyDAG/Buttons'
 ], function(
     ArchEditor,
-    ArchEditorWidget
+    ArchEditorWidget,
+    Buttons
 ) {
     var nop = () => {};
     var NestedLayer = function(opts) {
@@ -53,8 +55,6 @@ define([
     };
 
     NestedLayer.prototype.initHover = function() {
-        var btnClass = 'button ';
-
         this.$hover = this.$el.append('g')
             .attr('class', 'hover-items');
 
@@ -64,19 +64,32 @@ define([
             .attr('x', 0)
             .attr('y', 0);
 
-        this.$leftBtn = this.$hover.append('circle')
-            .attr('r', 10)
-            .attr('class', btnClass);
 
-        this.$rightBtn = this.$hover.append('circle')
-            .attr('r', 10)
-            .attr('class', btnClass);
-
-        // TODO: Add buttons
         this.$el.on('mouseenter', this.onHover.bind(this));
         this.$el.on('mouseleave', this.onUnhover.bind(this));
-        this.$leftBtn.on('click', this.clickLeft.bind(this));
-        this.$rightBtn.on('click', this.clickRight.bind(this));
+
+        // Buttons
+        this.$leftBtn = new Buttons.Add({
+            context: null,
+            icon: this.isFirst() ? 'plus' : 'chevron-left',
+            $pEl: this.$hover
+        });
+
+        this.$rightBtn = new Buttons.Add({
+            context: null,
+            icon: this.isLast() ? 'plus' : 'chevron-right',
+            $pEl: this.$hover
+        });
+
+        this.$leftBtn._onClick = this.clickLeft.bind(this);
+        this.$rightBtn._onClick = this.clickRight.bind(this);
+    };
+
+    NestedLayer.prototype.refreshButtons = function() {
+        this.$leftBtn.icon = this.isFirst() ? 'plus' : 'chevron-left',
+        this.$rightBtn.icon = this.isLast() ? 'plus' : 'chevron-right';
+        this.$leftBtn._render();
+        this.$rightBtn._render();
     };
 
     NestedLayer.prototype.clickLeft = function() {
@@ -105,13 +118,12 @@ define([
     };
 
     NestedLayer.prototype.onHover = function() {
+        this.refreshButtons();
         this.$hover.attr('class', 'hover-items hovered');
-        // TODO
     };
 
     NestedLayer.prototype.onUnhover = function() {
         this.$hover.attr('class', 'hover-items unhovered');
-        // TODO
     };
 
     NestedLayer.prototype.onWidgetRefresh = function() {
@@ -122,10 +134,9 @@ define([
             .attr('width', width)
             .attr('height', height);
 
-        this.$leftBtn.attr('cy', height/2);
-        this.$rightBtn
-            .attr('cx', width)
-            .attr('cy', height/2);
+        this.$leftBtn.$el.attr('transform', `translate(0, ${height/2})`);
+        this.$rightBtn.$el
+            .attr('transform', `translate(${width}, ${height/2})`);
 
         this.onRefresh();
     };

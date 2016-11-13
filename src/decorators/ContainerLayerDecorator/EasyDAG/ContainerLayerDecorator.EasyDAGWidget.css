@@ -25,5 +25,5 @@
 }
 
 .nested-layers .hovered .hover-box {
-  stroke-opacity: 1;
+  stroke-opacity: 0;
 }
