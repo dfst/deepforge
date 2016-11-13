@@ -189,11 +189,16 @@ define([
                 break;
             }
         }
-        this.updateExpand();
+        if (events.length > 1) {  // if more than just 'complete' event
+            this.updateExpand();
+        }
     };
 
-    ContainerLayerDecorator.prototype.update = function() {
-        LayerDecorator.prototype.update.apply(this, arguments);
+    ContainerLayerDecorator.prototype.update = function(node) {
+        this._node = node;
+        // Update the attributes
+        this.setAttributes();
+
         // Check for a new nested layer
         var hasNewLayers = this._node.containedLayers
             .filter(id => !this.nestedLayers[id])
@@ -203,8 +208,13 @@ define([
             this.updateNestedTerritory();
         } else {
             // Update the order of the nested layers
-            this.updateExpand();
+            if (this._selected) {
+                this.expand();
+            } else {
+                this.condense();
+            }
         }
+        this.fieldsWidth = null;
     };
 
     ContainerLayerDecorator.prototype.updateExpand = function() {
@@ -274,7 +284,6 @@ define([
             i;
 
         // Shift name down
-        this.$el.attr('class', 'centering-offset expand');
         this.$name.attr('y', 20);
 
         // Add the nested children
@@ -343,6 +352,7 @@ define([
             .each('end', () => {
                 if (!isAnUpdate) {
                     this.$attributes.attr('opacity', 1);
+                    this.$el.attr('class', 'centering-offset expand');
                 }
             });
 
