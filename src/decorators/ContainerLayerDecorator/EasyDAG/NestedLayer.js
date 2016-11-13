@@ -34,6 +34,14 @@ define([
             embedded: true,
             widget: this.widget
         });
+        this.control._onUnload = () => {
+            ArchEditor.prototype._onUnload.apply(this.control, arguments);
+            // If it was the last node, remove it
+            var node = this.control._client.getNode(this.id);
+            if (node.getChildrenIds().length === 0) {
+                this.onLastNodeRemoved();
+            }
+        };
 
         // hack :(
         this.control.$btnModelHierarchyUp = {
@@ -127,6 +135,8 @@ define([
 
     NestedLayer.prototype.destroy = function() {
         this.control.destroy();
+        this.widget.destroy();
+        this.$el.remove();
     };
 
     return NestedLayer;

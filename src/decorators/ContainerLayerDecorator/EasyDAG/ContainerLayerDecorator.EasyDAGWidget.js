@@ -116,6 +116,16 @@ define([
             decorator._updateNestedIndices();
             client.completeTransaction();
         };
+
+        NestedLayer.prototype.onLastNodeRemoved = function() {
+            var decorator = this._parent,
+                index = decorator._node.containedLayers.indexOf(this.id),
+                msg = `Removing nested layer of ${decorator._node.name} at position ${index}`;
+
+            decorator.client.startTransaction(msg);
+            decorator.client.deleteNode(this.id);
+            decorator.client.completeTransaction();
+        };
     };
 
     _.extend(ContainerLayerDecorator.prototype, LayerDecorator.prototype);
@@ -228,6 +238,7 @@ define([
     ContainerLayerDecorator.prototype.removeNestedWidget = function(id) {
         this.nestedLayers[id].destroy();
         delete this.nestedLayers[id];
+        this.updateExpand();
     };
 
     ContainerLayerDecorator.prototype._renderInfo = function(y, width) {
