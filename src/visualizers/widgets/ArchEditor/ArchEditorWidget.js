@@ -196,5 +196,11 @@ define([
         };
     };
 
+    ArchEditorWidget.prototype.updateNode = function(desc) {
+        var item = this.items[desc.id];
+        item.update(desc);
+        this.refreshUI();
+    };
+
     return ArchEditorWidget;
 });

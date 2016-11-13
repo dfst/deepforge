@@ -202,8 +202,17 @@ define([
 
     ContainerLayerDecorator.prototype.update = function() {
         LayerDecorator.prototype.update.apply(this, arguments);
-        // Update the order of the nested layers
-        this.updateExpand();
+        // Check for a new nested layer
+        var hasNewLayers = this._node.containedLayers
+            .filter(id => !this.nestedLayers[id])
+            .length > 0;
+
+        if (hasNewLayers) {
+            this.updateNestedTerritory();
+        } else {
+            // Update the order of the nested layers
+            this.updateExpand();
+        }
     };
 
     ContainerLayerDecorator.prototype.updateExpand = function() {
@@ -279,7 +288,7 @@ define([
         var ids = this._node.containedLayers.filter(id => this.nestedLayers[id]),
             totalNestedWidth = 0,
             maxNestedHeight = 0,
-            firstFieldY,
+            fieldWidth,
             widget;
 
         if (ids.length === 0) {
@@ -295,15 +304,16 @@ define([
             }
         }
 
+        fieldWidth = this.fieldsWidth + 3 * NAME_MARGIN;
         width = Math.max(
             this.nameWidth + 2 * NAME_MARGIN,
             this.size.width,
-            this.fieldsWidth + 3 * NAME_MARGIN,
+            fieldWidth,
             totalNestedWidth + (ids.length + 1) * nestedMargin
         );
 
         // Render attributes
-        y = this._renderInfo(y, width);
+        y = this._renderInfo(y, fieldWidth);
         y += nestedMargin;
 
         // Update width, height
