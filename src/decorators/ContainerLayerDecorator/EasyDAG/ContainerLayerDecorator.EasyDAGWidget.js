@@ -235,8 +235,9 @@ define([
         this.updateExpand();
     };
 
-    ContainerLayerDecorator.prototype._renderInfo = function(y, width) {
-        var isAnUpdate = this.expanded;
+    ContainerLayerDecorator.prototype._renderInfo = function(top, width) {
+        var isAnUpdate = this.expanded,
+            y = top;
 
         // Add the attribute fields
         this.clearFields();
@@ -249,6 +250,10 @@ define([
 
         y = this.createAttributeFields(y, width);
         y = this.createPointerFields(y, width);
+
+        if (y !== top) {
+            y += this.ROW_HEIGHT/2;
+        }
         return y;
     };
 
@@ -256,19 +261,19 @@ define([
         // This should be rendered with the attributes
         var height,
             width,
-            rx,
 
             // Attributes
             initialY = 25,
             isAnUpdate = this.expanded,
             NAME_MARGIN = 15,
-            nestedMargin = 10,
+            nestedMargin = 10,  // minimum
             margin = 5,
-            y = margin,
+            y = margin + initialY,
             x = margin,
-            dy, i;
+            i;
 
-        y += initialY;
+        // Shift name down
+        this.$name.attr('y', 20);
 
         // Add the nested children
         var ids = this._node.containedLayers.filter(id => this.nestedLayers[id]),
@@ -277,13 +282,17 @@ define([
             firstFieldY,
             widget;
 
-        for (i = 0; i < ids.length; i++) {
-            widget = this.nestedLayers[ids[i]].widget;
-            totalNestedWidth += widget.getSvgWidth() * ZOOM;
-            maxNestedHeight = Math.max(widget.getSvgHeight() * ZOOM, maxNestedHeight);
+        if (ids.length === 0) {
+            maxNestedHeight = CreateNestedBtn.SIZE * 2;
+        } else {
+            for (i = 0; i < ids.length; i++) {
+                widget = this.nestedLayers[ids[i]].widget;
+                totalNestedWidth += widget.getSvgWidth() * ZOOM;
+                maxNestedHeight = Math.max(widget.getSvgHeight() * ZOOM, maxNestedHeight);
 
-            // Update the buttons (in case of reorder)
-            this.nestedLayers[ids[i]].refreshButtons();
+                // Update the buttons (in case of reorder)
+                this.nestedLayers[ids[i]].refreshButtons();
+            }
         }
 
         width = Math.max(
@@ -294,25 +303,15 @@ define([
         );
 
         // Render attributes
-        firstFieldY = y;
-        y = this._renderInfo(firstFieldY, width);
+        y = this._renderInfo(y, width);
+        y += nestedMargin;
 
-        // Shift name down
-        this.$name.attr('y', 20);
-        maxNestedHeight = maxNestedHeight || CreateNestedBtn.SIZE * 2;
         // Update width, height
-        rx = width/2;
-        dy = y - margin - initialY;
-        height = margin + this.dense.height + dy + maxNestedHeight;
-
-        height += margin;
+        height = y + maxNestedHeight + nestedMargin;
 
         // Equally space the nested widgets
         nestedMargin = (width - totalNestedWidth)/(ids.length + 1);
         x = nestedMargin - width/2;
-        if (firstFieldY !== y) {  // added attributes
-            y += this.ROW_HEIGHT + margin;
-        }
         for (i = 0; i < ids.length; i++) {
             this.nestedLayers[ids[i]].$el
                 .attr('transform', `translate(${x}, ${y}) scale(${ZOOM})`);
@@ -332,7 +331,7 @@ define([
 
         this.$body
             .transition()
-            .attr('x', -rx)
+            .attr('x', -width/2)
             .attr('y', 0)
             .attr('rx', 0)
             .attr('ry', 0)
