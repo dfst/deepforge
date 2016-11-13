@@ -39,15 +39,16 @@ define([
         this.onNestedRefresh = _.debounce(this.updateExpand.bind(this), 50);
 
         // Add event handlers
-        NestedLayer.prototype.addLayerBefore = function() {
-            return this.addLayer(true);
+        NestedLayer.prototype.addLayerBefore = function(layerId) {
+            console.log('creating node of type:', layerId);
+            return this.addLayer(layerId, true);
         };
 
-        NestedLayer.prototype.addLayerAfter = function() {
-            return this.addLayer();
+        NestedLayer.prototype.addLayerAfter = function(layerId) {
+            return this.addLayer(layerId);
         };
 
-        NestedLayer.prototype.addLayer = function(infront) {
+        NestedLayer.prototype.addLayer = function(baseId, infront) {
             var decorator = this._parent,
                 client = decorator.client,
                 parentId = decorator._node.id,
@@ -76,6 +77,11 @@ define([
                 parentId: parentId,
                 baseId: archNode.getId()
             });
+            // Create the selected layer
+            client.createNode({
+                parentId: newId,
+                baseId: baseId
+            });
             client.addMember(parentId, newId, CONSTANTS.CONTAINED_LAYER_SET);
             decorator._node.containedLayers.splice(index, 0, newId);
             decorator._updateNestedIndices();
@@ -97,8 +103,13 @@ define([
                 client = decorator.client,
                 msg;
 
+            if (forward) {
+                index = Math.max(0, index - 1);
+            } else {
+                index++;
+            }
+
             decorator._node.containedLayers.splice(index, 0, this.id);
-            // TODO: move the node appropriately
 
             msg = `Swapping nested layers at ${index} and ${forward ? index-1 : index+1}`;
             client.startTransaction(msg);
@@ -110,8 +121,6 @@ define([
     _.extend(ContainerLayerDecorator.prototype, LayerDecorator.prototype);
 
     ContainerLayerDecorator.prototype.DECORATOR_ID = DECORATOR_ID;
-
-    // TODO: when the node is updated, it should add the containedLayers to the territory
 
     ContainerLayerDecorator.prototype._updateNestedIndices = function() {
         this._node.containedLayers.forEach((layerId, index) => {
@@ -153,6 +162,7 @@ define([
     };
 
     ContainerLayerDecorator.prototype._containedEvents = function(events) {
+        var updateOrder = false;
         if (!this.expanded) {
             return;
         }
@@ -163,6 +173,11 @@ define([
                 this.createNestedWidget(events[i].eid);
                 break;
 
+            case GME_CONSTANTS.TERRITORY_EVENT_UPDATE:
+                console.log('node updated!', events[i].eid);
+                updateOrder = true;
+                break;
+
             case GME_CONSTANTS.TERRITORY_EVENT_UNLOAD:
                 this.removeNestedWidget(events[i].eid);
                 break;
@@ -171,6 +186,13 @@ define([
         //if (this.expanded) {
             this._expand();
         //}
+    };
+
+    ContainerLayerDecorator.prototype.update = function() {
+        LayerDecorator.prototype.update.apply(this, arguments);
+        // Update the order of the nested layers
+        // TODO
+        console.log('updated node!');
     };
 
     ContainerLayerDecorator.prototype.updateExpand = function() {

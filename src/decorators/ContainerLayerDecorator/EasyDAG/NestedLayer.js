@@ -76,7 +76,10 @@ define([
 
     NestedLayer.prototype.clickLeft = function() {
         if (this.type === NestedLayer.FIRST) {
-            this.addLayerBefore();
+            var nodes = this.widget.getValidInitialNodes();
+
+            return this.widget.promptLayer(nodes)
+                .then(selected => this.addLayerBefore(selected.node.id));
         } else {
             this.moveLayerForward();
         }
