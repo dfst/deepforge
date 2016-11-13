@@ -4,10 +4,12 @@
 define([
     'decorators/LayerDecorator/EasyDAG/LayerDecorator.EasyDAGWidget',
     'js/Constants',
+    'deepforge/Constants',
     './NestedLayer',
     'css!./ContainerLayerDecorator.EasyDAGWidget.css'
 ], function (
     LayerDecorator,
+    GME_CONSTANTS,
     CONSTANTS,
     NestedLayer
 ) {
@@ -35,6 +37,74 @@ define([
             }
         });
         this.onNestedRefresh = _.debounce(this.updateExpand.bind(this), 50);
+
+        // Add event handlers
+        NestedLayer.prototype.addLayerBefore = function() {
+            return this.addLayer(true);
+        };
+
+        NestedLayer.prototype.addLayerAfter = function() {
+            return this.addLayer();
+        };
+
+        NestedLayer.prototype.addLayer = function(infront) {
+            var decorator = this._parent,
+                client = decorator.client,
+                parentId = decorator._node.id,
+                archNode,
+                index,
+                newId,
+                msg;
+
+            // Get the index of the given layer
+            index = decorator._node.containedLayers.indexOf(this.id);
+            if (infront) {
+                index--;
+            } else {
+                index++;
+            }
+            index = Math.max(index, 0);
+
+            archNode = client.getAllMetaNodes()
+                .find(node => node.getAttribute('name') === 'Architecture');
+
+            // Create a new Architecture node in the given node
+            msg = `Adding layer to ${decorator._node.name} at position ${index}`;
+            client.startTransaction(msg);
+
+            newId = client.createNode({
+                parentId: parentId,
+                baseId: archNode.getId()
+            });
+            client.addMember(parentId, newId, CONSTANTS.CONTAINED_LAYER_SET);
+            decorator._node.containedLayers.splice(index, 0, newId);
+            decorator._updateNestedIndices();
+
+            client.completeTransaction();
+        };
+
+        NestedLayer.prototype.moveLayerForward = function() {
+            return this.moveLayer(true);
+        };
+
+        NestedLayer.prototype.moveLayerBackward = function() {
+            return this.moveLayer();
+        };
+
+        NestedLayer.prototype.moveLayer = function(forward) {
+            var decorator = this._parent,
+                index = decorator._node.containedLayers.indexOf(this.id),
+                client = decorator.client,
+                msg;
+
+            decorator._node.containedLayers.splice(index, 0, this.id);
+            // TODO: move the node appropriately
+
+            msg = `Swapping nested layers at ${index} and ${forward ? index-1 : index+1}`;
+            client.startTransaction(msg);
+            decorator._updateNestedIndices();
+            client.completeTransaction();
+        };
     };
 
     _.extend(ContainerLayerDecorator.prototype, LayerDecorator.prototype);
@@ -42,6 +112,19 @@ define([
     ContainerLayerDecorator.prototype.DECORATOR_ID = DECORATOR_ID;
 
     // TODO: when the node is updated, it should add the containedLayers to the territory
+
+    ContainerLayerDecorator.prototype._updateNestedIndices = function() {
+        this._node.containedLayers.forEach((layerId, index) => {
+            // Set the layer's member registry to it's index
+            client.setMemberRegistry(
+                parentId,
+                layerId,
+                CONSTANTS.CONTAINED_LAYER_SET,
+                CONSTANTS.CONTAINED_LAYER_INDEX,
+                index
+            );
+        });
+    };
 
     ContainerLayerDecorator.prototype.expand = function() {
         // Load the new territory
@@ -76,11 +159,11 @@ define([
 
         for (var i = events.length; i--;) {
             switch (events[i].etype) {
-            case CONSTANTS.TERRITORY_EVENT_LOAD:
+            case GME_CONSTANTS.TERRITORY_EVENT_LOAD:
                 this.createNestedWidget(events[i].eid);
                 break;
 
-            case CONSTANTS.TERRITORY_EVENT_UNLOAD:
+            case GME_CONSTANTS.TERRITORY_EVENT_UNLOAD:
                 this.removeNestedWidget(events[i].eid);
                 break;
             }
@@ -106,7 +189,6 @@ define([
                 .attr('class', 'nested-layers');
         }
 
-        // TODO: Store the index
         this.nestedLayers[id] = new NestedLayer({
             $container: this.$nested,
             parent: this,

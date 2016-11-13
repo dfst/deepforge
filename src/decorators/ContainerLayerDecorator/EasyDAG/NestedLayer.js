@@ -10,7 +10,7 @@ define([
         this.$el = opts.$container.append('g')
             .attr('class', 'nested-layer');
 
-        this._nodeId = opts.id;
+        this.id = opts.id;
         this._parent = opts.parent;
         this.type = opts.type;
         this.logger = opts.logger;
@@ -41,7 +41,7 @@ define([
             hide: nop
         };
         this.widget.active = true;
-        this.control.selectedObjectChanged(this._nodeId);
+        this.control.selectedObjectChanged(this.id);
 
     };
 
@@ -76,21 +76,17 @@ define([
 
     NestedLayer.prototype.clickLeft = function() {
         if (this.type === NestedLayer.FIRST) {
-            console.log('adding layer before this one');
-            // TODO: add layer before this one
+            this.addLayerBefore();
         } else {
-            console.log('swap the given layer with the previous one');
-            // TODO: swap the given layer with the previous one
+            this.moveLayerForward();
         }
     };
 
     NestedLayer.prototype.clickRight = function() {
         if (this.type === NestedLayer.LAST) {
-            console.log('add layer after this one');
-            // TODO: add layer before this one
+            this.addLayerAfter();
         } else {
-            console.log('swap the given layer with the previous one');
-            // TODO: swap the given layer with the previous one
+            this.moveLayerBackward();
         }
     };
 

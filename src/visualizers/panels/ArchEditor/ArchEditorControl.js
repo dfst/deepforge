@@ -109,7 +109,18 @@ define([
                     desc.color = color;
 
                     if (desc.layerType === 'Container') {
-                        desc.containedLayers = node.getMemberIds(Constants.CONTAINED_LAYER_SET);
+                        desc.containedLayers = node.getMemberIds(Constants.CONTAINED_LAYER_SET)
+                            .map(layerId => {
+                                var index = node.getMemberRegistry(
+                                    Constants.CONTAINED_LAYER_SET,
+                                    layerId,
+                                    Constants.CONTAINED_LAYER_INDEX
+                                );
+                                return [layerId, index];
+                            })
+                            .sort((a, b) => a[1] < b[2] ? -1 : 1)
+                            .map(tuple => tuple[0]);
+
                         // Set the decorator to ContainerLayerDecorator
                         desc.Decorator = this._client.decoratorManager
                             .getDecoratorForWidget('ContainerLayerDecorator', 'EasyDAG');

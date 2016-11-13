@@ -12,6 +12,8 @@
 }(this, function() {
     return {
         CONTAINED_LAYER_SET: 'addLayers',
+        CONTAINED_LAYER_INDEX: 'index',
+
         LINE_OFFSET: 'lineOffset',
 
         // DeepForge metadata creation in dist execution
