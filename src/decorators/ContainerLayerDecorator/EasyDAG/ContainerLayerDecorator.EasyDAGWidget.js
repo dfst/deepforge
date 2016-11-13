@@ -116,8 +116,8 @@ define([
     ContainerLayerDecorator.prototype._updateNestedIndices = function() {
         this._node.containedLayers.forEach((layerId, index) => {
             // Set the layer's member registry to it's index
-            client.setMemberRegistry(
-                parentId,
+            this.client.setMemberRegistry(
+                this._node.id,
                 layerId,
                 CONSTANTS.CONTAINED_LAYER_SET,
                 CONSTANTS.CONTAINED_LAYER_INDEX,

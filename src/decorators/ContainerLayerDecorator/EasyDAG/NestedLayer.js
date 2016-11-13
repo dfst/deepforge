@@ -116,5 +116,9 @@ define([
         this.onRefresh();
     };
 
+    NestedLayer.prototype.destroy = function() {
+        this.control.destroy();
+    };
+
     return NestedLayer;
 });
