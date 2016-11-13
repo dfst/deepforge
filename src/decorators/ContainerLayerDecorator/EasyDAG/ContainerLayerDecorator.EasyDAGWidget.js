@@ -163,12 +163,10 @@ define([
     ContainerLayerDecorator.prototype.condense = function() {
         // hide the nested layers
         this.$el.attr('class', 'centering-offset condense');
+        this.removeCreateNestedBtn();
         return LayerDecorator.prototype.condense.apply(this, arguments);
     };
 
-    // Include the nested layers in the updateTerritory method
-    //ContainerLayerDecorator.prototype.updateTerritory = function() {
-    //};
     ContainerLayerDecorator.prototype.updateNestedTerritory = function() {
         // Add the nested layers and update
         if (!this._nestedTerritoryUI) {
@@ -276,6 +274,7 @@ define([
         var ids = this._node.containedLayers.filter(id => this.nestedLayers[id]),
             totalNestedWidth = 0,
             maxNestedHeight = 0,
+            firstFieldY,
             widget;
 
         for (i = 0; i < ids.length; i++) {
@@ -295,7 +294,8 @@ define([
         );
 
         // Render attributes
-        y = this._renderInfo(y, width);
+        firstFieldY = y;
+        y = this._renderInfo(firstFieldY, width);
 
         // Shift name down
         this.$name.attr('y', 20);
@@ -310,23 +310,23 @@ define([
         // Equally space the nested widgets
         nestedMargin = (width - totalNestedWidth)/(ids.length + 1);
         x = nestedMargin - width/2;
+        if (firstFieldY !== y) {  // added attributes
+            y += this.ROW_HEIGHT + margin;
+        }
         for (i = 0; i < ids.length; i++) {
             this.nestedLayers[ids[i]].$el
                 .attr('transform', `translate(${x}, ${y}) scale(${ZOOM})`);
             x += this.nestedLayers[ids[i]].widget.getSvgWidth() * ZOOM + nestedMargin;
         }
 
-        if (this.$createNestedBtn) {
-            this.$createNestedBtn.remove();
-            this.$createNestedBtn = null;
-        }
+        this.removeCreateNestedBtn();
 
         if (ids.length === 0) {
             // Add the 'create nested layer' button if no nested layers
             this.$createNestedBtn = new CreateNestedBtn({
                 context: this,
                 $pEl: this.$el,
-                y: y + (height-y)/2
+                y: y + CreateNestedBtn.SIZE
             });
         }
 
@@ -352,6 +352,13 @@ define([
                 .attr('transform', `translate(${this.width/2}, 0)`);
 
             this.onResize();
+        }
+    };
+
+    ContainerLayerDecorator.prototype.removeCreateNestedBtn = function() {
+        if (this.$createNestedBtn) {
+            this.$createNestedBtn.remove();
+            this.$createNestedBtn = null;
         }
     };
 

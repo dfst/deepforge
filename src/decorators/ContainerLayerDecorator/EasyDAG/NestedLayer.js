@@ -18,6 +18,11 @@ define([
         this.logger = opts.logger;
 
         this.refreshButtons = _.debounce(this.updateButtons.bind(this), 100);
+        this.$outline = this.$el.append('rect')  // for hover detection
+            .attr('fill-opacity', 0)
+            .attr('x', 0)
+            .attr('y', 0);
+
         this.$content = this.$el.append('g');
         this.initHover();
 
@@ -59,11 +64,6 @@ define([
         this.$hover = this.$el.append('g')
             .attr('class', 'hover-items');
 
-        //this.$outline = this.$hover.append('rect')
-            //.attr('class', 'hover-box')
-            //.attr('fill-opacity', 0)
-            //.attr('x', 0)
-            //.attr('y', 0);
 
 
         this.$el.on('mouseenter', this.onHover.bind(this));
@@ -154,9 +154,9 @@ define([
         var width = this.widget.getSvgWidth(),
             height = this.widget.getSvgHeight();
 
-        //this.$outline
-            //.attr('width', width)
-            //.attr('height', height);
+        this.$outline
+            .attr('width', width)
+            .attr('height', height);
 
         this.$leftBtn.$el.attr('transform', `translate(0, ${height/2})`);
         this.$rightBtn.$el
