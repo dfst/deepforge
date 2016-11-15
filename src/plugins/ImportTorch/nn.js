@@ -317,7 +317,7 @@ define([
             // Connect the tlayer outputs to this._outputs
             var layer = tlayer.get('_node'),
                 concatLayer = this._outputs[0],
-                connections,
+                connections = [],
                 nodes;
 
             layer._outputs.forEach(output =>
