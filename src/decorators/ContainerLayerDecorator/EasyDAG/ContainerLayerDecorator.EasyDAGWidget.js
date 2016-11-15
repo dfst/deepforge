@@ -403,7 +403,7 @@ define([
 
     CreateNestedBtn.prototype._onClick = function() {
         // Call addLayerAfter and prompt for a layer
-        this.promptLayer()  // TODO: Add this in the ArchEditor
+        this.promptLayer()
             .then(layerId => this.addLayerAt(layerId, 0));
     };
 
