@@ -195,9 +195,13 @@ define([
     };
 
     ContainerLayerDecorator.prototype.update = function(node) {
+        var attrsUpdated = false,
+            attrs = this._attributes;
+
         this._node = node;
         // Update the attributes
         this.setAttributes();
+        attrsUpdated = !_.isEqual(attrs, this._attributes);
 
         // Check for a new nested layer
         var hasNewLayers = this._node.containedLayers
@@ -214,7 +218,10 @@ define([
                 this.condense();
             }
         }
-        this.fieldsWidth = null;
+        // Only reset fieldsWidth if the attribute has gotten larger
+        if (attrsUpdated) {
+            this.fieldsWidth = null;
+        }
     };
 
     ContainerLayerDecorator.prototype.updateExpand = function() {
