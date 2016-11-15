@@ -100,6 +100,7 @@ define([
             decorator.client.deleteNode(this.id);
             decorator.client.completeTransaction();
         };
+        this.updateNestedTerritory();
     };
 
     _.extend(ContainerLayerDecorator.prototype, LayerDecorator.prototype);
