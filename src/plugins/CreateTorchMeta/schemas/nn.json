@@ -229,7 +229,7 @@
     "setters": {},
     "types": {},
     "defaults": {},
-    "type": "Container"
+    "type": "Simple"
   },
   {
     "name": "ConcatTable",
