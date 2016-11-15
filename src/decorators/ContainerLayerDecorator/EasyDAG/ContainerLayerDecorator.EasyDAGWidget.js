@@ -152,12 +152,6 @@ define([
         client.completeTransaction();
     };
 
-
-    ContainerLayerDecorator.prototype.setAttributes = function() {
-        LayerDecorator.prototype.setAttributes.call(this);
-        this.updateNestedTerritory();
-    };
-
     ContainerLayerDecorator.prototype.condense = function() {
         // hide the nested layers
         this.$el.attr('class', 'centering-offset condense');
@@ -396,6 +390,7 @@ define([
         LayerDecorator.prototype.destroy.call(this);
         if (this._nestedTerritoryUI) {
             this.client.removeUI(this._nestedTerritoryUI);
+            this._nestedTerritoryUI = null;
         }
         this.destroyNested();
     };
