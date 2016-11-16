@@ -202,5 +202,26 @@ define([
         this.refreshUI();
     };
 
+    ArchEditorWidget.prototype.onBackgroundClick = function(event) {
+        if (this._allExpanded || (event && event.shiftKey && event.altKey)) {
+            this.toggleAllExpanded();
+        }
+        ThumbnailWidget.prototype.onBackgroundClick.call(this, event);
+    };
+
+    ArchEditorWidget.prototype.toggleAllExpanded = function() {
+        this.expandAllNodes(this._allExpanded);
+        this._allExpanded = !this._allExpanded;
+    };
+
+    ArchEditorWidget.prototype.expandAllNodes = function(reverse) {
+        var itemIds = Object.keys(this.items),
+            method = reverse ? 'condenseAll' : 'expandAll';
+
+        for (var i = itemIds.length; i--;) {
+            this.items[itemIds[i]][method]();
+        }
+    };
+
     return ArchEditorWidget;
 });

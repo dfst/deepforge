@@ -410,5 +410,19 @@ define([
             .then(layerId => this.addLayerAt(layerId, 0));
     };
 
+    ContainerLayerDecorator.prototype.expandAll = function() {
+        this.expand();
+        // For each of the nested layers, expand all their nodes
+        Object.keys(this.nestedLayers)
+            .forEach(id => this.nestedLayers[id].widget.expandAllNodes());
+    };
+
+    ContainerLayerDecorator.prototype.condenseAll = function() {
+        this.condense();
+        // For each of the nested layers, expand all their nodes
+        Object.keys(this.nestedLayers)
+            .forEach(id => this.nestedLayers[id].widget.expandAllNodes(true));
+    };
+
     return ContainerLayerDecorator;
 });

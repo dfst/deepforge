@@ -60,5 +60,15 @@ define([
         }
     };
 
+    Layer.prototype.expandAll = function() {
+        var method = this.decorator.expandAll || this.decorator.expand;
+        method.call(this.decorator);
+    };
+
+    Layer.prototype.condenseAll = function() {
+        var method = this.decorator.condenseAll || this.decorator.condense;
+        method.call(this.decorator);
+    };
+
     return Layer;
 });
