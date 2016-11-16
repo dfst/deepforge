@@ -1,0 +1,229 @@
+- type: SpatialConvolution
+  id: /r/2
+  next:
+    - /r/C
+  attributes:
+    ctor_arg_order: 'nInputPlane,nOutputPlane,kW,kH,dW,dH,padW,padH'
+    padH: 3
+    padW: 3
+    dH: 2
+    dW: 2
+    kH: 7
+    kW: 7
+    nOutputPlane: 64
+    nInputPlane: 3
+- type: ReLU
+  id: /r/3
+  next:
+    - /r/ry
+  attributes:
+    ctor_arg_order: p
+    p: true
+- type: CAddTable
+  id: /r/4
+  next:
+    - /r/3
+  attributes:
+    ctor_arg_order: ip
+    ip: true
+- type: ConcatTable
+  id: /r/6
+  next:
+    - /r/M
+  attributes:
+    ctor_arg_order: ''
+- type: ReLU
+  id: /r/7
+  next:
+    - /r/6
+  attributes:
+    ctor_arg_order: p
+    p: true
+- type: Linear
+  id: /r/Dp
+  next: []
+  attributes:
+    bias: ''
+    ctor_arg_order: 'inputSize,outputSize,bias'
+    outputSize: 1000
+    inputSize: 512
+- type: SpatialBatchNormalization
+  id: /r/C
+  next:
+    - /r/S
+  attributes:
+    ctor_arg_order: 'nOutput,eps,momentum,affine'
+    nOutput: 64
+- type: ReLU
+  id: /r/S
+  next:
+    - /r/P
+  attributes:
+    ctor_arg_order: p
+    p: true
+- type: SpatialMaxPooling
+  id: /r/P
+  next:
+    - /r/k
+  attributes:
+    ctor_arg_order: 'kW,kH,dW,dH,padW,padH'
+    padH: 1
+    padW: 1
+    dH: 2
+    dW: 2
+    kH: 3
+    kW: 3
+- type: ConcatTable
+  id: /r/k
+  next:
+    - /r/s
+  attributes:
+    ctor_arg_order: ''
+- type: CAddTable
+  id: /r/s
+  next:
+    - /r/H
+  attributes:
+    ctor_arg_order: ip
+    ip: true
+- type: ReLU
+  id: /r/H
+  next:
+    - /r/e
+  attributes:
+    ctor_arg_order: p
+    p: true
+- type: ConcatTable
+  id: /r/e
+  next:
+    - /r/g
+  attributes:
+    ctor_arg_order: ''
+- type: CAddTable
+  id: /r/g
+  next:
+    - /r/7
+  attributes:
+    ctor_arg_order: ip
+    ip: true
+- type: CAddTable
+  id: /r/M
+  next:
+    - /r/Q
+  attributes:
+    ctor_arg_order: ip
+    ip: true
+- type: ReLU
+  id: /r/Q
+  next:
+    - /r/N
+  attributes:
+    ctor_arg_order: p
+    p: true
+- type: ConcatTable
+  id: /r/N
+  next:
+    - /r/Mf
+  attributes:
+    ctor_arg_order: ''
+- type: CAddTable
+  id: /r/Mf
+  next:
+    - /r/a
+  attributes:
+    ctor_arg_order: ip
+    ip: true
+- type: ReLU
+  id: /r/a
+  next:
+    - /r/ab
+  attributes:
+    ctor_arg_order: p
+    p: true
+- type: ConcatTable
+  id: /r/ab
+  next:
+    - /r/CR
+  attributes:
+    ctor_arg_order: ''
+- type: CAddTable
+  id: /r/CR
+  next:
+    - /r/i
+  attributes:
+    ctor_arg_order: ip
+    ip: true
+- type: ReLU
+  id: /r/i
+  next:
+    - /r/H5
+  attributes:
+    ctor_arg_order: p
+    p: true
+- type: ConcatTable
+  id: /r/H5
+  next:
+    - /r/4
+  attributes:
+    ctor_arg_order: ''
+- type: ConcatTable
+  id: /r/ry
+  next:
+    - /r/t
+  attributes:
+    ctor_arg_order: ''
+- type: CAddTable
+  id: /r/t
+  next:
+    - /r/9A
+  attributes:
+    ctor_arg_order: ip
+    ip: true
+- type: ReLU
+  id: /r/9A
+  next:
+    - /r/Qu
+  attributes:
+    ctor_arg_order: p
+    p: true
+- type: ConcatTable
+  id: /r/Qu
+  next:
+    - /r/q
+  attributes:
+    ctor_arg_order: ''
+- type: CAddTable
+  id: /r/q
+  next:
+    - /r/o
+  attributes:
+    ctor_arg_order: ip
+    ip: true
+- type: ReLU
+  id: /r/o
+  next:
+    - /r/G
+  attributes:
+    ctor_arg_order: p
+    p: true
+- type: SpatialAveragePooling
+  id: /r/G
+  next:
+    - /r/b
+  attributes:
+    padW: ''
+    padH: ''
+    count_include_pad: true
+    ctor_arg_order: 'kW,kH,dW,dH,padW,padH'
+    dH: 1
+    dW: 1
+    kH: 7
+    kW: 7
+- type: View
+  id: /r/b
+  next:
+    - /r/Dp
+  attributes:
+    ctor_arg_order: params
+    params: 512
+    numInputDims: 3
