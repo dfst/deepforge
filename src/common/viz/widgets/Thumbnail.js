@@ -55,7 +55,7 @@ define([
     };
 
     ThumbnailWidget.prototype.getSvgHeight = function() {
-        return this.getSvgDistanceDim('y');
+        return this.height - 25;
     };
 
     ThumbnailWidget.prototype.getViewBox = function() {
