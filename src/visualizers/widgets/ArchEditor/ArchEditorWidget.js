@@ -49,6 +49,10 @@ define([
     ArchEditorWidget.prototype.ItemClass = Layer;
     ArchEditorWidget.prototype.SelectionManager = SelectionManager;
 
+    ArchEditorWidget.prototype.getComponentId = function() {
+        return 'ArchEditor';
+    };
+
     ArchEditorWidget.prototype.setupItemCallbacks = function() {
         ThumbnailWidget.prototype.setupItemCallbacks.apply(this, arguments);
         // Add the hover button functions

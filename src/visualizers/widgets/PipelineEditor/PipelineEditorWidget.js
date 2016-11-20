@@ -60,6 +60,10 @@ define([
     PipelineEditorWidget.prototype.onCreateInitialNode =
         PipelineControl.prototype.onCreateInitialNode;
 
+    PipelineEditorWidget.prototype.getComponentId = function() {
+        return 'PipelineEditor';
+    };
+
     PipelineEditorWidget.prototype.setupItemCallbacks = function() {
         ThumbnailWidget.prototype.setupItemCallbacks.call(this);
         this.ItemClass.prototype.connectPort =

@@ -16,8 +16,15 @@
             "MyPipelines": "PipelineIndex"
         }
     },
+    "PipelineEditor": {
+        "itemName": "operation"
+    },
+    "ExecutionView": {
+        "itemName": "job"
+    },
     "ArchEditor": {
         "hotkeys": "none",
+        "itemName": "layer",
         "LayerColors": {}
     },
     "BreadcrumbHeader": {

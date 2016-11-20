@@ -32,6 +32,10 @@ define([
 
     ExecutionViewWidget.prototype.SelectionManager = SelectionManager;
 
+    ExecutionViewWidget.prototype.getComponentId = function() {
+        return 'ExecutionView';
+    };
+
     ExecutionViewWidget.prototype.setExecutionNode = function(execNode) {
         this.isSnapshot = execNode.isSnapshot;
         this.originTime = execNode.createdAt;
