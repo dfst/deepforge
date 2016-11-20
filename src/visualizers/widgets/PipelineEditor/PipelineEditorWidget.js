@@ -38,9 +38,9 @@ define([
         };
 
     PipelineEditorWidget = function (logger, container, execCntr) {
+        container.addClass(WIDGET_CLASS);
         ThumbnailWidget.call(this, logger, container);
         this._emptyMsg = 'Click to add an operation';
-        this.$el.addClass(WIDGET_CLASS);
         this.portIdToNode = {};
         this.PORT_STATE = STATE.DEFAULT;
         this.srcPortToConnectArgs = null;
@@ -199,7 +199,11 @@ define([
         this.PORT_STATE = STATE.CONNECTING;
     };
 
-    PipelineEditorWidget.prototype.onDeselect =
+    PipelineEditorWidget.prototype.onDeselect = function() {
+        this.resetPortState();
+        return ThumbnailWidget.prototype.onDeselect.apply(this, arguments);
+    };
+
     PipelineEditorWidget.prototype.resetPortState = function() {
         // Reset connecting state
         this._itemsShowingPorts.forEach(item => item.hidePorts());

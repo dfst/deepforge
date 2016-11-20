@@ -17,9 +17,11 @@ define([
 ) {
     'use strict';
 
-    var ExecutionViewWidget;
+    var ExecutionViewWidget,
+        WIDGET_CLASS = 'execution-view';
 
     ExecutionViewWidget = function (logger, container) {
+        container.addClass(WIDGET_CLASS);
         EasyDAGWidget.call(this, logger, container);
         this.isSnapshot = true;
         this.originName = null;

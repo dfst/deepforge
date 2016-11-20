@@ -41,11 +41,5 @@ define([
         }
     };
 
-    SelectionManager.prototype.deselect = function() {
-        EasyDAGSelectionManager.prototype.deselect.call(this);
-        // Update the widget's 'port connecting' state
-        this._widget.onDeselect();
-    };
-
     return SelectionManager;
 });
