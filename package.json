@@ -34,6 +34,7 @@
     "webgme-simple-nodes": "^2.1.0"
   },
   "devDependencies": {
+    "brython": "^3.2.7",
     "chai": "^3.0.0",
     "jszip": "^2.5.0",
     "mocha": "^2.2.5",
