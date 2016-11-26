@@ -72,8 +72,8 @@ define([
             code = '';
 
         this.definitions = [
-            'require \'nn\'',
-            'require \'rnn\''
+            'import torch',
+            'import torch.nn as nn'
         ];
 
         // Add an index to each layer
@@ -85,6 +85,7 @@ define([
             code += this.genLayerDefinitions(layers);
         }
 
+        // TODO: Define the network w/ 'class ARCHITECTURE_NAME'
         this.logger.debug('Generating architecture code...');
         code += this.genArchCode(layers);
         this.logger.debug('Prepending hoisted code...');
