@@ -1,8 +1,10 @@
 /*globals define, WebGMEGlobal*/
 define([
+    'deepforge/globals',
     'widgets/EasyDAG/Buttons',
     'widgets/EasyDAG/Icons'
 ], function(
+    DeepForge,
     EasyDAGButtons,
     Icons
 ) {
@@ -84,7 +86,32 @@ define([
     };
 
     CloneAndEdit.prototype._onClick = function(item) {
-        console.log('Clone and edit!');
+        var node = client.getNode(item.id),
+            baseId = node && node.getBaseId(),
+            base = baseId && client.getNode(baseId),
+            typeId = base && base.getBaseId(),
+            type = typeId && client.getNode(typeId),
+            ctrName,
+            typeName,
+            newId;
+
+        // Clone the given node's base and change to it
+        if (type) {
+            typeName = type.getAttribute('name');
+            ctrName = `My${typeName}s`;
+            if (DeepForge.places[ctrName]) {
+                DeepForge.places[ctrName]().then(ctrId => {
+                    type = base.getAttribute('name');
+                    client.startTransaction(`Creating new ${typeName} from ${item.name}`);
+                    newId = client.copyNode(baseId, ctrId);
+                    // TODO: I should probably get a good name for it...
+                    client.completeTransaction();
+                    WebGMEGlobal.State.registerActiveObject(newId);
+                });
+            }
+        } else {
+            console.log('Could not find the base node!');
+        }
     };
 
     return {
