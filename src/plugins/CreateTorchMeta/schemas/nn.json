@@ -58,7 +58,7 @@
       "negative_slope": "1e-2"
     },
     "types": {
-      "inplace": "id",
+      "inplace": "boolean",
       "negative_slope": "float"
     },
     "setters": {},
@@ -91,7 +91,7 @@
       "alpha": "1."
     },
     "types": {
-      "inplace": "id",
+      "inplace": "boolean",
       "alpha": "float"
     },
     "setters": {},
@@ -108,7 +108,7 @@
       "inplace": "False"
     },
     "types": {
-      "inplace": "id"
+      "inplace": "boolean"
     },
     "setters": {},
     "params": [
@@ -124,7 +124,7 @@
       "max_value": 1
     },
     "types": {
-      "inplace": "id",
+      "inplace": "boolean",
       "max_value": "int",
       "min_value": "unary"
     },
@@ -143,7 +143,7 @@
       "inplace": "False"
     },
     "types": {
-      "inplace": "id",
+      "inplace": "boolean",
       "upper": "op",
       "lower": "op"
     },
@@ -162,7 +162,7 @@
       "inplace": "False"
     },
     "types": {
-      "inplace": "id"
+      "inplace": "boolean"
     },
     "setters": {},
     "params": [
@@ -177,7 +177,7 @@
       "inplace": "False"
     },
     "types": {
-      "inplace": "id"
+      "inplace": "boolean"
     },
     "setters": {},
     "params": [
@@ -240,7 +240,7 @@
       "stride": 1
     },
     "types": {
-      "bias": "id",
+      "bias": "boolean",
       "groups": "int",
       "output_padding": "int",
       "padding": "int",
@@ -270,7 +270,7 @@
       "stride": 1
     },
     "types": {
-      "bias": "id",
+      "bias": "boolean",
       "groups": "int",
       "dilation": "id",
       "padding": "int",
@@ -315,7 +315,7 @@
       "p": "0.5"
     },
     "types": {
-      "inplace": "id",
+      "inplace": "boolean",
       "p": "float"
     },
     "setters": {},
@@ -333,7 +333,7 @@
       "p": "0.5"
     },
     "types": {
-      "inplace": "id",
+      "inplace": "boolean",
       "p": "float"
     },
     "setters": {},
@@ -351,7 +351,7 @@
       "p": "0.5"
     },
     "types": {
-      "inplace": "id",
+      "inplace": "boolean",
       "p": "float"
     },
     "setters": {},
@@ -368,7 +368,7 @@
       "bias": "True"
     },
     "types": {
-      "bias": "id"
+      "bias": "boolean"
     },
     "setters": {},
     "params": [
@@ -388,7 +388,7 @@
       "p": 1
     },
     "types": {
-      "size_average": "id",
+      "size_average": "boolean",
       "weight": "id",
       "margin": "int",
       "p": "int"
@@ -410,7 +410,7 @@
       "margin": 0
     },
     "types": {
-      "size_average": "id",
+      "size_average": "boolean",
       "margin": "int"
     },
     "setters": {},
@@ -428,7 +428,7 @@
       "margin": 0
     },
     "types": {
-      "size_average": "id",
+      "size_average": "boolean",
       "margin": "int"
     },
     "setters": {},
@@ -501,7 +501,7 @@
       "stride": "None"
     },
     "types": {
-      "ceil_mode": "id",
+      "ceil_mode": "boolean",
       "stride": "id"
     },
     "setters": {},
@@ -543,7 +543,7 @@
     },
     "types": {
       "_random_samples": "id",
-      "return_indices": "id",
+      "return_indices": "boolean",
       "output_ratio": "id",
       "output_size": "id"
     },
@@ -584,8 +584,8 @@
       "stride": "None"
     },
     "types": {
-      "ceil_mode": "id",
-      "return_indices": "id",
+      "ceil_mode": "boolean",
+      "return_indices": "boolean",
       "dilation": "int",
       "padding": "int",
       "stride": "id"
@@ -611,8 +611,8 @@
       "stride": "None"
     },
     "types": {
-      "count_include_pad": "id",
-      "ceil_mode": "id",
+      "count_include_pad": "boolean",
+      "ceil_mode": "boolean",
       "padding": "int",
       "stride": "id"
     },
@@ -656,8 +656,8 @@
       "stride": "None"
     },
     "types": {
-      "ceil_mode": "id",
-      "return_indices": "id",
+      "ceil_mode": "boolean",
+      "return_indices": "boolean",
       "dilation": "int",
       "padding": "int",
       "stride": "id"
@@ -684,8 +684,8 @@
       "stride": "None"
     },
     "types": {
-      "ceil_mode": "id",
-      "return_indices": "id",
+      "ceil_mode": "boolean",
+      "return_indices": "boolean",
       "dilation": "int",
       "padding": "int",
       "stride": "id"
@@ -711,7 +711,7 @@
       "padding_idx": "None"
     },
     "types": {
-      "scale_grad_by_freq": "id",
+      "scale_grad_by_freq": "boolean",
       "norm_type": "int",
       "max_norm": "id",
       "padding_idx": "id"

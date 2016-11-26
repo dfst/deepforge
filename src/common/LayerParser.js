@@ -80,11 +80,15 @@
                     for (var i = args.length; i--;) {
                         if (args[i].tree[0]) {
                             def = args[i].tree[0].tree[0];
-                            defTypes[params[i-1]] = def.type;
                             if (def.type === 'int') {
                                 defaults[params[i-1]] = parseInt.apply(null, def.value.reverse());
                             } else {
                                 defaults[params[i-1]] = def.value;
+                            }
+                            if (/^(True|False)$/.test(defaults[params[i-1]])) {
+                                defTypes[params[i-1]] = 'boolean';
+                            } else {
+                                defTypes[params[i-1]] = def.type;
                             }
                         }
                     }
