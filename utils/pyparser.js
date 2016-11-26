@@ -2,11 +2,13 @@ var brython = require('./node-brython'),
     fs = require('fs'),
     assert = require('assert'),
     src = fs.readFileSync(process.env.HOME + '/projects/pytorch/torch/nn/modules/conv.py', 'utf8'),
-    root = brython.build_ast(src);
+    root = build_ast(src);
 
-console.log('loaded!');
-console.log('root:', Object.keys(root));
-console.log('type is', root.type);
+function build_ast(src) {
+  brython.$py_module_path['__main__']='./'
+  return brython.py2js(src,'__main__', '__main__', '__builtins__')
+}
+
 // The provided tree gives us contexts which can have associated 'C'
 function traverse (node, fn) {
     var i;

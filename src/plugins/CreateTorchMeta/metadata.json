@@ -17,7 +17,6 @@
       "value": "all",
       "valueItems": [
         "nn",
-        "rnn",
         "all"
       ],
       "valueType": "string",

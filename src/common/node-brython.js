@@ -12,7 +12,7 @@ Will brython replace Cython one day?  Only time will tell.
 
 var fs = require('fs'),
     path = require('path'),
-    brythonSrcPath = path.join(__dirname, '..', 'node_modules', 'brython', 'www', 'src', 'brython.js');
+    brythonSrcPath = path.join(__dirname, '..', '..', 'node_modules', 'brython', 'www', 'src', 'brython.js');
 
 document={};
 document.getElementsByTagName = () => [{src: ''}];
@@ -173,7 +173,4 @@ if (!module.parent) {
     execute_python_script(filename)
 }
 
-module.exports = {
-    build_ast,
-    execute_python_script
-};
+module.exports = __BRYTHON__;
