@@ -57,9 +57,40 @@ define([
         return n && n.getBaseId();
     };
 
+    var CloneAndEdit = function(params) {
+        EasyDAGButtons.ButtonBase.call(this, params);
+    };
+
+    CloneAndEdit.prototype = Object.create(GoToBase.prototype);
+    CloneAndEdit.prototype.BTN_CLASS = 'clone-and-edit';
+
+    CloneAndEdit.prototype._render = function() {
+        var lineRadius = GoToBase.SIZE - GoToBase.BORDER,
+            btnColor = '#80deea';
+
+        if (this.disabled) {
+            btnColor = '#e0e0e0';
+        }
+
+        this.$el
+            .append('circle')
+            .attr('r', GoToBase.SIZE)
+            .attr('fill', btnColor);
+
+        // Show the 'code' icon
+        Icons.addIcon('code', this.$el, {
+            radius: lineRadius
+        });
+    };
+
+    CloneAndEdit.prototype._onClick = function(item) {
+        console.log('Clone and edit!');
+    };
+
     return {
         DeleteOne: EasyDAGButtons.DeleteOne,
-        GoToBase: GoToBase
+        GoToBase: GoToBase,
+        CloneAndEdit: CloneAndEdit
     };
 });
 
