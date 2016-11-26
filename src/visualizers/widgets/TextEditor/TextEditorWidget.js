@@ -14,11 +14,16 @@ define([
     'use strict';
 
     var TextEditorWidget,
-        WIDGET_CLASS = 'text-editor';
+        WIDGET_CLASS = 'text-editor',
+        LINE_COMMENT = {
+            python: '#',
+            lua: '--'
+        };
 
     TextEditorWidget = function (logger, container) {
         this._logger = logger.fork('Widget');
 
+        this.language = this.language || 'python';
         this._el = container;
         this._el.css({height: '100%'});
         this.$editor = $('<div/>');
@@ -74,8 +79,8 @@ define([
 
     TextEditorWidget.prototype.getSessionOptions = function () {
         return {
-            mode: 'ace/mode/lua',
-            tabSize: 3,
+            mode: 'ace/mode/' + this.language,
+            tabSize: 4,
             useSoftTabs: true
         };
     };
@@ -90,8 +95,16 @@ define([
     };
 
     // Adding/Removing/Updating items
+    TextEditorWidget.prototype.comment = function (text) {
+        var prefix = LINE_COMMENT[this.language] + ' ';
+        return text.replace(
+            new RegExp('^(' + LINE_COMMENT[this.language] + ')?','mg'),
+            prefix
+        );
+    };
+
     TextEditorWidget.prototype.getHeader = function (desc) {
-        return `-- Editing "${desc.name}"`;
+        return this.comment(`Editing "${desc.name}"`);
     };
 
     TextEditorWidget.prototype.addNode = function (desc) {

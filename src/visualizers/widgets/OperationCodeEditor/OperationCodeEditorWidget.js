@@ -32,24 +32,24 @@ define([
 
     OperationCodeEditorWidget.prototype.getHeader = function (desc) {
         // Add comment about the inputs, attributes and references
-        var inputs = desc.inputs.map(pair => `-- ${pair[0]} (${pair[1]})`).join('\n'),
-            refs = desc.references.map(name => `-- ${name}`).join('\n'),
+        var inputs = desc.inputs.map(pair => `${pair[0]} (${pair[1]})`).join('\n'),
+            refs = desc.references.map(name => `${name}`).join('\n'),
             header = [
-                `-- Editing "${desc.name}" Implementation`
+                `Editing "${desc.name}" Implementation`
             ];
 
         if (inputs.length) {
-            header.push('--');
-            header.push('-- Defined variables:');
+            header.push('');
+            header.push('Defined variables:');
             header.push(inputs);
         }
         if (refs) {
             header.push(refs);
         }
-        header.push('--');
-        header.push('-- The following will be executed when the operation is run:');
+        header.push('');
+        header.push('The following will be executed when the operation is run:');
 
-        return header.join('\n');
+        return this.comment(header.join('\n'));
     };
 
     OperationCodeEditorWidget.prototype.canAddReturnTmpl = function (desc) {

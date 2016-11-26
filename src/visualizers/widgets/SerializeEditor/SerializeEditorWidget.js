@@ -23,12 +23,12 @@ define([
 
     SerializeEditorWidget.prototype.getHeader = function(desc) {
         this._name = desc.name;
-        return [
-            `-- The serialization function for ${desc.name}`,
-            '-- Globals:',
-            '--   `path` - target filename',
-            `--   \`data\` - the ${desc.name} to store`
-        ].join('\n');
+        return this.comment([
+            `The serialization function for ${desc.name}`,
+            'Globals:',
+            '  `path` - target filename',
+            `  \`data\` - the ${desc.name} to store`
+        ].join('\n'));
     };
 
     SerializeEditorWidget.prototype.getNameRegex = function () {
