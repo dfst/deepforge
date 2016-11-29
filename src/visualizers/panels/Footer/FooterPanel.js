@@ -5,13 +5,11 @@ define([
     'js/PanelBase/PanelBase',
     'js/Widgets/NetworkStatus/NetworkStatusWidget',
     'js/Widgets/BranchStatus/BranchStatusWidget',
-    'js/Widgets/KeyboardManager/KeyboardManagerWidget',
     './FilteredNotificationWidget'
 ], function (
     PanelBase,
     NetworkStatusWidget,
     BranchStatusWidget,
-    KeyboardManagerWidget,
     NotificationWidget
 ) {
 
@@ -55,13 +53,6 @@ define([
 
         //padding from screen right edge
         navBarInner.append(separator.clone());
-
-        //keyboard enable/disbale widget (NOTE: only on non touch device)
-        if (WebGMEGlobal.SUPPORTS_TOUCH !== true) {
-            keyBoardManagerEl = widgetPlaceHolder.clone();
-            new KeyboardManagerWidget(keyBoardManagerEl);
-            navBarInner.append(keyBoardManagerEl).append(separator.clone());
-        }
 
         networkStatusEl = widgetPlaceHolder.clone();
         new NetworkStatusWidget(networkStatusEl, this._client);
