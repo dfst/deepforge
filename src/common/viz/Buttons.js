@@ -68,7 +68,7 @@ define([
 
     CloneAndEdit.prototype._render = function() {
         var lineRadius = GoToBase.SIZE - GoToBase.BORDER,
-            btnColor = '#80deea';
+            btnColor = '#a5d6a7';
 
         if (this.disabled) {
             btnColor = '#e0e0e0';
@@ -93,6 +93,7 @@ define([
             type = typeId && client.getNode(typeId),
             ctrName,
             typeName,
+            name,
             newId;
 
         // Clone the given node's base and change to it
@@ -104,7 +105,10 @@ define([
                     type = base.getAttribute('name');
                     client.startTransaction(`Creating new ${typeName} from ${item.name}`);
                     newId = client.copyNode(baseId, ctrId);
-                    // TODO: I should probably get a good name for it...
+                    name = node.getAttribute('name');
+
+                    // TODO: Add this to the metasheet!
+                    client.setAttribute(newId, 'name', 'Copy of ' + name);
                     client.completeTransaction();
                     WebGMEGlobal.State.registerActiveObject(newId);
                 });
