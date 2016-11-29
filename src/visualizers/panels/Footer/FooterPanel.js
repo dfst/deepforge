@@ -5,14 +5,12 @@ define([
     'js/PanelBase/PanelBase',
     'js/Widgets/NetworkStatus/NetworkStatusWidget',
     'js/Widgets/BranchStatus/BranchStatusWidget',
-    'js/Widgets/BranchSelector/BranchSelectorWidget',
     'js/Widgets/KeyboardManager/KeyboardManagerWidget',
     './FilteredNotificationWidget'
 ], function (
     PanelBase,
     NetworkStatusWidget,
     BranchStatusWidget,
-    BranchSelectorWidget,
     KeyboardManagerWidget,
     NotificationWidget
 ) {
