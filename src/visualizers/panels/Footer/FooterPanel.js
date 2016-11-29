@@ -1,4 +1,4 @@
-/*globals define, _, WebGMEGlobal, $ */
+/*globals define, _, $ */
 /*jshint browser: true*/
 
 define([
@@ -43,7 +43,6 @@ define([
             navBarInner = $('<div/>', {class: 'navbar-inner'}),
             separator = $('<div class="spacer pull-right"></div>'),
             widgetPlaceHolder = $('<div class="pull-right"></div>'),
-            keyBoardManagerEl,
             networkStatusEl,
             branchStatusEl,
             notificationEl;
