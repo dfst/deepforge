@@ -118,10 +118,20 @@ define([
         }
     };
 
+    var Insert = function(params) {
+        EasyDAGButtons.ButtonBase.call(this, params);
+    };
+
+    Insert.prototype = Object.create(EasyDAGButtons.Add.prototype);
+    Insert.prototype._onClick = function(item) {
+        this.onInsertButtonClicked(item);
+    };
+
     return {
         DeleteOne: EasyDAGButtons.DeleteOne,
         GoToBase: GoToBase,
-        CloneAndEdit: CloneAndEdit
+        CloneAndEdit: CloneAndEdit,
+        Insert: Insert
     };
 });
 

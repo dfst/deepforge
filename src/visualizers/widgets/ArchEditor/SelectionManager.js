@@ -20,7 +20,15 @@ define([
 
         ManagerBase.prototype.createActionButtons.call(this, width, height);
 
-        if (!this.selectedItem.isConnection) {
+        if (this.selectedItem.isConnection) {
+            btn = new Buttons.Insert({
+                context: this._widget,
+                $pEl: this.$selection,
+                item: this.selectedItem,
+                x: width/2,
+                y: height/2
+            });
+        } else {
             disabled = !this._isCustomLayer();
             // Check that the base type
             btn = new Buttons.GoToBase({

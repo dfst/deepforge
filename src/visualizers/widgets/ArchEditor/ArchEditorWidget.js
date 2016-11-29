@@ -217,5 +217,11 @@ define([
         }
     };
 
+    ArchEditorWidget.prototype.onInsertButtonClicked = function(item) {
+        var nodes = this.getValidInitialNodes();
+        return this.promptLayer(nodes)
+            .then(selected => this.insertLayer(selected.node.id, item.id));
+    };
+
     return ArchEditorWidget;
 });

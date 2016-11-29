@@ -203,6 +203,7 @@ define([
     ArchEditorControl.prototype._initWidgetEventHandlers = function() {
         ThumbnailControl.prototype._initWidgetEventHandlers.call(this);
         this._widget.getCreateNewDecorator = this.getCreateNewDecorator.bind(this);
+        this._widget.insertLayer = this.insertLayer.bind(this);
     };
 
     ArchEditorControl.prototype.getCreateNewDecorator = function() {
@@ -210,6 +211,41 @@ define([
             'LayerDecorator',
             'EasyDAG'
         );
+    };
+
+    ArchEditorControl.prototype.insertLayer = function(layerBaseId, connId) {
+        var conn = this._client.getNode(connId),
+            parentId = conn.getParentId(),
+            layerId,
+            nextLayerId = conn.getPointer('dst').to,
+            connBaseId = conn.getBaseId(),
+            newConnId,
+
+            baseName = this._client.getNode(layerBaseId).getAttribute('name'),
+            prevLayerId = conn.getPointer('src').to,
+            srcName = this._client.getNode(prevLayerId).getAttribute('name'),
+            dstName = this._client.getNode(nextLayerId).getAttribute('name'),
+            msg = `Inserting ${baseName} layer between ${srcName} and ${dstName}`;
+
+        this._client.startTransaction(msg);
+        // Create the new layer
+        layerId = this._client.createNode({
+            parentId: parentId,
+            baseId: layerBaseId
+        });
+
+        // Connect the new layer to the previous dst of 'connId'
+        newConnId = this._client.createNode({
+            parentId: parentId,
+            baseId: connBaseId
+        });
+        this._client.setPointer(newConnId, 'src', layerId);
+        this._client.setPointer(newConnId, 'dst', nextLayerId);
+
+        // Change the dst of 'connId' to the new layer
+        this._client.setPointer(connId, 'dst', layerId);
+
+        this._client.completeTransaction();
     };
 
     return ArchEditorControl;
