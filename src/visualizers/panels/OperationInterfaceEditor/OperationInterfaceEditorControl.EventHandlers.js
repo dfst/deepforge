@@ -174,7 +174,7 @@ define([
         this._client.startTransaction(msg);
 
         // Currently, this will not update children already using old name...
-        this._client.delMetaPointer(this._currentNodeId, from);
+        this._client.delPointerMeta(this._currentNodeId, from);
         this._client.delPointer(this._currentNodeId, from);
         this._client.setPointerMeta(this._currentNodeId, ptrName, meta);
         this._client.setPointer(this._currentNodeId, ptrName, null);
@@ -188,7 +188,7 @@ define([
 
         this._client.startTransaction(msg);
         // Currently, this will not update children already using old name...
-        this._client.delMetaPointer(this._currentNodeId, name);
+        this._client.delPointerMeta(this._currentNodeId, name);
         this._client.delPointer(this._currentNodeId, name);
         this._client.completeTransaction();
     };
