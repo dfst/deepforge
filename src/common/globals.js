@@ -191,7 +191,7 @@ define([
                 .getId();
 
         // Look up the parent container
-        DeepForge.places[placeName]().then(parentId => {
+        return DeepForge.places[placeName]().then(parentId => {
 
             client.startTransaction(msg);
             newId = createNamedNode(baseId, parentId, !!metasheetName);
@@ -297,7 +297,8 @@ define([
     };
 
     DeepForge.last = {};
-    DeepForge.create  = {};
+    DeepForge.create = {};
+    DeepForge.register = {};
     instances.forEach(type => {
         DeepForge.create[type] = function() {
             return createNew.call(null, type);
@@ -307,6 +308,10 @@ define([
     metaNodes.forEach(type => {
         DeepForge.create[type] = function() {
             return createNew.call(null, type, type);
+        };
+        DeepForge.register[type] = function(id) {
+            // Add the given element to the metasheet!
+            return addToMetaSheet(id, type);
         };
     });
 

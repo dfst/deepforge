@@ -106,9 +106,9 @@ define([
                     client.startTransaction(`Creating new ${typeName} from ${item.name}`);
                     newId = client.copyNode(baseId, ctrId);
                     name = node.getAttribute('name');
-
-                    // TODO: Add this to the metasheet!
                     client.setAttribute(newId, 'name', 'Copy of ' + name);
+                    DeepForge.register[typeName](newId);
+
                     client.completeTransaction();
                     WebGMEGlobal.State.registerActiveObject(newId);
                 });
