@@ -1,0 +1,14 @@
+- type: Transpose
+  id: /4/g/i
+  next: []
+  attributes:
+    ctor_arg_order: params
+    params: '{2, 3}, {1, 2}'
+- type: View
+  id: /4/g/u
+  next:
+    - /4/g/i
+  attributes:
+    ctor_arg_order: params
+    params: '5, -1'
+    numInputDims: 3

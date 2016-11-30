@@ -57,7 +57,7 @@ define([
     };
 
     var createNamedNode = function(baseId, parentId, isMeta) {
-        var newId = client.createChild({parentId, baseId}),
+        var newId = client.createNode({parentId, baseId}),
             baseNode = client.getNode(baseId),
             basename = 'New' + baseNode.getAttribute('name'),
             newName = getUniqueName(parentId, basename);
@@ -72,7 +72,7 @@ define([
             client.setRegistry(newId, 'isAbstract', false);
         }
 
-        client.setAttributes(newId, 'name', newName);
+        client.setAttribute(newId, 'name', newName);
         return newId;
     };
 
@@ -191,7 +191,7 @@ define([
                 .getId();
 
         // Look up the parent container
-        DeepForge.places[placeName]().then(parentId => {
+        return DeepForge.places[placeName]().then(parentId => {
 
             client.startTransaction(msg);
             newId = createNamedNode(baseId, parentId, !!metasheetName);
@@ -265,7 +265,7 @@ define([
         }
 
         dataBaseId = dataBase.getId();
-        dataTypes = metanodes.filter(n => client.isTypeOf(n.getId(), dataBaseId))
+        dataTypes = metanodes.filter(n => n.isTypeOf(dataBaseId))
             .filter(n => !n.getRegistry('isAbstract'))
             .map(node => node.getAttribute('name'));
 
@@ -297,7 +297,8 @@ define([
     };
 
     DeepForge.last = {};
-    DeepForge.create  = {};
+    DeepForge.create = {};
+    DeepForge.register = {};
     instances.forEach(type => {
         DeepForge.create[type] = function() {
             return createNew.call(null, type);
@@ -307,6 +308,10 @@ define([
     metaNodes.forEach(type => {
         DeepForge.create[type] = function() {
             return createNew.call(null, type, type);
+        };
+        DeepForge.register[type] = function(id) {
+            // Add the given element to the metasheet!
+            return addToMetaSheet(id, type);
         };
     });
 

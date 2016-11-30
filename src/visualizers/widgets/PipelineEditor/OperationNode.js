@@ -1,4 +1,4 @@
-/*globals define */
+/*globals define, d3 */
 define([
     'widgets/EasyDAG/DAGItem',
     'underscore'
@@ -13,6 +13,10 @@ define([
         this.inputs = desc.inputs;
         this.outputs = desc.outputs;
         this._visiblePorts = null;
+
+        this._hovering = false;
+        this.$el.on('mouseenter', () => this.onHover());
+        this.$el.on('mouseleave', () => this._hovering && this.onUnhover());
     };
 
     _.extend(OperationNode.prototype, DAGItem.prototype);
@@ -21,8 +25,13 @@ define([
         DAGItem.prototype.setupDecoratorCallbacks.call(this);
         this.decorator.onPortClick = (id, portId, isSrc) => {
             var srcPort = this.inputs.find(port => port.id === portId);
+
+            d3.event.stopPropagation();
+            d3.event.preventDefault();
+
             if (srcPort && srcPort.connection) {
                 this.disconnectPort(portId, srcPort.connection);
+                this.hidePorts();
             } else {
                 this.connectPort(id, portId, isSrc);
             }
@@ -82,13 +91,34 @@ define([
         // TODO
     };
 
+    OperationNode.prototype.onHover = function() {
+        if (!this.isSelected() && this.canShowPorts()) {
+            this.showPorts();
+            this._hovering = true;
+        }
+    };
+
+    OperationNode.prototype.onUnhover = function() {
+        // Only fire these events if:
+        //  - not selected
+        //  - not creating a connection in the widget
+        if (!this.isSelected() && this.canShowPorts()) {
+            this.hidePorts();
+            this._hovering = false;
+        }
+    };
+
     OperationNode.prototype.onSelect = function() {
-        this.decorator.onSelect();
+        DAGItem.prototype.onSelect.call(this);
+        if (this._hovering) {
+            this._hovering = false;
+        }
+
         this.showPorts();
     };
 
     OperationNode.prototype.onDeselect = function() {
-        this.decorator.onDeselect();
+        DAGItem.prototype.onDeselect.call(this);
         this.hidePorts();
     };
 

@@ -4,7 +4,7 @@
 define([
     'deepforge/Constants',
     'js/Constants',
-    'panels/EasyDAG/EasyDAGControl',
+    'deepforge/viz/panels/ThumbnailControl',
     'deepforge/viz/PipelineControl',
     'deepforge/viz/Execute',
     'deepforge/globals',
@@ -15,7 +15,7 @@ define([
 ], function (
     CONSTANTS,
     GME_CONSTANTS,
-    EasyDAGControl,
+    ThumbnailControl,
     PipelineControl,
     Execute,
     DeepForge,
@@ -40,7 +40,7 @@ define([
     DECORATORS[CONSTANTS.OP.INPUT] = 'ArtifactOpDecorator';
 
     PipelineEditorControl = function (options) {
-        EasyDAGControl.call(this, options);
+        ThumbnailControl.call(this, options);
         Execute.call(this, this._client, this._logger);
         this.addedIds = {};
         this.executionTerritory = {};
@@ -52,7 +52,7 @@ define([
 
     _.extend(
         PipelineEditorControl.prototype,
-        EasyDAGControl.prototype,
+        ThumbnailControl.prototype,
         PipelineControl.prototype,
         Execute.prototype
     );
@@ -98,7 +98,7 @@ define([
         var msg = `Renaming pipeline "${from}" -> "${to}"`;
         if (from !== to && !/^\s*$/.test(to)) {
             this._client.startTransaction(msg);
-            this._client.setAttributes(this._currentNodeId, 'name', to);
+            this._client.setAttribute(this._currentNodeId, 'name', to);
             this._client.completeTransaction();
         }
     };
@@ -124,10 +124,10 @@ define([
             operation = metanodes.find(n => n.getAttribute('name') === 'Operation');
 
         // Get all the meta nodes that are instances of Operations
-        metanodes.map(n => n.getId())
-            .filter(nId => this._client.isTypeOf(nId, operation.getId()))
+        metanodes
+            .filter(n => n.isTypeOf(operation.getId()))
             // Add a rule for them
-            .forEach(opId => this._territories[opId] = this.TERRITORY_RULE);
+            .forEach(op => this._territories[op.getId()] = this.TERRITORY_RULE);
 
         // Add arch/artifact dir to the territory
         // loading more than necessary.... can restrict it in the future
@@ -138,12 +138,11 @@ define([
     };
 
     PipelineEditorControl.prototype._initWidgetEventHandlers = function () {
-        EasyDAGControl.prototype._initWidgetEventHandlers.call(this);
+        ThumbnailControl.prototype._initWidgetEventHandlers.call(this);
         this._widget.getExistingPortMatches = this.getExistingPortMatches.bind(this);
         this._widget.createConnection = this.createConnection.bind(this);
         this._widget.removeConnection = this.removeConnection.bind(this);
         this._widget.getDecorator = this.getDecorator.bind(this);
-        this._widget.updateThumbnail = this.updateThumbnail.bind(this);
     };
 
     PipelineEditorControl.prototype.isContainedInActive = function (gmeId) {
@@ -159,7 +158,7 @@ define([
             this.addedIds[desc.id] = true;
             // Validate any connections
             if (this.isValid(desc)) {
-                return EasyDAGControl.prototype._onLoad.call(this, gmeId);
+                return ThumbnailControl.prototype._onLoad.call(this, gmeId);
             }
         } else if (desc.parentId !== null &&
             this.isContainedInActive(desc.parentId) && desc.isDataPort) {
@@ -179,7 +178,7 @@ define([
 
                 this.invalidated[desc.id] = true;
                 this._client.startTransaction(msg);
-                this._client.delMoreNodes([desc.id]);
+                this._client.deleteNode(desc.id);
                 this._client.completeTransaction();
                 return false;
             }
@@ -198,7 +197,7 @@ define([
 
         if(this.addedIds[gmeId]) {
             delete this.addedIds[gmeId];
-            return EasyDAGControl.prototype._onUnload.call(this, gmeId);
+            return ThumbnailControl.prototype._onUnload.call(this, gmeId);
         }
     };
 
@@ -239,8 +238,13 @@ define([
     PipelineEditorControl.prototype.getValidOutputs = function (inputId, outputs) {
         // Valid input if one of the isTypeOf(<output>, inputId)
         // for at least one output
-        var inputType = this._client.getNode(inputId).getMetaTypeId();
-        return outputs.filter(type => this._client.isTypeOf(type, inputType)).length;
+        var inputType = this._client.getNode(inputId).getMetaTypeId(),
+            node;
+
+        return outputs.filter(type => {
+            node = this._client.getNode(type);
+            return node.isTypeOf(inputType);
+        }).length;
     };
 
     PipelineEditorControl.prototype._getValidSuccessorNodes = function (nodeId) {
@@ -283,7 +287,7 @@ define([
         msg = `Disconnecting ${names[0]} of ${names[1]} from ${names[2]} of ${names[3]}`;
 
         this._client.startTransaction(msg);
-        this._client.delMoreNodes([id]);
+        this._client.deleteNode(id);
         this._client.completeTransaction();
     };
 
@@ -325,10 +329,13 @@ define([
                 return [
                     node.getId(),
                     dstPorts.filter(id => {
-                        var typeId = this._client.getNode(id).getMetaTypeId();
+                        var typeId = this._client.getNode(id).getMetaTypeId(),
+                            portTypeNode = this._client.getNode(portType),
+                            typeNode = this._client.getNode(typeId);
+
                         return isOutput ?
-                            this._client.isTypeOf(portType, typeId) :
-                            this._client.isTypeOf(typeId, portType);
+                            portTypeNode.isTypeOf(typeId) :
+                            typeNode.isTypeOf(portType);
                     })
                 ];
             };
@@ -352,12 +359,12 @@ define([
 
         this._client.startTransaction(msg);
 
-        connId = this._client.createChild({
+        connId = this._client.createNode({
             parentId: this._currentNodeId,
             baseId: this.getConnectionId()
         });
-        this._client.makePointer(connId, CONN.SRC, srcId);
-        this._client.makePointer(connId, CONN.DST, dstId);
+        this._client.setPointer(connId, CONN.SRC, srcId);
+        this._client.setPointer(connId, CONN.DST, dstId);
 
         this._client.completeTransaction();
     };
@@ -369,14 +376,16 @@ define([
         // the dst operation
         var result = [],
             ipairs = inputs.map(id => [id, this._client.getNode(id).getMetaTypeId()]),
-            oType;
+            oType,
+            oTypeId;
 
         // For each output, get all possible (valid) input destinations
         outputs.forEach(outputId => {
-            oType = this._client.getNode(outputId).getMetaTypeId();
+            oTypeId = this._client.getNode(outputId).getMetaTypeId();
+            oType = this._client.getNode(oTypeId);
             result = result.concat(ipairs.filter(pair =>
                     // output type should be valid input type
-                    this._client.isTypeOf(oType, pair[1])
+                    oType.isTypeOf(pair[1])
                 )
                 .map(pair => [outputId, pair[0]])  // Get the input data id
             );
@@ -587,7 +596,7 @@ define([
         if (this.executionUI) {
             this._client.removeUI(this, this.executionEvents.bind(this));
         }
-        EasyDAGControl.prototype._detachClientEventListeners.call(this);
+        ThumbnailControl.prototype._detachClientEventListeners.call(this);
     };
 
     ////////////////////// Execution Support END //////////////////////
@@ -628,34 +637,12 @@ define([
         this._deleteTag(name);  // Remove execution tag
         if (this.isRunning(node)) {
             this.silentStopExecution(id, true).then(() => {
-                this._client.delMoreNodes([id]);
+                this._client.deleteNode(id);
                 this._client.completeTransaction();
             });
         } else {
-            this._client.delMoreNodes([id]);
+            this._client.deleteNode(id);
             this._client.completeTransaction();
-        }
-    };
-
-    PipelineEditorControl.prototype.updateThumbnail = function (svg) {
-        var node = this._client.getNode(this._currentNodeId),
-            name,
-            attrs,
-            currentThumbnail,
-            attrName = 'thumbnail',
-            msg;
-
-        if (node) {  // may have been deleted
-            name = node.getAttribute('name');
-            attrs = node.getValidAttributeNames();
-            currentThumbnail = node.getAttribute(attrName);
-            msg = `Updating pipeline thumbnail for "${name}"`;
-
-            if (attrs.indexOf(attrName) > -1 && currentThumbnail !== svg) {
-                this._client.startTransaction(msg);
-                this._client.setAttributes(this._currentNodeId, attrName, svg);
-                this._client.completeTransaction();
-            }
         }
     };
 
@@ -672,8 +659,8 @@ define([
         if (criterion) {
             // Get all criterion types
             criterionId = criterion.getId();
-            items = this._client.getAllMetaNodes().map(node => node.getId())
-                .filter(id => this._client.isTypeOf(id, criterionId));
+            items = this._client.getAllMetaNodes()
+                .filter(node => node.isTypeOf(criterionId));
 
             return items.map(id => {
                 return {
@@ -681,7 +668,7 @@ define([
                 };
             });
         } else {
-            return EasyDAGControl.prototype._getValidTargetsFor.apply(this, arguments);
+            return ThumbnailControl.prototype._getValidTargetsFor.apply(this, arguments);
         }
     };
 

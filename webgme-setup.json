@@ -58,7 +58,12 @@
         "test": "test/plugins/ExportExecution"
       }
     },
-    "layouts": {},
+    "layouts": {
+      "SidebarLayout": {
+        "src": "src/layouts/SidebarLayout",
+        "enabled": true
+      }
+    },
     "visualizers": {
       "ArchEditor": {
         "src": "panels/ArchEditor/ArchEditorPanel",
@@ -193,12 +198,12 @@
         "secondary": false,
         "widget": "src/visualizers/widgets/PipelineIndex"
       },
-      "MainView": {
-        "src": "panels/MainView/MainViewPanel",
-        "title": "MainView",
-        "panel": "src/visualizers/panels/MainView",
+      "Sidebar": {
+        "src": "panels/Sidebar/SidebarPanel",
+        "title": "Sidebar",
+        "panel": "src/visualizers/panels/Sidebar",
         "secondary": false,
-        "widget": "src/visualizers/widgets/MainView"
+        "widget": "src/visualizers/widgets/Sidebar"
       },
       "JobEditor": {
         "src": "panels/JobEditor/JobEditorPanel",
@@ -234,6 +239,34 @@
         "panel": "src/visualizers/panels/ExecutionIndex",
         "secondary": false,
         "widget": "src/visualizers/widgets/ExecutionIndex"
+      },
+      "WorkerHeader": {
+        "src": "panels/WorkerHeader/WorkerHeaderPanel",
+        "title": "WorkerHeader",
+        "panel": "src/visualizers/panels/WorkerHeader",
+        "secondary": false,
+        "widget": "src/visualizers/widgets/WorkerHeader"
+      },
+      "ArtifactIndex": {
+        "src": "panels/ArtifactIndex/ArtifactIndexPanel",
+        "title": "ArtifactIndex",
+        "panel": "src/visualizers/panels/ArtifactIndex",
+        "secondary": false,
+        "widget": "src/visualizers/widgets/ArtifactIndex"
+      },
+      "ArchIndex": {
+        "src": "panels/ArchIndex/ArchIndexPanel",
+        "title": "ArchIndex",
+        "panel": "src/visualizers/panels/ArchIndex",
+        "secondary": false,
+        "widget": "src/visualizers/widgets/ArchIndex"
+      },
+      "ForwardViz": {
+        "src": "panels/ForwardViz/ForwardVizPanel",
+        "title": "ForwardViz",
+        "panel": "src/visualizers/panels/ForwardViz",
+        "secondary": false,
+        "widget": "src/visualizers/widgets/ForwardViz"
       }
     },
     "addons": {},
@@ -258,6 +291,9 @@
       },
       "LayerDecorator": {
         "src": "src/decorators/LayerDecorator"
+      },
+      "ContainerLayerDecorator": {
+        "src": "src/decorators/ContainerLayerDecorator"
       }
     },
     "seeds": {
@@ -284,12 +320,24 @@
       },
       "xor": {
         "src": "src/seeds/xor"
+      },
+      "devProject": {
+        "src": "src/seeds/devProject"
       }
     },
     "routers": {
       "JobLogsAPI": {
         "src": "src/routers/JobLogsAPI",
         "mount": "execution/logs"
+      },
+      "JobOriginAPI": {
+        "src": "src/routers/JobOriginAPI",
+        "mount": "job/origins"
+      },
+      "ExecPulse": {
+        "src": "src/routers/ExecPulse",
+        "test": "test/routers/ExecPulse",
+        "mount": "execution/pulse"
       }
     }
   },
@@ -304,7 +352,7 @@
       "CHFLayout": {
         "project": "webgme-chflayout",
         "path": "node_modules/webgme-chflayout/src/layouts/CHFLayout",
-        "enabled": true
+        "enabled": false
       }
     },
     "visualizers": {

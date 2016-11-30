@@ -178,7 +178,7 @@ define([
 
     ForgeActionButton.prototype.createNamedNode = function(baseId, isMeta) {
         var parentId = this._currentNodeId,
-            newId = this.client.createChild({parentId, baseId}),
+            newId = this.client.createNode({parentId, baseId}),
             basename = 'New' + this.client.getNode(baseId).getAttribute('name'),
             newName = this.getUniqueName(parentId, basename);
 
@@ -186,7 +186,7 @@ define([
         if (!isMeta) {
             newName = newName.substring(0, 1).toLowerCase() + newName.substring(1);
         }
-        this.client.setAttributes(newId, 'name', newName);
+        this.client.setAttribute(newId, 'name', newName);
         return newId;
     };
 
@@ -355,8 +355,8 @@ define([
         var nodeId = this._currentNodeId;
         if (nodeId) {
             this.client.startTransaction(msg);
-            this.client.delMoreNodes([nodeId]);
-            this.client.completeTransaction(msg);
+            this.client.deleteNode(nodeId);
+            this.client.completeTransaction();
         }
     };
 

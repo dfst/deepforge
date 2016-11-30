@@ -25,8 +25,8 @@ define([
         NEW_PRIM_ID = '__NEW_PRIM__';
 
     OperationInterfaceEditorWidget = function (logger, container) {
+        container.addClass(WIDGET_CLASS);
         EasyDAG.call(this, logger, container);
-        this.$el.addClass(WIDGET_CLASS);
     };
 
     _.extend(OperationInterfaceEditorWidget.prototype, EasyDAG.prototype);

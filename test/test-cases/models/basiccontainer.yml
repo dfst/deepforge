@@ -1,0 +1,23 @@
+- type: Sqrt
+  id: /Q/0
+  next: []
+  attributes:
+    ctor_arg_order: b
+    b: 3
+- type: Linear
+  id: /Q/V
+  next:
+    - /Q/K
+  attributes:
+    bias: ''
+    ctor_arg_order: 'inputSize,outputSize,bias'
+    inputSize: 100
+    outputSize: 200
+- type: Parallel
+  id: /Q/K
+  next:
+    - /Q/0
+  attributes:
+    ctor_arg_order: 'inputDimension,outputDimension'
+    inputDimension: 100
+    outputDimension: 200

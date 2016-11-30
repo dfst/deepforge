@@ -6,13 +6,15 @@ define([
     'SimpleNodes/Constants',
     'deepforge/layer-args',
     'deepforge/utils',
+    'deepforge/Constants',
     'underscore',
     'text!./metadata.json'
 ], function (
     PluginBase,
-    Constants,
+    SimpleNodeConstants,
     createLayerDict,
     utils,
+    Constants,
     _,
     metadata
 ) {
@@ -65,7 +67,7 @@ define([
     };
 
     GenerateArchitecture.prototype.createOutputFiles = function (tree) {
-        var layers = tree[Constants.CHILDREN],
+        var layers = tree[SimpleNodeConstants.CHILDREN],
             result = {},
             code = '';
 
@@ -125,12 +127,57 @@ define([
     };
 
     GenerateArchitecture.prototype.createLayer = function (layer) {
-        var args = this.createArgString(layer);
-        return `nn.${layer.name}${args}`;
+        var args = this.createArgString(layer),
+            def = `nn.${layer.name}${args}`,
+            type = layer.base.base.name,
+            addedIds,
+            node,
+            name,
+            children,
+            id;
+
+        // Check if it is a container and has the 'addLayers' set
+        // If so, it should sort them by their registry 'index' and add
+        // each nested architecture's code to the given container
+        if (type === 'Container') {
+            // Get the members of the 'addLayers' set
+            addedIds = {};
+            id = layer[SimpleNodeConstants.NODE_PATH];
+            node = this._nodeCache[id];
+            this.core.getMemberPaths(node, Constants.CONTAINED_LAYER_SET)
+                .forEach(id => addedIds[id] = true);
+
+            // Get the (sorted) children
+            children = layer[SimpleNodeConstants.CHILDREN]
+                .map(child => {  // get (child, index) tuples
+                    var index;
+
+                    id = child[SimpleNodeConstants.NODE_PATH];
+                    index = this.core.getMemberRegistry(node, Constants.CONTAINED_LAYER_SET, id, Constants.CONTAINED_LAYER_INDEX);
+                    return [child, index];
+                })
+                .filter(pair => pair[1] !== undefined)  // remove non-members
+                .sort((a, b) => a[1] < b[1] ? -1 : 1)  // sort by 'index'
+                .map(pair => pair[0]);
+
+
+            var addedLayerDefs = '',
+                firstLayer;
+            for (var i = 0; i < children.length; i++) {
+                id = children[i][SimpleNodeConstants.NODE_PATH];
+                // Get the children!
+                firstLayer = children[i][SimpleNodeConstants.CHILDREN][0];
+                name = this.getVarName(utils.abbr(layer.name + '_' + i));
+                addedLayerDefs += this.createSequential(firstLayer, name).code;
+                def += `:add(${name})`;
+            }
+            this.hoist(addedLayerDefs);
+        }
+        return def;
     };
 
     GenerateArchitecture.prototype.createSequential = function (layer, name) {
-        var next = layer[Constants.NEXT][0],
+        var next = layer[SimpleNodeConstants.NEXT][0],
             args,
             snippet,
             snippets,
@@ -142,7 +189,7 @@ define([
 
         while (layer) {
             // if there is only one successor, just add the given layer
-            if (layer[Constants.PREV].length > 1) {  // sequential layers are over
+            if (layer[SimpleNodeConstants.PREV].length > 1) {  // sequential layers are over
                 next = layer;  // the given layer will be added by the caller
                 break;
             } else {  // add the given layer
@@ -151,11 +198,11 @@ define([
 
             }
 
-            while (layer && layer[Constants.NEXT].length > 1) {  // concat/parallel
+            while (layer && layer[SimpleNodeConstants.NEXT].length > 1) {  // concat/parallel
                 // if there is a fork, recurse and add a concat layer
 
-                this.logger.debug(`detected fork of size ${layer[Constants.NEXT].length}`);
-                snippets = layer[Constants.NEXT].map(nlayer =>
+                this.logger.debug(`detected fork of size ${layer[SimpleNodeConstants.NEXT].length}`);
+                snippets = layer[SimpleNodeConstants.NEXT].map(nlayer =>
                     this.createSequential(nlayer, this.getVarName('net')));
                 code += '\n' + snippets.map(snippet => snippet.code).join('\n');
 
@@ -183,7 +230,7 @@ define([
                                 `concat_${layer[INDEX]}:add(${snippet.name})`)
                             .join('\n') + `\n\n${name}:add(concat_${layer[INDEX]})`;
                         
-                        next = layer[Constants.NEXT][0];
+                        next = layer[SimpleNodeConstants.NEXT][0];
                     } else {
                         next = null;  // no next layers
                     }
@@ -203,7 +250,7 @@ define([
             }
 
             layer = next;
-            next = layer && layer[Constants.NEXT][0];
+            next = layer && layer[SimpleNodeConstants.NEXT][0];
         }
 
         return {
@@ -218,14 +265,14 @@ define([
         var content = layer[arg];
 
         if (typeof content === 'object') {  // layer as arg
-            if (content[Constants.CHILDREN].length) {
+            if (content[SimpleNodeConstants.CHILDREN].length) {
                 // Generate the code for the children of layer[arg]
                 var name = this.getVarName(utils.abbr(arg)),
                     layers;
 
                 this.logger.debug(`Adding layer arg for ${arg} (${layer.name})`);
                 try {
-                    layers = this.genRawArchCode(layer[arg][Constants.CHILDREN], name);
+                    layers = this.genRawArchCode(layer[arg][SimpleNodeConstants.CHILDREN], name);
                 } catch (e) {
                     this.logger.error(`Layer arg creation failed: ${e}`);
                     return null;
@@ -244,7 +291,7 @@ define([
     GenerateArchitecture.prototype.createArgString = function (layer) {
         var setters = this.LayerDict[layer.name].setters,
             setterNames = Object.keys(this.LayerDict[layer.name].setters),
-            base = layer[Constants.BASE],
+            base = layer[SimpleNodeConstants.BASE],
             desc,
             fn,
             layerCode,

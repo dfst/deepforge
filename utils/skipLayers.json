@@ -15,7 +15,7 @@
     "Sequencer",
     "SequencerCriterion",
     "TrimZero",
-    "Bottle",
+    "MapTable",
     "GPU",
 
     "Sequential",

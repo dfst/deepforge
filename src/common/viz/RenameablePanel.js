@@ -49,7 +49,7 @@ define([
 
                 if (!/^\s*$/.test(newValue)) {
                     this._client.startTransaction(msg);
-                    this._client.setAttributes(nodeId, 'name', newValue);
+                    this._client.setAttribute(nodeId, 'name', newValue);
                     this._client.completeTransaction();
                 }
             }

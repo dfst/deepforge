@@ -92,7 +92,7 @@ define([
 
                     this.logger.info(`${tuple[0]} version info:\n${projVersion} ` +
                         `(project)\n${latest} (latest)`);
-                    return latest !== projVersion;
+                    return projVersion < latest;
                 });
 
                 return Q.all(tuples.map(tuple => this.uploadSeed.apply(this, tuple)));

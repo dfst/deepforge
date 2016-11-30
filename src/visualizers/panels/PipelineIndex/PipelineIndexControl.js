@@ -54,7 +54,7 @@ define([
                 }
 
                 this._client.startTransaction(msg);
-                this._client.delMoreNodes(ids);
+                this._client.deleteNodes(ids);
                 this._client.completeTransaction();
 
                 this._client.removeUI(delUI);
@@ -68,7 +68,7 @@ define([
 
             if (oldName !== name && !/^\s*$/.test(name)) {
                 this._client.startTransaction(msg);
-                this._client.setAttributes(id, 'name', name);
+                this._client.setAttribute(id, 'name', name);
                 this._client.completeTransaction();
             }
         };
@@ -102,20 +102,20 @@ define([
     // This next function retrieves the relevant node information for the widget
     PipelineIndexControl.prototype._getObjectDescriptor = function (nodeId) {
         var node = this._client.getNode(nodeId),
+            base,
             objDescriptor;
 
         if (node) {
+            base = this._client.getNode(node.getBaseId());
             objDescriptor = {
-                id: undefined,
-                name: undefined,
-                parentId: undefined,
+                id: node.getId(),
+                name: node.getAttribute(nodePropertyNames.Attributes.name),
+                parentId: node.getParentId(),
                 thumbnail: node.getAttribute('thumbnail'),
+                type: base.getAttribute('name'),
                 executionCount: node.getMemberIds('executions').length
             };
 
-            objDescriptor.id = node.getId();
-            objDescriptor.name = node.getAttribute(nodePropertyNames.Attributes.name);
-            objDescriptor.parentId = node.getParentId();
         }
 
         return objDescriptor;

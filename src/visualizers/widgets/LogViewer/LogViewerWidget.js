@@ -135,6 +135,7 @@ define([
 
     LogViewerWidget.prototype.getEditorOptions = function() {
         return {
+            fontFamily: 'bitstream vera sans mono',
             fontSize: '10pt'
         };
     };

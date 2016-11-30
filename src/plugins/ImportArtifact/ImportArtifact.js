@@ -86,6 +86,7 @@ define([
                 });
 
                 this.core.setAttribute(dataNode, 'data', hash);
+                this.core.setAttribute(dataNode, 'createdAt', Date.now());
                 baseName = this.core.getAttribute(baseType, 'name');
 
                 var getName;

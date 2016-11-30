@@ -3,10 +3,12 @@
 define([
     'deepforge/layer-args',
     'common/util/assert',
+    'deepforge/Constants',
     'deepforge/lua'
 ], function(
     createLayerDict,
     assert,
+    Constants,
     lua
 ) {
     'use strict';
@@ -39,6 +41,20 @@ define([
                 }
             });
             return '{' + strings.join(', ') + '}';
+        };
+
+        var getAttributeString = function(value, layerType) {
+            if (value instanceof lua.types.LuaTable) {
+                if (value.get('_node')) {
+                    throw Error(`Detected unsupported varargs (composed of layers) for ${layerType}`);
+                }
+                return stringify(value);
+            } else if ((typeof value) === 'object') {
+                // special lua.js object
+                value = value.valueOf();
+            }
+
+            return value;
         };
 
         var allConnectedTo = function(current) {
@@ -79,6 +95,7 @@ define([
                 connsFrom[id] = [];
             }
             connsFrom[id].push(conn, dst);
+            return conn;
         };
 
         // nn drawing library
@@ -104,7 +121,8 @@ define([
                 cntr,
                 layer,
                 cntrName,
-                value;
+                value,
+                i;
 
             if (this._cachedNode) {
                 // only generate a single node for each layer
@@ -117,7 +135,17 @@ define([
                 parent: parent
             });
 
-            for (var i = this._attrs.length; i--;) {
+            // merge all the last arguments into a single one (ie, assume the last
+            // attribute is varargs
+            if (this._attrs.length < this._values.length) {
+                i = this._attrs.length;
+                value = this._values.splice(i-1)
+                    .map(val => getAttributeString(val, this._base)).join(', ');
+                this._values.push(value);
+            }
+
+            // Add the attributes to the layer
+            for (i = this._attrs.length; i--;) {
                 name = this._attrs[i].name;
                 value = this._values[i];
 
@@ -169,56 +197,131 @@ define([
             return self;
         };
 
-        // Each container will have `inputs` and `outputs`
+        Layer.prototype._getAllNodes = function() {
+            return [this._node()];
+        };
+
         var Container = function() {
+            Layer.apply(this, arguments);
+            this._nestedIndex = 0;
+        };
+
+        Container.prototype = Object.create(Layer.prototype);
+
+        Container.prototype.add = function(self, tlayer) {
+            var layer = tlayer.get('_node'),
+                container = this._node(),
+                children,
+                arch;
+
+            // Add a nested 'Architecture' node
+            arch = core.createNode({
+                parent: container,
+                base: META.Architecture
+            });
+
+            // Add this node to the 'addLayers' set
+            core.addMember(container, Constants.CONTAINED_LAYER_SET, arch);
+            // Assign it an appropriate 'index' value
+            core.setMemberRegistry(
+                container,
+                Constants.CONTAINED_LAYER_SET,
+                core.getPath(arch),
+                Constants.CONTAINED_LAYER_INDEX,
+                this._nestedIndex++
+            );
+
+            // Move the added node(s)/conns to this architecture node
+            children = layer._getAllNodes();
+            for (var i = children.length; i--;) {
+                core.moveNode(children[i], arch);
+            }
+            layer._parent = arch;
+            return self;
+        };
+
+        // Implicit Containers are sequential and concat containers;
+        // these containers are visually implied in deepforge (although
+        // they are explicitly defined in torch)
+        var ImplicitContainer = function() {
             // inputs and outputs are webgme nodes
             this._inputs = [];
             this._outputs = [];
+            this._children = [];
+            this._connections = [];
         };
 
-        Container.prototype.add = function() {
+        // Implicit containers will have to record their 'children'.
+        // When an implicit container is added to an actual container,
+        // the container will set it's '_parent' value. If any additional
+        // layers are added to the implicit container after, they will
+        // need to be moved to the parent of the implicit container
+        ImplicitContainer.prototype.add = function() {
             logger.error('Add is not overridden!');
         };
 
-        var Sequential = function(/*attrs, args*/) {
-            Container.call(this);
+        ImplicitContainer.prototype._getAllNodes = function() {
+            var nodes = this._children.map(layer => layer._getAllNodes())
+                .reduce((l1, l2) => l1.concat(l2), []);
+
+            return this._connections.concat(nodes);
         };
 
-        Sequential.prototype = new Container();
+        var Sequential = function(/*attrs, args*/) {
+            ImplicitContainer.call(this);
+        };
+
+        Sequential.prototype = new ImplicitContainer();
 
         Sequential.prototype.add = function(self, tlayer) {
             var layer = tlayer.get('_node'),
-                nodes = layer._inputs;
+                nodes = layer._inputs,
+                connections = [];
 
             // If this._inputs is empty, add the layer to the inputs list
             if (this._inputs.length === 0) {  // first node
                 this._inputs = this._inputs.concat(nodes);
             } else {
                 // connect all inputs of the added node to the current outputs
+                // add the connection to the list of allNodes
                 this._outputs.forEach(src =>
-                    nodes.forEach(dst => connect(src, dst))
+                    nodes.forEach(dst => connections.push(connect(src, dst)))
                 );
             }
             this._outputs = layer._outputs;
+            this._children.push(layer);
+            this._connections = this._connections.concat(connections);
+
+            // If _parent is set, move the nodes and connection to the _parent node
+            if (this._parent) {
+                nodes = layer._getAllNodes().concat(connections);
+                for (var i = nodes.length; i--;) {
+                    core.moveNode(nodes[i], this._parent);
+                }
+            }
             return self;
         };
 
         var Concat = function(attrs, args) {
-            Container.call(this);
+            ImplicitContainer.call(this);
 
             // Create a concat node and add it to this._outputs
             var concat = new Layer('Concat', attrs, args);
             this._outputs.push(concat._node());
+            this._children.push(concat);
         };
 
-        Concat.prototype = new Container();
+        Concat.prototype = new ImplicitContainer();
 
         Concat.prototype.add = function(self, tlayer) {
             // Connect the tlayer outputs to this._outputs
             var layer = tlayer.get('_node'),
-                concatLayer = this._outputs[0];
+                concatLayer = this._outputs[0],
+                connections = [],
+                nodes;
 
-            layer._outputs.forEach(output => connect(output, concatLayer));
+            layer._outputs.forEach(output =>
+                connections.push(connect(output, concatLayer)));
 
             // Connect the incomingly connected node to tlayer
             // TODO: This might not work if adding layers after this container is
@@ -226,14 +329,23 @@ define([
 
             // Add the layer's inputs to the inputs
             this._inputs = this._inputs.concat(layer._inputs);
+            this._children.push(layer);
+            this._connections = this._connections.concat(connections);
+            if (this._parent) {
+                nodes = layer._getAllNodes().concat(connections);
+                for (var i = nodes.length; i--;) {
+                    core.moveNode(nodes[i], this._parent);
+                }
+            }
             return self;
         };
 
         // Special layers (with special functions - like 'add')
-        var LAYERS = {
-            Concat: Concat,
-            Sequential: Sequential
-        };
+        var CONTAINERS,
+            LAYERS = {
+                Concat: Concat,
+                Sequential: Sequential
+            };
 
         var getValue = function(txt) {
             if (txt === 'true') {
@@ -286,6 +398,9 @@ define([
 
             if (LAYERS[type]) {
                 node = new LAYERS[type](args, attrs);
+            } else if (CONTAINERS[type]) {
+                node = new Container(type, args, attrs);
+                res.set('add', node.add.bind(node)); // add the 'add' method
             } else {  // Call generic Layer with type name
                 node = new Layer(type, args, attrs);
             }
@@ -327,11 +442,23 @@ define([
                 return;
             }
 
-            // TODO: Create the nn object
+            // Mocking the nn layers (as defined in the metamodel)
             var nn = lua.newContext()._G,
-                names = Object.keys(LayerDict);
+                names = Object.keys(LayerDict),
+                base,
+                baseName;
+
+            // For each layer, check the name of the base type. If it is 'Container',
+            // then it should be added to the CONTAINERS dictionary. This will change how
+            // it is handled in 'CreateLayer'
+            CONTAINERS = {};
 
             for (var i = names.length; i--;) {
+                base = core.getBase(META[names[i]]);
+                baseName = core.getAttribute(base, 'name');
+                if (baseName === 'Container') {
+                    CONTAINERS[names[i]] = true;
+                }
                 nn.set(names[i], CreateLayer.bind(null, names[i]));
             }
 

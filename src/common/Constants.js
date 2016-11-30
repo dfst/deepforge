@@ -1,31 +1,53 @@
 /* globals define */
-define({
-    LINE_OFFSET: 'lineOffset',
+(function(root, factory){
+    if(typeof define === 'function' && define.amd) {
+        define([], function(){
+            return factory();
+        });
+    } else if(typeof module === 'object' && module.exports) {
+        module.exports = factory();
+    } else {
+        root.CONSTANTS = factory();
+    }
+}(this, function() {
+    return {
+        CONTAINED_LAYER_SET: 'addLayers',
+        CONTAINED_LAYER_INDEX: 'index',
 
-    // DeepForge metadata creation in dist execution
-    START_CMD: 'deepforge-cmd',
+        LINE_OFFSET: 'lineOffset',
 
-    IMAGE: {  // all prefixed w/ 'IMG' for simple upload detection
-        PREFIX: 'IMG',
-        BASIC: 'IMG-B',
-        CREATE: 'IMG-C',
-        UPDATE: 'IMG-U',
-        NAME: 'IMAGE-N'  // No upload required
-    },
+        // DeepForge metadata creation in dist execution
+        START_CMD: 'deepforge-cmd',
 
-    GRAPH_CREATE: 'GRAPH',
-    GRAPH_PLOT: 'PLOT',
-    GRAPH_CREATE_LINE: 'LINE',
+        IMAGE: {  // all prefixed w/ 'IMG' for simple upload detection
+            PREFIX: 'IMG',
+            BASIC: 'IMG-B',
+            CREATE: 'IMG-C',
+            UPDATE: 'IMG-U',
+            NAME: 'IMAGE-N'  // No upload required
+        },
 
-    // Code Generation Constants
-    CTOR_ARGS_ATTR: 'ctor_arg_order',
+        GRAPH_CREATE: 'GRAPH',
+        GRAPH_PLOT: 'PLOT',
+        GRAPH_CREATE_LINE: 'LINE',
 
-    // Operation types
-    OP: {
-        INPUT: 'Input',
-        OUTPUT: 'Output'
-    },
+        // Code Generation Constants
+        CTOR_ARGS_ATTR: 'ctor_arg_order',
 
-    // Job stdout update
-    STDOUT_UPDATE: 'stdout_update'
-});
+        // Operation types
+        OP: {
+            INPUT: 'Input',
+            OUTPUT: 'Output'
+        },
+
+        // Heartbeat constants (ExecPulse router)
+        PULSE: {
+            DEAD: 0,
+            ALIVE: 1,
+            DOESNT_EXIST: 2
+        },
+
+        // Job stdout update
+        STDOUT_UPDATE: 'stdout_update'
+    };
+}));

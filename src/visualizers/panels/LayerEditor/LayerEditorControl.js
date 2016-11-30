@@ -94,10 +94,10 @@ define([
         this._client.startTransaction(msg);
 
         TextEditorControl.prototype.saveTextFor.call(this, id, text, true);
-        this._client.setAttributes(id, 'name', layerSchema.name);
+        this._client.setAttribute(id, 'name', layerSchema.name);
 
         this._logger.debug(`Setting ctor args to ${ctorAttrs.join(',')}`);
-        this._client.setAttributes(id, Constants.CTOR_ARGS_ATTR, ctorAttrs.join(','));
+        this._client.setAttribute(id, Constants.CTOR_ARGS_ATTR, ctorAttrs.join(','));
 
         types = layerSchema.types || {};
         schema = this.getPointerMeta();
@@ -114,29 +114,29 @@ define([
 
         // Remove old pointers
         node.getPointerNames().filter(ptr => !currentPtrs[ptr])
-            .forEach(ptr => this._client.deleteMetaPointer(id, ptr));
+            .forEach(ptr => this._client.delPointerMeta(id, ptr));
 
         // Remove old attributes
         setterNames = Object.keys(layerSchema.setters);
         _.difference(currentAttrs, ctorAttrs, setterNames)
-            .forEach(attr => this._client.removeAttributeSchema(id, attr));
+            .forEach(attr => this._client.delAttributeMeta(id, attr));
 
         // Add setters
         for (i = setterNames.length; i--;) {
             schema = utils.getSetterSchema(setterNames[i], layerSchema.setters, layerSchema.defaults);
             // Get setter attr schema
             if (schema.hasOwnProperty('default')) {
-                this._client.setAttributes(id, setterNames[i], schema.default);
+                this._client.setAttribute(id, setterNames[i], schema.default);
                 delete schema.default;
             }
             if (types[setterNames[i]]) {
                 schema.type = types[setterNames[i]];
             }
-            this._client.setAttributeSchema(id, setterNames[i], schema);
+            this._client.setAttributeMeta(id, setterNames[i], schema);
         }
 
         ctorAttrs.forEach(attr =>
-            this._client.setAttributeSchema(id, attr, {
+            this._client.setAttributeMeta(id, attr, {
                 type: types[attr] || 'string'
             })
         );

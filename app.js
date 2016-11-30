@@ -4,10 +4,16 @@
 var gmeConfig = require('./config'),
     webgme = require('webgme'),
     path = require('path'),
+    fs = require('fs'),
     rm_rf = require('rimraf'),
+    gracefulFs = require('graceful-fs'),
     myServer;
 
+process.chdir(__dirname);
 webgme.addToRequireJsPaths(gmeConfig);
+
+// Patch the 'fs' module to fix 'too many files open' error
+gracefulFs.gracefulify(fs);
 
 // Clear seed hash info
 ['nn', 'pipeline'].map(lib => path.join(__dirname, 'src', 'seeds', lib, 'hash.txt'))

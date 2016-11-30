@@ -1,10 +1,10 @@
-/*globals WebGMEGlobal, $, define*/
+/*globals WebGMEGlobal, $, define, $klay*/
 /*jshint browser: true*/
 
 define([
     'deepforge/Constants',
     'widgets/EasyDAG/AddNodeDialog',
-    'widgets/EasyDAG/EasyDAGWidget',
+    'deepforge/viz/widgets/Thumbnail',
     'deepforge/viz/PipelineControl',
     'deepforge/viz/Utils',
     'deepforge/globals',
@@ -12,11 +12,12 @@ define([
     './Connection',
     './SelectionManager',
     'underscore',
+    './klay',
     'css!./styles/PipelineEditorWidget.css'
 ], function (
     CONSTANTS,
     AddNodeDialog,
-    EasyDAGWidget,
+    ThumbnailWidget,
     PipelineControl,
     Utils,
     DeepForge,
@@ -37,8 +38,9 @@ define([
         };
 
     PipelineEditorWidget = function (logger, container, execCntr) {
-        EasyDAGWidget.call(this, logger, container);
-        this.$el.addClass(WIDGET_CLASS);
+        container.addClass(WIDGET_CLASS);
+        ThumbnailWidget.call(this, logger, container);
+        this._emptyMsg = 'Click to add an operation';
         this.portIdToNode = {};
         this.PORT_STATE = STATE.DEFAULT;
         this.srcPortToConnectArgs = null;
@@ -49,7 +51,8 @@ define([
         this.initExecs(execCntr);
     };
 
-    _.extend(PipelineEditorWidget.prototype, EasyDAGWidget.prototype);
+    _.extend(PipelineEditorWidget.prototype, ThumbnailWidget.prototype);
+
     PipelineEditorWidget.prototype.ItemClass = OperationNode;
     PipelineEditorWidget.prototype.SelectionManager = SelectionManager;
     PipelineEditorWidget.prototype.Connection = Connection;
@@ -57,17 +60,28 @@ define([
     PipelineEditorWidget.prototype.onCreateInitialNode =
         PipelineControl.prototype.onCreateInitialNode;
 
+    PipelineEditorWidget.prototype.getComponentId = function() {
+        return 'PipelineEditor';
+    };
+
     PipelineEditorWidget.prototype.setupItemCallbacks = function() {
-        EasyDAGWidget.prototype.setupItemCallbacks.call(this);
+        ThumbnailWidget.prototype.setupItemCallbacks.call(this);
         this.ItemClass.prototype.connectPort =
             PipelineEditorWidget.prototype.connectPort.bind(this);
         this.ItemClass.prototype.disconnectPort =
             PipelineEditorWidget.prototype.disconnectPort.bind(this);
+
+        this.ItemClass.prototype.canShowPorts = () => {
+            // when the widget is connecting ports, the items
+            // will ignore hover event behaviors wrt showing
+            // ports
+            return !this.isConnectingPorts();
+        };
     };
 
     //////////////////// Port Support ////////////////////
     PipelineEditorWidget.prototype.addConnection = function(desc) {
-        EasyDAGWidget.prototype.addConnection.call(this, desc);
+        ThumbnailWidget.prototype.addConnection.call(this, desc);
         // Record the connection with the input (dst) port
         var dstItem = this.items[desc.dst],
             dstPort;
@@ -85,11 +99,10 @@ define([
             // Update the given port...
             dstItem.refreshPorts();
         }
-        this.refreshThumbnail();
     };
 
     PipelineEditorWidget.prototype.addNode = function(desc) {
-        EasyDAGWidget.prototype.addNode.call(this, desc);
+        ThumbnailWidget.prototype.addNode.call(this, desc);
         // Update the input port connections (if not connection)
         var item = this.items[desc.id];
         if (item) {
@@ -101,11 +114,10 @@ define([
         }
 
         // If in a "connecting-port" state, refresh the port
-        if (this.PORT_STATE === STATE.CONNECTING) {
+        if (this.isConnectingPorts()) {
             this.PORT_STATE = STATE.DEFAULT;
             this.connectPort.apply(this, this.srcPortToConnectArgs);
         }
-        this.refreshThumbnail();
     };
 
     PipelineEditorWidget.prototype._removeConnection = function(id) {
@@ -119,8 +131,7 @@ define([
             port.connection = null;
             dst.refreshPorts();
         }
-        EasyDAGWidget.prototype._removeConnection.call(this, id);
-        this.refreshThumbnail();
+        ThumbnailWidget.prototype._removeConnection.call(this, id);
     };
 
     // May not actually need these port methods
@@ -139,8 +150,7 @@ define([
         if (this.portIdToNode.hasOwnProperty(gmeId)) {
             this.removePort(gmeId);
         } else {
-            EasyDAGWidget.prototype.removeNode.call(this, gmeId);
-            this.refreshThumbnail();
+            ThumbnailWidget.prototype.removeNode.call(this, gmeId);
         }
     };
 
@@ -156,11 +166,15 @@ define([
         this.removeConnection(connId);
     };
 
+    PipelineEditorWidget.prototype.isConnectingPorts = function() {
+        return this.PORT_STATE === STATE.CONNECTING;
+    };
+
     PipelineEditorWidget.prototype.connectPort = function(nodeId, id, isOutput) {
         this._logger.info('port ' + id + ' has been clicked! (', isOutput, ')');
         if (this.PORT_STATE === STATE.DEFAULT) {
             this.srcPortToConnectArgs = arguments;
-            this.startPortConnection(nodeId, id, isOutput);
+            return this.startPortConnection(nodeId, id, isOutput);
         } else if (this._selectedPort !== id) {
             this._logger.info('connecting ' + this._selectedPort + ' to ' + id);
             var src = !isOutput ? this._selectedPort : id,
@@ -169,30 +183,31 @@ define([
             this.createConnection(src, dst);
         } else if (!this._selectedPort) {
             this._logger.error(`Invalid connection state: ${this.PORT_STATE} w/ ${this._selectedPort}`);
-            this.resetPortState();
         }
+
+        this.resetPortState();
     };
 
     PipelineEditorWidget.prototype.startPortConnection = function(nodeId, id, isOutput) {
-        var existingMatches = this.getExistingPortMatches(id, isOutput),
-            item = this.items[nodeId];
+        var existingMatches = this.getExistingPortMatches(id, isOutput);
         
         // Hide all ports except 'id' on 'nodeId'
         this._selectedPort = id;
-        item.showPorts(id, !isOutput);
 
         // Get all existing potential port destinations for the id
         existingMatches.forEach(match =>
             this.showPorts(match.nodeId, match.portIds, isOutput)
         );
-
-        // Show the 'add' button
-        // TODO
+        this.showPorts(nodeId, id, !isOutput);
 
         this.PORT_STATE = STATE.CONNECTING;
     };
 
-    PipelineEditorWidget.prototype.onDeselect =
+    PipelineEditorWidget.prototype.onDeselect = function() {
+        this.resetPortState();
+        return ThumbnailWidget.prototype.onDeselect.apply(this, arguments);
+    };
+
     PipelineEditorWidget.prototype.resetPortState = function() {
         // Reset connecting state
         this._itemsShowingPorts.forEach(item => item.hidePorts());
@@ -208,27 +223,6 @@ define([
     // No extra buttons - just the empty message!
     PipelineEditorWidget.prototype.refreshExtras =
         PipelineEditorWidget.prototype.updateEmptyMsg;
-
-    PipelineEditorWidget.prototype.refreshConnections = function() {
-        // Update the connections to they first update their start/end points
-        var connIds = Object.keys(this.connections),
-            src,
-            dst,
-            conn;
-
-        for (var i = connIds.length; i--;) {
-            conn = this.connections[connIds[i]];
-
-            // Update the start/end point
-            src = this.items[conn.src];
-            conn.setStartPoint(src.getPortLocation(conn.srcPort));
-
-            dst = this.items[conn.dst];
-            conn.setEndPoint(dst.getPortLocation(conn.dstPort, true));
-            
-            conn.redraw();
-        }
-    };
 
     //////////////////// Action Overrides ////////////////////
 
@@ -348,7 +342,7 @@ define([
             // Create new architecture from the "set ptr" dialog
             return this.selectArchitectureTarget.apply(this, arguments);
         } else {
-            return EasyDAGWidget.prototype.selectTargetFor.apply(this, arguments);
+            return ThumbnailWidget.prototype.selectTargetFor.apply(this, arguments);
         }
     };
 
@@ -402,46 +396,114 @@ define([
 
     ////////////////////////// Action Overrides END //////////////////////////
 
-    ////////////////////////// Thumbnail updates //////////////////////////
-    PipelineEditorWidget.prototype.getSvgDistanceDim = function(dim) {
-        var maxValue = this._getMaxAlongAxis(dim),
-            nodes,
-            minValue;
-
-        nodes = this.graph.nodes().map(id => this.graph.node(id));
-        minValue = Math.min.apply(null, nodes.map(node => node[dim]));
-        return maxValue-minValue;
-    };
-
-    PipelineEditorWidget.prototype.getSvgWidth = function() {
-        return this.getSvgDistanceDim('x');
-    };
-
-    PipelineEditorWidget.prototype.getSvgHeight = function() {
-        return this.getSvgDistanceDim('y');
-    };
-
-    PipelineEditorWidget.prototype.getViewBox = function() {
-        var maxX = this.getSvgWidth('x'),
-            maxY = this.getSvgHeight('y');
-
-        return `0 0 ${maxX} ${maxY}`;
-    };
-
-    PipelineEditorWidget.prototype.refreshThumbnail = _.debounce(function() {
-        // Get the svg...
-        var svg = document.createElement('svg'),
-            group = this.$svg.node(),
-            child;
-
-        svg.setAttribute('viewBox', this.getViewBox());
-        for (var i = 0; i < group.children.length; i++) {
-            child = $(group.children[i]);
-            svg.appendChild(child.clone()[0]);
+    // Changing the layout to klayjs
+    PipelineEditorWidget.prototype.refreshScreen = function() {
+        if (!this.active) {
+            return;
         }
 
-        this.updateThumbnail(svg.outerHTML);
-    }, 1000);
+        // WRITE UPDATES
+        // Update the locations of all the nodes
+
+        var graph = {
+            id: 'root',
+            properties: {
+                direction: 'DOWN',
+                'de.cau.cs.kieler.spacing': 25,
+                'de.cau.cs.kieler.edgeRouting': 'ORTHOGONAL'
+                //'de.cau.cs.kieler.klay.layered.nodePlace': 'INTERACTIVE'
+            },
+            edges: [],
+            children: []
+        };
+
+        graph.children = Object.keys(this.items).map(itemId => {
+            var item = this.items[itemId],
+                ports;
+
+            ports = item.inputs.map(p => this._getPortInfo(item, p, true))
+                .concat(item.outputs.map(p => this._getPortInfo(item, p)));
+            return {
+                id: itemId,
+                height: item.height,
+                width: item.width,
+                ports: ports,
+                properties: {
+                    'de.cau.cs.kieler.portConstraints': 'FIXED_POS'
+                }
+            };
+        });
+
+        graph.edges = Object.keys(this.connections).map(connId => {
+            var conn = this.connections[connId];
+            return {
+                id: connId,
+                source: conn.src,
+                target: conn.dst,
+                sourcePort: conn.srcPort,
+                targetPort: conn.dstPort
+            };
+        });
+
+        $klay.layout({
+            graph: graph,
+            success: graph => {
+                this.resultGraph = graph;
+                this.queueFns([
+                    this.applyLayout.bind(this, graph),
+                    this.updateTranslation.bind(this),
+                    this.refreshItems.bind(this),
+                    this.refreshConnections.bind(this),
+                    this.selectionManager.redraw.bind(this.selectionManager),
+                    this.updateContainerWidth.bind(this),
+                    this.refreshExtras.bind(this)
+                ]);
+            }
+        });
+    };
+
+    PipelineEditorWidget.prototype._getPortInfo = function(item, port, isInput) {
+        var position = item.decorator.getPortLocation(port.id, isInput),
+            side = isInput ? 'NORTH' : 'SOUTH';
+
+        position.y += (item.height/2) - 1;
+        return {
+            id: port.id,
+            width: 1,  // Ports are rendered outside the node in this library;
+            height: 1,  // we want it to look like it goes right up to the node
+            properties: {
+                'de.cau.cs.kieler.portSide': side
+            },
+            x: position.x,
+            y: position.y
+        };
+    };
+
+    PipelineEditorWidget.prototype.applyLayout = function (graph) {
+        var id,
+            item,
+            lItem,  // layout item
+            i;
+
+        for (i = graph.children.length; i--;) {
+            // update the x, y
+            lItem = graph.children[i];
+            id = lItem.id;
+            item = this.items[id];
+            item.x = lItem.x + item.width/2;
+            item.y = lItem.y + item.height/2;
+        }
+
+        for (i = graph.edges.length; i--;) {
+            // update the connection.points
+            lItem = graph.edges[i];
+            id = lItem.id;
+            item = this.connections[id];
+            item.points = lItem.bendPoints || [];
+            item.points.unshift(lItem.sourcePoint);
+            item.points.push(lItem.targetPoint);
+        }
+    };
 
     return PipelineEditorWidget;
 });

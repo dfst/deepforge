@@ -2,17 +2,20 @@
 /*jshint browser: true*/
 
 define([
-    'text!./Pipeline.ejs',
+    'text!./cards/Pipeline.ejs',
+    'text!./cards/Architecture.ejs',
     'underscore',
     'css!./styles/PipelineIndexWidget.css'
 ], function (
     PipelineHtml,
+    ArchitectureHtml,
     _
 ) {
     'use strict';
 
     var PipelineIndexWidget,
         PipelineTemplate = _.template(PipelineHtml),
+        ArchitectureTemplate = _.template(ArchitectureHtml),
         EMPTY_MSG = 'No Existing Pipelines... yet!',
         WIDGET_CLASS = 'pipeline-index';
 
@@ -59,6 +62,10 @@ define([
         });
     };
 
+    PipelineIndexWidget.prototype.getEmptyMsg = function() {
+        return EMPTY_MSG;
+    };
+
     PipelineIndexWidget.prototype.updateBackgroundText = function() {
         if (this.$backgroundText) {
             this.$backgroundText.remove();
@@ -67,7 +74,7 @@ define([
         // Add background text if empty
         if (Object.keys(this.cards).length === 0) {
             this.$backgroundText = $('<div>', {class: 'background-text'});
-            this.$backgroundText.text(EMPTY_MSG);
+            this.$backgroundText.text(this.getEmptyMsg());
             this.$el.append(this.$backgroundText);
         }
     };
@@ -86,13 +93,22 @@ define([
     };
 
     // Adding/Removing/Updating items
+    PipelineIndexWidget.prototype.getCardTemplate = function (desc) {
+        if (desc.type === 'Architecture') {
+            return ArchitectureTemplate;
+        }
+        return PipelineTemplate;
+    };
+
     PipelineIndexWidget.prototype.addNode = function (desc) {
-        var node;
+        var node,
+            Template;
 
         if (desc) {
             // Add node to a table of cards
+            Template = this.getCardTemplate(desc);
             this.nodes[desc.id] = desc;
-            node = $(PipelineTemplate(desc));
+            node = $(Template(desc));
             this.cards[desc.id] = node;
 
             // Add click listeners

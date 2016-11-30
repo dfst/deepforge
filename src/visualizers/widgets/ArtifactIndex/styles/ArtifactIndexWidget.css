@@ -1,0 +1,13 @@
+.artifact-index {
+  background-color: #eee !important;
+  outline: none;
+  text-align: center;
+}
+
+.artifact-index .data-download {
+  color: inherit;
+}
+
+.artifact-index .type {
+  font-style: italic;
+}

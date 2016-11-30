@@ -27,6 +27,7 @@ define([
             new Buttons.Enter({
                 context: this._widget,
                 $pEl: this.$selection,
+                title: 'View output',
                 item: this.selectedItem,
                 icon: 'monitor',
                 x: width,

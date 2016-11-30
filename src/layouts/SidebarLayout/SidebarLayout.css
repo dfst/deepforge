@@ -1,0 +1,12 @@
+.ui-layout-center .layout-center {
+    left: 40px;
+    height: 100%;
+    width: 100%;
+    position: absolute;
+}
+
+.ui-layout-sidebar {
+    top: 64px;
+    width: 40px;
+    bottom: 27px;
+}

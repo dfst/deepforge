@@ -65,9 +65,6 @@
       "VolumetricFullConvolution",
       "VolumetricMaxUnpooling"
    ],
-   "Containers": [
-      "Concat"
-   ],
    "Criterion": [
       "BCECriterion",
       "WeightedMSECriterion",
@@ -96,6 +93,7 @@
       "LinearNoBias",
       "SparseLinear",
       "Dropout",
+      "Concat",
       "Abs",
       "Add",
       "Mul",

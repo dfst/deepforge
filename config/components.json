@@ -2,13 +2,29 @@
     "AutoViz": {
         "preloadIds": [
             "ArchEditor",
+            "ArchIndex",
+            "PipelineIndex",
             "PipelineEditor",
             "OperationEditor",
             "ExecutionView"
-        ]
+        ],
+        "visualizerOverrides": {
+            "": "ForwardViz",
+            "MyArtifacts": "ArtifactIndex",
+            "MyArchitectures": "ArchIndex",
+            "MyExecutions": "ExecutionIndex",
+            "MyPipelines": "PipelineIndex"
+        }
+    },
+    "PipelineEditor": {
+        "itemName": "operation"
+    },
+    "ExecutionView": {
+        "itemName": "job"
     },
     "ArchEditor": {
         "hotkeys": "none",
+        "itemName": "layer",
         "LayerColors": {}
     },
     "BreadcrumbHeader": {
@@ -43,11 +59,11 @@
         "rootMenuClass": "deepforge-logo",
         "rootDisplayName": "DeepForge"
     },
-    "CHFLayout": {
+    "SidebarLayout": {
         "panels": [
             {
-                "id": "Header",
-                "panel": "BreadcrumbHeader/BreadcrumbHeaderPanel",
+                "id": "WorkerHeader",
+                "panel": "WorkerHeader/WorkerHeaderPanel",
                 "container": "header",
                 "DEBUG_ONLY": false
             },
@@ -61,6 +77,12 @@
                 "id": "MainPanel",
                 "panel": "AutoViz/AutoVizPanel",
                 "container": "center",
+                "DEBUG_ONLY": false
+            },
+            {
+                "id": "Sidebar",
+                "panel": "Sidebar/SidebarPanel",
+                "container": "sidebar",
                 "DEBUG_ONLY": false
             },
             {

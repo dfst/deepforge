@@ -135,7 +135,7 @@ define([
                 }
             ]
         });
-        this._client.makePointer(this._currentNodeId, ptrName, null);
+        this._client.setPointer(this._currentNodeId, ptrName, null);
         this._client.completeTransaction();
     };
 
@@ -174,10 +174,10 @@ define([
         this._client.startTransaction(msg);
 
         // Currently, this will not update children already using old name...
-        this._client.deleteMetaPointer(this._currentNodeId, from);
+        this._client.delPointerMeta(this._currentNodeId, from);
         this._client.delPointer(this._currentNodeId, from);
         this._client.setPointerMeta(this._currentNodeId, ptrName, meta);
-        this._client.makePointer(this._currentNodeId, ptrName, null);
+        this._client.setPointer(this._currentNodeId, ptrName, null);
 
         this._client.completeTransaction();
     };
@@ -188,7 +188,7 @@ define([
 
         this._client.startTransaction(msg);
         // Currently, this will not update children already using old name...
-        this._client.deleteMetaPointer(this._currentNodeId, name);
+        this._client.delPointerMeta(this._currentNodeId, name);
         this._client.delPointer(this._currentNodeId, name);
         this._client.completeTransaction();
     };
@@ -204,13 +204,13 @@ define([
 
         msg = `Adding ${isInput ? 'input' : 'output'} "${dataName}" to ${name} interface`;
         this._client.startTransaction(msg);
-        var id = this._client.createChild({
+        var id = this._client.createNode({
             parentId: cntrId,
             baseId: typeId
         });
 
         // Set the name of the new input
-        this._client.setAttributes(id, 'name', dataName);
+        this._client.setAttribute(id, 'name', dataName);
 
         this._client.completeTransaction();
     };

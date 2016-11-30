@@ -1,0 +1,47 @@
+.worker-modal .modal-content .modal-header span {
+  font-size: 28px;
+  vertical-align: middle;
+}
+
+.worker-modal .modal-content .modal-header .header-icon {
+  height: 28px;
+  width: 28px;
+  margin-right: 1ex;
+  display: inline-block;
+  vertical-align: middle;
+  background-size: 28px 28px;
+}
+
+.worker-modal .modal-content .modal-body th {
+  text-align: left;
+}
+
+.worker-modal .job-tag {
+  margin-right: 5px;
+}
+
+.worker-modal .queue-title {
+  float: left;
+  margin-right: 5px;
+  font-size: 1.4em;
+  color: #555555;
+  font-weight: bold;
+  width: 100%;
+  text-align: center;
+}
+
+.worker-modal .no-jobs-msg {
+  font-style: italic;
+  font-size: 1.3em;
+  color: #777;
+}
+
+.worker-modal .no-workers-msg {
+  font-style: italic;
+  font-size: 1.3em;
+  color: #777;
+}
+
+.worker-modal .job-queue {
+  padding-top: 1em;
+}

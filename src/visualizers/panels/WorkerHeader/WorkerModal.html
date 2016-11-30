@@ -1,0 +1,60 @@
+<div class="worker-modal modal fade in" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">x</button>
+                <i class="header-icon gme-icon"></i>
+                <span>Overview</span>
+            </div>
+            <div class="modal-body">
+                <div>
+                    <div class="queue-title">Connected Workers</div>
+                    <table class="table table-projects">
+                        <thead>
+                            <tr class="with-children">
+                                <th class="title-owner">Worker Id
+                                    <!--<i class="glyphicon glyphicon-sort-by-attributes-alt sorted in-order"></i>
+                                    <i class="glyphicon glyphicon-sort-by-attributes sorted rev-order"></i>-->
+                                </th>
+                                <th class="title-name">Last Seen
+                                    <!--<i class="glyphicon glyphicon-sort-by-attributes-alt sorted in-order"></i>
+                                    <i class="glyphicon glyphicon-sort-by-attributes sorted rev-order"></i>-->
+                                </th>
+                                <th class="title-modified">Status
+                                    <!--<i class="glyphicon glyphicon-sort-by-attributes-alt sorted in-order"></i>
+                                    <i class="glyphicon glyphicon-sort-by-attributes sorted rev-order"></i>-->
+                                </th>
+                            </tr>
+                            <!--<tr class="with-no-children">
+                                <th>No projects in this group...</th>
+                            </tr>-->
+                        </thead>
+                        <tbody class="worker-list">
+                            <tr><td class="no-workers-msg">No Connected Workers...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="job-queue">
+                    <div class="queue-title">Job Queue</div>
+                    <table class="table table-projects">
+                        <thead>
+                            <tr class="with-children">
+                                <th>Job</th>
+                                <th>Execution</th>
+                                <th>Project</th>
+                                <th>Creation Date</th>
+                                <th>Status</th>
+                            </tr>
+                            <!--<tr class="with-no-children">-->
+                                <!--<th>No queued jobs</th>-->
+                            <!--</tr>-->
+                        </thead>
+                        <tbody class="job-queue-list">
+                            <tr><td class="no-jobs-msg">No Running Jobs...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

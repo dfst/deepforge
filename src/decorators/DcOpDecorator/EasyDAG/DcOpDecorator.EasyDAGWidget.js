@@ -47,11 +47,11 @@ define([
             // create the outputId node
             outputId = this._createOutputNode(baseId);
         } else {
-            this.client.makePointer(outputId, CONSTANTS.POINTER_BASE, baseId);
+            this.client.setPointer(outputId, CONSTANTS.POINTER_BASE, baseId);
         }
         // Copy the data content to the output node
         hash = target.getAttribute('data');
-        this.client.setAttributes(outputId, 'data', hash);
+        this.client.setAttribute(outputId, 'data', hash);
     };
 
     DcOpDecorator.prototype._createOutputNode = function(baseId) {
@@ -69,7 +69,7 @@ define([
             return metaType.getAttribute('name') === 'Outputs';
         });
 
-        return this.client.createChild({
+        return this.client.createNode({
             baseId: baseId,
             parentId: outputCntrId
         });

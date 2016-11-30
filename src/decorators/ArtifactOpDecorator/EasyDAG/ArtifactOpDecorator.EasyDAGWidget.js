@@ -57,13 +57,13 @@ define([
             this.client.startTransaction(`Removing output of ${this.name}`);
             this.client.delPointer(this._node.id, name);
             if (outputId) {
-                this.client.delAttributes(outputId, 'data');
+                this.client.delAttribute(outputId, 'data');
             }
             this.client.completeTransaction();
         } else if (name === this.castOpts.ptr) {  // set the casted value
             this.client.startTransaction(`Setting output of ${this.name} to ${to}`);
             this.castOutputType(to);
-            this.client.makePointer(this._node.id, name, to);
+            this.client.setPointer(this._node.id, name, to);
             this.client.completeTransaction();
         } else {
             DecoratorBase.prototype.savePointer.call(this, name, to);

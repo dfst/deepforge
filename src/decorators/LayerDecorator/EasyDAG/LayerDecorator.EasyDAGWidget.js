@@ -77,11 +77,11 @@ define([
         // Create a nested "architecture" node and set the ptr target to it
         baseId = base.getId();
         this.client.startTransaction(msg);
-        tgtId = this.client.createChild({
+        tgtId = this.client.createNode({
             parentId: this._node.id,
             baseId: baseId
         });
-        this.client.setAttributes(tgtId, 'name', `${ptr} (${this._node.name})`);
+        this.client.setAttribute(tgtId, 'name', `${ptr} (${this._node.name})`);
         this.savePointer(ptr, tgtId);
         this.client.completeTransaction();
         WebGMEGlobal.State.registerActiveObject(tgtId);
@@ -95,7 +95,7 @@ define([
             // If the target is contained in the current node, delete it!
             if (currentId.indexOf(this._node.id) === 0) {
                 this.client.startTransaction(`Removing layer for ${ptr} of ${name}`);
-                this.client.delMoreNodes([currentId]);
+                this.client.deleteNode(currentId);
                 this.client.completeTransaction();
                 this.logger.info(`Removed ${ptr} and deleted target (${currentId})`);
             } else {

@@ -199,6 +199,7 @@ define([
 
     OutputViewerPanel.prototype.handleEvents = function (events) {
         var metadataId = this.getMetadataId(),
+            node,
             event;
 
         if (!metadataId) {
@@ -206,8 +207,13 @@ define([
             return;
         }
 
-        events = events.filter(event => event.eid && (this._pages[event.eid] ||
-            this._client.isTypeOf(event.eid, metadataId)));
+        events = events.filter(event => {
+            if (event.eid) {
+                node = this._client.getNode(event.eid);
+                return this._pages[event.eid] || node.isTypeOf(metadataId);
+            }
+            return false;
+        });
         for (var i = events.length; i--;) {
             event = events[i];
             switch (event.etype) {

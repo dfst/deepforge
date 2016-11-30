@@ -100,7 +100,7 @@ define([
 
         this._client.startTransaction(`Updating class "${name || nodeName}"`);
         if (name) {
-            this._client.setAttributes(id, 'name', name);
+            this._client.setAttribute(id, 'name', name);
         }
         if (basePath) {
             this._client.setBase(id, basePath);
@@ -137,7 +137,7 @@ define([
         }
 
         for (i = nameMatches.length; i--;) {
-            if (this._client.isTypeOf(nameMatches[i].getId(), classNode.getId())) {
+            if (nameMatches[i].isTypeOf(classNode.getId())) {
                 return nameMatches[i].getId();
             }
         }

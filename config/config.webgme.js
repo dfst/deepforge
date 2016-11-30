@@ -9,6 +9,7 @@ var config = require('webgme/config/config.default'),
 // The paths can be loaded from the webgme-setup.json
 config.plugin.basePaths.push(__dirname + '/../src/plugins');
 config.plugin.basePaths.push(__dirname + '/../node_modules/webgme-simple-nodes/src/plugins');
+config.visualization.layout.basePaths.push(__dirname + '/../src/layouts');
 config.visualization.layout.basePaths.push(__dirname + '/../node_modules/webgme-chflayout/src/layouts');
 config.visualization.decoratorPaths.push(__dirname + '/../src/decorators');
 config.visualization.decoratorPaths.push(__dirname + '/../node_modules/webgme-easydag/src/decorators');
@@ -20,6 +21,7 @@ config.seedProjects.basePaths.push(__dirname + '/../src/seeds/devPipelineTests')
 config.seedProjects.basePaths.push(__dirname + '/../src/seeds/project');
 config.seedProjects.basePaths.push(__dirname + '/../src/seeds/cifar10');
 config.seedProjects.basePaths.push(__dirname + '/../src/seeds/xor');
+config.seedProjects.basePaths.push(__dirname + '/../src/seeds/devProject');
 
 
 
@@ -31,6 +33,8 @@ config.visualization.panelPaths.push(__dirname + '/../src/visualizers/panels');
 
 
 config.rest.components['execution/logs'] = __dirname + '/../src/routers/JobLogsAPI/JobLogsAPI.js';
+config.rest.components['job/origins'] = __dirname + '/../src/routers/JobOriginAPI/JobOriginAPI.js';
+config.rest.components['execution/pulse'] = __dirname + '/../src/routers/ExecPulse/ExecPulse.js';
 
 // Visualizer descriptors
 config.visualization.visualizerDescriptors.push(__dirname + '/../src/visualizers/Visualizers.json');
@@ -55,7 +59,7 @@ config.requirejsPaths = {
   'widgets/FloatingActionButton': './node_modules/webgme-fab/src/visualizers/widgets/FloatingActionButton'
 };
 
-config.visualization.layout.default = 'CHFLayout';
+config.visualization.layout.default = 'SidebarLayout';
 config.mongo.uri = 'mongodb://127.0.0.1:27017/deepforge';
 validateConfig(config);
 module.exports = config;

@@ -2,30 +2,42 @@
 /*jshint node:true, browser:true*/
 
 define([
-    'common/storage/constants',
+    'common/util/assert',
     'text!./metadata.json',
     'executor/ExecutorClient',
     'plugin/PluginBase',
     'deepforge/plugin/LocalExecutor',
     'deepforge/plugin/PtrCodeGen',
-    'deepforge/JobLogsClient',
+    'deepforge/api/JobLogsClient',
+    'deepforge/api/JobOriginClient',
+    'deepforge/api/ExecPulseClient',
+    './ExecuteJob.Files',
+    './ExecuteJob.Metadata',
+    './ExecuteJob.SafeSave',
     'deepforge/Constants',
     'deepforge/utils',
-    './templates/index',
     'q',
+    'superagent',
     'underscore'
 ], function (
-    STORAGE_CONSTANTS,
+    assert,
     pluginMetadata,
     ExecutorClient,
     PluginBase,
     LocalExecutor,  // DeepForge operation primitives
     PtrCodeGen,
     JobLogsClient,
+    JobOriginClient,
+    ExecPulseClient,
+
+    ExecuteJobFiles,
+    ExecuteJobMetadata,
+    ExecuteJobSafeSave,
+
     CONSTANTS,
     utils,
-    Templates,
     Q,
+    superagent,
     _
 ) {
     'use strict';
@@ -45,15 +57,23 @@ define([
     var ExecuteJob = function () {
         // Call base class' constructor.
         PluginBase.call(this);
+        ExecuteJobSafeSave.call(this);
         this.pluginMetadata = pluginMetadata;
         this._metadata = {};
+        this._beating = null;
 
         // Metadata updating
         this._markForDeletion = {};  // id -> node
         this._oldMetadataByName = {};  // name -> id
         this.lastAppliedCmd = {};
+        this.createdMetadataIds = {};
         this.canceled = false;
+
         this.changes = {};
+        this.currentChanges = {};  // read-only changes being applied
+        this.creations = {};
+        this.deletions = [];
+        this.createIdToMetadataId = {};
         this.logManager = null;
     };
 
@@ -64,10 +84,34 @@ define([
      */
     ExecuteJob.metadata = pluginMetadata;
     ExecuteJob.UPDATE_INTERVAL = 1500;
+    ExecuteJob.HEARTBEAT_INTERVAL = 2500;
 
     // Prototypical inheritance from PluginBase.
     ExecuteJob.prototype = Object.create(PluginBase.prototype);
     ExecuteJob.prototype.constructor = ExecuteJob;
+
+    ExecuteJob.prototype.configure = function () {
+        var result = PluginBase.prototype.configure.apply(this, arguments),
+            params = {
+                logger: this.logger,
+                port: this.gmeConfig.server.port,
+                branchName: this.branchName,
+                projectId: this.projectId
+            },
+            isHttps = typeof window === 'undefined' ? false :
+                window.location.protocol !== 'http:';
+
+        this.logManager = new JobLogsClient(params);
+        this.originManager = new JobOriginClient(params);
+        this.pulseClient = new ExecPulseClient(params);
+
+        this.executor = new ExecutorClient({
+            logger: this.logger,
+            serverPort: this.gmeConfig.server.port,
+            httpsecure: isHttps
+        });
+        return result;
+    };
 
     /**
      * Main function for the plugin to execute. This will perform the execution.
@@ -81,23 +125,120 @@ define([
     ExecuteJob.prototype.main = function (callback) {
         // Check the activeNode to make sure it is a valid node
         var type = this.core.getMetaType(this.activeNode),
-            typeName = type && this.getAttribute(type, 'name');
+            typeName = type && this.getAttribute(type, 'name'),
+            execNode,
+            status;
 
         if (typeName !== 'Job') {
             return callback(`Cannot execute ${typeName} (expected Job)`, this.result);
         }
 
-        // Get the gmeConfig...
-        this.logManager = new JobLogsClient({
-            logger: this.logger,
-            port: this.gmeConfig.server.port,
-            branchName: this.branchName,
-            projectId: this.projectId
-        });
+        // Set the parent execution to 'running'
+        execNode = this.core.getParent(this.activeNode);
+        status = this.getAttribute(execNode, 'status');
+        if (status !== 'running') {
+            this.setAttribute(execNode, 'status', 'running');
+        }
+
         this._callback = callback;
         this.currentForkName = null;
-        this.prepare()
-            .then(() => this.executeJob(this.activeNode));
+        this.forkNameBase = this.getAttribute(this.activeNode, 'name');
+        this.isResuming(this.activeNode)
+            .then(resuming => {
+                this._resumed = resuming;
+                return this.prepare(resuming);
+            })
+            .then(() => {
+                if (this._resumed) {
+                    this.currentRunId = this.getAttribute(this.activeNode, 'jobId');
+                    this.startExecHeartBeat();
+                    if (this.canResumeJob(this.activeNode)) {
+                        return this.resumeJob(this.activeNode);
+                    } else {
+                        var name = this.getAttribute(this.activeNode, 'name'),
+                            id = this.core.getPath(this.activeNode),
+                            msg = `Cannot resume ${name} (${id}). Missing jobId.`;
+
+                        this.logger.error(msg);
+                        return callback(msg);
+                    }
+                } else {
+                    this.currentRunId = null;  // will be set after exec files created
+                    return this.executeJob(this.activeNode);
+                }
+            })
+            .catch(err => this._callback(err));
+    };
+
+    ExecuteJob.prototype.isResuming = function (job) {
+        job = job || this.activeNode;
+        var deferred = Q.defer(),
+            status = this.getAttribute(job, 'status'),
+            jobId;
+
+        if (status === 'running') {
+            jobId = this.getAttribute(job, 'jobId');
+            // Check if on the origin branch
+            this.originManager.getOrigin(jobId)
+                .then(origin => {
+                    if (this.branchName === origin.branch) {
+                        // Check if plugin is no longer running
+                        return this.pulseClient.check(jobId)
+                            .then(alive => {
+                                deferred.resolve(alive !== CONSTANTS.PULSE.ALIVE);
+                            });
+                    } else {
+                        deferred.resolve(false);
+                    }
+                });
+        } else {
+            deferred.resolve(false);
+        }
+        return deferred.promise;
+    };
+
+    ExecuteJob.prototype.canResumeJob = function (job) {
+        return !!this.getAttribute(job, 'jobId');
+    };
+
+    ExecuteJob.prototype.resumeJob = function (job) {
+        var hash = this.getAttribute(job, 'jobId'),
+            name = this.getAttribute(job, 'name'),
+            id = this.core.getPath(job),
+            msg;
+
+        this.logger.info(`Resuming job ${name} (${id})`);
+
+        return this.logManager.getMetadata(id)
+            .then(metadata => {
+                var count = metadata.lineCount;
+
+                if (count === -1) {
+                    this.logger.warn(`No line count found for ${id}. Setting count to 0`);
+                    count = 0;
+                    return this.logManager.deleteLog(id)
+                        .then(() => count);
+                }
+                return count;
+            })
+            .then(count => {  // update line count (to inform logClient appendTo)
+                this.outputLineCount[id] = count;
+                return this.executor.getOutput(hash, 0, count);
+            })
+            .then(output => {  // parse the stdout to update the job metadata
+                var stdout = output.map(o => o.output).join(''),
+                    result = this.processStdout(job, stdout),
+                    name = this.getAttribute(job, 'name'),
+                    promise = Q();
+
+
+                if (result.hasMetadata) {
+                    msg = `Updated graph/image output for ${name}`;
+                    promise = this.save(msg);
+                }
+                return promise.then(() => this.getOperation(job));
+            })
+            .then(opNode => this.watchOperation(hash, opNode, job));
     };
 
     ExecuteJob.prototype.updateForkName = function (basename) {
@@ -117,120 +258,6 @@ define([
         });
     };
 
-    ExecuteJob.prototype.delAttribute = function (node, attr) {
-        return this.setAttribute(node, attr, null);
-    };
-
-    ExecuteJob.prototype.setAttribute = function (node, attr, value) {
-        var nodeId = this.core.getPath(node);
-
-        if (!this.changes[nodeId]) {
-            this.changes[nodeId] = {};
-        }
-        this.changes[nodeId][attr] = value;
-    };
-
-    ExecuteJob.prototype.getAttribute = function (node, attr) {
-        var nodeId = this.core.getPath(node),
-            base,
-            baseId;
-
-        // Check the changes; fallback on actual node
-        if (this.changes[nodeId] && this.changes[nodeId][attr] !== undefined) {
-            // If deleted the attribute, get the default (inherited) value
-            if (this.changes[nodeId][attr] === null) {
-                base = this.core.getBase(node);
-                baseId = this.core.getPath(base);
-                return this.getAttribute(baseId, attr);
-            }
-            return this.changes[nodeId][attr];
-        }
-
-        return this.core.getAttribute(node, attr);
-    };
-
-    ExecuteJob.prototype._applyNodeChanges = function (node, changes) {
-        var attr,
-            value;
-
-        for (var i = changes.length; i--;) {
-            attr = changes[i][0];
-            value = changes[i][1];
-            if (value !== null) {
-                this.core.setAttribute(node, attr, value);
-            } else {
-                this.core.delAttribute(node, attr);
-            }
-        }
-        return node;
-    };
-
-    ExecuteJob.prototype.applyChanges = function () {
-        var nodeIds = Object.keys(this.changes),
-            attrs,
-            value,
-            changes,
-            promises = [],
-            changesFor = {},
-            id,
-            promise;
-
-        for (var i = nodeIds.length; i--;) {
-            changes = [];
-            attrs = Object.keys(this.changes[nodeIds[i]]);
-            for (var a = attrs.length; a--;) {
-                value = this.changes[nodeIds[i]][attrs[a]];
-                changes.push([attrs[a], value]);
-            }
-            changesFor[nodeIds[i]] = changes;
-            promise = this.core.loadByPath(this.rootNode, nodeIds[i]);
-            promises.push(promise);
-        }
-
-        this.changes = {};
-        return Q.all(promises).then(nodes => {
-            for (var i = nodes.length; i--;) {
-                id = this.core.getPath(nodes[i]);
-                this._applyNodeChanges(nodes[i], changesFor[id]);
-            }
-        });
-    };
-
-    // Override 'save' to notify the user on fork
-    ExecuteJob.prototype.save = function (msg) {
-        var name = this.getAttribute(this.activeNode, 'name');
-        return this.updateForkName(name)
-            .then(() => this.applyChanges())
-            .then(() => PluginBase.prototype.save.call(this, msg))
-            .then(result => {
-                var msg;
-                if (result.status === STORAGE_CONSTANTS.FORKED) {
-                    msg = `"${name}" execution has forked to "${result.forkName}"`;
-                    this.currentForkName = result.forkName;
-                    this.logManager.fork(result.forkName);
-                    this.sendNotification(msg);
-                } else if (result.status === STORAGE_CONSTANTS.MERGED) {
-                    this.logger.debug('Merged changes. About to update plugin nodes');
-                    return this.updateNodes();
-                }
-            });
-    };
-
-    ExecuteJob.prototype.updateNodes = function (hash) {
-        var activeId = this.core.getPath(this.activeNode);
-
-        hash = hash || this.currentHash;
-        return Q.ninvoke(this.project, 'loadObject', hash)
-            .then(commitObject => {
-                return this.core.loadRoot(commitObject.root);
-            })
-            .then(rootObject => {
-                this.rootNode = rootObject;
-                return this.core.loadByPath(rootObject,activeId);
-            })
-            .then(activeObject => this.activeNode = activeObject);
-    };
-
     ExecuteJob.prototype.getConnections = function (nodes) {
         var conns = [];
         for (var i = nodes.length; i--;) {
@@ -243,7 +270,7 @@ define([
         return conns;
     };
 
-    ExecuteJob.prototype.prepare = function () {
+    ExecuteJob.prototype.prepare = function (isResuming) {
         var dstPortId,
             srcPortId,
             conns,
@@ -269,7 +296,7 @@ define([
                     }
                 }
             })
-            .then(() => this.recordOldMetadata(this.activeNode));
+            .then(() => this.recordOldMetadata(this.activeNode, isResuming));
     };
 
     ExecuteJob.prototype.recordOldMetadata = function (job) {
@@ -279,15 +306,18 @@ define([
             idsToDelete = [],
             type,
             base,
-            child;
+            child,
+            i;
 
+        // If we are resuming the pipeline, we will not be deleting any metadata
         this.lastAppliedCmd[nodeId] = 0;
+        this.createdMetadataIds[nodeId] = [];
         this._oldMetadataByName[nodeId] = {};
         this._markForDeletion[nodeId] = {};
         return this.core.loadChildren(job)
             .then(jobChildren => {
                 // Remove any metadata nodes
-                for (var i = jobChildren.length; i--;) {
+                for (i = jobChildren.length; i--;) {
                     child = jobChildren[i];
                     if (this.isMetaTypeOf(child, this.META.Metadata)) {
                         id = this.core.getPath(child);
@@ -310,20 +340,28 @@ define([
                 }
 
                 // make the deletion ids relative to the job node
-                idsToDelete = idsToDelete.map(id => id.replace(nodeId, ''));
-                return Q.all(idsToDelete.map(id => this.core.loadByPath(job, id)));
-            })
-            .then(nodes => nodes.forEach(node => this.core.deleteNode(node)));
+                this.logger.debug(`About to delete ${idsToDelete.length}: ${idsToDelete.join(', ')}`);
+                for (i = idsToDelete.length; i--;) {
+                    this.deleteNode(idsToDelete[i]);
+                }
+            });
     };
 
     ExecuteJob.prototype.clearOldMetadata = function (job) {
         var nodeId = this.core.getPath(job),
-            nodeIds = Object.keys(this._markForDeletion[nodeId]);
+            nodeIds,
+            node;
 
+        // Remove created nodes left over from resumed job
+        this.createdMetadataIds[nodeId].forEach(id => delete this._markForDeletion[nodeId][id]);
+        nodeIds = Object.keys(this._markForDeletion[nodeId]);
+        this.logger.debug(`About to delete ${nodeIds.length}: ${nodeIds.join(', ')}`);
         for (var i = nodeIds.length; i--;) {
-            this.core.deleteNode(this._markForDeletion[nodeId][nodeIds[i]]);
+            node = this._markForDeletion[nodeId][nodeIds[i]];
+            this.deleteNode(this.core.getPath(node));
         }
         delete this.lastAppliedCmd[nodeId];
+        delete this.createdMetadataIds[nodeId];
         delete this._markForDeletion[nodeId];
 
         this.delAttribute(job, 'jobId');
@@ -401,6 +439,7 @@ define([
             .then(() => this.save(msg))
             .then(() => {
                 this.result.setSuccess(!err);
+                this.stopExecHeartBeat();
                 this._callback(err, this.result);
             })
             .catch(err => {
@@ -472,20 +511,32 @@ define([
                 })
                 .then(mds => {
                     // Record the large files
-                    var inputData = {};
+                    var inputData = {},
+                        runsh = '# Bash script to download data files and run job\n' +
+                        'if [ -z "$DEEPFORGE_URL" ]; then\n  echo "Please set DEEPFORGE_URL and' +
+                        ' re-run:"\n  echo ""  \n  echo "  DEEPFORGE_URL=http://my.' +
+                        'deepforge.server.com:8080 bash run.sh"\n  echo ""\n exit 1\nfi\n';
+
                     mds.forEach((metadata, i) => {
                         // add the hashes for each input
                         var input = inputs[i], 
-                            hash = files.inputAssets[input];
+                            hash = files.inputAssets[input],
+                            dataPath = 'inputs/' + input + '/data',
+                            url = this.blobClient.getRelativeDownloadURL(hash);
 
-                        inputData['inputs/' + input + '/data'] = {
+                        inputData[dataPath] = {
                             req: hash,
                             cache: metadata.content
                         };
+
+                        // Add to the run.sh file
+                        runsh += `wget $DEEPFORGE_URL${url} -O ${dataPath}\n`;
                     });
 
                     delete files.inputAssets;
                     files['input-data.json'] = JSON.stringify(inputData, null, 2);
+                    runsh += 'th init.lua';
+                    files['run.sh'] = runsh;
 
                     // Add pointer assets
                     Object.keys(files.ptrAssets)
@@ -501,7 +552,6 @@ define([
                         ptrFiles = Object.keys(files.ptrAssets),
                         file;
 
-                    files['start.js'] = _.template(Templates.START)(CONSTANTS);
                     delete files.ptrAssets;
                     fileList = Object.keys(files).concat(ptrFiles);
 
@@ -564,14 +614,7 @@ define([
 
     ExecuteJob.prototype.executeDistOperation = function (job, opNode, hash) {
         var name = this.getAttribute(opNode, 'name'),
-            jobId = this.core.getPath(job),
-            isHttps = typeof window === 'undefined' ? false :
-                window.location.protocol !== 'http:',
-            executor = new ExecutorClient({
-                logger: this.logger,
-                serverPort: this.gmeConfig.server.port,
-                httpsecure: isHttps
-            });
+            jobId = this.core.getPath(job);
 
         this.logger.info(`Executing operation "${name}"`);
 
@@ -583,335 +626,39 @@ define([
         this.logger.info(`Setting ${jobId} status to "queued" (${this.currentHash})`);
         this.logger.debug(`Making a commit from ${this.currentHash}`);
         this.save(`Queued "${name}" operation in ${this.pipelineName}`)
-            .then(() => executor.createJob({hash}))
+            .then(() => this.executor.createJob({hash}))
             .then(info => {
                 this.setAttribute(job, 'jobId', info.hash);
                 if (info.secret) {  // o.w. it is a cached job!
                     this.setAttribute(job, 'secret', info.secret);
                 }
-                return this.watchOperation(executor, hash, opNode, job);
+                if (!this.currentRunId) {
+                    this.currentRunId = info.hash;
+                    if (this._beating === null) {
+                        this.startExecHeartBeat();
+                    }
+                }
+                return this.recordJobOrigin(hash, job);
             })
+            .then(() => this.watchOperation(hash, opNode, job))
             .catch(err => this.logger.error(`Could not execute "${name}": ${err}`));
 
     };
 
-    ExecuteJob.prototype.createOperationFiles = function (node) {
-        var files = {};
-        // For each operation, generate the output files:
-        //   inputs/<arg-name>/init.lua  (respective data deserializer)
-        //   pointers/<name>/init.lua  (result of running the main plugin on pointer target - may need a rename)
-        //   outputs/<name>/  (make dirs for each of the outputs)
-        //   outputs/init.lua  (serializers for data outputs)
-        //
-        //   attributes.lua (returns lua table of operation attributes)
-        //   init.lua (main file -> calls main and serializes outputs)
-        //   <name>.lua (entry point -> calls main operation code)
+    ExecuteJob.prototype.recordJobOrigin = function (hash, job) {
+        var execNode = this.core.getParent(job),
+            info;
 
-        // add the given files
-        this.logger.info('About to create dist execution files');
-        return this.createEntryFile(node, files)
-            .then(() => this.createClasses(node, files))
-            .then(() => this.createCustomLayers(node, files))
-            .then(() => this.createInputs(node, files))
-            .then(() => this.createOutputs(node, files))
-            .then(() => this.createMainFile(node, files))
-            .then(() => {
-                this.createAttributeFile(node, files);
-                return Q.ninvoke(this, 'createPointers', node, files);
-            });
+        info = {
+            hash: hash,
+            nodeId: this.core.getPath(job),
+            job: this.getAttribute(job, 'name'),
+            execution: this.getAttribute(execNode, 'name')
+        };
+        this.runningJobHashes.push(hash);
+        return this.originManager.record(hash, info);
     };
 
-    ExecuteJob.prototype.createEntryFile = function (node, files) {
-        this.logger.info('Creating entry files...');
-        return this.getOutputs(node)
-            .then(outputs => {
-                var name = this.getAttribute(node, 'name'),
-                    content = {};
-
-                // inputs and outputs
-                content.name = name;
-                content.outputs = outputs;
-
-                files['init.lua'] = _.template(Templates.ENTRY)(content);
-
-                // Create the deepforge file
-                files['deepforge.lua'] = _.template(Templates.DEEPFORGE)(CONSTANTS);
-            });
-    };
-
-    ExecuteJob.prototype.createClasses = function (node, files) {
-        var metaDict = this.core.getAllMetaNodes(this.rootNode),
-            isClass,
-            metanodes,
-            classNodes,
-            inheritanceLvl = {},
-            code;
-
-        this.logger.info('Creating custom layer file...');
-        metanodes = Object.keys(metaDict).map(id => metaDict[id]);
-        isClass = this.getTypeDictFor('Complex', metanodes);
-
-        classNodes = metanodes.filter(node => {
-            var base = this.core.getBase(node),
-                baseId = this.core.getPath(base),
-                count = 1;
-
-            // Count the sets back to a class node
-            while (base) {
-                if (isClass[baseId]) {
-                    inheritanceLvl[this.core.getPath(node)] = count;
-                    return true;
-                }
-                base = this.core.getBase(base);
-                baseId = this.core.getPath(base);
-                count++;
-            }
-
-            return false;
-        });
-
-        // Get the code definitions for each
-        // Sort by levels of inheritance...
-        code = classNodes.sort((a, b) => {
-            var aId = this.core.getPath(a),
-                bId = this.core.getPath(b);
-
-            return inheritanceLvl[aId] > inheritanceLvl[bId];
-        }).map(node =>
-            `require './${this.getAttribute(node, 'name')}.lua'`
-        ).join('\n');
-
-        // Create the class files
-        classNodes.forEach(node => {
-            var name = this.getAttribute(node, 'name');
-            files[`classes/${name}.lua`] = this.getAttribute(node, 'code');
-        });
-
-        // Create the custom layers file
-        files['classes/init.lua'] = code;
-    };
-
-    ExecuteJob.prototype.getTypeDictFor = function (name, metanodes) {
-        var isType = {};
-        // Get all the custom layers
-        for (var i = metanodes.length; i--;) {
-            if (this.getAttribute(metanodes[i], 'name') === name) {
-                isType[this.core.getPath(metanodes[i])] = true;
-            }
-        }
-        return isType;
-    };
-
-    ExecuteJob.prototype.createCustomLayers = function (node, files) {
-        var metaDict = this.core.getAllMetaNodes(this.rootNode),
-            isCustomLayer,
-            metanodes,
-            customLayers,
-            code;
-
-        this.logger.info('Creating custom layer file...');
-        metanodes = Object.keys(metaDict).map(id => metaDict[id]);
-        isCustomLayer = this.getTypeDictFor('CustomLayer', metanodes);
-
-        customLayers = metanodes.filter(node =>
-            this.core.getMixinPaths(node).some(id => isCustomLayer[id]));
-
-        // Get the code definitions for each
-        code = 'require \'nn\'\n\n' + customLayers
-            .map(node => this.getAttribute(node, 'code')).join('\n');
-
-        // Create the custom layers file
-        files['custom-layers.lua'] = code;
-    };
-
-    ExecuteJob.prototype.createInputs = function (node, files) {
-        var tplContents,
-            inputs;
-
-        this.logger.info('Retrieving inputs and deserialize fns...');
-        return this.getInputs(node)
-            .then(allInputs => {
-                // For each input, match the connection with the input name
-                //   [ name, type ] => [ name, type, node ]
-                //
-                // For each input,
-                //  - create the deserializer
-                //  - put it in inputs/<name>/init.lua
-                //  - copy the data asset to /inputs/<name>/init.lua
-                inputs = allInputs
-                    .filter(pair => !!this.getAttribute(pair[2], 'data'));  // remove empty inputs
-
-                files.inputAssets = {};  // data assets
-                return Q.all(inputs.map(pair => {
-                    var name = pair[0],
-                        node = pair[2],
-                        nodeId = this.core.getPath(node),
-                        fromNodeId;
-
-                    // Get the deserialize function. First, try to get it from
-                    // the source method (this guarantees that the correct
-                    // deserialize method is used despite any auto-upcasting
-                    fromNodeId = this.inputPortsFor[nodeId][0] || nodeId;
-
-                    return this.core.loadByPath(this.rootNode, fromNodeId)
-                        .then(fromNode => {
-                            var deserFn,
-                                base,
-                                className;
-
-                            deserFn = this.getAttribute(fromNode, 'deserialize');
-
-                            if (this.isMetaTypeOf(node, this.META.Complex)) {
-                                // Complex objects are expected to define their own
-                                // (static) deserialize factory method
-                                base = this.core.getMetaType(node);
-                                className = this.getAttribute(base, 'name');
-                                deserFn = `return ${className}.deserialize(path)`;
-                            }
-
-                            return {
-                                name: name,
-                                code: deserFn
-                            };
-                        });
-                }));
-            })
-            .then(_tplContents => {
-                tplContents = _tplContents;
-                var hashes = inputs.map(pair => {
-                    var hash = this.getAttribute(pair[2], 'data');
-                    files.inputAssets[pair[0]] = hash;
-                    return {
-                        hash: hash,
-                        name: pair[0]
-                    };
-                });
-
-                return Q.all(hashes.map(pair => 
-                    this.blobClient.getMetadata(pair.hash)
-                        .fail(err => this.onBlobRetrievalFail(node, pair.name, err))));
-            })
-            .then(metadatas => {
-                // Create the deserializer
-                tplContents.forEach((ctnt, i) => {
-                    // Get the name of the given asset
-                    ctnt.filename = metadatas[i].name;
-                    files['inputs/' + ctnt.name + '/init.lua'] = _.template(Templates.DESERIALIZE)(ctnt);
-                });
-                return files;
-            });
-    };
-
-    ExecuteJob.prototype.createOutputs = function (node, files) {
-        // For each of the output types, grab their serialization functions and
-        // create the `outputs/init.lua` file
-        this.logger.info('Creating outputs/init.lua...');
-        return this.getOutputs(node)
-            .then(outputs => {
-                var outputTypes = outputs
-                // Get the serialize functions for each
-                    .map(tuple => {
-                        var node = tuple[2],
-                            serFn = this.getAttribute(node, 'serialize');
-
-                        if (this.isMetaTypeOf(node, this.META.Complex)) {
-                            // Complex objects are expected to define their own
-                            // serialize methods
-                            serFn = 'if data ~= nil then data:serialize(path) end';
-                        }
-
-                        return [tuple[1], serFn];
-                    });
-
-                files['outputs/init.lua'] = _.template(Templates.SERIALIZE)({types: outputTypes});
-            });
-    };
-
-    ExecuteJob.prototype.createMainFile = function (node, files) {
-        this.logger.info('Creating main file...');
-        return this.getInputs(node)
-            .then(inputs => {
-                var name = this.getAttribute(node, 'name'),
-                    code = this.getAttribute(node, 'code'),
-                    pointers = this.core.getPointerNames(node).filter(ptr => ptr !== 'base'),
-                    content = {
-                        name: name
-                    };
-
-                // Get input data arguments
-                content.inputs = inputs
-                    .map(pair => [pair[0], !this.getAttribute(pair[2], 'data')]);  // remove empty inputs
-
-                // Defined variables for each pointers
-                content.pointers = pointers
-                    .map(id => [id, this.core.getPointerPath(node, id) === null]);
-
-                // Add remaining code
-                content.code = code;
-
-                files['main.lua'] = _.template(Templates.MAIN)(content);
-
-                // Set the line offset
-                var lineOffset = this.getLineOffset(files['main.lua'], code);
-                this.setAttribute(node, CONSTANTS.LINE_OFFSET, lineOffset);
-            });
-    };
-
-    ExecuteJob.prototype.getLineOffset = function (main, snippet) {
-        var i = main.indexOf(snippet),
-            lines = main.substring(0, i).match(/\n/g);
-
-        return lines ? lines.length : 0;
-    };
-
-    ExecuteJob.prototype.createAttributeFile = function (node, files) {
-        var skip = ['code'],
-            numRegex = /^\d+\.?\d*((e|e-)\d+)?$/,
-            table;
-
-        this.logger.info('Creating attributes file...');
-        table = '{\n\t' + this.core.getAttributeNames(node)
-            .filter(attr => skip.indexOf(attr) === -1)
-            .map(name => {
-                var value = this.getAttribute(node, name);
-                if (!numRegex.test(value)) {
-                    value = `"${value}"`;
-                }
-                return [name, value];
-            })
-            .map(pair => pair.join(' = '))
-            .join(',\n\t') + '\n}';
-
-        files['attributes.lua'] = `-- attributes of ${this.getAttribute(node, 'name')}\nreturn ${table}`;
-    };
-
-    ExecuteJob.prototype.createPointers = function (node, files, cb) {
-        var pointers,
-            nIds;
-
-        this.logger.info('Creating pointers file...');
-        pointers = this.core.getPointerNames(node)
-            .filter(name => name !== 'base')
-            .filter(id => this.core.getPointerPath(node, id) !== null);
-
-        nIds = pointers.map(p => this.core.getPointerPath(node, p));
-        files.ptrAssets = {};
-        Q.all(
-            nIds.map(nId => this.getPtrCodeHash(nId))
-        )
-        .then(resultHashes => {
-            var name = this.getAttribute(node, 'name');
-            this.logger.info(`Pointer generation for ${name} FINISHED!`);
-            resultHashes.forEach((hash, index) => {
-                files.ptrAssets[`pointers/${pointers[index]}/init.lua`] = hash;
-            });
-            return cb(null, files);
-        })
-        .fail(e => {
-            this.logger.error(`Could not generate pointer files for ${this.getAttribute(node, 'name')}: ${e.toString()}`);
-            return cb(e);
-        });
-    };
 
     ExecuteJob.prototype.notifyStdoutUpdate = function (nodeId) {
         this.sendNotification({
@@ -920,7 +667,40 @@ define([
         });
     };
 
-    ExecuteJob.prototype.watchOperation = function (executor, hash, op, job) {
+    ExecuteJob.prototype.isExecutionCanceled = function () {
+        var execNode = this.core.getParent(this.activeNode);
+        return this.getAttribute(execNode, 'status') === 'canceled';
+    };
+
+    ExecuteJob.prototype.startExecHeartBeat = function () {
+        this._beating = true;
+        this.updateExecHeartBeat();
+    };
+
+    ExecuteJob.prototype.stopExecHeartBeat = function () {
+        this._beating = false;
+    };
+
+    ExecuteJob.prototype.updateExecHeartBeat = function () {
+        var time = Date.now(),
+            next = () => {
+                if (this._beating) {
+                    setTimeout(this.updateExecHeartBeat.bind(this),
+                        ExecuteJob.HEARTBEAT_INTERVAL - (Date.now() - time));
+                }
+            };
+
+        this.pulseClient.update(this.currentRunId)
+            .then(() => next())
+            .catch(err => {
+                if (err) {
+                    this.logger.error(`heartbeat failed: ${err}`);
+                    next();
+                }
+            });
+    };
+
+    ExecuteJob.prototype.watchOperation = function (hash, op, job) {
         var jobId = this.core.getPath(job),
             opId = this.core.getPath(op),
             info,
@@ -928,32 +708,35 @@ define([
             name = this.getAttribute(job, 'name');
 
         // If canceled, stop the operation
-        if (this.canceled) {
+        if (this.canceled || this.isExecutionCanceled()) {
             secret = this.getAttribute(job, 'secret');
             if (secret) {
-                executor.cancelJob(hash, secret);
+                this.executor.cancelJob(hash, secret);
                 this.delAttribute(job, 'secret');
                 this.canceled = true;
                 return this.onOperationCanceled(op);
             }
         }
 
-        return executor.getInfo(hash)
+        return this.executor.getInfo(hash)
             .then(_info => {  // Update the job's stdout
                 var actualLine,  // on executing job
-                    currentLine = this.outputLineCount[jobId];
+                    currentLine = this.outputLineCount[jobId],
+                    prep = Q();
 
                 info = _info;
                 actualLine = info.outputNumber;
                 if (actualLine !== null && actualLine >= currentLine) {
                     this.outputLineCount[jobId] = actualLine + 1;
-                    return executor.getOutput(hash, currentLine, actualLine+1)
+                    return prep
+                        .then(() => this.executor.getOutput(hash, currentLine, actualLine+1))
                         .then(outputLines => {
                             var stdout = this.getAttribute(job, 'stdout'),
                                 output = outputLines.map(o => o.output).join(''),
                                 last = stdout.lastIndexOf('\n'),
                                 result,
                                 lastLine,
+                                next = Q(),
                                 msg;
 
                             // parse deepforge commands
@@ -967,13 +750,18 @@ define([
 
                             if (output) {
                                 // Send notification to all clients watching the branch
-                                this.logManager.appendTo(jobId, output)
+                                var metadata = {
+                                    lineCount: this.outputLineCount[jobId]
+                                };
+                                next = next
+                                    .then(() => this.logManager.appendTo(jobId, output, metadata))
                                     .then(() => this.notifyStdoutUpdate(jobId));
                             }
                             if (result.hasMetadata) {
                                 msg = `Updated graph/image output for ${name}`;
-                                return this.save(msg);
+                                next = next.then(() => this.save(msg));
                             }
+                            return next;
                         });
                 }
             })
@@ -993,14 +781,23 @@ define([
                         var delta = Date.now() - time;
                             
                         if (delta > ExecuteJob.UPDATE_INTERVAL) {
-                            return this.watchOperation(executor, hash, op, job);
+                            return this.watchOperation(hash, op, job);
                         }
 
                         setTimeout(
-                            this.watchOperation.bind(this, executor, hash, op, job),
+                            this.watchOperation.bind(this, hash, op, job),
                             ExecuteJob.UPDATE_INTERVAL - delta
                         );
                     });
+                }
+
+                // Record that the job hash is no longer running
+                this.logger.info(`Job "${name}" has finished (${info.status})`);
+                var i = this.runningJobHashes.indexOf(hash);
+                if (i !== -1) {
+                    this.runningJobHashes.splice(i, 1);
+                } else {
+                    this.logger.warn(`Could not find running job hash ${hash}`);
                 }
 
                 if (info.status === 'CANCELED') {
@@ -1055,7 +852,7 @@ define([
         // Create an array of [name, node]
         // For now, just match by type. Later we may use ports for input/outputs
         // Store the results in the outgoing ports
-        this.getOutputs(node)
+        return this.getOutputs(node)
             .then(outputPorts => {
                 outputs = outputPorts.map(tuple => [tuple[0], tuple[2]]);
                 outputs.forEach(output => outputMap[output[0]] = output[1]);
@@ -1123,6 +920,9 @@ define([
 
     _.extend(
         ExecuteJob.prototype,
+        ExecuteJobFiles.prototype,
+        ExecuteJobMetadata.prototype,
+        ExecuteJobSafeSave.prototype,
         PtrCodeGen.prototype,
         LocalExecutor.prototype
     );
@@ -1173,122 +973,6 @@ define([
             stdout: result.join('\n'),
             hasMetadata: hasMetadata
         };
-    };
-
-    ExecuteJob.prototype[CONSTANTS.GRAPH_CREATE] = function (job, id) {
-        var graph,
-            name = Array.prototype.slice.call(arguments, 2).join(' '),
-            jobId = this.core.getPath(job);
-
-        id = jobId + '/' + id;
-        this.logger.info(`Creating graph ${id} named ${name}`);
-
-        // Check if the graph already exists
-        graph = this._getExistingMetadata(jobId, 'Graph', name);
-        if (!graph) {
-            graph = this.core.createNode({
-                base: this.META.Graph,
-                parent: job
-            });
-
-            if (name) {
-                this.setAttribute(graph, 'name', name);
-            }
-        }
-
-        this._metadata[id] = graph;
-    };
-
-    ExecuteJob.prototype[CONSTANTS.GRAPH_PLOT] = function (job, id, x, y) {
-        var jobId = this.core.getPath(job),
-            nonNum = /[^\d\.]*/g,
-            graph,
-            points;
-            
-
-        id = jobId + '/' + id;
-        this.logger.info(`Adding point ${x}, ${y} to ${id}`);
-        graph = this._metadata[id];
-        if (!graph) {
-            this.logger.warn(`Can't add point to non-existent graph: ${id}`);
-            return;
-        }
-
-        // Clean the points by removing and special characters
-        x = x.replace(nonNum, '');
-        y = y.replace(nonNum, '');
-        points = this.getAttribute(graph, 'points');
-        points += `${x},${y};`;
-        this.setAttribute(graph, 'points', points);
-    };
-
-    ExecuteJob.prototype[CONSTANTS.GRAPH_CREATE_LINE] = function (job, graphId, id) {
-        var jobId = this.core.getPath(job),
-            graph = this._metadata[jobId + '/' + graphId],
-            name = Array.prototype.slice.call(arguments, 3).join(' '),
-            line;
-
-        // Create a 'line' node in the given Graph metadata node
-        name = name.replace(/\s+$/, '');
-        line = this.core.createNode({
-            base: this.META.Line,
-            parent: graph
-        });
-        this.setAttribute(line, 'name', name);
-        this._metadata[jobId + '/' + id] = line;
-    };
-
-    ExecuteJob.prototype[CONSTANTS.IMAGE.BASIC] =
-    ExecuteJob.prototype[CONSTANTS.IMAGE.UPDATE] =
-    ExecuteJob.prototype[CONSTANTS.IMAGE.CREATE] = function (job, hash, imgId) {
-        var name = Array.prototype.slice.call(arguments, 3).join(' '),
-            imageNode = this._getImageNode(job, imgId, name);
-
-        this.setAttribute(imageNode, 'data', hash);
-    };
-
-    ExecuteJob.prototype[CONSTANTS.IMAGE.NAME] = function (job, imgId) {
-        var name = Array.prototype.slice.call(arguments, 2).join(' '),
-            imageNode = this._getImageNode(job, imgId, name);
-
-        this.setAttribute(imageNode, 'name', name);
-    };
-
-    ExecuteJob.prototype._getImageNode = function (job, imgId, name) {
-        var jobId = this.core.getPath(job),
-            id = jobId + '/IMAGE/' + imgId,
-            imageNode = this._metadata[id];  // Look for the metadata imageNode
-
-        if (!imageNode) {
-
-            // Check if the imageNode already exists
-            imageNode = this._getExistingMetadata(jobId, 'Image', name);
-            if (!imageNode) {
-                this.logger.info(`Creating image ${id} named ${name}`);
-                imageNode = this.core.createNode({
-                    base: this.META.Image,
-                    parent: job
-                });
-                this.setAttribute(imageNode, 'name', name);
-            }
-            this._metadata[id] = imageNode;
-        }
-        return imageNode;
-    };
-
-    ExecuteJob.prototype._getExistingMetadata = function (jobId, type, name) {
-        var oldMetadata = this._oldMetadataByName[jobId] &&
-            this._oldMetadataByName[jobId][type],
-            node,
-            id;
-
-        if (oldMetadata && oldMetadata[name]) {
-            id = oldMetadata[name];
-            node = this._markForDeletion[jobId][id];
-            delete this._markForDeletion[jobId][id];
-        }
-
-        return node || null;
     };
 
     return ExecuteJob;

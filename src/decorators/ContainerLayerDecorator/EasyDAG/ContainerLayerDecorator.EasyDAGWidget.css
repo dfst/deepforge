@@ -1,0 +1,25 @@
+.condense .nested-layers {
+  display: none;
+}
+
+.nested-layers .hover-box {
+  stroke: black;
+  stroke-dasharray: 4, 4;
+  stroke-opacity: 0;
+}
+
+.nested-layers .unhovered .button {
+  opacity: 0;
+}
+
+.nested-layers .hovered .button {
+  opacity: 1;
+}
+
+.nested-layers .unhovered .hover-box {
+  stroke-opacity: 0;
+}
+
+.nested-layers .hovered .hover-box {
+  stroke-opacity: 0;
+}
