@@ -17,7 +17,8 @@ define([
     'use strict';
 
     pluginMetadata = JSON.parse(pluginMetadata);
-    var HEADER_LENGTH = 60;
+    var HEADER_LENGTH = 60,
+        INDENT = '   ';
 
     /**
      * Initializes a new instance of GenerateExecFile.
@@ -100,7 +101,7 @@ define([
                 opNodes = nodes
                     .filter(node => this.isMetaTypeOf(node, this.META.Operation));
 
-                return Q.all(nodes.map(node => this.registerNameAndData(node)));
+                return Q.all(nodes.map(node => this.registerNode(node)));
             })
             .then(() => Q.all(opNodes
                 .filter(n => {
@@ -126,8 +127,8 @@ define([
                     safename = name.replace(/[^a-zA-Z0-9_]+/g, '_');
 
                 return `local function ${safename} (${inputArgs.join(', ')})\n` +
-                    fnbody.replace(/\n/gm, '\n   ') +
-                    `   return ${outputs.join(', ')}\nend\n\n` +
+                    fnbody.replace(/^/gm, INDENT) +
+                    `${INDENT}return ${outputs.join(', ')}\nend\n\n` +
                     `return ${safename}`;
             })
             .fail(err => this.logger.error(err));
@@ -196,7 +197,15 @@ define([
         return 'input';
     };
 
-    GenerateExecFile.prototype.registerNameAndData = function (node) {
+    GenerateExecFile.prototype.registerNode = function (node) {
+        if (this.isMetaTypeOf(node, this.META.Operation)) {
+            return this.registerOperation(node);
+        } else if (this.isMetaTypeOf(node, this.META.Transporter)) {
+            return this.registerTransporter(node);
+        }
+    };
+
+    GenerateExecFile.prototype.registerOperation = function (node) {
         var name = this.core.getAttribute(node, 'name'),
             id = this.core.getPath(node),
             base = this.core.getBase(node),
@@ -204,62 +213,66 @@ define([
             namebase,
             i = 2;
 
-        if (this.isMetaTypeOf(node, this.META.Operation)) {
-
-            // If it is an Input/Output operation, assign it a variable name
-            if (baseName === CONSTANTS.OP.INPUT) {
-                this.isInputOp[id] = true;
-                name = this.getVariableName(node);
-            } else if (baseName === CONSTANTS.OP.OUTPUT) {
-                this.isOutputOp[id] = true;
-                name = this.getOutputName(node);
-            }
-
-            // Get a unique operation name
-            namebase = name;
-            while (this._opNames[name]) {
-                name = namebase + '_' + i;
-                i++;
-            }
-
-            // register the unique name
-            this._opNames[name] = true;
-            this._nameFor[id] = name;
-
-            // For operations, register all output data node names by path
-            return this.core.loadChildren(node)
-                .then(cntrs => {
-                    var cntr = cntrs.find(n => this.isMetaTypeOf(n, this.META.Outputs));
-                    return this.core.loadChildren(cntr);
-                })
-                .then(outputs => {
-                    outputs.forEach(output => {
-                        var dataId = this.core.getPath(output);
-
-                        name = this.core.getAttribute(output, 'name');
-                        this._dataNameFor[dataId] = name;
-                    });
-                });
-
-        // For each input data node, register the associated output id
-        } else if (this.isMetaTypeOf(node, this.META.Transporter)) {
-            var outputData = this.core.getPointerPath(node, 'src'),
-                inputData = this.core.getPointerPath(node, 'dst'),
-                srcOpId = this.getOpIdFor(outputData),
-                dstOpId = this.getOpIdFor(inputData);
-
-            this._srcIdFor[inputData] = outputData;
-
-            // Store the next operation ids for the op id
-            if (!this._nextOps[srcOpId]) {
-                this._nextOps[srcOpId] = [];
-            }
-            this._nextOps[srcOpId].push(dstOpId);
-
-            // Increment the incoming counts for each dst op
-            this._incomingCnts[dstOpId] = this._incomingCnts[dstOpId] || 0;
-            this._incomingCnts[dstOpId]++;
+        // TODO: Change inputs/output operations to be input args or return values
+        // If it is an Input/Output operation, assign it a variable name
+        if (baseName === CONSTANTS.OP.INPUT) {
+            this.isInputOp[id] = true;
+            name = this.getVariableName(node);
+        } else if (baseName === CONSTANTS.OP.OUTPUT) {
+            this.isOutputOp[id] = true;
+            name = this.getOutputName(node);
         }
+
+        // Define a function for the base class of the given node...
+        // TODO
+
+        // Determine an argument order for the given node
+        // TODO
+
+        // Get a unique operation name
+        namebase = name;
+        while (this._opNames[name]) {
+            name = namebase + '_' + i;
+            i++;
+        }
+
+        // register the unique name
+        this._opNames[name] = true;
+        this._nameFor[id] = name;
+
+        // For operations, register all output data node names by path
+        return this.core.loadChildren(node)
+            .then(cntrs => {
+                var cntr = cntrs.find(n => this.isMetaTypeOf(n, this.META.Outputs));
+                return this.core.loadChildren(cntr);
+            })
+            .then(outputs => {
+                outputs.forEach(output => {
+                    var dataId = this.core.getPath(output);
+
+                    name = this.core.getAttribute(output, 'name');
+                    this._dataNameFor[dataId] = name;
+                });
+            });
+    };
+
+    GenerateExecFile.prototype.registerTransporter = function (node) {
+        var outputData = this.core.getPointerPath(node, 'src'),
+            inputData = this.core.getPointerPath(node, 'dst'),
+            srcOpId = this.getOpIdFor(outputData),
+            dstOpId = this.getOpIdFor(inputData);
+
+        this._srcIdFor[inputData] = outputData;
+
+        // Store the next operation ids for the op id
+        if (!this._nextOps[srcOpId]) {
+            this._nextOps[srcOpId] = [];
+        }
+        this._nextOps[srcOpId].push(dstOpId);
+
+        // Increment the incoming counts for each dst op
+        this._incomingCnts[dstOpId] = this._incomingCnts[dstOpId] || 0;
+        this._incomingCnts[dstOpId]++;
     };
 
     GenerateExecFile.prototype.getOpIdFor = function (dataId) {
@@ -344,7 +357,7 @@ define([
                 operation.refs = codeFiles;
                 if (this.isOutputOp[operation.id]) {
                     // TODO reassign variables...
-                    operation.code = this._nameFor[id]
+                    operation.code = this._nameFor[id];
                 } else {
                     this.genOperationCode(operation);
                 }
@@ -379,21 +392,24 @@ define([
 
     GenerateExecFile.prototype.genOperationCode = function (operation) {
         var header = this.createHeader(`"${operation.name}" Operation`),
-            codeParts = [];
+            codeParts = [],
+            body = [];
 
         codeParts.push(header);
         codeParts.push(`local ${operation.name}_results`);
         codeParts.push('do');
 
         if (operation.inputs.length) {
-            codeParts.push(operation.inputs.join('\n   '));
+            body.push(operation.inputs.join('\n'));
         }
 
         if (operation.refs.length) {
-            codeParts.push(operation.refs.join('\n   '));
+            body.push(operation.refs.join('\n'));
         }
 
-        codeParts.push('   ' + operation.code.replace(/\n/gm, '\n   '));
+        body.push(operation.code);
+
+        codeParts.push(body.join('\n').replace(/^/mg, INDENT));
         codeParts.push('end');
         codeParts.push('');
 
