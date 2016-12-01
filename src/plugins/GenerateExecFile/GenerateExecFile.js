@@ -6,18 +6,24 @@ define([
     'plugin/PluginBase',
     'deepforge/plugin/PtrCodeGen',
     'deepforge/Constants',
+    'underscore',
     'q'
 ], function (
     pluginMetadata,
     PluginBase,
     PtrCodeGen,
     CONSTANTS,
+    _,
     Q
 ) {
     'use strict';
 
     pluginMetadata = JSON.parse(pluginMetadata);
     var HEADER_LENGTH = 60,
+        SKIP_ATTRS = {
+            lineOffset: true,
+            code: true
+        },
         INDENT = '   ';
 
     /**
@@ -35,8 +41,12 @@ define([
         this._srcIdFor = {};  // input path -> output data node path
 
         this._nameFor = {};  // input path -> opname
+        this._baseNameFor = {};
         this._dataNameFor = {};  
-        this._opNames = {};
+        this._instanceNames = {};
+        this._opBaseNames = {};
+        this._fnNameFor = {};
+        this._functions = {};  // function definitions for the operations
 
         // topo sort stuff
         this._nextOps = {};
@@ -111,14 +121,18 @@ define([
                 .map(node => this.createOperation(node)))
             )
             .then(operations => {
-                var nextIds = opNodes.map(n => this.core.getPath(n))
-                        .filter(id => !this._incomingCnts[id]);
+                var opDict = {},
+                    firstOpIds;
 
-                operations.forEach(op => this._operations[op.id] = op);
+                firstOpIds = opNodes.map(n => this.core.getPath(n))
+                    .filter(id => !this._incomingCnts[id]);
 
-                // Toposort and concat!
-                return this.combineOpNodes(nextIds);
+                operations.forEach(op => opDict[op.id] = op);
+
+                // Toposort!
+                return this.sortOperations(opDict, firstOpIds);
             })
+            .then(operations => this.generateCodeSections(operations))
             .then(fnbody => {
                 // add the function definition
                 var inputArgs = Object.keys(this.isInputOp).map(id => this._nameFor[id]),
@@ -127,7 +141,7 @@ define([
                     safename = name.replace(/[^a-zA-Z0-9_]+/g, '_');
 
                 return `local function ${safename} (${inputArgs.join(', ')})\n` +
-                    fnbody.replace(/^/gm, INDENT) +
+                    indent(fnbody) +
                     `${INDENT}return ${outputs.join(', ')}\nend\n\n` +
                     `return ${safename}`;
             })
@@ -148,16 +162,19 @@ define([
         );
     };
 
-    GenerateExecFile.prototype.combineOpNodes = function (opIds) {
+    GenerateExecFile.prototype.sortOperations = function (operationDict, opIds) {
         var nextIds = [],
+            sorted = opIds,
             dstIds,
-            code,
             id;
 
+        if (!opIds.length) {
+            return [];
+        }
         // Combine all nodes with incoming cnts of 0
-        code = opIds
-            .filter(id => this._operations[id])
-            .map(id => this._operations[id].code).join('\n');
+        //code = opIds
+            //.filter(id => operationDict[id])
+            //.map(id => operationDict[id].code).join('\n');
 
         // Decrement all next ops
         dstIds = opIds.map(id => this._nextOps[id])
@@ -171,10 +188,112 @@ define([
         }
 
         // append
-        return [
-            code,
-            nextIds.length ? this.combineOpNodes(nextIds) : ''
-        ].join('\n');
+        console.log('sorted is', sorted);
+        return sorted
+            .map(id => operationDict[id])
+            .filter(op => !!op)
+            .concat(this.sortOperations(operationDict, nextIds));
+    };
+
+    GenerateExecFile.prototype.generateCodeSections = function(sortedOps) {
+        // Create the code sections:
+        //  - operation definitions
+        //  - pipeline definition
+        //  - main
+        var code = {},
+            baseIds = [];
+
+        // Define the operation functions...
+        code.defs = {};
+        for (var i = 0; i < sortedOps.length; i++) {
+            if (!(this.isInputOp[sortedOps[i].id] || this.isOutputOp[sortedOps[i].id]) &&
+                !baseIds.includes(sortedOps[i].baseId)) {
+
+                code.defs[sortedOps[i].basename] = this.defineOperationFn(sortedOps[i]);
+                baseIds.push(sortedOps[i].baseId);
+            }
+        }
+        console.log('defs', code.defs);
+
+        // Define the pipeline function
+        // TODO
+        code.pipelines = this.definePipelineFn(sortedOps);
+
+        // Define the main body
+        // TODO
+
+        return code;
+    };
+
+    var indent = function(text) {
+        return text.replace(/^/mg, INDENT);
+    };
+
+    GenerateExecFile.prototype.defineOperationFn = function(operation) {
+        var lines = [],
+            args = operation.inputNames || [];
+
+        // Create the function definition
+        args.unshift('attributes');
+        // Add the refs to the end
+        args = args.concat(operation.refNames);
+
+        args = args.join(', ');
+
+        lines.push(`local function ${operation.basename}(${args})`);
+        lines.push(indent(operation.code));
+        lines.push('end');
+
+        return indent(lines.join('\n'));
+    };
+
+    GenerateExecFile.prototype.definePipelineFn = function(sortedOps) {
+        var inputArgs = Object.keys(this.isInputOp).map(id => this._nameFor[id]),
+            outputs = Object.keys(this.isOutputOp).map(id => this._nameFor[id]),
+            name = this.core.getAttribute(this.activeNode, 'name'),
+            safename = getUniqueName(name, this._opBaseNames),
+            result = {},
+            fnbody;
+
+        // TODO: create the fnbody
+        // Call each function in order, with the respective attributes, etc
+        fnbody = sortedOps.map(op => this.getOpInvocation(op)).join('\n');
+
+        result[safename] = `local function ${safename} (${inputArgs.join(', ')})\n` +
+            indent(fnbody) +
+            `${INDENT}return ${outputs.join(', ')}\nend\n\n`;
+        // FIXME: return object w/ return values
+
+        return result;
+    };
+
+    var toAttrString = function(attr) {
+        if (/^\d\.?\d$/.test(attr) || /^(true|false|nil)$/.test(attr)) {
+            return attr;
+        }
+        return `"${attr}"`;
+    };
+
+    GenerateExecFile.prototype.getOpInvocation = function(op) {
+        // TODO: get the attributes
+        var lines = [],
+            attrs,
+            args;
+
+        attrs = '{' +
+            Object.keys(op.attributes).map(key => `${key}=${toAttrString(op.attributes[key])}`)
+            .join(',') +
+        '}';
+
+        lines.push(`local ${op.name}_attrs = ${attrs}`);
+        args = op.inputValues || [];
+        args.unshift(op.name + '_attrs');
+        // FIXME: Add the refs
+        //args = args.concat(op.refs);
+        args = args.join(', ');
+        lines.push(`local ${op.name}_results = ${op.name}(${args})`);
+
+        return lines.join('\n');
     };
 
     GenerateExecFile.prototype.getOutputName = function(/*node*/) {
@@ -205,15 +324,28 @@ define([
         }
     };
 
+    var getUniqueName = function(namebase, takenDict) {
+        var name,
+            i = 2;
+
+        name = namebase = namebase.replace(/[^A-Za-z\d]/g, '_');
+        // Get a unique operation name
+        while (takenDict[name]) {
+            name = namebase + '_' + i;
+            i++;
+        }
+        takenDict[name] = true;
+
+        return name;
+    };
+
     GenerateExecFile.prototype.registerOperation = function (node) {
         var name = this.core.getAttribute(node, 'name'),
             id = this.core.getPath(node),
             base = this.core.getBase(node),
-            baseName = this.core.getAttribute(base, 'name'),
-            namebase,
-            i = 2;
+            baseId = this.core.getPath(base),
+            baseName = this.core.getAttribute(base, 'name');
 
-        // TODO: Change inputs/output operations to be input args or return values
         // If it is an Input/Output operation, assign it a variable name
         if (baseName === CONSTANTS.OP.INPUT) {
             this.isInputOp[id] = true;
@@ -221,24 +353,24 @@ define([
         } else if (baseName === CONSTANTS.OP.OUTPUT) {
             this.isOutputOp[id] = true;
             name = this.getOutputName(node);
+        } else {
+            // Define a function for the base class of the given node...
+            // TODO
+
+            // Determine an argument order for the given node
+            // TODO
+
+            // get a unique operation instance name
+            name = getUniqueName(name, this._instanceNames);
+            this._nameFor[id] = name;
+
+            // get a unique operation base name
+            if (!this._fnNameFor[baseId]) {
+                name = this.core.getAttribute(base, 'name');
+                name = getUniqueName(name, this._opBaseNames);
+                this._fnNameFor[baseId] = name;
+            }
         }
-
-        // Define a function for the base class of the given node...
-        // TODO
-
-        // Determine an argument order for the given node
-        // TODO
-
-        // Get a unique operation name
-        namebase = name;
-        while (this._opNames[name]) {
-            name = namebase + '_' + i;
-            i++;
-        }
-
-        // register the unique name
-        this._opNames[name] = true;
-        this._nameFor[id] = name;
 
         // For operations, register all output data node names by path
         return this.core.loadChildren(node)
@@ -292,16 +424,26 @@ define([
     //     - replace the `return <thing>` w/ `<ref-name> = <thing>`
     GenerateExecFile.prototype.createOperation = function (node) {
         var id = this.core.getPath(node),
+            baseId = this.core.getPath(this.core.getBase(node)),
+            attrNames = this.core.getValidAttributeNames(node),
             operation = {};
 
         operation.name = this._nameFor[id];
+        operation.basename = this._fnNameFor[baseId];
+        operation.baseId = baseId;
         operation.id = id;
         operation.code = this.core.getAttribute(node, 'code');
+        operation.attributes = {};
+        for (var i = attrNames.length; i--;) {
+            if (!SKIP_ATTRS[attrNames[i]]) {
+                operation.attributes[attrNames[i]] = this.core.getAttribute(node, attrNames[i]);
+            }
+        }
 
         // Update the 'code' attribute
         // Change the last return statement to assign the results to a table
-        operation.code = this.assignResultToVar(operation.code,
-            `${operation.name}_results`);
+        //operation.code = this.assignResultToVar(operation.code,
+            //`${operation.name}_results`);
 
         // Get all the input names (and sources)
         return this.core.loadChildren(node)
@@ -311,7 +453,7 @@ define([
                 inputs = containers
                     .find(cntr => this.isMetaTypeOf(cntr, this.META.Inputs));
 
-                this.logger.info(`${name} has ${containers.length} cntrs`);
+                this.logger.info(`${operation.name} has ${containers.length} cntrs`);
                 return this.core.loadChildren(inputs);
             })
             .then(data => {
@@ -320,15 +462,19 @@ define([
                     ids = data.map(d => this.core.getPath(d)),
                     srcIds = ids.map(id => this._srcIdFor[id]);
 
-                operation.inputs = inputNames.map((name, i) => {
+                console.log('setting inputNames to', inputNames);
+                operation.inputNames = inputNames || [];
+                operation.inputValues = inputNames.map((name, i) => {
                     var id = srcIds[i],
                         srcDataName = this._dataNameFor[id],
                         srcOpId = this.getOpIdFor(id),
                         srcOpName = this._nameFor[srcOpId];
 
                     if (this.isInputOp[srcOpId]) {
+                        return srcOpId;
                         return `local ${name} = ${srcOpName}`;
                     } else {
+                        return [srcOpName, srcDataName];
                         return `local ${name} = ${srcOpName}_results.${srcDataName}`;
                     }
                 });
@@ -355,12 +501,6 @@ define([
             })
             .then(codeFiles => {
                 operation.refs = codeFiles;
-                if (this.isOutputOp[operation.id]) {
-                    // TODO reassign variables...
-                    operation.code = this._nameFor[id];
-                } else {
-                    this.genOperationCode(operation);
-                }
                 return operation;
             });
     };
@@ -409,7 +549,7 @@ define([
 
         body.push(operation.code);
 
-        codeParts.push(body.join('\n').replace(/^/mg, INDENT));
+        codeParts.push(indent(body.join('\n')));
         codeParts.push('end');
         codeParts.push('');
 
@@ -426,6 +566,15 @@ define([
     };
 
     _.extend(GenerateExecFile.prototype, PtrCodeGen.prototype);
+
+    var OperationFn = function(/*operation*/) {
+        // This is a class creates the fn for the given operation
+        // This includes argument order and the body of the function
+        // TODO
+    };
+
+    OperationFn.prototype.toString = function() {
+    };
 
     return GenerateExecFile;
 });
