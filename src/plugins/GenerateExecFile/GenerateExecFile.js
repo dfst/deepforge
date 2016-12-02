@@ -24,6 +24,7 @@ define([
             lineOffset: true,
             code: true
         },
+        RESERVED = /^(and|break|do|else|elseifend|false|for|function|if|in|local|nil|not|orrepeat|return|then|true|until|while|print)$/,
         INDENT = '   ';
 
     /**
@@ -41,6 +42,7 @@ define([
         this._srcIdFor = {};  // input path -> output data node path
 
         this._nameFor = {};  // input path -> opname
+        this._outputNames = {};
         this._baseNameFor = {};
         this._dataNameFor = {};  
         this._instanceNames = {};
@@ -101,6 +103,23 @@ define([
     };
 
     GenerateExecFile.prototype.createExecFile = function (children) {
+        return this.createCodeSections(children)
+            .then(sections => {
+                var code = [];
+
+                Object.keys(sections.operations)
+                    .forEach(name => code.push(sections.operations[name]));
+
+                Object.keys(sections.pipelines)
+                    .forEach(name => code.push(sections.pipelines[name]));
+
+                code.push(sections.main);
+
+                return code.join('\n\n');
+            });
+    };
+
+    GenerateExecFile.prototype.createCodeSections = function (children) {
         // Convert opNodes' jobs to the nested operations
         var opNodes,
             nodes;
@@ -133,18 +152,6 @@ define([
                 return this.sortOperations(opDict, firstOpIds);
             })
             .then(operations => this.generateCodeSections(operations))
-            .then(fnbody => {
-                // add the function definition
-                var inputArgs = Object.keys(this.isInputOp).map(id => this._nameFor[id]),
-                    outputs = Object.keys(this.isOutputOp).map(id => this._nameFor[id]),
-                    name = this.core.getAttribute(this.activeNode, 'name'),
-                    safename = name.replace(/[^a-zA-Z0-9_]+/g, '_');
-
-                return `local function ${safename} (${inputArgs.join(', ')})\n` +
-                    indent(fnbody) +
-                    `${INDENT}return ${outputs.join(', ')}\nend\n\n` +
-                    `return ${safename}`;
-            })
             .fail(err => this.logger.error(err));
     };
 
@@ -171,10 +178,6 @@ define([
         if (!opIds.length) {
             return [];
         }
-        // Combine all nodes with incoming cnts of 0
-        //code = opIds
-            //.filter(id => operationDict[id])
-            //.map(id => operationDict[id].code).join('\n');
 
         // Decrement all next ops
         dstIds = opIds.map(id => this._nextOps[id])
@@ -188,7 +191,6 @@ define([
         }
 
         // append
-        console.log('sorted is', sorted);
         return sorted
             .map(id => operationDict[id])
             .filter(op => !!op)
@@ -201,26 +203,29 @@ define([
         //  - pipeline definition
         //  - main
         var code = {},
-            baseIds = [];
+            baseIds = [],
+            outputOps = [],
+            mainOps = [];
 
         // Define the operation functions...
-        code.defs = {};
+        code.operations = {};
         for (var i = 0; i < sortedOps.length; i++) {
-            if (!(this.isInputOp[sortedOps[i].id] || this.isOutputOp[sortedOps[i].id]) &&
-                !baseIds.includes(sortedOps[i].baseId)) {
-
-                code.defs[sortedOps[i].basename] = this.defineOperationFn(sortedOps[i]);
-                baseIds.push(sortedOps[i].baseId);
+            if (!this.isInputOp[sortedOps[i].id] && !baseIds.includes(sortedOps[i].baseId)) {
+                if (!this.isOutputOp[sortedOps[i].id]) {
+                    code.operations[sortedOps[i].basename] = this.defineOperationFn(sortedOps[i]);
+                    baseIds.push(sortedOps[i].baseId);
+                    mainOps.push(sortedOps[i]);
+                } else {
+                    outputOps.push(sortedOps[i]);
+                }
             }
         }
-        console.log('defs', code.defs);
 
         // Define the pipeline function
-        // TODO
-        code.pipelines = this.definePipelineFn(sortedOps);
+        code.pipelines = this.definePipelineFn(mainOps, outputOps);
 
         // Define the main body
-        // TODO
+        this.addCodeMain(code);
 
         return code;
     };
@@ -244,27 +249,51 @@ define([
         lines.push(indent(operation.code));
         lines.push('end');
 
-        return indent(lines.join('\n'));
+        return lines.join('\n');
     };
 
-    GenerateExecFile.prototype.definePipelineFn = function(sortedOps) {
+    GenerateExecFile.prototype.definePipelineFn = function(sortedOps, outputOps) {
         var inputArgs = Object.keys(this.isInputOp).map(id => this._nameFor[id]),
-            outputs = Object.keys(this.isOutputOp).map(id => this._nameFor[id]),
             name = this.core.getAttribute(this.activeNode, 'name'),
             safename = getUniqueName(name, this._opBaseNames),
+            results = [],
             result = {},
+            returnStat,
             fnbody;
 
-        // TODO: create the fnbody
         // Call each function in order, with the respective attributes, etc
         fnbody = sortedOps.map(op => this.getOpInvocation(op)).join('\n');
 
+        // Create the return statement
+        results.push('\n\nresults = {}');
+        outputOps.map(op => this.getOutputPair(op))
+            .forEach(pair => results.push(`results['${pair[0]}'] = ${pair[1]}`));
+        results.push('return results');
+        returnStat = results.join('\n');
+
+        // Merge the fnbody, return statement and the function def
         result[safename] = `local function ${safename} (${inputArgs.join(', ')})\n` +
-            indent(fnbody) +
-            `${INDENT}return ${outputs.join(', ')}\nend\n\n`;
-        // FIXME: return object w/ return values
+            `${indent(fnbody + returnStat)}\nend`;
 
         return result;
+    };
+
+    GenerateExecFile.prototype.getOutputPair = function(operation) {
+        var input = operation.inputValues[0].slice(),
+            value;
+
+        // Get the src operation name and data value name
+        input[0] += '_results';
+        value = input.join('.');
+        return [this._nameFor[operation.id], value];
+    };
+
+    GenerateExecFile.prototype.addCodeMain = function(code) {
+        var pipelineName = Object.keys(code.pipelines)[0],
+            args = Object.keys(this.isInputOp).map((val, index) => `arg[${index+1}]`)
+                .join(', ');
+
+        code.main = `return ${pipelineName}(${args})`;
     };
 
     var toAttrString = function(attr) {
@@ -286,8 +315,11 @@ define([
         '}';
 
         lines.push(`local ${op.name}_attrs = ${attrs}`);
-        args = op.inputValues || [];
+        args = (op.inputValues || [])
+            .map(val => val instanceof Array ? `${val[0]}_results.${val[1]}` : val);
+
         args.unshift(op.name + '_attrs');
+            
         // FIXME: Add the refs
         //args = args.concat(op.refs);
         args = args.join(', ');
@@ -296,14 +328,10 @@ define([
         return lines.join('\n');
     };
 
-    GenerateExecFile.prototype.getOutputName = function(/*node*/) {
-        var c = Object.keys(this.isOutputOp).length;
+    GenerateExecFile.prototype.getOutputName = function(node) {
+        var basename = this.core.getAttribute(node, 'saveName');
 
-        if (c !== 1) {
-            return `output${c}`;
-        }
-
-        return 'output';
+        return getUniqueName(basename, this._outputNames, true);
     };
 
     GenerateExecFile.prototype.getVariableName = function (/*node*/) {
@@ -324,13 +352,19 @@ define([
         }
     };
 
-    var getUniqueName = function(namebase, takenDict) {
+    var getUniqueName = function(namebase, takenDict, unsafeAllowed) {
         var name,
-            i = 2;
+            i = 2,
+            isUnsafe = function(name) {
+                return !unsafeAllowed && RESERVED.test(name);
+            };
 
-        name = namebase = namebase.replace(/[^A-Za-z\d]/g, '_');
+        if (!unsafeAllowed) {
+            namebase = namebase.replace(/[^A-Za-z\d]/g, '_');
+        }
+        name = namebase;
         // Get a unique operation name
-        while (takenDict[name]) {
+        while (takenDict[name] || isUnsafe(name)) {
             name = namebase + '_' + i;
             i++;
         }
@@ -348,10 +382,10 @@ define([
 
         // If it is an Input/Output operation, assign it a variable name
         if (baseName === CONSTANTS.OP.INPUT) {
-            this.isInputOp[id] = true;
+            this.isInputOp[id] = node;
             name = this.getVariableName(node);
         } else if (baseName === CONSTANTS.OP.OUTPUT) {
-            this.isOutputOp[id] = true;
+            this.isOutputOp[id] = node;
             name = this.getOutputName(node);
         } else {
             // Define a function for the base class of the given node...
@@ -362,14 +396,15 @@ define([
 
             // get a unique operation instance name
             name = getUniqueName(name, this._instanceNames);
-            this._nameFor[id] = name;
+        }
 
-            // get a unique operation base name
-            if (!this._fnNameFor[baseId]) {
-                name = this.core.getAttribute(base, 'name');
-                name = getUniqueName(name, this._opBaseNames);
-                this._fnNameFor[baseId] = name;
-            }
+        this._nameFor[id] = name;
+
+        // get a unique operation base name
+        if (!this._fnNameFor[baseId]) {
+            name = this.core.getAttribute(base, 'name');
+            name = getUniqueName(name, this._opBaseNames);
+            this._fnNameFor[baseId] = name;
         }
 
         // For operations, register all output data node names by path
@@ -462,7 +497,6 @@ define([
                     ids = data.map(d => this.core.getPath(d)),
                     srcIds = ids.map(id => this._srcIdFor[id]);
 
-                console.log('setting inputNames to', inputNames);
                 operation.inputNames = inputNames || [];
                 operation.inputValues = inputNames.map((name, i) => {
                     var id = srcIds[i],
@@ -471,11 +505,9 @@ define([
                         srcOpName = this._nameFor[srcOpId];
 
                     if (this.isInputOp[srcOpId]) {
-                        return srcOpId;
-                        return `local ${name} = ${srcOpName}`;
+                        return this._nameFor[srcOpId];
                     } else {
                         return [srcOpName, srcDataName];
-                        return `local ${name} = ${srcOpName}_results.${srcDataName}`;
                     }
                 });
 
