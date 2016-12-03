@@ -4,6 +4,7 @@
 define([
     'text!./metadata.json',
     'text!./deepforge.ejs',
+    'text!./toboolean.lua',
     'plugin/PluginBase',
     'deepforge/plugin/PtrCodeGen',
     'deepforge/Constants',
@@ -12,6 +13,7 @@ define([
 ], function (
     pluginMetadata,
     deepForgeTxt,
+    TOBOOLEAN,
     PluginBase,
     PtrCodeGen,
     CONSTANTS,
@@ -66,6 +68,7 @@ define([
         this.activeNodeDepth = null;
 
         this.isInputOp = {};
+        this.inputType = {};
         this.isOutputOp = {};
     };
 
@@ -279,8 +282,6 @@ define([
         // Add custom layer definitions
         this.addCustomLayers(code);
 
-        // TODO: Add the 'deepforge' section
-
         return code;
     };
 
@@ -344,10 +345,26 @@ define([
 
     GenerateExecFile.prototype.addCodeMain = function(sections) {
         var pipelineName = Object.keys(sections.pipelines)[0],
+            hasBool = false,
             code = '',
+            type,
+            arg,
             args;
 
-        args = Object.keys(this.isInputOp).map((val, index) => `arg[${index+1}]`);
+        args = Object.keys(this.isInputOp).map((val, index) => {
+            type = this.inputType[val];
+            arg = `arg[${index+1}]`;
+            if (type === 'boolean') {
+                hasBool = true;
+                return `toboolean(${arg})`;
+            } else if (type === 'number') {
+                return `tonumber(${arg})`;
+            } else if (type === 'string') {
+                return arg;
+            } else {
+                return `torch.load(${arg})`;
+            }
+        });
 
         // Should I check for the number of arguments? This would be nice if I knew the names of the arguments...
         // I might be able to just use the input names...
@@ -356,6 +373,11 @@ define([
             //code += `if #arg == 0 then print('Too few arguments. Expected ${args.length}.') end\n`;
         //}
 
+        // Handle the arg types
+        if (hasBool) {
+            // add toboolean def
+            code += TOBOOLEAN;
+        }
         code += `return ${pipelineName}(${args.join(', ')})`;
         sections.main = code;
     };
@@ -544,12 +566,6 @@ define([
             this.isOutputOp[id] = node;
             name = this.getOutputName(node);
         } else {
-            // Define a function for the base class of the given node...
-            // TODO
-
-            // Determine an argument order for the given node
-            // TODO
-
             // get a unique operation instance name
             name = getUniqueName(name, this._instanceNames);
         }
@@ -571,10 +587,17 @@ define([
             })
             .then(outputs => {
                 outputs.forEach(output => {
-                    var dataId = this.core.getPath(output);
+                    var dataId = this.core.getPath(output),
+                        base;
 
                     name = this.core.getAttribute(output, 'name');
                     this._dataNameFor[dataId] = name;
+
+                    // Get the input type
+                    if (this.isInputOp[id]) {
+                        base = this.core.getBase(output);
+                        this.inputType[id] = this.core.getAttribute(base, 'name');
+                    }
                 });
             });
     };
@@ -754,15 +777,6 @@ define([
     };
 
     _.extend(GenerateExecFile.prototype, PtrCodeGen.prototype);
-
-    var OperationFn = function(/*operation*/) {
-        // This is a class creates the fn for the given operation
-        // This includes argument order and the body of the function
-        // TODO
-    };
-
-    OperationFn.prototype.toString = function() {
-    };
 
     return GenerateExecFile;
 });
