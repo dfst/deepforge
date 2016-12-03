@@ -475,16 +475,16 @@ define([
     };
 
     var toAttrString = function(attr) {
-        if (/^\d\.?\d$/.test(attr) || /^(true|false|nil)$/.test(attr)) {
+        if (/^\d+\.?\d*$/.test(attr) || /^(true|false|nil)$/.test(attr)) {
             return attr;
         }
         return `"${attr}"`;
     };
 
     GenerateExecFile.prototype.getOpInvocation = function(op) {
-        // TODO: get the attributes
         var lines = [],
             attrs,
+            refInits = [],
             args;
 
         attrs = '{' +
@@ -498,8 +498,16 @@ define([
 
         args.unshift(op.name + '_attrs');
             
-        // FIXME: Add the refs
-        //args = args.concat(op.refs);
+        // Create the ref init functions
+        refInits = op.refs.map((code, index) => {
+            return [
+                `local function create_${op.refNames[index]}()`,
+                indent(code),
+                'end'
+            ].join('\n');
+        });
+        lines = lines.concat(refInits);
+        args = args.concat(op.refNames.map(name => `create_${name}()`));
         args = args.join(', ');
         lines.push(`local ${op.name}_results = ${op.name}(${args})`);
 
@@ -654,11 +662,6 @@ define([
             }
         }
 
-        // Update the 'code' attribute
-        // Change the last return statement to assign the results to a table
-        //operation.code = this.assignResultToVar(operation.code,
-            //`${operation.name}_results`);
-
         // Get all the input names (and sources)
         return this.core.loadChildren(node)
             .then(containers => {
@@ -718,9 +721,7 @@ define([
 
     GenerateExecFile.prototype.genPtrSnippet = function (ptrName, pId) {
         return this.getPtrCodeHash(pId)
-            .then(hash => this.blobClient.getObjectAsString(hash))
-            .then(code => this.createHeader(`creating ${ptrName}`, 40) + '\n' +
-                this.assignResultToVar(code, ptrName));
+            .then(hash => this.blobClient.getObjectAsString(hash));
     };
 
     GenerateExecFile.prototype.createHeader = function (title, length) {
