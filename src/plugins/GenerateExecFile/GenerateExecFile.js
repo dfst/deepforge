@@ -90,6 +90,7 @@ define([
      * @param {function(string, plugin.PluginResult)} callback - the result callback
      */
     GenerateExecFile.prototype.main = function (callback) {
+        var name = this.core.getAttribute(this.activeNode, 'name');
         // Get all the children and call generate exec file
         this.activeNodeId = this.core.getPath(this.activeNode);
         this.activeNodeDepth = this.activeNodeId.split('/').length + 1;
@@ -100,7 +101,7 @@ define([
 
         return this.core.loadChildren(this.activeNode)
             .then(nodes => this.createExecFile(nodes))
-            .then(code => this.blobClient.putFile('init.lua', code))
+            .then(code => this.blobClient.putFile(`${name}.lua`, code))
             .then(hash => {
                 this.result.addArtifact(hash);
                 this.result.setSuccess(true);
