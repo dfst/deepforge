@@ -3,6 +3,7 @@
 
 define([
     'text!./metadata.json',
+    'text!./deepforge.ejs',
     'plugin/PluginBase',
     'deepforge/plugin/PtrCodeGen',
     'deepforge/Constants',
@@ -10,6 +11,7 @@ define([
     'q'
 ], function (
     pluginMetadata,
+    deepForgeTxt,
     PluginBase,
     PtrCodeGen,
     CONSTANTS,
@@ -27,7 +29,10 @@ define([
         RESERVED = /^(and|break|do|else|elseifend|false|for|function|if|in|local|nil|not|orrepeat|return|then|true|until|while|print)$/,
         INDENT = '   ',
         INIT_CLASSES_FN = '__initClasses',
-        INIT_LAYERS_FN = '__initLayers';
+        INIT_LAYERS_FN = '__initLayers',
+        DEEPFORGE_CODE = _.template(deepForgeTxt)({
+            initCode: `${INIT_CLASSES_FN}()\n${INDENT}${INIT_LAYERS_FN}()`
+        });
 
     /**
      * Initializes a new instance of GenerateExecFile.
@@ -112,7 +117,6 @@ define([
                     initLayerFn,
                     code = [];
 
-                // TODO: Add the 'deepforge' section
                 // concat all the sections into a single file
 
                 // wrap the class/layer initialization in a fn
@@ -152,6 +156,7 @@ define([
 
                 code = code.concat(_.values(sections.pipelines));
 
+                code.push(DEEPFORGE_CODE);
                 code.push('deepforge.initialize()');
                 code.push(sections.main);
 
