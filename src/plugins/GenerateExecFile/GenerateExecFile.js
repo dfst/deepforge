@@ -1,4 +1,4 @@
-/*globals define, _*/
+/*globals define */
 /*jshint node:true, browser:true*/
 
 define([
@@ -25,7 +25,9 @@ define([
             code: true
         },
         RESERVED = /^(and|break|do|else|elseifend|false|for|function|if|in|local|nil|not|orrepeat|return|then|true|until|while|print)$/,
-        INDENT = '   ';
+        INDENT = '   ',
+        INIT_CLASSES_FN = '__initClasses',
+        INIT_LAYERS_FN = '__initLayers';
 
     /**
      * Initializes a new instance of GenerateExecFile.
@@ -105,14 +107,52 @@ define([
     GenerateExecFile.prototype.createExecFile = function (children) {
         return this.createCodeSections(children)
             .then(sections => {
-                var code = [];
+                var classes,
+                    initClassFn,
+                    initLayerFn,
+                    code = [];
 
-                Object.keys(sections.operations)
-                    .forEach(name => code.push(sections.operations[name]));
+                // TODO: Add the 'deepforge' section
+                // concat all the sections into a single file
 
-                Object.keys(sections.pipelines)
-                    .forEach(name => code.push(sections.pipelines[name]));
+                // wrap the class/layer initialization in a fn
+                // Add the classes ordered wrt their deps
+                classes = Object.keys(sections.classes)
+                    .sort((a, b) => {
+                        // if a depends on b, switch them (return 1)
+                        if (sections.classDependencies[a].includes(b)) {
+                            return 1;
+                        }
+                        return -1;
+                    })
+                    // Create fns from the classes
+                    .map(name => [
+                        `local function init${name}()`,
+                        indent(sections.classes[name]),
+                        'end',
+                        `init${name}()`
+                    ].join('\n'));
 
+                initClassFn = [
+                    `local function ${INIT_CLASSES_FN}()`,
+                    indent(classes.join('\n\n')),
+                    'end'
+                ].join('\n');
+
+                code = code.concat(initClassFn);
+
+                // wrap the layers in a function
+                initLayerFn = [
+                    `local function ${INIT_LAYERS_FN}()`,
+                    indent(_.values(sections.layers).join('\n\n')),
+                    'end'
+                ].join('\n');
+                code = code.concat(initLayerFn);
+                code = code.concat(_.values(sections.operations));
+
+                code = code.concat(_.values(sections.pipelines));
+
+                code.push('deepforge.initialize()');
                 code.push(sections.main);
 
                 return code.join('\n\n');
@@ -227,6 +267,14 @@ define([
         // Define the main body
         this.addCodeMain(code);
 
+        // Add custom class definitions
+        this.addCustomClasses(code);
+
+        // Add custom layer definitions
+        this.addCustomLayers(code);
+
+        // TODO: Add the 'deepforge' section
+
         return code;
     };
 
@@ -288,12 +336,114 @@ define([
         return [this._nameFor[operation.id], value];
     };
 
-    GenerateExecFile.prototype.addCodeMain = function(code) {
-        var pipelineName = Object.keys(code.pipelines)[0],
-            args = Object.keys(this.isInputOp).map((val, index) => `arg[${index+1}]`)
-                .join(', ');
+    GenerateExecFile.prototype.addCodeMain = function(sections) {
+        var pipelineName = Object.keys(sections.pipelines)[0],
+            code = '',
+            args;
 
-        code.main = `return ${pipelineName}(${args})`;
+        args = Object.keys(this.isInputOp).map((val, index) => `arg[${index+1}]`);
+
+        // Should I check for the number of arguments? This would be nice if I knew the names of the arguments...
+        // I might be able to just use the input names...
+        // TODO
+        //if (args.length > 0) {
+            //code += `if #arg == 0 then print('Too few arguments. Expected ${args.length}.') end\n`;
+        //}
+
+        code += `return ${pipelineName}(${args.join(', ')})`;
+        sections.main = code;
+    };
+
+    GenerateExecFile.prototype.addCustomClasses = function(sections) {
+        // TODO: Refactor this (merge it w/ the logic in ExecuteJob.Files.js
+        var metaDict = this.core.getAllMetaNodes(this.rootNode),
+            isClass,
+            metanodes,
+            classNodes,
+            inheritanceLvl = {};
+
+        this.logger.info('Creating custom layer file...');
+        metanodes = Object.keys(metaDict).map(id => metaDict[id]);
+        isClass = this.getTypeDictFor('Complex', metanodes);
+
+        // Store the dependencies for each class
+        sections.classDependencies = {};
+
+        classNodes = metanodes.filter(node => {
+            var base = this.core.getBase(node),
+                baseId = this.core.getPath(base),
+                deps = [],
+                name,
+                count = 1;
+
+            // Count the sets back to a class node
+            while (base) {
+                deps.push(this.core.getAttribute(base, 'name'));
+                if (isClass[baseId]) {
+                    inheritanceLvl[this.core.getPath(node)] = count;
+                    name = this.core.getAttribute(node, 'name');
+                    sections.classDependencies[name] = deps;
+                    return true;
+                }
+                base = this.core.getBase(base);
+                baseId = this.core.getPath(base);
+                count++;
+            }
+
+            return false;
+        });
+
+        // Get the code definitions for each
+        sections.classes = {};
+        classNodes
+            .sort((a, b) => {
+                var aId = this.core.getPath(a),
+                    bId = this.core.getPath(b);
+
+                return inheritanceLvl[aId] > inheritanceLvl[bId];
+            })
+            .forEach(node => {
+                var name = this.core.getAttribute(node, 'name'),
+                    code = this.core.getAttribute(node, 'code');
+
+                sections.classes[name] = code;
+            });
+    };
+
+    GenerateExecFile.prototype.addCustomLayers = function(sections) {
+        // TODO: Refactor this (merge it w/ the logic in ExecuteJob.Files.js
+        var metaDict = this.core.getAllMetaNodes(this.rootNode),
+            isCustomLayer,
+            metanodes,
+            customLayers;
+
+        this.logger.info('Creating custom layer file...');
+        metanodes = Object.keys(metaDict).map(id => metaDict[id]);
+        isCustomLayer = this.getTypeDictFor('CustomLayer', metanodes);
+
+        customLayers = metanodes.filter(node =>
+            this.core.getMixinPaths(node).some(id => isCustomLayer[id]));
+
+        // Get the code definitions for each
+        sections.layers = {};
+        customLayers
+            .map(layer => [
+                this.core.getAttribute(layer, 'name'),
+                this.core.getAttribute(layer, 'code')
+            ])
+            .forEach(pair => sections.layers[pair[0]] = pair[1]);
+    };
+
+
+    GenerateExecFile.prototype.getTypeDictFor = function (name, metanodes) {
+        var isType = {};
+        // Get all the custom layers
+        for (var i = metanodes.length; i--;) {
+            if (this.core.getAttribute(metanodes[i], 'name') === name) {
+                isType[this.core.getPath(metanodes[i])] = true;
+            }
+        }
+        return isType;
     };
 
     var toAttrString = function(attr) {
