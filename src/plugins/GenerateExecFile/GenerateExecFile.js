@@ -440,7 +440,7 @@ define([
                     indent(this.core.getAttribute(node, attr)),
                     'end'
                 ].join('\n');
-            })
+            }).join('\n')
         ].join('\n');
     };
 

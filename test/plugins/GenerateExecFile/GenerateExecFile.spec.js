@@ -79,13 +79,14 @@ describe('GenerateExecFile', function () {
 
     [  // name, id, args, expected result
         ['concat', '/f/e', 'hello world', 'helloworld', 'hello-world'],
-        ['math example', '/f/J', '2 2 2', 96, 'result']
+        ['math example', '/f/J', '2 2 2', 96, 'result'],
+        ['cifar10 prep-train-test', '/f/C']
     ].forEach(testCase => {
         var caseName = testCase[0],
             nodeId = testCase[1],
-            cliArgs = testCase[2].split(' '),
-            saveData = testCase[3],
-            saveName = testCase[4],
+            cliArgs,
+            saveData,
+            saveName,
             exportTestCode;
 
         describe(caseName, function() {
@@ -116,52 +117,58 @@ describe('GenerateExecFile', function () {
                 lua.compile(exportTestCode);
             });
 
-            it(`should save ${saveData} to ${saveName}`, function (done) {
-                var context = lua.newContext(),
-                    args = lua.newContext()._G,
-                    torch = lua.newContext()._G,
-                    bin;
+            if (testCase.length > 2) {
+                cliArgs = testCase[2].split(' ');
+                saveData = testCase[3];
+                saveName = testCase[4];
 
-                context.loadStdLib();
-                // Add the test input args
-                cliArgs.forEach((cliArg, index) => args.set(index+1, cliArg));
-                context._G.set('arg', args);
+                it(`should save ${saveData} to ${saveName}`, function (done) {
+                    var context = lua.newContext(),
+                        args = lua.newContext()._G,
+                        torch = lua.newContext()._G,
+                        bin;
 
-                // Add the torch.save, torch.class mocks
-                torch.set('save', (path, data) => {
-                    expect(path).to.equal(saveName);
-                    expect(data).to.equal(saveData);
-                    done();
-                });
-                torch.set('class', (name) => {
-                    var cntr = context._G,
-                        classes,
-                        newClass = lua.newContext()._G;
+                    context.loadStdLib();
+                    // Add the test input args
+                    cliArgs.forEach((cliArg, index) => args.set(index+1, cliArg));
+                    context._G.set('arg', args);
 
-                    if (name.includes('.')) {
-                        classes = name.split('.');
-                        name = classes.pop();
-                        for (var i = 0; i < classes.length; i++) {
-                            cntr = cntr.get(classes[i]);
+                    // Add the torch.save, torch.class mocks
+                    torch.set('save', (path, data) => {
+                        expect(path).to.equal(saveName);
+                        expect(data).to.equal(saveData);
+                        done();
+                    });
+                    torch.set('class', (name) => {
+                        var cntr = context._G,
+                            classes,
+                            newClass = lua.newContext()._G;
+
+                        if (name.includes('.')) {
+                            classes = name.split('.');
+                            name = classes.pop();
+                            for (var i = 0; i < classes.length; i++) {
+                                cntr = cntr.get(classes[i]);
+                            }
                         }
-                    }
-                    cntr.set(name, newClass);
-                    return newClass;
+                        cntr.set(name, newClass);
+                        return newClass;
+                    });
+                    context._G.set('torch', torch);
+                    
+                    // change require searchers to allow silent failing
+                    context._G.get('package').set('searchers', [function() {
+                        return () => {};
+                    }]);
+
+                    // suppress print messages
+                    context._G.set('print', () => {});
+
+                    // Cross compile to js and run
+                    bin = context.loadString(exportTestCode);
+                    bin();
                 });
-                context._G.set('torch', torch);
-                
-                // change require searchers to allow silent failing
-                context._G.get('package').set('searchers', [function() {
-                    return () => {};
-                }]);
-
-                // suppress print messages
-                context._G.set('print', () => {});
-
-                // Cross compile to js and run
-                bin = context.loadString(exportTestCode);
-                bin();
-            });
+            }
         });
     });
 });
