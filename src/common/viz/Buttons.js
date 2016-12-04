@@ -60,7 +60,7 @@ define([
     };
 
     var CloneAndEdit = function(params) {
-        EasyDAGButtons.ButtonBase.call(this, params);
+        GoToBase.call(this, params);
     };
 
     CloneAndEdit.prototype = Object.create(GoToBase.prototype);
