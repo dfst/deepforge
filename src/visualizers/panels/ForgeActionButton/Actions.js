@@ -267,7 +267,7 @@ define([
             },
             {
                 name: 'Export for local execution',
-                icon: "play_for_work",
+                icon: 'play_for_work',
                 priority: -1,
                 action: function() {
                     var pluginId = 'GenerateExecFile',

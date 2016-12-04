@@ -386,13 +386,6 @@ define([
             }
         });
 
-        // Should I check for the number of arguments? This would be nice if I knew the names of the arguments...
-        // I might be able to just use the input names...
-        // TODO
-        //if (args.length > 0) {
-            //code += `if #arg == 0 then print('Too few arguments. Expected ${args.length}.') end\n`;
-        //}
-
         // Handle the arg types
         if (hasBool) {
             // add toboolean def
@@ -449,7 +442,6 @@ define([
     };
 
     GenerateExecFile.prototype.addCustomClasses = function(sections) {
-        // TODO: Refactor this (merge it w/ the logic in ExecuteJob.Files.js
         var metaDict = this.core.getAllMetaNodes(this.rootNode),
             isClass,
             metanodes,
@@ -505,7 +497,6 @@ define([
     };
 
     GenerateExecFile.prototype.addCustomLayers = function(sections) {
-        // TODO: Refactor this (merge it w/ the logic in ExecuteJob.Files.js
         var metaDict = this.core.getAllMetaNodes(this.rootNode),
             isCustomLayer,
             metanodes,
