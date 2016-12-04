@@ -46,6 +46,21 @@ define([
     var GenerateExecFile = function () {
         // Call base class' constructor.
         PluginBase.call(this);
+        this.initRecords();
+    };
+
+    /**
+     * Metadata associated with the plugin. Contains id, name, version, description, icon, configStructue etc.
+     * This is also available at the instance at this.pluginMetadata.
+     * @type {object}
+     */
+    GenerateExecFile.metadata = pluginMetadata;
+
+    // Prototypical inheritance from PluginBase.
+    GenerateExecFile.prototype = Object.create(PluginBase.prototype);
+    GenerateExecFile.prototype.constructor = GenerateExecFile;
+
+    GenerateExecFile.prototype.initRecords = function() {
         this.pluginMetadata = pluginMetadata;
 
         this._srcIdFor = {};  // input path -> output data node path
@@ -68,20 +83,11 @@ define([
         this.activeNodeDepth = null;
 
         this.isInputOp = {};
-        this.inputType = {};
+        this._portCache = {};
+        this.inputNode = {};
+        this.outputDataToOpId = {};
         this.isOutputOp = {};
     };
-
-    /**
-     * Metadata associated with the plugin. Contains id, name, version, description, icon, configStructue etc.
-     * This is also available at the instance at this.pluginMetadata.
-     * @type {object}
-     */
-    GenerateExecFile.metadata = pluginMetadata;
-
-    // Prototypical inheritance from PluginBase.
-    GenerateExecFile.prototype = Object.create(PluginBase.prototype);
-    GenerateExecFile.prototype.constructor = GenerateExecFile;
 
     /**
      * Main function for the plugin to execute. This will perform the execution.
@@ -94,6 +100,9 @@ define([
      */
     GenerateExecFile.prototype.main = function (callback) {
         var name = this.core.getAttribute(this.activeNode, 'name');
+
+        this.initRecords();
+
         // Get all the children and call generate exec file
         this.activeNodeId = this.core.getPath(this.activeNode);
         this.activeNodeDepth = this.activeNodeId.split('/').length + 1;
@@ -178,6 +187,14 @@ define([
                 nodes = _nodes;
                 opNodes = nodes
                     .filter(node => this.isMetaTypeOf(node, this.META.Operation));
+
+                // Sort the connections to come first
+                nodes
+                    .map(node => [
+                        node,
+                        this.isMetaTypeOf(node, this.META.Transporter) ? -1 : 1
+                    ])
+                    .sort((a, b) => a[1] < b[1] ? -1 : 1);
 
                 return Q.all(nodes.map(node => this.registerNode(node)));
             })
@@ -346,14 +363,16 @@ define([
     GenerateExecFile.prototype.addCodeMain = function(sections) {
         var pipelineName = Object.keys(sections.pipelines)[0],
             hasBool = false,
-            code = '',
-            type,
-            arg,
+            code = [],
+            loadNodes = {},
             args;
 
-        args = Object.keys(this.isInputOp).map((val, index) => {
-            type = this.inputType[val];
-            arg = `arg[${index+1}]`;
+        args = Object.keys(this.isInputOp).map((id, index) => {
+            var node = this.inputNode[id],
+                base = this.core.getBase(node),
+                type = this.core.getAttribute(base, 'name'),
+                arg = `arg[${index+1}]`;
+
             if (type === 'boolean') {
                 hasBool = true;
                 return `toboolean(${arg})`;
@@ -362,7 +381,8 @@ define([
             } else if (type === 'string') {
                 return arg;
             } else {
-                return `torch.load(${arg})`;
+                loadNodes[id] = node;
+                return `load['${this._nameFor[id]}'](${arg})`;
             }
         });
 
@@ -376,10 +396,56 @@ define([
         // Handle the arg types
         if (hasBool) {
             // add toboolean def
-            code += TOBOOLEAN;
+            code.push(TOBOOLEAN);
         }
-        code += `return ${pipelineName}(${args.join(', ')})`;
-        sections.main = code;
+        // Define the 'saveOutputs' method
+        var saveNodes = {};
+        Object.keys(this.outputDataToOpId).forEach(dataId => {
+            var opId = this.outputDataToOpId[dataId];
+            // The key is used for the output name resolution. The
+            // value is used for the serialization fn look-up. So,
+            // the key is the output operation id and the value is
+            // the data port connected to the output operation
+            saveNodes[opId] = this._portCache[this._srcIdFor[dataId]];
+        });
+
+        // Add dictionary of serializers/deserializers
+        code.push(
+            this.createTorchFnDict('load', loadNodes, 'deserialize', 'path'),
+            this.createTorchFnDict('save', saveNodes, 'serialize', 'path, data')
+        );
+
+        // Add a saveOutputs method for convenience
+        code.push([
+            'local function saveOutputs(data)',
+            indent(Object.keys(this.isOutputOp).map(id => {
+                var name = this._nameFor[id];
+                return `print('saving ${name}...')\nsave['${name}']('${name}', data['${name}'])`;
+            }).join('\n')),
+            'end'
+        ].join('\n'));
+
+        code.push(
+            `local outputs = ${pipelineName}(${args.join(', ')})\n` +
+            'saveOutputs(outputs)',
+            'return outputs'
+        );
+
+        sections.main = code.join('\n\n');
+    };
+
+    GenerateExecFile.prototype.createTorchFnDict = function(name, nodeDict, attr, args) {
+        return [
+            `local ${name} = {}`,
+            Object.keys(nodeDict).map(id => {
+                var node = nodeDict[id];
+                return [
+                    `${name}['${this._nameFor[id]}'] = function(${args})`,
+                    indent(this.core.getAttribute(node, attr)),
+                    'end'
+                ].join('\n');
+            })
+        ].join('\n');
     };
 
     GenerateExecFile.prototype.addCustomClasses = function(sections) {
@@ -590,23 +656,34 @@ define([
         // For operations, register all output data node names by path
         return this.core.loadChildren(node)
             .then(cntrs => {
-                var cntr = cntrs.find(n => this.isMetaTypeOf(n, this.META.Outputs));
-                return this.core.loadChildren(cntr);
+                var outputs = cntrs.find(n => this.isMetaTypeOf(n, this.META.Outputs)),
+                    inputs = cntrs.find(n => this.isMetaTypeOf(n, this.META.Inputs));
+
+                return Q.all([inputs, outputs].map(cntr => this.core.loadChildren(cntr)));
             })
-            .then(outputs => {
+            .then(data => {
+                var inputs = data[0],
+                    outputs = data[1];
+
+                // Get the input type
                 outputs.forEach(output => {
-                    var dataId = this.core.getPath(output),
-                        base;
+                    var dataId = this.core.getPath(output);
 
                     name = this.core.getAttribute(output, 'name');
                     this._dataNameFor[dataId] = name;
 
-                    // Get the input type
-                    if (this.isInputOp[id]) {
-                        base = this.core.getBase(output);
-                        this.inputType[id] = this.core.getAttribute(base, 'name');
-                    }
+                    this._portCache[dataId] = output;
                 });
+                inputs.forEach(input => 
+                    this._portCache[this.core.getPath(input)] = input
+                );
+
+                // Extra recording for input/output nodes in the pipeline
+                if (this.isInputOp[id]) {
+                    this.inputNode[id] = outputs[0];
+                } else if (this.isOutputOp[id]) {
+                    this.outputDataToOpId[this.core.getPath(inputs[0])] = id;
+                }
             });
     };
 
