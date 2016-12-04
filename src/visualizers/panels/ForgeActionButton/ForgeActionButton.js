@@ -3,6 +3,7 @@
 
 define([
     'blob/BlobClient',
+    'js/Utils/SaveToDisk',
     'js/Constants',
     'panel/FloatingActionButton/FloatingActionButton',
     'deepforge/viz/PipelineControl',
@@ -16,6 +17,7 @@ define([
     'deepforge/globals'
 ], function (
     BlobClient,
+    SaveToDisk,
     CONSTANTS,
     PluginButton,
     PipelineControl,
@@ -358,6 +360,20 @@ define([
             this.client.deleteNode(nodeId);
             this.client.completeTransaction();
         }
+    };
+
+    ForgeActionButton.prototype.downloadFromBlob = function(hash) {
+        var name;
+
+        this._blobClient.getMetadata(hash)
+            .then(metadata => {
+                name = metadata.name;
+                return this._blobClient.getObjectAsString(hash);
+            })
+            .then(text => {
+                SaveToDisk.downloadTextAsFile(name, text);
+            })
+            .fail(err => this.logger.error(`Blob download failed: ${err}`));
     };
 
     return ForgeActionButton;
