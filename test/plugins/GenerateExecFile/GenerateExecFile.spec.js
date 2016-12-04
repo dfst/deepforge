@@ -1,7 +1,7 @@
 /*jshint node:true, mocha:true*/
 
 'use strict';
-describe.only('GenerateExecFile', function () {
+describe('GenerateExecFile', function () {
     var testFixture = require('../../globals'),
         path = testFixture.path,
         SEED_DIR = path.join(testFixture.DF_SEED_DIR, 'devProject'),
