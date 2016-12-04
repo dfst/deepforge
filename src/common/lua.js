@@ -2565,7 +2565,7 @@ function LuaContext(){
             case 'number':
                 return c;
             case 'string':
-                return parseInt(s) || dummy0;
+                return parseInt(c) || dummy0;
             default:
                 if (c == dummy0){
                     return c;

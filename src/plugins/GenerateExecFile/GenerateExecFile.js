@@ -276,14 +276,17 @@ define([
         // Define the operation functions...
         code.operations = {};
         for (var i = 0; i < sortedOps.length; i++) {
-            if (!this.isInputOp[sortedOps[i].id] && !baseIds.includes(sortedOps[i].baseId)) {
-                if (!this.isOutputOp[sortedOps[i].id]) {
+            if (this.isInputOp[sortedOps[i].id]) {
+                continue;
+            }
+            if (!this.isOutputOp[sortedOps[i].id]) {
+                if (!baseIds.includes(sortedOps[i].baseId)) {  // new definition
                     code.operations[sortedOps[i].basename] = this.defineOperationFn(sortedOps[i]);
                     baseIds.push(sortedOps[i].baseId);
-                    mainOps.push(sortedOps[i]);
-                } else {
-                    outputOps.push(sortedOps[i]);
                 }
+                mainOps.push(sortedOps[i]);
+            } else {
+                outputOps.push(sortedOps[i]);
             }
         }
 
@@ -566,7 +569,7 @@ define([
         lines = lines.concat(refInits);
         args = args.concat(op.refNames.map(name => `create_${name}()`));
         args = args.join(', ');
-        lines.push(`local ${op.name}_results = ${op.name}(${args})`);
+        lines.push(`local ${op.name}_results = ${op.basename}(${args})`);
 
         return lines.join('\n');
     };

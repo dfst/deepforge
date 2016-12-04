@@ -77,78 +77,91 @@ describe('GenerateExecFile', function () {
         });
     });
 
-    describe('export test case', function() {
-        var exportTestCode;
-        before(function(done) {
-            // Run the example
-            var pluginConfig = {},
-                context = {
-                    namespace: 'pipeline',
-                    project: project,
-                    commitHash: commitHash,
-                    branchName: 'test',
-                    activeNode: '/f/e'
-                };
+    [  // name, id, args, expected result
+        ['concat', '/f/e', 'hello world', 'helloworld', 'hello-world'],
+        ['math example', '/f/J', '2 2 2', 96, 'result']
+    ].forEach(testCase => {
+        var caseName = testCase[0],
+            nodeId = testCase[1],
+            cliArgs = testCase[2].split(' '),
+            saveData = testCase[3],
+            saveName = testCase[4],
+            exportTestCode;
 
-            manager.executePlugin(pluginName, pluginConfig, context, function (err, pluginResult) {
-                var blobClient = new BlobClient(gmeConfig, logger),
-                    codeHash = pluginResult.artifacts[0];
+        describe(caseName, function() {
+            before(function(done) {
+                // Run the example
+                var pluginConfig = {},
+                    context = {
+                        namespace: 'pipeline',
+                        project: project,
+                        commitHash: commitHash,
+                        branchName: 'test',
+                        activeNode: nodeId
+                    };
 
-                return blobClient.getObjectAsString(codeHash)
-                    .then(code => {
-                        exportTestCode = code;
-                        done();
-                    });
+                manager.executePlugin(pluginName, pluginConfig, context, function (err, pluginResult) {
+                    var blobClient = new BlobClient(gmeConfig, logger),
+                        codeHash = pluginResult.artifacts[0];
+
+                    return blobClient.getObjectAsString(codeHash)
+                        .then(code => {
+                            exportTestCode = code;
+                            done();
+                        });
+                });
             });
-        });
 
-        it('should generate valid lua', function () {
-            lua.compile(exportTestCode);
-        });
-
-        it('should save concatenated strings to hello-world', function (done) {
-            var context = lua.newContext(),
-                args = lua.newContext()._G,
-                torch = lua.newContext()._G,
-                cliArgs = ['hello', 'world'],
-                bin;
-
-            context.loadStdLib();
-            // Add the test input args
-            cliArgs.forEach((cliArg, index) => args.set(index+1, cliArg));
-            context._G.set('arg', args);
-
-            // Add the torch.save, torch.class mocks
-            torch.set('save', (path, data) => {
-                expect(path).to.equal('hello-world');
-                expect(data).to.equal(cliArgs.join(''));
-                done();
+            it('should generate valid lua', function () {
+                lua.compile(exportTestCode);
             });
-            torch.set('class', (name) => {
-                var cntr = context._G,
-                    classes,
-                    newClass = lua.newContext()._G;
 
-                if (name.includes('.')) {
-                    classes = name.split('.');
-                    name = classes.pop();
-                    for (var i = 0; i < classes.length; i++) {
-                        cntr = cntr.get(classes[i]);
+            it(`should save ${saveData} to ${saveName}`, function (done) {
+                var context = lua.newContext(),
+                    args = lua.newContext()._G,
+                    torch = lua.newContext()._G,
+                    bin;
+
+                context.loadStdLib();
+                // Add the test input args
+                cliArgs.forEach((cliArg, index) => args.set(index+1, cliArg));
+                context._G.set('arg', args);
+
+                // Add the torch.save, torch.class mocks
+                torch.set('save', (path, data) => {
+                    expect(path).to.equal(saveName);
+                    expect(data).to.equal(saveData);
+                    done();
+                });
+                torch.set('class', (name) => {
+                    var cntr = context._G,
+                        classes,
+                        newClass = lua.newContext()._G;
+
+                    if (name.includes('.')) {
+                        classes = name.split('.');
+                        name = classes.pop();
+                        for (var i = 0; i < classes.length; i++) {
+                            cntr = cntr.get(classes[i]);
+                        }
                     }
-                }
-                cntr.set(name, newClass);
-                return newClass;
-            });
-            context._G.set('torch', torch);
-            
-            // change require searchers to allow silent failing
-            context._G.get('package').set('searchers', [function() {
-                return () => {};
-            }]);
+                    cntr.set(name, newClass);
+                    return newClass;
+                });
+                context._G.set('torch', torch);
+                
+                // change require searchers to allow silent failing
+                context._G.get('package').set('searchers', [function() {
+                    return () => {};
+                }]);
 
-            // Cross compile to js and run
-            bin = context.loadString(exportTestCode);
-            bin();
+                // suppress print messages
+                context._G.set('print', () => {});
+
+                // Cross compile to js and run
+                bin = context.loadString(exportTestCode);
+                bin();
+            });
         });
     });
 });
