@@ -445,5 +445,9 @@ define([
         return false;
     };
 
+    OperationInterfaceEditorControl.prototype._isValidTerminalNode = function() {
+        return true;
+    };
+
     return OperationInterfaceEditorControl;
 });
