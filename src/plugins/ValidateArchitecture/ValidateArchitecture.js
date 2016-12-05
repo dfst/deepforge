@@ -29,8 +29,9 @@ define([
      * @classdesc This class represents the plugin ValidateArchitecture.
      * @constructor
      */
-    var TMP_DIR = '/tmp',
-        spawn = childProcess.spawn;  // TODO: configurable
+    var TMP_DIR = '/tmp',  // TODO: configurable
+        spawn = childProcess.spawn,
+        GET_ARG_INDEX = /argument #([0-9]+) to/;
     var ValidateArchitecture = function () {
         // Call base class' constructor.
         PluginBase.call(this);
@@ -52,8 +53,12 @@ define([
         var name = this.core.getAttribute(this.activeNode, 'name');
 
         this._callback = callback;
-        this._tmpFileId = `${name}_${Date.now()}`;
-        return PluginBase.prototype.main.call(this, callback);
+        // make the tmp dir
+        this._tmpFileId = path.join(TMP_DIR, `${name}_${Date.now()}`);
+        fs.mkdir(this._tmpFileId, err => {
+            if (err) throw err;
+            return PluginBase.prototype.main.call(this, callback);
+        });
     };
 
     ValidateArchitecture.prototype.createOutputFiles = function (tree) {
@@ -62,8 +67,10 @@ define([
             id;
 
         // Generate code for each layer
+        this.layerName = {};
         for (var i = layers.length; i--;) {
             id = layers[i][SimpleNodeConstants.NODE_PATH];
+            this.layerName[id] = layers[i].name;
             tests.push([id, this.createLayerTestCode(layers[i])]);
         }
 
@@ -87,13 +94,16 @@ define([
     ValidateArchitecture.prototype.validateLayers = function (layerTests) {
         return Q.all(layerTests.map(layer => this.validateLayer(layer[0], layer[1])))
             .then(results => results.filter(result => !!result));
+            // TODO: Remove tmp files
     };
 
     ValidateArchitecture.prototype.validateLayer = function (id, code) {
         var deferred = Q.defer(),
-            tmpPath = path.join(TMP_DIR, this._tmpFileId);
+            tmpPath = path.join(this._tmpFileId, id.replace(/[^a-zA-Z\d]+/g, '_'));
 
         // Write to a temp file
+        console.log('--- Test code for ' + id + ' ---');
+        console.log(code);
         fs.writeFile(tmpPath, code, err => {
             var job,
                 stderr = '',
@@ -102,7 +112,6 @@ define([
             if (err) {
                 return deferred.reject(`Could not create tmp file at ${tmpPath}: ${err}`);
             }
-
             // Run the file
             job = spawn('th', [tmpPath]);
             job.stderr.on('data', data => stderr += data.toString());
@@ -123,9 +132,26 @@ define([
 
     ValidateArchitecture.prototype.parseError = function (id, stderr) {
         console.log(`error for ${id} is ${stderr}`);
+        var msg = stderr
+            .split('\n').shift()  // first line
+            .replace(/^[^:]*: /, '')  // remove the file path
+            .replace(/ at [^ ]*\)/, ')')  // remove last line number
+            .replace(/ to '\?'/, '');  // remove unknown symbol
+
+        // convert 'bad argument #[num]' to the argument name
+        if (msg.indexOf('bad argument') === 0) {
+            var layerName = this.layerName[id],
+                args = this.LayerDict[layerName].args,
+                argIndex = +(stderr.match(GET_ARG_INDEX)[1]),
+                argName = args[argIndex-1].name;
+
+            // FIXME: This is not the correct index...
+            msg = msg.replace(`#${argIndex}`, `"${argName}"`);
+        }
+
         return {
             id: id,
-            msg: stderr
+            msg: msg
         };
     };
 
