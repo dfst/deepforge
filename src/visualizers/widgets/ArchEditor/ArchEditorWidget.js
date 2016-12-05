@@ -223,5 +223,16 @@ define([
             .then(selected => this.insertLayer(selected.node.id, item.id));
     };
 
+    ArchEditorWidget.prototype.displayErrors = function(errors) {
+        // For each of the errors, highlight the given nodes
+        _.values(this.items).forEach(item => item.clear());
+        errors.forEach(error => {
+            var id = error.id,
+                msg = error.msg;
+
+            this.items[id].warn(msg);
+        });
+    };
+
     return ArchEditorWidget;
 });
