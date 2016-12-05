@@ -52,6 +52,10 @@
       "UpdateLibrarySeed": {
         "src": "src/plugins/UpdateLibrarySeed",
         "test": "test/plugins/UpdateLibrarySeed"
+      },
+      "ValidateArchitecture": {
+        "src": "src/plugins/ValidateArchitecture",
+        "test": "test/plugins/ValidateArchitecture"
       }
     },
     "layouts": {
