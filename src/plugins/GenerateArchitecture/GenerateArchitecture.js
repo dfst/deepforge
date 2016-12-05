@@ -49,6 +49,11 @@ define([
         this.LayerDict = createLayerDict(this.core, this.META);
         this.uniqueId = 2;
         this.varnames = {net: true};
+        this.definitions = [
+            'require \'nn\'',
+            'require \'rnn\''
+        ];
+
         return PluginBase.prototype.main.apply(this, arguments);
     };
 
@@ -70,11 +75,6 @@ define([
         var layers = tree[SimpleNodeConstants.CHILDREN],
             result = {},
             code = '';
-
-        this.definitions = [
-            'require \'nn\'',
-            'require \'rnn\''
-        ];
 
         // Add an index to each layer
         layers.forEach((l, index) => l[INDEX] = index);
