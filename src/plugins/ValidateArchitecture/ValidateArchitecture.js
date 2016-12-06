@@ -29,9 +29,11 @@ define([
      * @classdesc This class represents the plugin ValidateArchitecture.
      * @constructor
      */
-    var TMP_DIR = '/tmp',  // TODO: configurable
+    var TMP_DIR = '/tmp',
         spawn = childProcess.spawn,
-        GET_ARG_INDEX = /argument #([0-9]+) to/;
+        GET_ARG_INDEX = /argument #([0-9]+) to/,
+        TORCH_INSTALLED = true;
+
     var ValidateArchitecture = function () {
         // Call base class' constructor.
         PluginBase.call(this);
@@ -66,6 +68,10 @@ define([
             tests = [],
             id;
 
+        if (!TORCH_INSTALLED) {
+            return this.validationFinished();
+        }
+
         // Generate code for each layer
         this.layerName = {};
         for (var i = layers.length; i--;) {
@@ -76,12 +82,22 @@ define([
 
         // Run each code snippet
         this.validateLayers(tests)
-            .then(errors => {
-                console.log('errors', errors);
-                errors.forEach(error => this.createMessage(null, error));
-                this.result.setSuccess(true);
-                this._callback(null, this.result);
-            });
+            .then(errors => this.validationFinished(errors))
+            .fail(err => this.logger.error(`validation failed: ${err}`));
+    };
+
+    ValidateArchitecture.prototype.validationFinished = function (errors) {
+        if (!TORCH_INSTALLED) {
+            this.logger.warn('Torch is not installed. Architecture validation is not supported.');
+        } else {
+            this.logger.info(`found ${errors.length} validation errors`);
+        }
+
+        this.createMessage(null, {
+            errors: TORCH_INSTALLED ? errors : null
+        });
+        this.result.setSuccess(true);
+        this._callback(null, this.result);
     };
 
     ValidateArchitecture.prototype.createLayerTestCode = function (layer) {
@@ -101,37 +117,42 @@ define([
         var deferred = Q.defer(),
             tmpPath = path.join(this._tmpFileId, id.replace(/[^a-zA-Z\d]+/g, '_'));
 
-        // Write to a temp file
-        console.log('--- Test code for ' + id + ' ---');
-        console.log(code);
-        fs.writeFile(tmpPath, code, err => {
-            var job,
-                stderr = '',
-                stdout = '';
+        if (!TORCH_INSTALLED) {
+            deferred.resolve(null);
+        } else {
+            // Write to a temp file
+            fs.writeFile(tmpPath, code, err => {
+                var job,
+                    stderr = '',
+                    stdout = '';
 
-            if (err) {
-                return deferred.reject(`Could not create tmp file at ${tmpPath}: ${err}`);
-            }
-            // Run the file
-            job = spawn('th', [tmpPath]);
-            job.stderr.on('data', data => stderr += data.toString());
-            job.stdout.on('data', data => stdout += data.toString());
-            job.on('close', code => {
-                // TODO: Ignore errors if 'th' not found
-                if (code === 0) {
-                    deferred.resolve(null);
-                } else {
-                    // If it errored, clean the error and return it
-                    deferred.resolve(this.parseError(id, stderr));
+                if (err) {
+                    return deferred.reject(`Could not create tmp file at ${tmpPath}: ${err}`);
                 }
+                // Run the file
+                job = spawn('th', [tmpPath]);
+                job.stderr.on('data', data => stderr += data.toString());
+                job.stdout.on('data', data => stdout += data.toString());
+                job.on('error', err => {
+                    if (err.code === 'ENOENT') {
+                        TORCH_INSTALLED = false;
+                    }
+                });
+                job.on('close', code => {
+                    if (code === 0) {
+                        deferred.resolve(null);
+                    } else {
+                        // If it errored, clean the error and return it
+                        deferred.resolve(this.parseError(id, stderr));
+                    }
+                });
             });
-        });
+        }
 
         return deferred.promise;
     };
 
     ValidateArchitecture.prototype.parseError = function (id, stderr) {
-        console.log(`error for ${id} is ${stderr}`);
         var msg = stderr
             .split('\n').shift()  // first line
             .replace(/^[^:]*: /, '')  // remove the file path
@@ -146,6 +167,8 @@ define([
                 argName = args[argIndex-1].name;
 
             // FIXME: This is not the correct index...
+            // This is the index for the incorrect argument passed to the
+            // tensor...
             msg = msg.replace(`#${argIndex}`, `"${argName}"`);
         }
 
