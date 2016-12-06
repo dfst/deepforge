@@ -230,7 +230,7 @@ define([
             var id = error.id,
                 msg = error.msg;
 
-            this.items[id].warn(msg);
+            this.items[id].error(msg);
         });
     };
 
