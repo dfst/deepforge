@@ -38,7 +38,7 @@ define([
         ThumbnailControl.call(this, options);
         this._config = DEFAULT_CONFIG;
         ComponentSettings.resolveWithWebGMEGlobal(this._config, this.getComponentId());
-        this.validateLayers = _.debounce(() => this.validateArchitecture(), 1500);
+        this.validateLayers = _.debounce(() => this.validateArchitecture(), 500);
     };
 
     _.extend(ArchEditorControl.prototype, ThumbnailControl.prototype);
@@ -257,12 +257,10 @@ define([
     };
 
     ArchEditorControl.prototype.validateArchitecture = function() {
-        // TODO: this should be triggered with a delay after the last edit
-        // the calls should be batched
         var pluginId = 'ValidateArchitecture',
             context = this._client.getCurrentPluginContext(pluginId);
 
-        console.log('validating arch');
+        this._logger.info('about to validate arch');
         // Run the plugin in the browser (set namespace)
         context.managerConfig.namespace = 'nn';
         context.pluginConfig = {};
@@ -270,7 +268,7 @@ define([
             .then(res => {
                 this._widget.displayErrors(res.messages.map(msg => msg.message));
             })
-            .fail(err => this.logger.warn(`Validation failed: ${err}`));
+            .fail(err => this._logger.warn(`Validation failed: ${err}`));
     };
 
     return ArchEditorControl;
