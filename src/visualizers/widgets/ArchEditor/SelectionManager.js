@@ -1,4 +1,4 @@
-/* globals _, WebGMEGlobal, define*/
+/* globals _, define*/
 define([
     'widgets/EasyDAG/SelectionManager',
     'deepforge/viz/Buttons'
