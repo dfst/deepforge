@@ -1,8 +1,8 @@
 [![Release State](https://img.shields.io/badge/state-beta-yellow.svg)](https://img.shields.io/badge/state-beta-yellow.svg)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](./LICENSE)
-[![Build Status](https://travis-ci.org/dfst/deepforge.svg?branch=master)](https://travis-ci.org/dfst/deepforge)
+[![Build Status](https://travis-ci.org/deepforge-dev/deepforge.svg?branch=master)](https://travis-ci.org/deepforge-dev/deepforge)
 [![Join the chat at https://gitter.im/dfst/deepforge](https://badges.gitter.im/dfst/deepforge.svg)](https://gitter.im/dfst/deepforge?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-[![Stories in Ready](https://badge.waffle.io/dfst/deepforge.png?label=ready&title=Ready)](https://waffle.io/dfst/deepforge)
+[![Stories in Ready](https://badge.waffle.io/deepforge-dev/deepforge.png?label=ready&title=Ready)](https://waffle.io/deepforge-dev/deepforge)
 
 **Notice**: DeepForge is still a work in progress and in beta! That being said, any contributions and/or feedback is greatly appreciated. If you have any questions, check out the [wiki](https://github.com/dfst/deepforge/wiki/) or drop me a line on the gitter!
 
