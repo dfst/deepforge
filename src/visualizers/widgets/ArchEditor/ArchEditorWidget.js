@@ -42,6 +42,7 @@ define([
         }
         ThumbnailWidget.apply(this, arguments);
         this._emptyMsg = 'Click to add a new layer';
+        this.hasError = {};
     };
 
     _.extend(ArchEditorWidget.prototype, ThumbnailWidget.prototype);
@@ -225,12 +226,24 @@ define([
 
     ArchEditorWidget.prototype.displayErrors = function(errors) {
         // For each of the errors, highlight the given nodes
-        _.values(this.items).forEach(item => item.clear());
-        errors.forEach(error => {
-            var id = error.id,
-                msg = error.msg;
+        var oldErrored = Object.keys(this.hasError),
+            currentErrored = errors.map(err => err.id),
+            newErrored = _.difference(currentErrored, oldErrored),
+            fixedLayers = _.difference(oldErrored, currentErrored);
 
-            this.items[id].error(msg);
+        this._logger.info('updating displayed errors to', currentErrored);
+        this.hasError = {};
+        newErrored.forEach(id => {
+            if (this.items[id]) {
+                this.items[id].decorator.highlight('red');
+                this.hasError[id] = true;
+            }
+        });
+
+        fixedLayers.forEach(id => {
+            if (this.items[id]) {
+                this.items[id].clear();
+            }
         });
     };
 
