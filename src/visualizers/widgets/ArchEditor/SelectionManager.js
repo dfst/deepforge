@@ -7,7 +7,6 @@ define([
     Buttons
 ) {
 
-    var client = WebGMEGlobal.Client;
     var SelectionManager = function() {
         ManagerBase.apply(this, arguments);
     };
