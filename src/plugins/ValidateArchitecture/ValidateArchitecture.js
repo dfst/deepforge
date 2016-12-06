@@ -180,5 +180,10 @@ define([
 
     ValidateArchitecture.prototype._saveOutput = function () {};
 
+    // for testing
+    ValidateArchitecture.prototype.setTorchInstalled = function (value) {
+        TORCH_INSTALLED = !!value;
+    };
+
     return ValidateArchitecture;
 });
