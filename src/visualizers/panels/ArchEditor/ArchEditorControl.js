@@ -266,7 +266,10 @@ define([
         context.pluginConfig = {};
         Q.ninvoke(this._client, 'runServerPlugin', pluginId, context)
             .then(res => {
-                this._widget.displayErrors(res.messages.map(msg => msg.message));
+                var results = res.messages[0].message;
+                if (results.errors !== null) {
+                    this._widget.displayErrors(results.errors);
+                }
             })
             .fail(err => this._logger.warn(`Validation failed: ${err}`));
     };
