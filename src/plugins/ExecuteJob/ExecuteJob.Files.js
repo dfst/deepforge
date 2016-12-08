@@ -285,7 +285,7 @@ define([
     };
 
     ExecuteJob.prototype.createAttributeFile = function (node, files) {
-        var skip = ['code', 'stdout', 'execFiles', 'jobId', 'secret'],
+        var skip = ['code', 'stdout', 'execFiles', 'jobId', 'secret', 'lineOffset'],
             numOrBool = /^(-?\d+\.?\d*((e|e-)\d+)?|(true|false))$/,
             table;
 
