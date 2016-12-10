@@ -94,7 +94,10 @@ describe('ValidateArchitecture', function () {
                 expect(dir).to.equal(plugin._tmpFileId);
                 return oldMkdir(dir, cb);
             };
-            plugin.main(done);
+            plugin.main(() => {
+                fs.mkdir = oldMkdir;
+                done();
+            });
         });
 
         it('should rm tmp dir', function(done) {
