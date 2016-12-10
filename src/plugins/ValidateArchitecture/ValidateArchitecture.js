@@ -8,7 +8,8 @@ define([
     'q',
     'fs',
     'path',
-    'child_process'
+    'child_process',
+    'rimraf'
 ], function (
     PluginBase,
     SimpleNodeConstants,
@@ -16,7 +17,8 @@ define([
     Q,
     fs,
     path,
-    childProcess
+    childProcess,
+    rm_rf
 ) {
     'use strict';
 
@@ -111,8 +113,9 @@ define([
 
     ValidateArchitecture.prototype.validateLayers = function (layerTests) {
         return Q.all(layerTests.map(layer => this.validateLayer(layer[0], layer[1])))
-            .then(results => results.filter(result => !!result));
-            // TODO: Remove tmp files
+            .then(results => Q.nfcall(rm_rf, this._tmpFileId)
+                .then(() => results.filter(result => !!result))
+            );
     };
 
     ValidateArchitecture.prototype.validateLayer = function (id, code) {
