@@ -101,8 +101,10 @@ define([
     };
 
     ValidateArchitecture.prototype.createLayerTestCode = function (layer) {
-        // TODO: add custom layer definition if necessary
+        var customLayerDefs = this.genLayerDefinitions([layer]);
+
         return this.definitions.concat([
+            customLayerDefs,
             this.createLayer(layer)
         ]).join('\n');
     };
