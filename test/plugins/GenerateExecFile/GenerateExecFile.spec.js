@@ -5,6 +5,7 @@ describe('GenerateExecFile', function () {
     var testFixture = require('../../globals'),
         lua = require('../../../src/common/lua'),
         path = testFixture.path,
+        assert = require('assert'),
         SEED_DIR = path.join(testFixture.DF_SEED_DIR, 'devProject'),
         gmeConfig = testFixture.getGmeConfig(),
         expect = testFixture.expect,
@@ -139,19 +140,23 @@ describe('GenerateExecFile', function () {
                         expect(data).to.equal(saveData);
                         done();
                     });
-                    torch.set('class', (name) => {
-                        var cntr = context._G,
-                            classes,
-                            newClass = lua.newContext()._G;
+                    torch.set('class', name => {
+                        try {
+                            var cntr = context._G,
+                                classes,
+                                newClass = lua.newContext()._G;
 
-                        if (name.includes('.')) {
-                            classes = name.split('.');
-                            name = classes.pop();
-                            for (var i = 0; i < classes.length; i++) {
-                                cntr = cntr.get(classes[i]);
+                            if (name.includes('.')) {
+                                classes = name.split('.');
+                                name = classes.pop();
+                                for (var i = 0; i < classes.length; i++) {
+                                    cntr = cntr.get(classes[i]) || cntr;
+                                }
                             }
+                            cntr.set(name, newClass);
+                        } catch(e) {
+                            assert(!e, `Failed defining class ${name}: ${e}`);
                         }
-                        cntr.set(name, newClass);
                         return newClass;
                     });
                     context._G.set('torch', torch);
