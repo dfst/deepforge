@@ -6,6 +6,9 @@ var testFixture = require('../../globals');
 describe('ValidateArchitecture', function () {
     var gmeConfig = testFixture.getGmeConfig(),
         expect = testFixture.expect,
+        fs = require('fs'),
+        rm_rf = require('rimraf'),
+        mockery = require('mockery'),
         logger = testFixture.logger.fork('ValidateArchitecture'),
         PluginCliManager = testFixture.WebGME.PluginCliManager,
         manager = new PluginCliManager(null, logger, gmeConfig),
@@ -81,6 +84,30 @@ describe('ValidateArchitecture', function () {
             plugin.main(err => {
                 expect(err).to.equal(null);
                 expect(Object.keys(validated).length).to.equal(5);
+                done();
+            });
+        });
+
+        it('should make tmp dir', function(done) {
+            var oldMkdir = fs.mkdir;
+            fs.mkdir = (dir, cb) => {
+                expect(dir).to.equal(plugin._tmpFileId);
+                return oldMkdir(dir, cb);
+            };
+            plugin.main(done);
+        });
+
+        it('should rm tmp dir', function(done) {
+            mockery.enable({
+                warnOnReplace: false,
+                warnOnUnregistered: false
+            });
+            mockery.registerMock('rimraf', (dir, cb) => {
+                expect(dir).to.equal(plugin._tmpFileId);
+                return rm_rf(dir, cb);
+            });
+            plugin.main(() => {
+                mockery.disable();
                 done();
             });
         });
