@@ -117,6 +117,7 @@ describe('ValidateArchitecture', function () {
 
         // check that errors are returned in the message
         it('should return two error messages', function(done) {
+            this.timeout(3000);
             plugin.validateLayer = (id, code) => {
                 if (code.indexOf('Linear()') === -1) {
                     return null;
