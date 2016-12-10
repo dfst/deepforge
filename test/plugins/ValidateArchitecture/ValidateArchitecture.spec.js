@@ -123,4 +123,31 @@ describe('ValidateArchitecture', function () {
             });
         });
     });
+
+    describe('custom layer test case', function() {
+        beforeEach(done => {
+            var context = {
+                project: project,
+                commitHash: commitHash,
+                namespace: 'nn',
+                branchName: 'test',
+                activeNode: '/4/5'  // "simple broken" architecture
+            };
+
+            return manager.initializePlugin(pluginName)
+                .then(plugin_ => {
+                    plugin = plugin_;
+                    return manager.configurePlugin(plugin, {}, context);
+                })
+                .nodeify(done);
+        });
+
+        it('should add custom layer def to test code', function(done) {
+            plugin.validateLayer = (id, code) => {
+                expect(code.indexOf('torch.class')).to.not.equal(-1);
+                return null;
+            };
+            plugin.main(done);
+        });
+    });
 });
