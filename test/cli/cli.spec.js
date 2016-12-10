@@ -1,58 +1,59 @@
-var mockery = require('mockery'),
-    assert = require('assert'),
-    path = require('path'),
-    nop = () => {},
-    cli;
+describe('cli', function() {
+    var mockery = require('mockery'),
+        assert = require('assert'),
+        path = require('path'),
+        nop = () => {},
+        cli;
 
-var callRegister = {
-    childProcess: {
-        execSync: []
-    }
-};
-
-var mocks = {
-    childProcess: {},
-    rimraf: {}
-};
-
-var childProcess = {
-    execSync: function(cmd) {
-        callRegister.childProcess.execSync.push(cmd);
-        if (mocks.childProcess.execSync) {
-            return mocks.childProcess.execSync.apply(this, arguments);
+    var callRegister = {
+        childProcess: {
+            execSync: []
         }
-    },
-    spawnSync: function(cmd) {
-        if (cmd === 'luarocks') {
+    };
+
+    var mocks = {
+        childProcess: {},
+        rimraf: {}
+    };
+
+    var childProcess = {
+        execSync: function(cmd) {
+            callRegister.childProcess.execSync.push(cmd);
+            if (mocks.childProcess.execSync) {
+                return mocks.childProcess.execSync.apply(this, arguments);
+            }
+        },
+        spawnSync: function(cmd) {
+            if (cmd === 'luarocks') {
+                return {
+                    stdout: 'rnn'
+                };
+            }
+            return {};
+        },
+        spawn: function() {
+            if (mocks.childProcess.spawn) {
+                mocks.childProcess.spawn.apply(this, arguments);
+            }
             return {
-                stdout: 'rnn'
+                on: () => {},
+                stdout: {
+                    on: () => {}
+                },
+                stderr: {
+                    on: () => {}
+                }
             };
         }
-        return {};
-    },
-    spawn: function() {
-        if (mocks.childProcess.spawn) {
-            mocks.childProcess.spawn.apply(this, arguments);
+    };
+    var rimraf = {};
+    rimraf.sync = function() {
+        if (mocks.rimraf.sync) {
+            mocks.rimraf.sync.apply(this, arguments);
         }
-        return {
-            on: () => {},
-            stdout: {
-                on: () => {}
-            },
-            stderr: {
-                on: () => {}
-            }
-        };
-    }
-};
-var rimraf = {};
-rimraf.sync = function() {
-    if (mocks.rimraf.sync) {
-        mocks.rimraf.sync.apply(this, arguments);
-    }
-};
+    };
 
-describe('cli', function() {
+
     before(function() {
         // create the mocks
         mockery.enable({
