@@ -83,7 +83,9 @@ define([
             exists = {},
             i = 2;
 
-        children.forEach(child => exists[child.getAttribute('name')] = true);
+        children
+            .filter(child => child !== null)
+            .forEach(child => exists[child.getAttribute('name')] = true);
 
         while (exists[name]) {
             name = basename + '_' + i;
