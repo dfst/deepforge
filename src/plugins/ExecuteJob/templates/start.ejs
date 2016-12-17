@@ -74,7 +74,7 @@ requirejs([
     var checkFinished = () => {
         if (exitCode !== null && remainingImageCount === 0) {
             log('finished!');
-            process.exit(exitCode);
+            cleanup();
         }
     };
 
@@ -201,14 +201,46 @@ requirejs([
 
     // Download the large files
     var inputData = JSON.parse(fs.readFileSync('./input-data.json')),
-        inputPaths = Object.keys(inputData);
+        inputPaths = Object.keys(inputData),
+        pid,
+        job,
+        cleanup;
+
+    // Make sure to kill the spawned process group on exit
+    cleanup = function() {
+        if (job) {
+            pid = job.pid;
+            job = null;
+            log(`killing process group: ${pid}`);
+            process.kill(pid, 'SIGTERM');
+            if (exitCode === null) {
+                exitCode = 1;
+            }
+            log(`exiting w/ code ${exitCode}`);
+            process.exit(exitCode);
+        }
+    };
+
+    process.on('exit', () => {
+        log('received "exit" event')
+        cleanup();
+    });
+    process.on('SIGINT', () => {
+        log('received "SIGINT" event')
+        exitCode = 130;
+        cleanup();
+    });
+    process.on('uncaughtException', () => {
+        log('received "uncaughtException" event')
+        cleanup();
+    });
 
     // Request the data from the blob
     prepareCache()
         .then(() => Q.all(inputPaths.map(ipath => getData(ipath, inputData[ipath]))))
         .then(() => {
             // Run 'th init.lua' and merge the stdout, stderr
-            var job = spawn('th', ['init.lua']);
+            job = spawn('th', ['init.lua']);
             job.stdout.on('data', onStdout);
             job.stderr.on('data', onStderr);
             job.on('close', code => {
