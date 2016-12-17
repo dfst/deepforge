@@ -212,7 +212,7 @@ requirejs([
             pid = job.pid;
             job = null;
             log(`killing process group: ${pid}`);
-            process.kill(pid, 'SIGTERM');
+            process.kill(-pid, 'SIGTERM');
             if (exitCode === null) {
                 exitCode = 1;
             }
@@ -240,7 +240,7 @@ requirejs([
         .then(() => Q.all(inputPaths.map(ipath => getData(ipath, inputData[ipath]))))
         .then(() => {
             // Run 'th init.lua' and merge the stdout, stderr
-            job = spawn('th', ['init.lua']);
+            job = spawn('th', ['init.lua'], {detached: true});
             job.stdout.on('data', onStdout);
             job.stderr.on('data', onStderr);
             job.on('close', code => {
