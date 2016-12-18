@@ -213,11 +213,10 @@ requirejs([
             job = null;
             log(`killing process group: ${pid}`);
             process.kill(-pid, 'SIGTERM');
-            if (exitCode === null) {
-                exitCode = 1;
+            if (exitCode !== null) {
+                log(`exiting w/ code ${exitCode}`);
+                process.exit(exitCode);
             }
-            log(`exiting w/ code ${exitCode}`);
-            process.exit(exitCode);
         }
     };
 
@@ -227,8 +226,8 @@ requirejs([
     });
     process.on('SIGINT', () => {
         log('received "SIGINT" event')
-        exitCode = 130;
         cleanup();
+        process.exit();
     });
     process.on('uncaughtException', () => {
         log('received "uncaughtException" event')
