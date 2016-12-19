@@ -224,10 +224,10 @@ requirejs([
         log('received "exit" event')
         cleanup();
     });
-    process.on('SIGINT', () => {
+    process.on('SIGINT', function() {
         log('received "SIGINT" event')
         cleanup();
-        process.exit();
+        process.exit(130);
     });
     process.on('uncaughtException', () => {
         log('received "uncaughtException" event')
