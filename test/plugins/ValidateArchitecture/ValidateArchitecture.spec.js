@@ -129,8 +129,6 @@ describe('ValidateArchitecture', function () {
                 }
             };
             plugin.main((err, result) => {
-                console.log('finished!');
-                console.log(result.messages[0].message);
                 var invalidLayers = result.messages[0].message.errors.map(msg => msg.id);
                 expect(result.messages[0]).to.not.equal(undefined);
                 done();
