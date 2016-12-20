@@ -460,7 +460,7 @@ define([
 
         classNodes = metanodes.filter(node => {
             var base = this.core.getBase(node),
-                baseId = this.core.getPath(base),
+                baseId,
                 deps = [],
                 name,
                 count = 1;
@@ -468,6 +468,7 @@ define([
             // Count the sets back to a class node
             while (base) {
                 deps.push(this.core.getAttribute(base, 'name'));
+                baseId = this.core.getPath(base);
                 if (isClass[baseId]) {
                     inheritanceLvl[this.core.getPath(node)] = count;
                     name = this.core.getAttribute(node, 'name');
@@ -475,7 +476,6 @@ define([
                     return true;
                 }
                 base = this.core.getBase(base);
-                baseId = this.core.getPath(base);
                 count++;
             }
 
