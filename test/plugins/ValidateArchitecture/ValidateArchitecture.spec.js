@@ -129,7 +129,10 @@ describe('ValidateArchitecture', function () {
                     };
                 }
             };
+            var first = true;
             plugin.main((err, result) => {
+                assert(first);
+                first = false;
                 console.log('invoking callback!');
                 console.log('err', err);
                 console.log('result', result);
