@@ -86,6 +86,7 @@ define([
         } else {
             this.deleteNode(item.id);
         }
+        this.selectionManager.deselect();
     };
 
     return {
