@@ -131,6 +131,7 @@ describe('ValidateArchitecture', function () {
             plugin.main((err, result) => {
                 var invalidLayers = result.messages[0].message.errors.map(msg => msg.id);
                 expect(result.messages[0]).to.not.equal(undefined);
+                expect(invalidLayers.length).to.equal(2);
                 done();
             });
         });
@@ -138,14 +139,12 @@ describe('ValidateArchitecture', function () {
         describe('w/o torch support', function() {
             before(function(done) {
                 preparePlugin(() => {
-                    plugin.setTorchInstalled(false);
                     done();
                 });
             });
 
-            after(() => plugin.setTorchInstalled(true));
-
             it('should return "null" for messages', function(done) {
+                plugin.setTorchInstalled(false);
                 plugin.main((err, result) => {
                     var errors = result.messages[0].message.errors;
                     expect(errors).to.equal(null);
