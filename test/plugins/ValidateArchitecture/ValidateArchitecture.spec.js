@@ -117,8 +117,9 @@ describe('ValidateArchitecture', function () {
 
         // check that errors are returned in the message
         it('should return two error messages', function(done) {
-            this.timeout(3000);
             plugin.validateLayer = (id, code) => {
+                console.log('validating layer:', id);
+                console.log('code is', code);
                 if (code.indexOf('Linear()') === -1) {
                     return null;
                 } else {  // error!
@@ -129,6 +130,9 @@ describe('ValidateArchitecture', function () {
                 }
             };
             plugin.main((err, result) => {
+                console.log('invoking callback!');
+                console.log('err', err);
+                console.log('result', result);
                 var invalidLayers = result.messages[0].message.errors.map(msg => msg.id);
                 expect(invalidLayers.length).to.equal(2);
                 done();
