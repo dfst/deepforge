@@ -18,8 +18,8 @@
     "dotenv": "^2.0.0",
     "exists-file": "^2.1.0",
     "express": "^4.14.0",
-    "lodash.difference": "^4.1.2",
     "graceful-fs": "^4.1.10",
+    "lodash.difference": "^4.1.2",
     "lodash.merge": "^4.5.1",
     "mongodb": "^2.2.10",
     "nodemon": "^1.9.2",
@@ -30,6 +30,7 @@
     "webgme-breadcrumbheader": "^2.1.1",
     "webgme-chflayout": "^2.0.0",
     "webgme-easydag": "dfst/webgme-easydag",
+    "webgme-executor-worker": "^1.0.1",
     "webgme-fab": "dfst/webgme-fab",
     "webgme-simple-nodes": "^2.1.0"
   },
