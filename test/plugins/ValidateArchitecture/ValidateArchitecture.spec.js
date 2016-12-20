@@ -67,6 +67,7 @@ describe('ValidateArchitecture', function () {
             return manager.initializePlugin(pluginName)
                 .then(plugin_ => {
                     plugin = plugin_;
+                    plugin.setTorchInstalled(true);
                     return manager.configurePlugin(plugin, {}, context);
                 })
                 .nodeify(done);

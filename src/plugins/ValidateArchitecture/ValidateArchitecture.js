@@ -83,8 +83,6 @@ define([
         }
 
         // Run each code snippet
-        console.log('found ' + tests.length + ' tests:');
-        console.log('\t', tests.map(t => t[0]));
         this.validateLayers(tests)
             .then(errors => this.validationFinished(errors))
             .fail(err => this.logger.error(`validation failed: ${err}`));
@@ -114,7 +112,6 @@ define([
     };
 
     ValidateArchitecture.prototype.validateLayers = function (layerTests) {
-        console.log('layerTests.length', layerTests.length);
         return Q.all(layerTests.map(layer => this.validateLayer(layer[0], layer[1])))
             .then(results => Q.nfcall(rm_rf, this._tmpFileId)
                 .then(() => results.filter(result => !!result))
