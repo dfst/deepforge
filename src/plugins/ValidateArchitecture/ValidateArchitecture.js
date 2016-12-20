@@ -84,7 +84,7 @@ define([
 
         // Run each code snippet
         console.log('found ' + tests.length + ' tests:');
-        console.log('\t', tests.map(t => t[0]);
+        console.log('\t', tests.map(t => t[0]));
         this.validateLayers(tests)
             .then(errors => this.validationFinished(errors))
             .fail(err => this.logger.error(`validation failed: ${err}`));
