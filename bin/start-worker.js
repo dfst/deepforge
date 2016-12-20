@@ -6,8 +6,7 @@ var path = require('path'),
     spawn = childProcess.spawn,
     rm_rf = require('rimraf'),
     projectConfig = require(__dirname + '/../config'),
-    executorSrc = path.join(__dirname, '..', 'node_modules', 'webgme', 'src',
-        'server', 'middleware', 'executor', 'worker'),
+    executorSrc = path.join(__dirname, '..', 'node_modules', '.bin', 'webgme-executor-worker'),
     id = Date.now(),
     workerRootPath = process.env.DEEPFORGE_WORKER_DIR || path.join(__dirname, '..', 'src', 'worker'),
     workerPath = path.join(workerRootPath, `worker_${id}`),
@@ -60,7 +59,7 @@ var startExecutor = function() {
 
     // Start the executor
     var execJob = spawn('node', [
-        'node_worker.js',
+        executorSrc,
         workerConfigPath,
         workerTmp
     ]);
@@ -80,14 +79,4 @@ var createConfigJson = function() {
     fs.writeFile(workerConfigPath, JSON.stringify(config), startExecutor);
 };
 
-process.chdir(executorSrc);
-
-fs.mkdir(workerTmp, function() {
-    // npm install in this directory
-    var npmInstall = spawn('npm', ['install']);
-    npmInstall.stdout.pipe(process.stdout);
-    npmInstall.stderr.pipe(process.stderr);
-    npmInstall.on('close', function() {
-        createConfigJson();
-    });
-});
+fs.mkdir(workerTmp, createConfigJson);
