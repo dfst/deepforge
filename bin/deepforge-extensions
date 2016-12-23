@@ -1,0 +1,62 @@
+#!/usr/bin/env node
+
+var Command = require('commander').Command,
+    program = new Command(),
+    extender = require('../utils/extender');
+
+// Supported commands
+//  - add
+//  - remove
+//  - list
+//  - update
+program
+    .command('add <project>')
+    .description('Add an extension to deepforge')
+    .option('-n, --name <name>', 'Project name (if different from <project>)')
+    .action(project => {
+        console.log('loading extension from: ' + project);
+        // Install the project
+        // TODO
+
+        // Check for the extensions.json in the project (look up type, etc)
+        // TODO
+        var extConfig,
+            extType;
+
+        // Try to add the extension to the project (using the extender)
+        if (!extender.isSupportedType(extType)) {
+            console.error(`Unrecognized extension type: "${extType}"`);
+            process.exit(1);
+        }
+        extender.install[extType](extConfig);
+
+        // Record the extension in the ~/.deepforge/extensions.json
+        // TODO
+
+        console.log(project);
+    });
+
+program
+    .command('remove <name>')
+    .description('Remove an extension from deepforge')
+    .action(name => {
+        console.log('removing extension:', name);
+
+        // Look up the extension in ~/.deepforge/extensions.json
+        // TODO
+        var extConfig,
+            extType;
+
+        // Run the uninstaller using the extender
+        extender.uninstall[extType](extConfig);
+    });
+
+program
+    .command('list <name>', 'List installed deepforge extensions')
+    .option('-l, --long', 'Print project and version information')
+    .action((name, opts) => {
+        // Print the info. If 'long' is set, include the version info
+        // TODO
+    });
+
+program.parse(process.argv);

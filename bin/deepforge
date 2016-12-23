@@ -447,6 +447,10 @@ program
         }
     });
 
+// extensions
+program
+    .command('extensions <command>', 'Manage deepforge extensions');
+
 module.exports = function(cmd) {
     var cmds = cmd.split(/\s+/).filter(w => !!w);
     cmds.unshift('./bin/deepforge');
