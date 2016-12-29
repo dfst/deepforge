@@ -332,7 +332,7 @@ define([
                     // Add these inputs to the metadata
                     inputNames.forEach((input, index) => {
                         metadata.configStructure.push({
-                            name: inputData[index],
+                            name: inputData[index].getId(),
                             displayName: input,
                             description: `Export ${input} as static (non-input) content`,
                             value: false,
