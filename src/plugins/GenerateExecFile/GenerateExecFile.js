@@ -3,8 +3,8 @@
 
 define([
     'text!./metadata.json',
-    'text!./deepforge.ejs',
     'text!./toboolean.lua',
+    './format',
     'plugin/PluginBase',
     'deepforge/plugin/PtrCodeGen',
     'deepforge/Constants',
@@ -12,8 +12,8 @@ define([
     'q'
 ], function (
     pluginMetadata,
-    deepForgeTxt,
     TOBOOLEAN,
+    FORMATS,
     PluginBase,
     PtrCodeGen,
     CONSTANTS,
@@ -28,13 +28,7 @@ define([
             lineOffset: true,
             code: true
         },
-        RESERVED = /^(and|break|do|else|elseifend|false|for|function|if|in|local|nil|not|orrepeat|return|then|true|until|while|print)$/,
-        INDENT = '   ',
-        INIT_CLASSES_FN = '__initClasses',
-        INIT_LAYERS_FN = '__initLayers',
-        DEEPFORGE_CODE = _.template(deepForgeTxt)({
-            initCode: `${INIT_CLASSES_FN}()\n${INDENT}${INIT_LAYERS_FN}()`
-        });
+        RESERVED = /^(and|break|do|else|elseifend|false|for|function|if|in|local|nil|not|orrepeat|return|then|true|until|while|print)$/;
 
     /**
      * Initializes a new instance of GenerateExecFile.
@@ -99,8 +93,6 @@ define([
      * @param {function(string, plugin.PluginResult)} callback - the result callback
      */
     GenerateExecFile.prototype.main = function (callback) {
-        var name = this.core.getAttribute(this.activeNode, 'name');
-
         this.initRecords();
 
         // Get all the children and call generate exec file
@@ -112,8 +104,7 @@ define([
         }
 
         return this.core.loadChildren(this.activeNode)
-            .then(nodes => this.createExecFile(nodes))
-            .then(code => this.blobClient.putFile(`${name}.lua`, code))
+            .then(nodes => this.generateOutputFiles(nodes))
             .then(hash => {
                 this.result.addArtifact(hash);
                 this.result.setSuccess(true);
@@ -122,58 +113,25 @@ define([
             .fail(err => callback(err));
     };
 
-    GenerateExecFile.prototype.createExecFile = function (children) {
+    GenerateExecFile.prototype.generateOutputFiles = function (children) {
+        var name = this.core.getAttribute(this.activeNode, 'name');
+
         return this.createCodeSections(children)
             .then(sections => {
-                var classes,
-                    initClassFn,
-                    initLayerFn,
-                    code = [];
+                // Get the selected format
+                var format = this.getCurrentConfig().format || 'Torch CLI',
+                    generate = FORMATS[format],
+                    files;
 
-                // concat all the sections into a single file
-
-                // wrap the class/layer initialization in a fn
-                // Add the classes ordered wrt their deps
-                classes = Object.keys(sections.classes)
-                    .sort((a, b) => {
-                        // if a depends on b, switch them (return 1)
-                        if (sections.classDependencies[a].includes(b)) {
-                            return 1;
-                        }
-                        return -1;
-                    })
-                    // Create fns from the classes
-                    .map(name => [
-                        `local function init${name}()`,
-                        indent(sections.classes[name]),
-                        'end',
-                        `init${name}()`
-                    ].join('\n'));
-
-                initClassFn = [
-                    `local function ${INIT_CLASSES_FN}()`,
-                    indent(classes.join('\n\n')),
-                    'end'
-                ].join('\n');
-
-                code = code.concat(initClassFn);
-
-                // wrap the layers in a function
-                initLayerFn = [
-                    `local function ${INIT_LAYERS_FN}()`,
-                    indent(_.values(sections.layers).join('\n\n')),
-                    'end'
-                ].join('\n');
-                code = code.concat(initLayerFn);
-                code = code.concat(_.values(sections.operations));
-
-                code = code.concat(_.values(sections.pipelines));
-
-                code.push(DEEPFORGE_CODE);
-                code.push('deepforge.initialize()');
-                code.push(sections.main);
-
-                return code.join('\n\n');
+                files = generate.call(this, sections);
+                // If it returns a string, just put a single file
+                if (typeof files === 'string') {
+                    return this.blobClient.putFile(`${name}.lua`, files);
+                } else {  // filename -> content
+                    var artifact = this.blobClient.createArtifact(name);
+                    return artifact.putFiles(files)
+                        .then(() => artifact.save());
+                }
             });
     };
 
@@ -305,8 +263,10 @@ define([
         return code;
     };
 
-    var indent = function(text) {
-        return text.replace(/^/mg, INDENT);
+    // expose this utility function to format extensions
+    var indent = GenerateExecFile.prototype.indent = function(text, spaces) {
+        spaces = spaces || 3;
+        return text.replace(/^/mg, new Array(spaces+1).join(' '));
     };
 
     GenerateExecFile.prototype.defineOperationFn = function(operation) {
