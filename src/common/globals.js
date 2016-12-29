@@ -271,10 +271,8 @@ define([
             .filter(n => !n.getRegistry('isAbstract'))
             .map(node => node.getAttribute('name'));
 
-        //this.logger.info(`Found ${dataTypes.length} data types`);
-
-        // Add the target type to the pluginMetadata... hacky :/
-        var metadata = WebGMEGlobal.allPluginsMetadata[UPLOAD_PLUGIN], 
+        // Add the target type to the pluginMetadata...
+        var metadata = WebGMEGlobal.allPluginsMetadata[UPLOAD_PLUGIN],
             config = metadata.configStructure
                 .find(opt => opt.name === DATA_TYPE_CONFIG.name);
 
