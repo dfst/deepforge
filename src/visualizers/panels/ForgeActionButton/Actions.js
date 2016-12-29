@@ -5,12 +5,14 @@ define([
     'panel/FloatingActionButton/styles/Materialize',
     'q',
     'js/RegistryKeys',
-    'deepforge/globals'
+    'deepforge/globals',
+    'deepforge/Constants'
 ], function(
     Materialize,
     Q,
     REGISTRY_KEYS,
-    DeepForge
+    DeepForge,
+    Constants
 ) {
     var FILE_UPLOAD_INPUT = $('<input type="file" />');
 
@@ -266,7 +268,7 @@ define([
                 }
             },
             {
-                name: 'Export for local execution',
+                name: 'Export Pipeline',
                 icon: 'play_for_work',
                 priority: -1,
                 action: function() {
@@ -276,19 +278,81 @@ define([
                     // Run the plugin in the browser (set namespace)
                     context.managerConfig.namespace = 'pipeline';
                     context.pluginConfig = {};
-                    Q.ninvoke(this.client, 'runBrowserPlugin', pluginId, context)
-                        .then(res => {
-                            var id = this._currentNodeId,
-                                node = this.client.getNode(id),
-                                base = this.client.getNode(node.getBaseId()),
-                                type = base.getAttribute('name'),
-                                name = node.getAttribute('name');
 
-                            // Get the file and download it
-                            this.downloadFromBlob(res.artifacts[0]);
-                            Materialize.toast(`Exported ${name} ${type}!`, 2000);
+                    // Provide options for which inputs are fixed/static
+                    var metadata = WebGMEGlobal.allPluginsMetadata[pluginId],
+                        id = this._currentNodeId,
+                        node = this.client.getNode(id),
+                        inputData,
+                        inputNames;
+
+                    inputData = node.getChildrenIds()
+                        .map(id => this.client.getNode(id))
+                        .filter(node => {
+                            var typeId = node.getMetaTypeId(),
+                                type = this.client.getNode(typeId).getAttribute('name');
+
+                            return type === Constants.OP.INPUT;
                         })
-                        .fail(err => Materialize.toast(`Export failed: ${err}`, 2000));
+                        .map(input => {
+                            var outputCntr,
+                                outputIds;
+
+                            outputCntr = input.getChildrenIds()
+                                .map(id => this.client.getNode(id))
+                                .find(node => {
+                                    var typeId = node.getMetaTypeId(),
+                                        type = this.client.getNode(typeId).getAttribute('name');
+                                    return type === 'Outputs';
+                                });
+
+                            // input operations only have a single output
+                            outputIds = outputCntr.getChildrenIds();
+
+                            if (outputIds.length === 1) {
+                                return outputIds[0];
+                            } else if (outputIds.length > 1) {
+                                this.logger.warn(`Found multiple ids for input op: ${outputIds.join(', ')}`);
+                                return;
+                            }
+                        })
+                        .filter(outputId => !!outputId)
+                        .map(id => this.client.getNode(id))
+                        .filter(output => output.getAttribute('data'));
+
+                    // get the output data node name
+                    inputNames = inputData
+                        .map(node => node.getAttribute('name'))
+                        .sort();
+
+                    // Clear out any old input options...
+                    metadata.configStructure = metadata.configStructure
+                        .filter(option => !option.dynamic);
+
+                    // Add these inputs to the metadata
+                    inputNames.forEach((input, index) => {
+                        metadata.configStructure.push({
+                            name: inputData[index],
+                            displayName: input,
+                            description: `Export ${input} as static (non-input) content`,
+                            value: false,
+                            valueType: 'boolean',
+                            readOnly: false,
+                            dynamic: true
+                        });
+                    });
+
+                    // Look up the inputs and provide options for setting them to static
+                    WebGMEGlobal.InterpreterManager.configureAndRun(metadata, (result) => {
+                        var msg = 'Export complete!';
+                        if (!result) {
+                            return;
+                        }
+                        if (!result.success) {
+                            msg = `Export failed: ${result.error}`;
+                        }
+                        Materialize.toast(msg, 2000);
+                    });
                 }
             }
         ],
