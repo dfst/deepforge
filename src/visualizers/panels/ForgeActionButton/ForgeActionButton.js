@@ -474,8 +474,8 @@ define([
         if (inputOpts.length || exportFormats.length > 1) {
             configDialog.show(globalOpts, inputConfig, {}, (formatOpts, inputOpts) => {
                 var context = this.client.getCurrentPluginContext(pluginId),
-                    exportFormat = globalOpts.length ? formatOpts.exportFormat : exportFormats[0],
-                    staticInputs = Object.keys(inputOpts).filter(input => inputOpts[input]);
+                    exportFormat = (globalOpts.length && formatOpts) ? formatOpts.exportFormat : exportFormats[0],
+                    staticInputs = Object.keys(inputOpts || {}).filter(input => inputOpts[input]);
 
                 this.logger.debug('Exporting pipeline to format', exportFormat);
                 this.logger.debug('static inputs:', staticInputs);
