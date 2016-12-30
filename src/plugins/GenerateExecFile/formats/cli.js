@@ -10,7 +10,7 @@ define([
         INIT_LAYERS_FN = '__initLayers',
         DEEPFORGE_CODE;  // defined at the bottom (after the embedded template)
 
-    var createExecFile = function (sections) {
+    var createExecFile = function (sections, staticInputs) {
         var classes,
             initClassFn,
             initLayerFn,
@@ -21,6 +21,7 @@ define([
         // wrap the class/layer initialization in a fn
         // Add the classes ordered wrt their deps
         classes = Object.keys(sections.classes)
+            // FIXME: I shouldn't need this
             .sort((a, b) => {
                 // if a depends on b, switch them (return 1)
                 if (sections.classDependencies[a].includes(b)) {
@@ -51,13 +52,78 @@ define([
             'end'
         ].join('\n');
         code = code.concat(initLayerFn);
-        code = code.concat(_.values(sections.operations));
 
+        // Add operation fn definitions
+        code = code.concat(_.values(sections.operations));
         code = code.concat(_.values(sections.pipelines));
 
         code.push(DEEPFORGE_CODE);
         code.push('deepforge.initialize()');
-        code.push(sections.main);
+
+        // define deserializers, serializers
+        code.push(sections.deserializers);
+        code.push(sections.serializers);
+
+        code.push(sections.serializeOutputsDef);
+
+        if (staticInputs.length) {
+            var files = {},
+                staticNames = staticInputs.map(input => input.name),
+                varDefs,
+                index = 1;
+
+            // Add the hash for each of the static inputs and reference them
+            staticInputs.forEach(input => {
+                files[`res/${input.name}`] = input.hash;
+            });
+
+            varDefs = staticNames.map(name => {
+                return `local ${name} = './res/${name}'`;
+            });
+
+            // Grab the remaining args from the cli
+            varDefs = varDefs.concat(sections.mainInputNames.map(name => {
+                if (!staticNames.includes(name)) {
+                    return `local ${name} = arg[${index++}]`;
+                }
+            }));
+
+            // Add the main fn
+            code.push(varDefs.join('\n'));
+            code.push(sections.main);
+
+            // Save outputs to disk
+            code.push(sections.serializeOutputs);
+
+            files['init.lua'] = code.join('\n\n');
+
+            return files;
+        } else {
+            // Grab the args from the cli
+            code.push(sections.mainInputNames.map((name, index) => {
+                return `local ${name} = arg[${index + 1}]`;
+            }).join('\n'));
+
+            // Add the main fn
+            code.push(sections.main);
+
+            // Save outputs to disk
+            code.push(sections.serializeOutputs);
+
+            // If there are static inputs set, pack them in the export file
+            // TODO
+
+            // We should be given the input names that have been set and
+            // TODO
+
+            return code.join('\n\n');
+        }
+
+        // If there are static inputs set, pack them in the export file
+        // TODO
+
+        // We should be given the input names that have been set and
+        // TODO
 
         return code.join('\n\n');
     };

@@ -8,6 +8,7 @@ define([
     'plugin/PluginBase',
     'deepforge/plugin/PtrCodeGen',
     'deepforge/Constants',
+    'blob/BlobConfig',
     'underscore',
     'q'
 ], function (
@@ -17,6 +18,7 @@ define([
     PluginBase,
     PtrCodeGen,
     CONSTANTS,
+    BlobConfig,
     _,
     Q
 ) {
@@ -122,15 +124,38 @@ define([
                 var config = this.getCurrentConfig(),
                     format = config.format || 'Torch CLI',
                     generate = FORMATS[format],
+                    staticInputs,
                     files;
 
-                files = generate.call(this, sections, config.staticInputs);
+                staticInputs = config.staticInputs.map(id => {
+                    var opId = id.split('/').splice(0, this.activeNodeDepth).join('/'),
+                        port = this._portCache[id];
+
+                    return {
+                        portId: id,
+                        id: opId,
+                        hash: this.core.getAttribute(port, 'data'),
+                        name: this._nameFor[opId]
+                    };
+                });
+
+                files = generate.call(this, sections, staticInputs);
                 // If it returns a string, just put a single file
                 if (typeof files === 'string') {
                     return this.blobClient.putFile(`${name}.lua`, files);
                 } else {  // filename -> content
-                    var artifact = this.blobClient.createArtifact(name);
-                    return artifact.putFiles(files)
+                    var artifact = this.blobClient.createArtifact(name),
+                        objects = {};
+
+                    Object.keys(files).forEach(key => {
+                        if (BlobConfig.hashRegex.test(files[key])) {
+                            objects[key] = files[key];
+                            delete files[key];
+                        }
+                    });
+
+                    return artifact.addFiles(files)
+                        .then(() => artifact.addObjectHashes(objects))
                         .then(() => artifact.save());
                 }
             });
@@ -252,6 +277,9 @@ define([
         // Define the pipeline function
         code.pipelines = this.definePipelineFn(mainOps, outputOps);
 
+        // Define the serializers/deserializers
+        this.addCodeSerializers(code);
+
         // Define the main body
         this.addCodeMain(code);
 
@@ -324,39 +352,49 @@ define([
         return [this._nameFor[operation.id], value];
     };
 
-    GenerateExecFile.prototype.addCodeMain = function(sections) {
-        var pipelineName = Object.keys(sections.pipelines)[0],
-            hasBool = false,
-            code = [],
-            loadNodes = {},
-            args;
+    GenerateExecFile.prototype.addCodeSerializers = function(sections) {
+        var loadNodes = {},
+            saveNodes = {},
+            hasBool = false;
 
-        args = Object.keys(this.isInputOp).map((id, index) => {
+
+        // Add the serializer fn names for each input
+        sections.serializerFor = {};
+        sections.deserializerFor = {};
+
+        Object.keys(this.isOutputOp).map(id => {
+            var name = this._nameFor[id];
+            sections.serializerFor[name] = `__save['${name}']`;
+        });
+
+        // Add the serializer definitions
+        Object.keys(this.isInputOp).forEach(id => {
             var node = this.inputNode[id],
                 base = this.core.getBase(node),
                 type = this.core.getAttribute(base, 'name'),
-                arg = `arg[${index+1}]`;
+                name = this._nameFor[id];
 
             if (type === 'boolean') {
                 hasBool = true;
-                return `toboolean(${arg})`;
+                sections.deserializerFor[name] = 'toboolean';
             } else if (type === 'number') {
-                return `tonumber(${arg})`;
+                sections.deserializerFor[name] = 'tonumber';
             } else if (type === 'string') {
-                return arg;
+                sections.deserializerFor[name] = 'tostring';
             } else {
                 loadNodes[id] = node;
-                return `load['${this._nameFor[id]}'](${arg})`;
+                sections.deserializerFor[name] = `__load['${this._nameFor[id]}']`;
             }
         });
 
-        // Handle the arg types
-        if (hasBool) {
-            // add toboolean def
-            code.push(TOBOOLEAN);
-        }
-        // Define the 'saveOutputs' method
-        var saveNodes = {};
+        sections.deserializers = this.createTorchFnDict(
+            '__load',
+            loadNodes,
+            'deserialize',
+            'path'
+        );
+
+        // Add the deserializer definitions
         Object.keys(this.outputDataToOpId).forEach(dataId => {
             var opId = this.outputDataToOpId[dataId];
             // The key is used for the output name resolution. The
@@ -366,29 +404,43 @@ define([
             saveNodes[opId] = this._portCache[this._srcIdFor[dataId]];
         });
 
-        // Add dictionary of serializers/deserializers
-        code.push(
-            this.createTorchFnDict('load', loadNodes, 'deserialize', 'path'),
-            this.createTorchFnDict('save', saveNodes, 'serialize', 'path, data')
+        sections.serializers = this.createTorchFnDict(
+            '__save',
+            saveNodes,
+            'serialize',
+            'path, data'
         );
+
+        if (hasBool) {  // add toboolean def
+            sections.deserializers += '\n' + TOBOOLEAN;
+        }
 
         // Add a saveOutputs method for convenience
-        code.push([
-            'local function saveOutputs(data)',
+        sections.serializeOutputsDef = [
+            'local function __saveOutputs(data)',
             indent(Object.keys(this.isOutputOp).map(id => {
                 var name = this._nameFor[id];
-                return `print('saving ${name}...')\nsave['${name}']('${name}', data['${name}'])`;
+                return [
+                    `print('saving ${name}...')`,
+                    `${sections.serializerFor[name]}('${name}', data['${name}'])`
+                ].join('\n');
+
             }).join('\n')),
             'end'
-        ].join('\n'));
+        ].join('\n');
 
-        code.push(
-            `local outputs = ${pipelineName}(${args.join(', ')})\n` +
-            'saveOutputs(outputs)',
-            'return outputs'
-        );
+        sections.serializeOutputs = '__saveOutputs(outputs)';
+    };
 
-        sections.main = code.join('\n\n');
+    GenerateExecFile.prototype.addCodeMain = function(sections) {
+        var pipelineName = Object.keys(sections.pipelines)[0],
+            args;
+
+        // Create some names for the inputs
+        sections.mainInputNames = Object.keys(this.isInputOp).map(id => this._nameFor[id]);
+        args = sections.mainInputNames.map(name => `${sections.deserializerFor[name]}(${name})`);
+
+        sections.main = `local outputs = ${pipelineName}(${args.join(', ')})`;
     };
 
     GenerateExecFile.prototype.createTorchFnDict = function(name, nodeDict, attr, args) {
