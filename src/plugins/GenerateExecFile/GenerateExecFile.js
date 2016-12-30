@@ -115,6 +115,12 @@ define([
             .fail(err => callback(err));
     };
 
+    GenerateExecFile.prototype.getCurrentConfig = function () {
+        var config = PluginBase.prototype.getCurrentConfig.call(this);
+        config.staticInputs = config.staticInputs || [];
+        return config;
+    };
+
     GenerateExecFile.prototype.generateOutputFiles = function (children) {
         var name = this.core.getAttribute(this.activeNode, 'name');
 
