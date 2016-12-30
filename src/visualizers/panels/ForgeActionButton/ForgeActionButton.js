@@ -449,12 +449,15 @@ define([
             inputConfig = _.extend({}, metadata),
             globalOpts = [];
 
-        if (exportFormats.length < 2) {
-            configDialog._initDialog = function() {
-                PluginConfigDialog.prototype._initDialog.apply(this, arguments);
+        // Hide the divider if missing inputOpts or globalOpts
+        configDialog._initDialog = function() {
+            PluginConfigDialog.prototype._initDialog.apply(this, arguments);
+            if (!globalOpts.length || !inputOpts.length) {
                 this._divContainer.find('.global-and-plugin-divider').remove();
-            };
-        } else {
+            }
+        };
+
+        if (exportFormats.length > 1) {
             globalOpts.push({  // format options
                 name: 'exportFormat',
                 displayName: 'Export Format',
@@ -464,25 +467,38 @@ define([
                 readOnly: false
             });
         }
-
         inputConfig.configStructure = inputOpts;
-        configDialog.show(globalOpts, inputConfig, {}, (formatOpts, inputOpts) => {
-            var context = this.client.getCurrentPluginContext(pluginId),
-                exportFormat = globalOpts.length ? formatOpts.exportFormat : exportFormats[0],
-                staticInputs = Object.keys(inputOpts).filter(input => inputOpts[input]);
 
-            this.logger.debug('Exporting pipeline to format', exportFormat);
-            this.logger.debug('static inputs:', staticInputs);
+        if (inputOpts.length || exportFormats.length > 1) {
+            configDialog.show(globalOpts, inputConfig, {}, (formatOpts, inputOpts) => {
+                var context = this.client.getCurrentPluginContext(pluginId),
+                    exportFormat = globalOpts.length ? formatOpts.exportFormat : exportFormats[0],
+                    staticInputs = Object.keys(inputOpts).filter(input => inputOpts[input]);
+
+                this.logger.debug('Exporting pipeline to format', exportFormat);
+                this.logger.debug('static inputs:', staticInputs);
+
+                context.managerConfig.namespace = 'pipeline';
+                context.pluginConfig = {
+                    format: exportFormat,
+                    staticInputs: staticInputs
+                };
+                return Q.ninvoke(this.client, 'runBrowserPlugin', pluginId, context)
+                    .then(deferred.resolve)
+                    .fail(deferred.reject);
+            });
+        } else {  // no options - just run the plugin!
+            var context = this.client.getCurrentPluginContext(pluginId);
+
+            this.logger.debug('Exporting pipeline to format', exportFormats[0]);
 
             context.managerConfig.namespace = 'pipeline';
             context.pluginConfig = {
-                format: exportFormat,
-                staticInputs: staticInputs
+                format: exportFormats[0],
+                staticInputs: []
             };
-            return Q.ninvoke(this.client, 'runBrowserPlugin', pluginId, context)
-                .then(deferred.resolve)
-                .fail(deferred.reject);
-        });
+            return Q.ninvoke(this.client, 'runBrowserPlugin', pluginId, context);
+        }
 
         return deferred.promise;
     };
