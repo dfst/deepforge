@@ -20,26 +20,13 @@ define([
 
         // wrap the class/layer initialization in a fn
         // Add the classes ordered wrt their deps
-        classes = Object.keys(sections.classes)
-            // FIXME: I shouldn't need this
-            .sort((a, b) => {
-                // if a depends on b, switch them (return 1)
-                if (sections.classDependencies[a].includes(b)) {
-                    return 1;
-                }
-                return -1;
-            })
+        classes = sections.orderedClasses
             // Create fns from the classes
-            .map(name => [
-                `local function init${name}()`,
-                this.indent(sections.classes[name]),
-                'end',
-                `init${name}()`
-            ].join('\n'));
+            .map(name => this.indent(sections.classes[name])).join('\n');
 
         initClassFn = [
             `local function ${INIT_CLASSES_FN}()`,
-            this.indent(classes.join('\n\n')),
+            this.indent(classes),
             'end'
         ].join('\n');
 
@@ -110,20 +97,8 @@ define([
             // Save outputs to disk
             code.push(sections.serializeOutputs);
 
-            // If there are static inputs set, pack them in the export file
-            // TODO
-
-            // We should be given the input names that have been set and
-            // TODO
-
             return code.join('\n\n');
         }
-
-        // If there are static inputs set, pack them in the export file
-        // TODO
-
-        // We should be given the input names that have been set and
-        // TODO
 
         return code.join('\n\n');
     };

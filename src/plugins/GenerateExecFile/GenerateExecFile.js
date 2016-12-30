@@ -510,6 +510,16 @@ define([
 
                 sections.classes[name] = code;
             });
+
+        // order classes by dependency
+        sections.orderedClasses = Object.keys(sections.classes)
+            .sort((a, b) => {
+                // if a depends on b, switch them (return 1)
+                if (sections.classDependencies[a].includes(b)) {
+                    return 1;
+                }
+                return -1;
+            });
     };
 
     GenerateExecFile.prototype.addCustomLayers = function(sections) {
