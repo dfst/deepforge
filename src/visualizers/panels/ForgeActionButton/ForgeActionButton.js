@@ -369,21 +369,23 @@ define([
     };
 
     ForgeActionButton.prototype.downloadFromBlob = function(hash) {
-        var name;
-
         this._blobClient.getMetadata(hash)
             .then(metadata => {
-                name = metadata.name;
-                return this._blobClient.getObjectAsString(hash);
-            })
-            .then(text => {
-                SaveToDisk.downloadTextAsFile(name, text);
+                var url = this._blobClient.getDownloadURL(hash),
+                    name = metadata.name,
+                    save = document.createElement('a');
+
+                save.href = url;
+                save.target = '_self';
+                save.download = name;
+
+                save.click();
+                (window.URL || window.webkitURL).revokeObjectURL(save.href);
             })
             .fail(err => this.logger.error(`Blob download failed: ${err}`));
     };
 
     /// Export Pipeline Support
-
     ForgeActionButton.prototype.exportPipeline = function() {
         var deferred = Q.defer(),
             pluginId = 'GenerateExecFile',
