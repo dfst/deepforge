@@ -119,11 +119,12 @@ define([
         return this.createCodeSections(children)
             .then(sections => {
                 // Get the selected format
-                var format = this.getCurrentConfig().format || 'Torch CLI',
+                var config = this.getCurrentConfig(),
+                    format = config.format || 'Torch CLI',
                     generate = FORMATS[format],
                     files;
 
-                files = generate.call(this, sections);
+                files = generate.call(this, sections, config.staticInputs);
                 // If it returns a string, just put a single file
                 if (typeof files === 'string') {
                     return this.blobClient.putFile(`${name}.lua`, files);

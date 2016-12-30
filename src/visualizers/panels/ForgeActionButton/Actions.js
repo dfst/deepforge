@@ -271,7 +271,16 @@ define([
                 icon: 'play_for_work',
                 priority: -1,
                 action: function() {
-                    this.exportPipeline();
+                    this.exportPipeline()
+                        .then(result => {
+                            Materialize.toast('Export successful!', 2000);
+                            // Download the result!
+                            // TODO
+                        })
+                        .fail(err => {
+                            this.logger.warn('Pipeline export failed:', err);
+                            Materialize.toast(`Export failed: ${err}`, 4000);
+                        });
                 }
             }
         ],
