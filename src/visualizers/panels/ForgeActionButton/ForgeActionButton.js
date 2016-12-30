@@ -1,9 +1,10 @@
-/*globals $, window, define, _ */
+/*globals $, window, define, _, WebGMEGlobal */
 /*jshint browser: true*/
 
 define([
     'blob/BlobClient',
     'js/Utils/SaveToDisk',
+    'js/Dialogs/PluginConfig/PluginConfigDialog',
     'js/Constants',
     'panel/FloatingActionButton/FloatingActionButton',
     'deepforge/viz/PipelineControl',
@@ -14,11 +15,13 @@ define([
     'js/RegistryKeys',
     'js/Panels/MetaEditor/MetaEditorConstants',
     'q',
-    'deepforge/globals'
+    'deepforge/globals',
+    'deepforge/Constants'
 ], function (
     BlobClient,
     SaveToDisk,
-    CONSTANTS,
+    PluginConfigDialog,
+    GME_CONSTANTS,
     PluginButton,
     PipelineControl,
     NodePrompter,
@@ -28,7 +31,8 @@ define([
     REGISTRY_KEYS,
     META_CONSTANTS,
     Q,
-    DeepForge
+    DeepForge,
+    Constants
 ) {
     'use strict';
 
@@ -142,19 +146,19 @@ define([
 
     // Helper functions REMOVE! FIXME
     ForgeActionButton.prototype.addToMetaSheet = function(nodeId, metasheetName) {
-        var root = this.client.getNode(CONSTANTS.PROJECT_ROOT_ID),
+        var root = this.client.getNode(GME_CONSTANTS.PROJECT_ROOT_ID),
             metatabs = root.getRegistry(REGISTRY_KEYS.META_SHEETS),
             metatab = metatabs.find(tab => tab.title === metasheetName) || metatabs[0],
             metatabId = metatab.SetID;
 
         // Add to the general meta
         this.client.addMember(
-            CONSTANTS.PROJECT_ROOT_ID,
+            GME_CONSTANTS.PROJECT_ROOT_ID,
             nodeId,
             META_CONSTANTS.META_ASPECT_SET_NAME
         );
         this.client.setMemberRegistry(
-            CONSTANTS.PROJECT_ROOT_ID,
+            GME_CONSTANTS.PROJECT_ROOT_ID,
             nodeId,
             META_CONSTANTS.META_ASPECT_SET_NAME,
             REGISTRY_KEYS.POSITION,
@@ -165,9 +169,9 @@ define([
         );
 
         // Add to the specific sheet
-        this.client.addMember(CONSTANTS.PROJECT_ROOT_ID, nodeId, metatabId);
+        this.client.addMember(GME_CONSTANTS.PROJECT_ROOT_ID, nodeId, metatabId);
         this.client.setMemberRegistry(
-            CONSTANTS.PROJECT_ROOT_ID,
+            GME_CONSTANTS.PROJECT_ROOT_ID,
             nodeId,
             metatabId,
             REGISTRY_KEYS.POSITION,
@@ -376,5 +380,132 @@ define([
             .fail(err => this.logger.error(`Blob download failed: ${err}`));
     };
 
+    /// Export Pipeline Support
+
+    ForgeActionButton.prototype.exportPipeline = function() {
+        var pluginId = 'GenerateExecFile',
+            context = this.client.getCurrentPluginContext(pluginId);
+
+        // Run the plugin in the browser (set namespace)
+        context.managerConfig.namespace = 'pipeline';
+        context.pluginConfig = {};
+
+        // Provide options for which inputs are fixed/static
+        var metadata = WebGMEGlobal.allPluginsMetadata[pluginId],
+            id = this._currentNodeId,
+            node = this.client.getNode(id),
+            inputData,
+            inputNames;
+
+        inputData = node.getChildrenIds()
+            .map(id => this.client.getNode(id))
+            .filter(node => {
+                var typeId = node.getMetaTypeId(),
+                    type = this.client.getNode(typeId).getAttribute('name');
+
+                return type === Constants.OP.INPUT;
+            })
+            .map(input => {
+                var outputCntr,
+                    outputIds;
+
+                outputCntr = input.getChildrenIds()
+                    .map(id => this.client.getNode(id))
+                    .find(node => {
+                        var typeId = node.getMetaTypeId(),
+                            type = this.client.getNode(typeId).getAttribute('name');
+                        return type === 'Outputs';
+                    });
+
+                // input operations only have a single output
+                outputIds = outputCntr.getChildrenIds();
+
+                if (outputIds.length === 1) {
+                    return outputIds[0];
+                } else if (outputIds.length > 1) {
+                    this.logger.warn(`Found multiple ids for input op: ${outputIds.join(', ')}`);
+                    return;
+                }
+            })
+            .filter(outputId => !!outputId)
+            .map(id => this.client.getNode(id))
+            .filter(output => output.getAttribute('data'));
+
+        // get the output data node name
+        inputNames = inputData
+            .map(node => node.getAttribute('name'))
+            .sort();
+
+        //var dialog = $(ExportPipelineHtml),
+            //btnSave = dialog.find('.btn-save');
+
+        // Clear out any old input options...
+        //metadata.configStructure = metadata.configStructure
+            //.filter(option => !option.dynamic);
+
+        // Add these inputs to the metadata
+        var inputOpts = inputNames.map((input, index) => {
+            return {
+                name: inputData[index].getId(),
+                displayName: input,
+                description: `Export ${input} as static (non-input) content`,
+                value: false,
+                valueType: 'boolean',
+                readOnly: false,
+                dynamic: true
+            };
+        });
+
+        // Look up the inputs and provide options for setting them to static
+        // For the final version, I need to hide the namespace (set to 'pipeline')
+        // TODO
+
+        // Should also auto-download on completion
+        // TODO
+        //dialog.modal('show');
+        //btnSave.on('click', event => {
+            ////console.log('run!');
+            //dialog.modal('hide');
+
+            //var context = this.client.getCurrentPluginContext(pluginId);
+
+            //// Run the plugin in the browser (set namespace)
+            //context.managerConfig.namespace = 'pipeline';
+
+            //// Get the config info for static options
+            //// TODO
+            ////context.pluginConfig = {
+                ////srcHash: hash
+            ////};
+
+            ////Q.ninvoke(this.client, 'runBrowserPlugin', pluginId, context)
+                ////.then(res => {
+                    ////Materialize.toast('TODO: Finish this!', 2000);
+                    //////Materialize.toast(res.messages[0].message, 2000);
+                ////})
+                ////.fail(err => Materialize.toast(`Export failed: ${err}`, 2000));
+            //event.stopPropagation();
+            //event.preventDefault();
+        //});
+
+        var formatOpts = [],
+            configDialog = new PluginConfigDialog({client: this.client}),
+            inputConfig = _.extend({}, metadata);
+
+        if (formatOpts.length === 0) {
+            configDialog._initDialog = function() {
+                PluginConfigDialog.prototype._initDialog.apply(this, arguments);
+                this._divContainer.find('.global-and-plugin-divider').remove();
+            };
+        }
+
+        inputConfig.configStructure = inputOpts;
+        configDialog.show(formatOpts, inputConfig, {}, (formatOpts, inputOpts) => {
+            console.log('running!');
+            console.log(formatOpts);
+            console.log(inputOpts);
+            // TODO: Create list of static options from the config
+        });
+    };
     return ForgeActionButton;
 });
