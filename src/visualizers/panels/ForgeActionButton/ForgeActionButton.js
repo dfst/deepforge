@@ -444,8 +444,6 @@ define([
             };
         });
 
-        // Should also auto-download on completion
-        // TODO
         var exportFormats = Object.keys(ExportFormatDict),
             configDialog = new PluginConfigDialog({client: this.client}),
             inputConfig = _.extend({}, metadata),
@@ -484,7 +482,7 @@ define([
             return Q.ninvoke(this.client, 'runBrowserPlugin', pluginId, context)
                 .then(deferred.resolve)
                 .fail(deferred.reject);
-        })
+        });
 
         return deferred.promise;
     };

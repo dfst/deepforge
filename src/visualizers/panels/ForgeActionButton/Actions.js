@@ -275,7 +275,10 @@ define([
                         .then(result => {
                             Materialize.toast('Export successful!', 2000);
                             // Download the result!
-                            // TODO
+                            this.downloadFromBlob(result.artifacts[0]);
+                            result.__unread = true;
+                            this.results.push(result);
+                            this._updatePluginBtns();
                         })
                         .fail(err => {
                             this.logger.warn('Pipeline export failed:', err);
