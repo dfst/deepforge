@@ -295,7 +295,6 @@ define([
             this.$execContent.empty();
             execs.forEach(html => this.$execContent.append(html));
 
-            this.$execContent.height(200);
             this.$execBody.show();
         } else {
             // Set the height to 0
