@@ -59,7 +59,7 @@ program
                     console.error(`Unrecognized extension type: "${extType}"`);
                     process.exit(1);
                 }
-                extender.install[extType](extConfig, extProject);
+                extender.install[extType](extConfig, {root: extRoot, name: extProject});
 
                 console.log(`The ${extConfig.name} extension has been added to deepforge.`);
             });
