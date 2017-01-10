@@ -1,12 +1,13 @@
+
 /* globals define*/
 // The supported export formats and metadata
 define([
-    './formats/cli'
+    './formats/cli/cli.js'
 ], function(
-    TorchCLI
+    Format1
 ) {
 
     return {
-        'Torch CLI': TorchCLI
+        'Basic CLI': Format1
     };
 });
