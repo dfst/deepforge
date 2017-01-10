@@ -128,7 +128,7 @@ define([
             .then(sections => {
                 // Get the selected format
                 var config = this.getCurrentConfig(),
-                    format = config.format || 'Torch CLI',
+                    format = config.format || 'Basic CLI',
                     generate = FORMATS[format],
                     staticInputs,
                     files;
