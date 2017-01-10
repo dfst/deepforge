@@ -14,11 +14,17 @@ var path = require('path'),
     extConfigPath = path.join(CONFIG_DIR, EXTENSION_REGISTRY_NAME),
     allExtConfigs;
 
+var values = obj => Object.keys(obj).map(key => obj[key]);
+
 // Create the extensions.json if doesn't exist. Otherwise, load it
 if (!exists.sync(extConfigPath)) {
     allExtConfigs = {};
 } else {
-    allExtConfigs = fs.readFileSync(extConfigPath, 'utf8');
+    try {
+        allExtConfigs = JSON.parse(fs.readFileSync(extConfigPath, 'utf8'));
+    } catch (e) {
+        throw `Invalid config at ${extConfigPath}: ${e.toString()}`;
+    }
 }
 
 var persistExtConfig = () => {
@@ -49,8 +55,10 @@ extender.install['ExportFormat:Pipeline'] = (config, project) => {
         content;
 
     // add the config to the current installed extensions of this type
-    installedExts = allExtConfigs['ExportFormat:Pipeline'] = allExtConfigs['ExportFormat:Pipeline'] || [];
-    installedExts.push(config);
+    allExtConfigs['ExportFormat:Pipeline'] = allExtConfigs['ExportFormat:Pipeline'] || {};
+    allExtConfigs['ExportFormat:Pipeline'][config.name] = config;
+
+    installedExts = values(allExtConfigs['ExportFormat:Pipeline']);
 
     // copy the main script to src/plugins/GenExecFile/formats/<name>/<main>
     dstPath = path.join(PLUGIN_ROOT, 'formats', config.name);
