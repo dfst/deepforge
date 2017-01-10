@@ -56,6 +56,11 @@ extender.install['ExportFormat:Pipeline'] = (config, project) => {
 
     // add the config to the current installed extensions of this type
     allExtConfigs['ExportFormat:Pipeline'] = allExtConfigs['ExportFormat:Pipeline'] || {};
+
+    if (allExtConfigs['ExportFormat:Pipeline'][config.name]) {
+        console.log(`Extension ${config.name} already installed. Reinstalling...`);
+    }
+
     allExtConfigs['ExportFormat:Pipeline'][config.name] = config;
 
     installedExts = values(allExtConfigs['ExportFormat:Pipeline']);
