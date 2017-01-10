@@ -76,7 +76,7 @@ extender.install['ExportFormat:Pipeline'] = (config, project) => {
 
     // regenerate the format.js file from the template
     var formatTemplate = makeTpl(fs.readFileSync(path.join(PLUGIN_ROOT, 'format.js.ejs'), 'utf8')),
-        formatsIndex = formatTemplate({formats: installedExts});
+        formatsIndex = formatTemplate({path: path, formats: installedExts});
 
     dstPath = path.join(PLUGIN_ROOT, 'format.js');
     fs.writeFileSync(dstPath, formatsIndex);

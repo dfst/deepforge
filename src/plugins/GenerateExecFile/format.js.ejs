@@ -4,7 +4,7 @@ formats.push({ name: 'cli', main: 'cli.js', displayName: 'Basic CLI' })
 /* globals define*/
 // The supported export formats and metadata
 define([
-<%= formats.map(function(format) { return '\'./formats/' + format.name + '/' + format.main + '\'' })
+<%= formats.map(function(format) { return '\'./formats/' + format.name + '/' + path.basename(format.main) + '\'' })
     .join(',\n') %>
 ], function(
 <%= formats.map(function(f, index) { return 'Format' + index; }).join(',\n') %>
