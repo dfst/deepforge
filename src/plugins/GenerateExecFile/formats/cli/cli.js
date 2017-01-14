@@ -8,7 +8,35 @@ define([
 
     var INIT_CLASSES_FN = '__initClasses',
         INIT_LAYERS_FN = '__initLayers',
+        TOBOOLEAN,
         DEEPFORGE_CODE;  // defined at the bottom (after the embedded template)
+
+    var deserializersFromString = function(sections) {
+        var hasBool = false;
+
+        // Add serializers given cli string input
+        Object.keys(this.isInputOp).forEach(id => {
+            var node = this.inputNode[id],
+                base = this.core.getBase(node),
+                type = this.core.getAttribute(base, 'name'),
+                name = this._nameFor[id];
+
+            if (type === 'boolean') {
+                hasBool = true;
+                sections.deserializerFor[name] = 'toboolean';
+            } else if (type === 'number') {
+                sections.deserializerFor[name] = 'tonumber';
+            } else if (type === 'string') {
+                sections.deserializerFor[name] = 'tostring';
+            }
+        });
+
+        if (hasBool) {
+            sections.deserializers += '\n' + TOBOOLEAN;
+        }
+
+        return sections;
+    };
 
     var createExecFile = function (sections, staticInputs) {
         var classes,
@@ -16,8 +44,10 @@ define([
             initLayerFn,
             code = [];
 
-        // concat all the sections into a single file
+        // Update deserializers for cli input
+        deserializersFromString.call(this, sections);
 
+        // concat all the sections into a single file
         // wrap the class/layer initialization in a fn
         // Add the classes ordered wrt their deps
         classes = sections.orderedClasses
@@ -150,6 +180,15 @@ end
 
 function deepforge.Image:title(name)
    -- nop
+end`;
+
+    TOBOOLEAN = 
+`local function toboolean(str)
+    if str == 'true' then
+        return true
+    elseif str == 'false' then
+        return false
+    end
 end`;
 
     DEEPFORGE_CODE = _.template(deepforgeTxt)({

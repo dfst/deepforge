@@ -3,7 +3,6 @@
 
 define([
     'text!./metadata.json',
-    'text!./toboolean.lua',
     './format',
     'plugin/PluginBase',
     'deepforge/plugin/PtrCodeGen',
@@ -13,7 +12,6 @@ define([
     'q'
 ], function (
     pluginMetadata,
-    TOBOOLEAN,
     FORMATS,
     PluginBase,
     PtrCodeGen,
@@ -107,6 +105,7 @@ define([
 
         return this.core.loadChildren(this.activeNode)
             .then(nodes => this.generateOutputFiles(nodes))
+            .catch(err => callback(err))
             .then(hash => {
                 this.result.addArtifact(hash);
                 this.result.setSuccess(true);
@@ -376,21 +375,10 @@ define([
         // Add the serializer definitions
         Object.keys(this.isInputOp).forEach(id => {
             var node = this.inputNode[id],
-                base = this.core.getBase(node),
-                type = this.core.getAttribute(base, 'name'),
                 name = this._nameFor[id];
 
-            if (type === 'boolean') {
-                hasBool = true;
-                sections.deserializerFor[name] = 'toboolean';
-            } else if (type === 'number') {
-                sections.deserializerFor[name] = 'tonumber';
-            } else if (type === 'string') {
-                sections.deserializerFor[name] = 'tostring';
-            } else {
-                loadNodes[id] = node;
-                sections.deserializerFor[name] = `__load['${this._nameFor[id]}']`;
-            }
+            loadNodes[id] = node;
+            sections.deserializerFor[name] = `__load['${this._nameFor[id]}']`;
         });
 
         sections.deserializers = this.createTorchFnDict(
@@ -416,10 +404,6 @@ define([
             'serialize',
             'path, data'
         );
-
-        if (hasBool) {  // add toboolean def
-            sections.deserializers += '\n' + TOBOOLEAN;
-        }
 
         // Add a saveOutputs method for convenience
         sections.serializeOutputsDef = [
@@ -867,14 +851,6 @@ define([
 
         operation.code = codeParts.join('\n');
         return operation;
-    };
-
-    GenerateExecFile.prototype.assignResultToVar = function (code, name) {
-        var i = code.lastIndexOf('return');
-
-        return code.substring(0, i) +
-            code.substring(i)
-                .replace('return', `${name} = `);
     };
 
     _.extend(GenerateExecFile.prototype, PtrCodeGen.prototype);
