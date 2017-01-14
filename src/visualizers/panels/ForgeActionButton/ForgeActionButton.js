@@ -477,6 +477,10 @@ define([
                     exportFormat = (globalOpts.length && formatOpts) ? formatOpts.exportFormat : exportFormats[0],
                     staticInputs = Object.keys(inputOpts || {}).filter(input => inputOpts[input]);
 
+                if (!formatOpts) {  // canceled
+                    return;
+                }
+
                 this.logger.debug('Exporting pipeline to format', exportFormat);
                 this.logger.debug('static inputs:', staticInputs);
 
