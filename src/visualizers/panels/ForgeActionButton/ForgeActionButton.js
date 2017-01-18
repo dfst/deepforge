@@ -4,7 +4,7 @@
 define([
     'blob/BlobClient',
     'js/Utils/SaveToDisk',
-    'js/Dialogs/PluginConfig/PluginConfigDialog',
+    './ConfigDialog',
     'js/Constants',
     'panel/FloatingActionButton/FloatingActionButton',
     'deepforge/viz/PipelineControl',
@@ -21,7 +21,7 @@ define([
 ], function (
     BlobClient,
     SaveToDisk,
-    PluginConfigDialog,
+    ConfigDialog,
     GME_CONSTANTS,
     PluginButton,
     PipelineControl,
@@ -447,17 +447,11 @@ define([
         });
 
         var exportFormats = Object.keys(ExportFormatDict),
-            configDialog = new PluginConfigDialog({client: this.client}),
+            configDialog = new ConfigDialog(this.client, this._currentNodeId),
             inputConfig = _.extend({}, metadata),
+            extMetadata = {},
+            extOptions = [],
             globalOpts = [];
-
-        // Hide the divider if missing inputOpts or globalOpts
-        configDialog._initDialog = function() {
-            PluginConfigDialog.prototype._initDialog.apply(this, arguments);
-            if (!globalOpts.length || !inputOpts.length) {
-                this._divContainer.find('.global-and-plugin-divider').remove();
-            }
-        };
 
         if (exportFormats.length > 1) {
             globalOpts.push({  // format options
@@ -471,8 +465,12 @@ define([
         }
         inputConfig.configStructure = inputOpts;
 
-        if (inputOpts.length || exportFormats.length > 1) {
-            configDialog.show(globalOpts, inputConfig, {}, (formatOpts, inputOpts) => {
+        // Try to get the extension options
+        // TODO
+        extMetadata.id = 'extension config';
+        extMetadata.configStructure = [];
+        if (inputOpts.length || exportFormats.length || extOptions.length) {
+            configDialog.show(globalOpts, inputConfig, extMetadata, (formatOpts, inputOpts) => {
                 var context = this.client.getCurrentPluginContext(pluginId),
                     exportFormat = (globalOpts.length && formatOpts) ? formatOpts.exportFormat : exportFormats[0],
                     staticInputs = Object.keys(inputOpts || {}).filter(input => inputOpts[input]);
@@ -504,5 +502,6 @@ define([
 
         return deferred.promise;
     };
+
     return ForgeActionButton;
 });
