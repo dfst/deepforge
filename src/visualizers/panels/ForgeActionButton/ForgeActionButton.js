@@ -467,10 +467,8 @@ define([
 
         // Try to get the extension options
         // TODO
-        extMetadata.id = 'extension config';
-        extMetadata.configStructure = [];
         if (inputOpts.length || exportFormats.length || extOptions.length) {
-            configDialog.show(globalOpts, inputConfig, extMetadata, (formatOpts, inputOpts) => {
+            configDialog.show(globalOpts, inputConfig, (formatOpts, inputOpts) => {
                 var context = this.client.getCurrentPluginContext(pluginId),
                     exportFormat = (globalOpts.length && formatOpts) ? formatOpts.exportFormat : exportFormats[0],
                     staticInputs = Object.keys(inputOpts || {}).filter(input => inputOpts[input]);
