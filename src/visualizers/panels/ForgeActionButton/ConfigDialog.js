@@ -2,7 +2,8 @@
 define([
     'js/Dialogs/PluginConfig/PluginConfigDialog',
     'text!js/Dialogs/PluginConfig/templates/PluginConfigDialog.html',
-    'plugin/GenerateExecFile/GenerateExecFile/format'
+    'plugin/GenerateExecFile/GenerateExecFile/format',
+    'css!./ConfigDialog.css'
 ], function(
     PluginConfigDialog,
     pluginConfigDialogTemplate,
@@ -14,7 +15,8 @@ define([
         PLUGIN_CONFIG_SECTION_BASE = $('<div><fieldset><form class="form-horizontal" role="form"></form><fieldset></div>'),
         ENTRY_BASE = $('<div class="form-group"><div class="row"><label class="col-sm-4 control-label">NAME</label><div class="col-sm-8 controls"></div></div><div class="row description"><div class="col-sm-4"></div></div></div>'),
     //jscs:enable maximumLineLength
-        DESCRIPTION_BASE = $('<div class="desc muted col-sm-8"></div>');
+        DESCRIPTION_BASE = $('<div class="desc muted col-sm-8"></div>'),
+        SECTION_HEADER = $('<h6 class="config-section-header">');
 
     var ConfigDialog = function(client, nodeId) {
         PluginConfigDialog.call(this, {client: client});
@@ -48,12 +50,19 @@ define([
 
         // Generate the config options
         var formats = Object.keys(ExportFormats),
-            format = formats[0];
+            format = formats[0],
+            sectionHeader = SECTION_HEADER.clone();
 
+        sectionHeader.text('Static Artifacts');
+        this._divContainer.append(sectionHeader);
         this.generateConfigSection(this._pluginMetadata);
 
         if (formats.length > 1) {
             this._divContainer.append($('<hr class="extension-config-divider">'));
+            sectionHeader = SECTION_HEADER.clone();
+            sectionHeader.text('Export Options');
+            this._divContainer.append(sectionHeader);
+
             this.generateConfigSection({
                 id: 'FormatOptions',
                 configStructure: this._globalOptions
@@ -75,10 +84,8 @@ define([
             ExportFormats[format].getConfigStructure(this._client, this._node) : []
         };
         this._divContainer.find('.extension-config').remove();
-        this._divContainer.find('.extension-and-inputs-divider').remove();
 
         if (extConfig.configStructure.length) {
-            this._divContainer.append($('<hr class="extension-and-inputs-divider">'));
             this.generateConfigSection(extConfig);
         }
     };

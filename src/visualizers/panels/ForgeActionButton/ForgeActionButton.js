@@ -429,9 +429,16 @@ define([
             .map(id => this.client.getNode(id))
             .filter(output => output.getAttribute('data'));
 
-        // get the output data node name
+        // get the name of node referenced from the input op
         inputNames = inputData
-            .map(node => node.getAttribute('name'))
+            .map(node => {
+                var cntrId = node.getParentId(),
+                    opId = this._client.getNode(cntrId).getParentId(),
+                    inputOp = this._client.getNode(opId),
+                    targetNodeId = inputOp.getPointer('artifact').to;
+
+                return this._client.getNode(targetNodeId).getAttribute('name');
+            })
             .sort();
 
         // create config options from inputs
@@ -466,7 +473,6 @@ define([
         inputConfig.configStructure = inputOpts;
 
         // Try to get the extension options
-        // TODO
         if (inputOpts.length || exportFormats.length || extOptions.length) {
             configDialog.show(globalOpts, inputConfig, (formatOpts, inputOpts) => {
                 var context = this.client.getCurrentPluginContext(pluginId),
