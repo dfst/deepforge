@@ -8,7 +8,7 @@ define([
     pluginConfigDialogTemplate,
     ExportFormats
 ) {
-    var PLUGIN_DATA_KEY = 'plugin',
+    var SECTION_DATA_KEY = 'section',
         ATTRIBUTE_DATA_KEY = 'attribute',
     //jscs:disable maximumLineLength
         PLUGIN_CONFIG_SECTION_BASE = $('<div><fieldset><form class="form-horizontal" role="form"></form><fieldset></div>'),
@@ -47,29 +47,43 @@ define([
         this._title.text(this._pluginMetadata.id + ' ' + 'v' + this._pluginMetadata.version);
 
         // Generate the config options
-        var format = Object.keys(ExportFormats)[0],
-            extConfig = {
-                configStructure: ExportFormats[format].getConfigStructure ?
-                ExportFormats[format].getConfigStructure(this._client, this._node) : []
-            };
+        var formats = Object.keys(ExportFormats),
+            format = formats[0];
 
-        this.generateExtConfig({configStructure: this._globalOptions});
+        this.generateConfigSection(this._pluginMetadata);
 
-        this._divContainer.append($('<hr class="extension-config-divider">'));
-
-        this.generateExtConfig(extConfig);
-
-        if ((this._globalOptions.length || extConfig.configStructure.length) && this._pluginMetadata.configStructure.length) {
-            this._divContainer.append($('<hr class="extension-and-inputs-divider">'));
+        if (formats.length > 1) {
+            this._divContainer.append($('<hr class="extension-config-divider">'));
+            this.generateConfigSection({
+                id: 'FormatOptions',
+                configStructure: this._globalOptions
+            });
+            this._widgets.FormatOptions.exportFormat.el.find('select').on('change', event => {
+                var format = event.target.value;
+                // Update the ext config
+                this.updateExtConfig(format);
+            });
         }
 
-        this.generateExtConfig(this._pluginMetadata);
-
-        // TODO: When the Export Format is set, update the extension configuration opts
-        // TODO:
+        this.updateExtConfig(format);
     };
 
-    ConfigDialog.prototype.generateExtConfig = function (metadata) {
+    ConfigDialog.prototype.updateExtConfig = function (format) {
+        var extConfig = {
+            class: 'extension-config',
+            configStructure: ExportFormats[format].getConfigStructure ?
+            ExportFormats[format].getConfigStructure(this._client, this._node) : []
+        };
+        this._divContainer.find('.extension-config').remove();
+        this._divContainer.find('.extension-and-inputs-divider').remove();
+
+        if (extConfig.configStructure.length) {
+            this._divContainer.append($('<hr class="extension-and-inputs-divider">'));
+            this.generateConfigSection(extConfig);
+        }
+    };
+
+    ConfigDialog.prototype.generateConfigSection = function (metadata) {
         var len = metadata.configStructure.length,
             i,
             el,
@@ -79,9 +93,13 @@ define([
             containerEl,
             pluginSectionEl = PLUGIN_CONFIG_SECTION_BASE.clone();
 
-        pluginSectionEl.data(PLUGIN_DATA_KEY, metadata.id);
+        pluginSectionEl.data(SECTION_DATA_KEY, metadata.id);
         this._divContainer.append(pluginSectionEl);
         containerEl = pluginSectionEl.find('.form-horizontal');
+
+        if (metadata.class) {
+            pluginSectionEl.addClass(metadata.class);
+        }
 
         this._widgets[metadata.id] = {};
         for (i = 0; i < len; i += 1) {
