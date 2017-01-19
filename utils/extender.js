@@ -47,23 +47,22 @@ extender.getInstalledConfig = function(name) {
 };
 
 // Extension Types
-// TODO
-extender.install['ExportFormat:Pipeline'] = (config, project) => {
+extender.install['Export:Pipeline'] = (config, project) => {
     var installedExts,
         PLUGIN_ROOT = path.join(__dirname, '..', 'src', 'plugins', 'GenerateExecFile'),
         dstPath,
         content;
 
     // add the config to the current installed extensions of this type
-    allExtConfigs['ExportFormat:Pipeline'] = allExtConfigs['ExportFormat:Pipeline'] || {};
+    allExtConfigs['Export:Pipeline'] = allExtConfigs['Export:Pipeline'] || {};
 
-    if (allExtConfigs['ExportFormat:Pipeline'][config.name]) {
+    if (allExtConfigs['Export:Pipeline'][config.name]) {
         console.log(`Extension ${config.name} already installed. Reinstalling...`);
     }
 
-    allExtConfigs['ExportFormat:Pipeline'][config.name] = config;
+    allExtConfigs['Export:Pipeline'][config.name] = config;
 
-    installedExts = values(allExtConfigs['ExportFormat:Pipeline']);
+    installedExts = values(allExtConfigs['Export:Pipeline']);
 
     // copy the main script to src/plugins/GenExecFile/formats/<name>/<main>
     dstPath = path.join(PLUGIN_ROOT, 'formats', config.name);
@@ -88,7 +87,7 @@ extender.install['ExportFormat:Pipeline'] = (config, project) => {
     persistExtConfig();
 };
 
-extender.uninstall['ExportFormat:Pipeline'] = name => {
+extender.uninstall['Export:Pipeline'] = name => {
 };
 
 module.exports = extender;
