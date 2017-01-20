@@ -17,7 +17,7 @@ define([
     'q',
     'deepforge/globals',
     'deepforge/Constants',
-    'plugin/GenerateExecFile/GenerateExecFile/format'
+    'plugin/Export/Export/format'
 ], function (
     BlobClient,
     SaveToDisk,
@@ -388,7 +388,7 @@ define([
     /// Export Pipeline Support
     ForgeActionButton.prototype.exportPipeline = function() {
         var deferred = Q.defer(),
-            pluginId = 'GenerateExecFile',
+            pluginId = 'Export',
             metadata = WebGMEGlobal.allPluginsMetadata[pluginId],
             id = this._currentNodeId,
             node = this.client.getNode(id),

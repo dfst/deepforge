@@ -2,7 +2,7 @@
 define([
     'js/Dialogs/PluginConfig/PluginConfigDialog',
     'text!js/Dialogs/PluginConfig/templates/PluginConfigDialog.html',
-    'plugin/GenerateExecFile/GenerateExecFile/format',
+    'plugin/Export/Export/format',
     'css!./ConfigDialog.css'
 ], function(
     PluginConfigDialog,

@@ -1,7 +1,7 @@
 {
-  "id": "GenerateExecFile",
-  "name": "Generate Execution File",
-  "version": "0.1.0",
+  "id": "Export",
+  "name": "Export",
+  "version": "1.0.0",
   "description": "",
   "icon": {
     "class": "glyphicon glyphicon-cog",

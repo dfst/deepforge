@@ -1,7 +1,7 @@
 /*jshint node:true, mocha:true*/
 
 'use strict';
-describe('GenerateExecFile', function () {
+describe('Export', function () {
     var testFixture = require('../../globals'),
         lua = require('../../../src/common/lua'),
         path = testFixture.path,
@@ -9,12 +9,12 @@ describe('GenerateExecFile', function () {
         SEED_DIR = path.join(testFixture.DF_SEED_DIR, 'devProject'),
         gmeConfig = testFixture.getGmeConfig(),
         expect = testFixture.expect,
-        logger = testFixture.logger.fork('GenerateExecFile'),
+        logger = testFixture.logger.fork('Export'),
         PluginCliManager = testFixture.WebGME.PluginCliManager,
         manager = new PluginCliManager(null, logger, gmeConfig),
         BlobClient = require('webgme/src/server/middleware/blob/BlobClientWithFSBackend'),
         projectName = 'testProject',
-        pluginName = 'GenerateExecFile',
+        pluginName = 'Export',
         project,
         gmeAuth,
         storage,
