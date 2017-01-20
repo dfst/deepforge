@@ -49,7 +49,7 @@ extender.getInstalledConfig = function(name) {
 // Extension Types
 extender.install['Export:Pipeline'] = (config, project) => {
     var installedExts,
-        PLUGIN_ROOT = path.join(__dirname, '..', 'src', 'plugins', 'GenerateExecFile'),
+        PLUGIN_ROOT = path.join(__dirname, '..', 'src', 'plugins', 'Export'),
         dstPath,
         content;
 
@@ -88,6 +88,14 @@ extender.install['Export:Pipeline'] = (config, project) => {
 };
 
 extender.uninstall['Export:Pipeline'] = name => {
+    // Remove from config
+    // TODO
+
+    // Remove files
+    // TODO
+
+    // Re-generate template file
+    // TODO
 };
 
 module.exports = extender;
