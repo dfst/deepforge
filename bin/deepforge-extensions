@@ -87,7 +87,7 @@ program
 program
     .command('list')
     .description('List installed deepforge extensions')
-    .action((name, opts) => {
+    .action(() => {
         var allExtConfigs = extender.getExtensionsConfig(),
             types = Object.keys(allExtConfigs),
             hasContents = false,
