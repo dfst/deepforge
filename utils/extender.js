@@ -6,6 +6,7 @@
 //
 var path = require('path'),
     fs = require('fs'),
+    rm_rf = require('rimraf'),
     exists = require('exists-file'),
     makeTpl = require('lodash.template'),
     CONFIG_DIR = path.join(process.env.HOME, '.deepforge'),
@@ -43,59 +44,87 @@ extender.isSupportedType = function(type) {
 };
 
 extender.getInstalledConfig = function(name) {
-    return allExtConfigs[name] || null;
+    var group = values(allExtConfigs).find(typeGroup => {
+        return !!typeGroup[name];
+    });
+    return group && group[name];
 };
 
-// Extension Types
-extender.install['Export:Pipeline'] = (config, project) => {
-    var installedExts,
-        PLUGIN_ROOT = path.join(__dirname, '..', 'src', 'plugins', 'Export'),
-        dstPath,
-        content;
+var makeInstallFor = function(typeCfg) {
+    var saveExtensions = () => {
+        // regenerate the format.js file from the template
+        var installedExts = values(allExtConfigs[typeCfg.type]),
+            formatTemplate = makeTpl(fs.readFileSync(typeCfg.template, 'utf8')),
+            formatsIndex = formatTemplate({path: path, formats: installedExts}),
+            dstPath = typeCfg.template.replace(/\.ejs$/, '');
 
-    // add the config to the current installed extensions of this type
-    allExtConfigs['Export:Pipeline'] = allExtConfigs['Export:Pipeline'] || {};
+        fs.writeFileSync(dstPath, formatsIndex);
+        persistExtConfig();
+    };
 
-    if (allExtConfigs['Export:Pipeline'][config.name]) {
-        console.log(`Extension ${config.name} already installed. Reinstalling...`);
-    }
+    // Given a...
+    //  - template file
+    //  - extension type
+    //  - target path tpl
+    // create the installation/uninstallation functions
+    extender.install[typeCfg.type] = (config, project) => {
+        var dstPath,
+            content;
 
-    allExtConfigs['Export:Pipeline'][config.name] = config;
+        // add the config to the current installed extensions of this type
+        allExtConfigs[typeCfg.type] = allExtConfigs[typeCfg.type] || {};
 
-    installedExts = values(allExtConfigs['Export:Pipeline']);
+        if (allExtConfigs[typeCfg.type][config.name]) {
+            console.log(`Extension ${config.name} already installed. Reinstalling...`);
+        }
 
-    // copy the main script to src/plugins/GenExecFile/formats/<name>/<main>
-    dstPath = path.join(PLUGIN_ROOT, 'formats', config.name);
-    if (!exists.sync(dstPath)) {
-        fs.mkdirSync(dstPath);
-    }
+        allExtConfigs[typeCfg.type][config.name] = config;
 
-    try {
-        content = fs.readFileSync(path.join(project.root, config.main), 'utf8');
-    } catch (e) {
-        throw 'Could not read the extension\'s main file: ' + e;
-    }
-    dstPath = path.join(dstPath, path.basename(config.main));
-    fs.writeFileSync(dstPath, content);
+        // copy the main script to src/plugins/Export/formats/<name>/<main>
+        dstPath = makeTpl(typeCfg.targetDir)(config);
+        if (!exists.sync(dstPath)) {
+            fs.mkdirSync(dstPath);
+        }
 
-    // regenerate the format.js file from the template
-    var formatTemplate = makeTpl(fs.readFileSync(path.join(PLUGIN_ROOT, 'format.js.ejs'), 'utf8')),
-        formatsIndex = formatTemplate({path: path, formats: installedExts});
+        try {
+            // TODO: Should I copy a directory instead of a main file?
+            content = fs.readFileSync(path.join(project.root, config.main), 'utf8');
+        } catch (e) {
+            throw 'Could not read the extension\'s main file: ' + e;
+        }
+        dstPath = path.join(dstPath, path.basename(config.main));
+        fs.writeFileSync(dstPath, content);
 
-    dstPath = path.join(PLUGIN_ROOT, 'format.js');
-    fs.writeFileSync(dstPath, formatsIndex);
-    persistExtConfig();
+        saveExtensions();
+    };
+
+    // uninstall
+    extender.uninstall['Export:Pipeline'] = name => {
+        // Remove from config
+        allExtConfigs[typeCfg.type] = allExtConfigs[typeCfg.type] || {};
+
+        if (!allExtConfigs[typeCfg.type][name]) {
+            console.log(`Extension ${name} not installed`);
+            return;
+        }
+        var config = allExtConfigs[typeCfg.type][name],
+            dstPath = makeTpl(typeCfg.targetDir)(config);
+
+        // Remove the dstPath
+        delete allExtConfigs[typeCfg.type][name];
+        rm_rf.sync(dstPath);
+
+        // Re-generate template file
+        saveExtensions();
+    };
+
 };
 
-extender.uninstall['Export:Pipeline'] = name => {
-    // Remove from config
-    // TODO
-
-    // Remove files
-    // TODO
-
-    // Re-generate template file
-    // TODO
-};
+var PLUGIN_ROOT = path.join(__dirname, '..', 'src', 'plugins', 'Export');
+makeInstallFor({
+    type: 'Export:Pipeline',
+    template: path.join(PLUGIN_ROOT, 'format.js.ejs'),
+    targetDir: path.join(PLUGIN_ROOT, 'formats', '<%=name%>'),
+});
 
 module.exports = extender;

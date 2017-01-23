@@ -4,10 +4,10 @@
 define([
 './formats/cli/cli.js'
 ], function(
-Format1
+Format0
 ) {
 
     return {
-'Basic CLI': Format1
+'Basic CLI': Format0
     };
 });
