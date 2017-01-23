@@ -43,6 +43,10 @@ extender.isSupportedType = function(type) {
     return extender.install[type] && extender.uninstall[type];
 };
 
+extender.getExtensionsConfig = function() {
+    return allExtConfigs;
+};
+
 extender.getInstalledConfig = function(name) {
     var group = values(allExtConfigs).find(typeGroup => {
         return !!typeGroup[name];

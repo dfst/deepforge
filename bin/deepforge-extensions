@@ -85,11 +85,28 @@ program
     });
 
 program
-    .command('list <name>', 'List installed deepforge extensions')
-    .option('-l, --long', 'Print project and version information')
+    .command('list')
+    .description('List installed deepforge extensions')
     .action((name, opts) => {
-        // Print the info. If 'long' is set, include the version info
-        // TODO
+        var allExtConfigs = extender.getExtensionsConfig(),
+            types = Object.keys(allExtConfigs),
+            hasContents = false,
+            names;
+
+        for (var i = types.length; i--;) {
+            names = Object.keys(allExtConfigs[types[i]]);
+            if (names.length) {
+                hasContents = true;
+                console.log(types[i]);
+                for (var j = names.length; j--;) {
+                    console.log(`  ${names[j]}`);
+                }
+            }
+        }
+
+        if (!hasContents) {
+            console.log('no installed extensions');
+        }
     });
 
 program.parse(process.argv);
