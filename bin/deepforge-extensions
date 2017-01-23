@@ -67,7 +67,7 @@ program
     });
 
 program
-    .command('remove <name>')
+    .command('remove <name>').alias('rm')
     .description('Remove an extension from deepforge')
     .action(name => {
         // Look up the extension in ~/.deepforge/extensions.json
@@ -85,7 +85,7 @@ program
     });
 
 program
-    .command('list')
+    .command('list').alias('ls')
     .description('List installed deepforge extensions')
     .action(() => {
         var allExtConfigs = extender.getExtensionsConfig(),
