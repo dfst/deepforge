@@ -2,11 +2,7 @@
 
 var Command = require('commander').Command,
     program = new Command(),
-    extender = require('../utils/extender'),
-    npm = require('npm'),
-    fs = require('fs'),
-    path = require('path'),
-    exists = require('exists-file');
+    extender = require('../utils/extender');
 
 // Supported commands
 //  - add
@@ -19,69 +15,28 @@ program
     .option('-n, --name <name>', 'Project name (if different from <project>)')
     .action(project => {
         console.log('loading extension from: ' + project);
-        // Install the project
-        npm.load({}, err => {
-            if (err) throw err;
-
-            npm.install(project, (err, installed) => {
-                var extProject,
-                    extRoot;
-
-                if (err) throw err;
-
-                // TODO: may be able to look up the name after installation
-                extProject = installed[0][0];
-                extRoot = installed[0][1];
-
-                // Check for the extensions.json in the project (look up type, etc)
-                var extConfigPath = path.join(extRoot, extender.EXT_CONFIG_NAME),
-                    extConfig,
-                    extType;
-
-                // Check that the extensions file exists
-                if (!exists.sync(extConfigPath)) {
-                    console.error(`Could not find ${extender.EXT_CONFIG_NAME} for ${project}.`);
-                    console.error('');
-                    console.error(`This is likely an issue w/ the deepforge extension (${project})`);
-                    process.exit(1);
-                }
-
-                try {
-                    extConfig = JSON.parse(fs.readFileSync(extConfigPath, 'utf8'));
-                } catch(e) {  // Invalid JSON
-                    console.error(`Invalid ${extender.EXT_CONFIG_NAME}: ${e}`);
-                    process.exit(1);
-                }
-
-                // Try to add the extension to the project (using the extender)
-                extType = extConfig.type;
-                if (!extender.isSupportedType(extType)) {
-                    console.error(`Unrecognized extension type: "${extType}"`);
-                    process.exit(1);
-                }
-                extender.install[extType](extConfig, {root: extRoot, name: extProject});
-
-                console.log(`The ${extConfig.name} extension has been added to deepforge.`);
+        extender.install(project)
+            .then(extConfig => 
+                console.log(`The ${extConfig.name} extension has been added to deepforge.`))
+            .fail(err => {
+                console.error('Could not install extension:\n');
+                console.error(err);
+                process.exit(1);
             });
-        });
     });
 
 program
     .command('remove <name>').alias('rm')
     .description('Remove an extension from deepforge')
     .action(name => {
-        // Look up the extension in ~/.deepforge/extensions.json
-        var extConfig = extender.getInstalledConfig(name);
-        if (!extConfig) {
-            console.error(`Extension "${name}" not found`);
+        try {
+            extender.uninstall(name);
+            console.log(`${name} has been successfully removed!`);
+        } catch (e) {
+            console.error('Could not remove extension:');
+            console.error(e);
             process.exit(1);
         }
-
-        // Run the uninstaller using the extender
-        var extType = extConfig.type;
-        extender.uninstall[extType](name);
-
-        console.log(`${name} has been successfully removed!`);
     });
 
 program
@@ -105,7 +60,7 @@ program
         }
 
         if (!hasContents) {
-            console.log('no installed extensions');
+            console.log('No installed extensions');
         }
     });
 

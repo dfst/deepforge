@@ -6,6 +6,8 @@
 //
 var path = require('path'),
     fs = require('fs'),
+    npm = require('npm'),
+    Q = require('q'),
     rm_rf = require('rimraf'),
     exists = require('exists-file'),
     makeTpl = require('lodash.template'),
@@ -32,10 +34,7 @@ var persistExtConfig = () => {
     fs.writeFileSync(extConfigPath, JSON.stringify(allExtConfigs, null, 2));
 };
 
-var extender = {
-    install: {},
-    uninstall: {}
-};
+var extender = {};
 
 extender.EXT_CONFIG_NAME = EXT_CONFIG_NAME;
 
@@ -52,6 +51,65 @@ extender.getInstalledConfig = function(name) {
         return !!typeGroup[name];
     });
     return group && group[name];
+};
+
+extender.install = function(project) {
+    // Install the project
+    return Q.ninvoke(npm, 'load', {})
+        .then(() => Q.ninvoke(npm, 'install', project))
+        .then(results => {
+            var installed = results[0],
+                extProject,
+                extRoot;
+
+            extProject = installed[0][0];
+            extRoot = installed[0][1];
+
+            // Check for the extensions.json in the project (look up type, etc)
+            var extConfigPath = path.join(extRoot, extender.EXT_CONFIG_NAME),
+                extConfig,
+                extType;
+
+            // Check that the extensions file exists
+            if (!exists.sync(extConfigPath)) {
+                throw [
+                    `Could not find ${extender.EXT_CONFIG_NAME} for ${project}.`,
+                    '',
+                    `This is likely an issue w/ the deepforge extension (${project})`
+                ].join('\n');
+            }
+
+            try {
+                extConfig = JSON.parse(fs.readFileSync(extConfigPath, 'utf8'));
+            } catch(e) {  // Invalid JSON
+                throw `Invalid ${extender.EXT_CONFIG_NAME}: ${e}`;
+            }
+
+            // Try to add the extension to the project (using the extender)
+            extType = extConfig.type;
+            if (!extender.isSupportedType(extType)) {
+                throw `Unrecognized extension type: "${extType}"`;
+            }
+            extender.install[extType](extConfig, {
+                arg: project,
+                root: extRoot,
+                name: extProject
+            });
+
+            return extConfig;
+        });
+};
+
+extender.uninstall = function(name) {
+    // Look up the extension in ~/.deepforge/extensions.json
+    var extConfig = extender.getInstalledConfig(name);
+    if (!extConfig) {
+        throw `Extension "${name}" not found`;
+    }
+
+    // Run the uninstaller using the extender
+    var extType = extConfig.type;
+    extender.uninstall[extType](name);
 };
 
 var makeInstallFor = function(typeCfg) {
@@ -73,15 +131,22 @@ var makeInstallFor = function(typeCfg) {
     // create the installation/uninstallation functions
     extender.install[typeCfg.type] = (config, project) => {
         var dstPath,
+            pkgJsonPath = path.join(project.root, 'package.json'),
+            pkgJson = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf8')),
             content;
 
         // add the config to the current installed extensions of this type
+        project = project || config.project;
+        config.version = pkgJson.version;
+        config.project = project;
+
         allExtConfigs[typeCfg.type] = allExtConfigs[typeCfg.type] || {};
 
         if (allExtConfigs[typeCfg.type][config.name]) {
             console.log(`Extension ${config.name} already installed. Reinstalling...`);
         }
 
+        // TODO: store the version and install arg name
         allExtConfigs[typeCfg.type][config.name] = config;
 
         // copy the main script to src/plugins/Export/formats/<name>/<main>
@@ -92,6 +157,8 @@ var makeInstallFor = function(typeCfg) {
 
         try {
             // TODO: Should I copy a directory instead of a main file?
+            console.log('project.root', project.root);
+            console.log('config.main', config.main);
             content = fs.readFileSync(path.join(project.root, config.main), 'utf8');
         } catch (e) {
             throw 'Could not read the extension\'s main file: ' + e;
