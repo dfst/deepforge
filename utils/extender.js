@@ -53,7 +53,7 @@ extender.getInstalledConfig = function(name) {
     return group && group[name];
 };
 
-extender.install = function(project) {
+extender.install = function(project, isReinstall) {
     // Install the project
     return Q.ninvoke(npm, 'load', {})
         .then(() => Q.ninvoke(npm, 'install', project))
@@ -94,7 +94,7 @@ extender.install = function(project) {
                 arg: project,
                 root: extRoot,
                 name: extProject
-            });
+            }, true);
 
             return extConfig;
         });
@@ -129,7 +129,7 @@ var makeInstallFor = function(typeCfg) {
     //  - extension type
     //  - target path tpl
     // create the installation/uninstallation functions
-    extender.install[typeCfg.type] = (config, project) => {
+    extender.install[typeCfg.type] = (config, project, isReinstall) => {
         var dstPath,
             pkgJsonPath = path.join(project.root, 'package.json'),
             pkgJson = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf8')),
@@ -142,11 +142,10 @@ var makeInstallFor = function(typeCfg) {
 
         allExtConfigs[typeCfg.type] = allExtConfigs[typeCfg.type] || {};
 
-        if (allExtConfigs[typeCfg.type][config.name]) {
-            console.log(`Extension ${config.name} already installed. Reinstalling...`);
+        if (allExtConfigs[typeCfg.type][config.name] && !isReinstall) {
+            console.error(`Extension ${config.name} already installed. Reinstalling...`);
         }
 
-        // TODO: store the version and install arg name
         allExtConfigs[typeCfg.type][config.name] = config;
 
         // copy the main script to src/plugins/Export/formats/<name>/<main>
@@ -157,8 +156,6 @@ var makeInstallFor = function(typeCfg) {
 
         try {
             // TODO: Should I copy a directory instead of a main file?
-            console.log('project.root', project.root);
-            console.log('config.main', config.main);
             content = fs.readFileSync(path.join(project.root, config.main), 'utf8');
         } catch (e) {
             throw 'Could not read the extension\'s main file: ' + e;
