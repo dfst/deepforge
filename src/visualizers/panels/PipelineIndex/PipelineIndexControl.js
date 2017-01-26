@@ -103,11 +103,11 @@ define([
     PipelineIndexControl.prototype._getObjectDescriptor = function (nodeId) {
         var node = this._client.getNode(nodeId),
             base,
-            objDescriptor;
+            desc;
 
         if (node) {
             base = this._client.getNode(node.getBaseId());
-            objDescriptor = {
+            desc = {
                 id: node.getId(),
                 name: node.getAttribute(nodePropertyNames.Attributes.name),
                 parentId: node.getParentId(),
@@ -115,10 +115,9 @@ define([
                 type: base.getAttribute('name'),
                 executionCount: node.getMemberIds('executions').length
             };
-
         }
 
-        return objDescriptor;
+        return desc;
     };
 
     /* * * * * * * * Node Event Handling * * * * * * * */

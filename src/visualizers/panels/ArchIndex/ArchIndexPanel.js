@@ -5,7 +5,7 @@ define([
     'js/PanelBase/PanelBaseWithHeader',
     'js/PanelManager/IActivePanel',
     'widgets/ArchIndex/ArchIndexWidget',
-    'panels/PipelineIndex/PipelineIndexControl'
+    'panels/ArchIndex/ArchIndexControl'
 ], function (
     PanelBaseWithHeader,
     IActivePanel,
