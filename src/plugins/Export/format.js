@@ -2,12 +2,12 @@
 /* globals define*/
 // The supported export formats and metadata
 define([
-'./formats/cli/cli.js'
+    './formats/cli/cli'
 ], function(
-Format0
+    Format0
 ) {
 
     return {
-'Basic CLI': Format0
+        'Basic CLI': Format0
     };
 });
