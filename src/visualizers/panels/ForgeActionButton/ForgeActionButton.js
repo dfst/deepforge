@@ -456,7 +456,6 @@ define([
         var exportFormats = Object.keys(ExportFormatDict),
             configDialog = new ConfigDialog(this.client, this._currentNodeId),
             inputConfig = _.extend({}, metadata),
-            extMetadata = {},
             extOptions = [],
             globalOpts = [];
 

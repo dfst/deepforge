@@ -359,9 +359,7 @@ define([
 
     Export.prototype.addCodeSerializers = function(sections) {
         var loadNodes = {},
-            saveNodes = {},
-            hasBool = false;
-
+            saveNodes = {};
 
         // Add the serializer fn names for each input
         sections.serializerFor = {};

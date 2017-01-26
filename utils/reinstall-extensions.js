@@ -15,6 +15,7 @@ for (var i = types.length; i--;) {
     if (names.length) {
         installCount += names.length;
         for (var j = names.length; j--;) {
+            // eslint-disable-next-line no-console
             console.log(`Re-installing ${names[j]} extension...`);
             config = extConfig[types[i]][names[j]];
             currentInstall = currentInstall
@@ -24,5 +25,6 @@ for (var i = types.length; i--;) {
 }
 
 if (installCount) {
+    // eslint-disable-next-line no-console
     currentInstall.then(() => console.log('Extensions reinstalled successfully'));
 }

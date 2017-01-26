@@ -94,7 +94,7 @@ extender.install = function(project, isReinstall) {
                 arg: project,
                 root: extRoot,
                 name: extProject
-            }, true);
+            }, !!isReinstall);
 
             return extConfig;
         });
@@ -143,6 +143,7 @@ var makeInstallFor = function(typeCfg) {
         allExtConfigs[typeCfg.type] = allExtConfigs[typeCfg.type] || {};
 
         if (allExtConfigs[typeCfg.type][config.name] && !isReinstall) {
+            // eslint-disable-next-line no-console
             console.error(`Extension ${config.name} already installed. Reinstalling...`);
         }
 
@@ -155,7 +156,6 @@ var makeInstallFor = function(typeCfg) {
         }
 
         try {
-            // TODO: Should I copy a directory instead of a main file?
             content = fs.readFileSync(path.join(project.root, config.main), 'utf8');
         } catch (e) {
             throw 'Could not read the extension\'s main file: ' + e;
@@ -172,6 +172,7 @@ var makeInstallFor = function(typeCfg) {
         allExtConfigs[typeCfg.type] = allExtConfigs[typeCfg.type] || {};
 
         if (!allExtConfigs[typeCfg.type][name]) {
+            // eslint-disable-next-line no-console
             console.log(`Extension ${name} not installed`);
             return;
         }
@@ -192,7 +193,7 @@ var PLUGIN_ROOT = path.join(__dirname, '..', 'src', 'plugins', 'Export');
 makeInstallFor({
     type: 'Export:Pipeline',
     template: path.join(PLUGIN_ROOT, 'format.js.ejs'),
-    targetDir: path.join(PLUGIN_ROOT, 'formats', '<%=name%>'),
+    targetDir: path.join(PLUGIN_ROOT, 'formats', '<%=name%>')
 });
 
 module.exports = extender;
