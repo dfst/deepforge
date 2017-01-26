@@ -29,9 +29,9 @@
         "src": "src/plugins/CreateExecution",
         "test": "test/plugins/CreateExecution"
       },
-      "GenerateExecFile": {
-        "src": "src/plugins/GenerateExecFile",
-        "test": "test/plugins/GenerateExecFile"
+      "Export": {
+        "src": "src/plugins/Export",
+        "test": "test/plugins/Export"
       },
       "ImportArtifact": {
         "src": "src/plugins/ImportArtifact",
