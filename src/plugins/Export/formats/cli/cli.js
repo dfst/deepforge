@@ -116,21 +116,28 @@ define([
 
             return files;
         } else {
+            var pipelineName = Object.keys(sections.pipelines)[0],
+                main,
+                args;
+
+            // Create some names for the inputs
+            args = sections.mainInputNames.map(name => `${sections.deserializerFor[name]}(${name})`);
+
+            main = `local outputs = ${pipelineName}(${args.join(', ')})`;
+
             // Grab the args from the cli
             code.push(sections.mainInputNames.map((name, index) => {
                 return `local ${name} = arg[${index + 1}]`;
             }).join('\n'));
 
             // Add the main fn
-            code.push(sections.main);
+            code.push(main);
 
             // Save outputs to disk
             code.push(sections.serializeOutputs);
 
             return code.join('\n\n');
         }
-
-        return code.join('\n\n');
     };
 
     var deepforgeTxt =
