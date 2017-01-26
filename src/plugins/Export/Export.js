@@ -285,8 +285,8 @@ define([
         // Define the serializers/deserializers
         this.addCodeSerializers(code);
 
-        // Define the main body
-        this.addCodeMain(code);
+        // Define the main input names
+        code.mainInputNames = Object.keys(this.isInputOp).map(id => this._nameFor[id]);
 
         // Add custom class definitions
         this.addCustomClasses(code);
@@ -420,17 +420,6 @@ define([
         ].join('\n');
 
         sections.serializeOutputs = '__saveOutputs(outputs)';
-    };
-
-    Export.prototype.addCodeMain = function(sections) {
-        var pipelineName = Object.keys(sections.pipelines)[0],
-            args;
-
-        // Create some names for the inputs
-        sections.mainInputNames = Object.keys(this.isInputOp).map(id => this._nameFor[id]);
-        args = sections.mainInputNames.map(name => `${sections.deserializerFor[name]}(${name})`);
-
-        sections.main = `local outputs = ${pipelineName}(${args.join(', ')})`;
     };
 
     Export.prototype.createTorchFnDict = function(name, nodeDict, attr, args) {
