@@ -473,7 +473,7 @@ define([
         inputConfig.configStructure = inputOpts;
 
         // Try to get the extension options
-        if (inputOpts.length || exportFormats.length || extOptions.length) {
+        if (inputOpts.length || exportFormats.length > 1|| extOptions.length) {
             configDialog.show(globalOpts, inputConfig, (formatOpts, inputOpts) => {
                 var context = this.client.getCurrentPluginContext(pluginId),
                     exportFormat = (globalOpts.length && formatOpts) ? formatOpts.exportFormat : exportFormats[0],
