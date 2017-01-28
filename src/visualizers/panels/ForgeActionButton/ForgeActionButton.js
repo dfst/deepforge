@@ -456,31 +456,17 @@ define([
         var exportFormats = Object.keys(ExportFormatDict),
             configDialog = new ConfigDialog(this.client, this._currentNodeId),
             inputConfig = _.extend({}, metadata),
-            extOptions = [],
-            globalOpts = [];
+            extOptions = [];
 
-        if (exportFormats.length > 1) {
-            globalOpts.push({  // format options
-                name: 'exportFormat',
-                displayName: 'Export Format',
-                valueType: 'string',
-                value: exportFormats[0],
-                valueItems: exportFormats,
-                readOnly: false
-            });
-        }
         inputConfig.configStructure = inputOpts;
 
         // Try to get the extension options
         if (inputOpts.length || exportFormats.length > 1|| extOptions.length) {
-            configDialog.show(globalOpts, inputConfig, (formatOpts, inputOpts) => {
+            // TODO
+            configDialog.show(inputConfig, (allConfigs) => {
                 var context = this.client.getCurrentPluginContext(pluginId),
-                    exportFormat = (globalOpts.length && formatOpts) ? formatOpts.exportFormat : exportFormats[0],
-                    staticInputs = Object.keys(inputOpts || {}).filter(input => inputOpts[input]);
-
-                if (!formatOpts) {  // canceled
-                    return;
-                }
+                    exportFormat = allConfigs.FormatOptions.exportFormat,
+                    staticInputs = Object.keys(allConfigs[pluginId]).filter(input => inputOpts[input]);
 
                 this.logger.debug('Exporting pipeline to format', exportFormat);
                 this.logger.debug('static inputs:', staticInputs);
@@ -488,7 +474,8 @@ define([
                 context.managerConfig.namespace = 'pipeline';
                 context.pluginConfig = {
                     format: exportFormat,
-                    staticInputs: staticInputs
+                    staticInputs: staticInputs,
+                    extensionConfig: allConfigs.extensionConfig
                 };
                 return Q.ninvoke(this.client, 'runBrowserPlugin', pluginId, context)
                     .then(deferred.resolve)

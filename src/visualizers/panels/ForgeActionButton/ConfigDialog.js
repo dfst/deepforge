@@ -26,9 +26,47 @@ define([
 
     ConfigDialog.prototype = Object.create(PluginConfigDialog.prototype);
 
-    ConfigDialog.prototype.show = function(globalOptions, pluginMetadata, extMetadata, callback) {
-        this._extMetadata = extMetadata;
-        return PluginConfigDialog.prototype.show.call(this, globalOptions, pluginMetadata, {}, callback);
+    ConfigDialog.prototype.getFormatOptions = function() {
+        this._exportFormats = Object.keys(ExportFormats);
+
+        this._formatOptions = [];
+        if (this._exportFormats.length > 1) {
+            this._formatOptions.push({  // format options
+                name: 'exportFormat',
+                displayName: 'Export Format',
+                valueType: 'string',
+                value: exportFormats[0],
+                valueItems: exportFormats,
+                readOnly: false
+            });
+        }
+    };
+
+    ConfigDialog.prototype.show = function(pluginMetadata, callback) {
+        this._pluginMetadata = pluginMetadata;
+
+        this.getFormatOptions();
+        this._initDialog();
+
+        this._dialog.on('shown', () => {
+            this._dialog.find('input').first().focus();
+        });
+
+        this._btnSave.on('click', event => {
+            this.submit(callback);
+            event.stopPropagation();
+            event.preventDefault();
+        });
+
+        //save&run on CTRL + Enter
+        this._dialog.on('keydown.PluginConfigDialog', event => {
+            if (event.keyCode === 13 && (event.ctrlKey || event.metaKey)) {
+                event.stopPropagation();
+                event.preventDefault();
+                this.submit(callback);
+            }
+        });
+        this._dialog.modal('show');
     };
 
     ConfigDialog.prototype._initDialog = function() {
@@ -49,15 +87,13 @@ define([
         this._title.text(this._pluginMetadata.id + ' ' + 'v' + this._pluginMetadata.version);
 
         // Generate the config options
-        var formats = Object.keys(ExportFormats),
-            format = formats[0],
-            sectionHeader = SECTION_HEADER.clone();
+        var sectionHeader = SECTION_HEADER.clone();
 
         sectionHeader.text('Static Artifacts');
         this._divContainer.append(sectionHeader);
         this.generateConfigSection(this._pluginMetadata);
 
-        if (formats.length > 1) {
+        if (this._exportFormats.length > 1) {
             this._divContainer.append($('<hr class="extension-config-divider">'));
             sectionHeader = SECTION_HEADER.clone();
             sectionHeader.text('Export Options');
@@ -65,7 +101,7 @@ define([
 
             this.generateConfigSection({
                 id: 'FormatOptions',
-                configStructure: this._globalOptions
+                configStructure: this._formatOptions
             });
             this._widgets.FormatOptions.exportFormat.el.find('select').on('change', event => {
                 var format = event.target.value;
@@ -74,11 +110,43 @@ define([
             });
         }
 
-        this.updateExtConfig(format);
+        this.updateExtConfig(this._exportFormats[0]);
+    };
+
+    ConfigDialog.prototype.submit = function (callback) {
+        var config = this._getAllConfigValues();
+        // TODO: invoke the callback
+        this._dialog.modal('hide');
+        // Get the config settings
+        // TODO
+        // how should I return them together? an array? or a config object that
+        // organizes them by namespace?
+        debugger;
+        if (this._exportFormats.length === 1) {
+            config.FormatOptions = {
+                exportFormat: this._exportFormats[0]
+            };
+        }
+        callback(config);
+    };
+
+    ConfigDialog.prototype._getAllConfigValues = function () {
+        var settings = {};
+
+        Object.keys(this._widgets).forEach(namespace => {
+            settings[namespace] = {};
+
+            Object.keys(this._widgets[namespace]).forEach(name => {
+                settings[namespace][name] = this._widgets[namespace][name].getValue();
+            });
+        });
+
+        return settings;
     };
 
     ConfigDialog.prototype.updateExtConfig = function (format) {
         var extConfig = {
+            id: 'extensionConfig',
             class: 'extension-config',
             configStructure: ExportFormats[format].getConfigStructure ?
             ExportFormats[format].getConfigStructure(this._client, this._node) : []
