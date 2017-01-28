@@ -48,10 +48,6 @@
             "ImportTorch": {
                 "icon": "import_export",
                 "priority": -1
-            },
-            "Export": {
-                "icon": "play_for_work",
-                "priority": -1
             }
         }
     },

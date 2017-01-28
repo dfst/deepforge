@@ -268,7 +268,7 @@ define([
             },
             {
                 name: 'Export Pipeline',
-                icon: 'play_for_work',
+                icon: 'launch',
                 priority: -1,
                 action: function() {
                     this.exportPipeline()
