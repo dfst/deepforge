@@ -4,9 +4,18 @@ define([
 ], function(
 ) {
 
-    var TOBOOLEAN;
+    var TOBOOLEAN = 
+`local function toboolean(str)
+    if str == 'true' then
+        return true
+    elseif str == 'false' then
+        return false
+    end
+end`;
 
-    var deserializersFromString = function(sections) {
+    var CliExporter = {};
+
+    CliExporter.deserializersFromString = function(sections) {
         var hasBool = false;
 
         // Add serializers given cli string input
@@ -33,13 +42,14 @@ define([
         return sections;
     };
 
-    var createExecFile = function (sections, staticInputs) {
+    CliExporter.main = function (sections, staticInputs) {
         var code = [];
 
         // Update deserializers for cli input
-        deserializersFromString.call(this, sections);
+        this.deserializersFromString(sections);
 
         // Define all the operations, pipelines, etc
+        // 'getAllDefinitions' is provided as part of the public api
         code.push(this.getAllDefinitions(sections));
 
         // Command line specific stuff
@@ -90,14 +100,5 @@ define([
         return staticInputs.length ? files : files['init.lua'];
     };
 
-    TOBOOLEAN = 
-`local function toboolean(str)
-    if str == 'true' then
-        return true
-    elseif str == 'false' then
-        return false
-    end
-end`;
-
-    return createExecFile;
+    return CliExporter;
 });
