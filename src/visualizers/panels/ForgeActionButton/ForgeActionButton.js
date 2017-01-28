@@ -462,7 +462,6 @@ define([
 
         // Try to get the extension options
         if (inputOpts.length || exportFormats.length > 1|| extOptions.length) {
-            // TODO
             configDialog.show(inputConfig, (allConfigs) => {
                 var context = this.client.getCurrentPluginContext(pluginId),
                     exportFormat = allConfigs.FormatOptions.exportFormat,

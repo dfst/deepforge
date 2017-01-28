@@ -35,8 +35,8 @@ define([
                 name: 'exportFormat',
                 displayName: 'Export Format',
                 valueType: 'string',
-                value: exportFormats[0],
-                valueItems: exportFormats,
+                value: this._exportFormats[0],
+                valueItems: this._exportFormats,
                 readOnly: false
             });
         }
@@ -115,19 +115,14 @@ define([
 
     ConfigDialog.prototype.submit = function (callback) {
         var config = this._getAllConfigValues();
-        // TODO: invoke the callback
         this._dialog.modal('hide');
-        // Get the config settings
-        // TODO
-        // how should I return them together? an array? or a config object that
-        // organizes them by namespace?
-        debugger;
+
         if (this._exportFormats.length === 1) {
             config.FormatOptions = {
                 exportFormat: this._exportFormats[0]
             };
         }
-        callback(config);
+        return callback(config);
     };
 
     ConfigDialog.prototype._getAllConfigValues = function () {
