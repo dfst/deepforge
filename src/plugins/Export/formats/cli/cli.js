@@ -1,9 +1,7 @@
 /*globals define*/
 // Simple torch cli for the given pipeline
 define([
-    'underscore'
 ], function(
-    _
 ) {
 
     var TOBOOLEAN;
