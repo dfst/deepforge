@@ -123,6 +123,22 @@ define([
         return config;
     };
 
+    Export.prototype.getExporterFor = function (name) {
+        var Exporter = function() {},
+            format = FORMATS[name],
+            exporter;
+
+        Exporter.prototype = this;
+        exporter = new Exporter();
+
+        if (typeof format === 'function') {
+            exporter.main = format;
+        } else {
+            _.extend(exporter, format);
+        }
+        return exporter;
+    };
+
     Export.prototype.generateOutputFiles = function (children) {
         var name = this.core.getAttribute(this.activeNode, 'name');
 
@@ -131,9 +147,11 @@ define([
                 // Get the selected format
                 var config = this.getCurrentConfig(),
                     format = config.format || 'Basic CLI',
-                    generate = FORMATS[format],
+                    exporter,
                     staticInputs,
                     files;
+
+                exporter = this.getExporterFor(format);
 
                 staticInputs = config.staticInputs.map(id => {
                     var opId = id.split('/').splice(0, this.activeNodeDepth).join('/'),
@@ -147,7 +165,7 @@ define([
                     };
                 });
 
-                files = generate.call(this, sections, staticInputs);
+                files = exporter.main(sections, staticInputs);
                 // If it returns a string, just put a single file
                 if (typeof files === 'string') {
                     return this.blobClient.putFile(`${name}.lua`, files);
