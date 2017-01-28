@@ -466,7 +466,7 @@ define([
             configDialog.show(inputConfig, (allConfigs) => {
                 var context = this.client.getCurrentPluginContext(pluginId),
                     exportFormat = allConfigs.FormatOptions.exportFormat,
-                    staticInputs = Object.keys(allConfigs[pluginId]).filter(input => inputOpts[input]);
+                    staticInputs = Object.keys(allConfigs[pluginId]).filter(input => allConfigs[pluginId][input]);
 
                 this.logger.debug('Exporting pipeline to format', exportFormat);
                 this.logger.debug('static inputs:', staticInputs);
