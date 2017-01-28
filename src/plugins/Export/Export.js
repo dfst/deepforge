@@ -3,6 +3,7 @@
 
 define([
     'text!./metadata.json',
+    'text!./deepforge.ejs',
     './format',
     'plugin/PluginBase',
     'deepforge/plugin/PtrCodeGen',
@@ -12,6 +13,7 @@ define([
     'q'
 ], function (
     pluginMetadata,
+    DeepForgeBaseCode,
     FORMATS,
     PluginBase,
     PtrCodeGen,
@@ -28,7 +30,8 @@ define([
             lineOffset: true,
             code: true
         },
-        RESERVED = /^(and|break|do|else|elseifend|false|for|function|if|in|local|nil|not|orrepeat|return|then|true|until|while|print)$/;
+        RESERVED = /^(and|break|do|else|elseifend|false|for|function|if|in|local|nil|not|orrepeat|return|then|true|until|while|print)$/,
+        DeepForgeTpl = _.template(DeepForgeBaseCode);
 
     /**
      * Initializes a new instance of Export.
@@ -841,6 +844,56 @@ define([
     };
 
     _.extend(Export.prototype, PtrCodeGen.prototype);
+
+    // Extra utilities for export types
+    Export.prototype.INIT_CLASSES_FN = '__init_classes';
+    Export.prototype.INIT_LAYERS_FN = '__init_layers';
+    Export.prototype.getAllDefinitions = function (sections) {
+        var code = [],
+            classes,
+            initClassFn,
+            initLayerFn;
+
+        classes = sections.orderedClasses
+            // Create fns from the classes
+            .map(name => this.indent(sections.classes[name])).join('\n');
+
+        initClassFn = [
+            `local function ${this.INIT_CLASSES_FN}()`,
+            this.indent(classes),
+            'end'
+        ].join('\n');
+
+        code = code.concat(initClassFn);
+
+        // wrap the layers in a function
+        initLayerFn = [
+            `local function ${this.INIT_LAYERS_FN}()`,
+            this.indent(_.values(sections.layers).join('\n\n')),
+            'end'
+        ].join('\n');
+        code = code.concat(initLayerFn);
+
+        // Add operation fn definitions
+        code = code.concat(_.values(sections.operations));
+        code = code.concat(_.values(sections.pipelines));
+
+        // define deserializers, serializers
+        code.push(sections.deserializers);
+        code.push(sections.serializers);
+
+        code.push(this.getDeepforgeObject());
+        code.push('deepforge.initialize()');
+
+        code.push(sections.serializeOutputsDef);
+        return code.join('\n\n');
+    };
+
+    Export.prototype.getDeepforgeObject = function (content) {
+        content = content || {};
+        content.initCode = content.initCode || `${this.INIT_CLASSES_FN}()\n${'   '}${this.INIT_LAYERS_FN}()`;
+        return DeepForgeTpl(content);
+    };
 
     return Export;
 });
