@@ -181,9 +181,11 @@ describe('cli', function() {
         });
 
         it('should update deepforge from git if --git set w/ npm', function() {
+            var repo = require('../../package.json').repository.url;
             mocks.childProcess.spawn = (cmd, args) => {
+                // check for the git repo
                 if (cmd === 'npm') {
-                    assert.notEqual(args.indexOf('dfst/deepforge'), -1);
+                    assert.notEqual(args.indexOf(repo), -1);
                 }
             };
             cli('update --git');
