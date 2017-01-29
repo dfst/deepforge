@@ -8,7 +8,8 @@ var Command = require('commander').Command,
     execSync = childProcess.execSync,
     path = require('path'),
     fs = require('fs'),
-    version = require('../package.json').version,
+    pkgJson = require('../package.json'),
+    version = pkgJson.version,
     exists = require('exists-file'),
     DEFAULT_CONFIG = require('./config.json'),
     merge = require('lodash.merge'),
@@ -334,7 +335,7 @@ program
         if (!args.torch || args.server) {
 
             if (args.git) {
-                pkg = 'dfst/deepforge';
+                pkg = pkgJson.repository.url;
             } else {
                 // Check the version
                 try {
