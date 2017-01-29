@@ -165,7 +165,7 @@ define([
                     };
                 });
 
-                files = exporter.main(sections, staticInputs);
+                files = exporter.main(sections, staticInputs, config.extensionConfig);
                 // If it returns a string, just put a single file
                 if (typeof files === 'string') {
                     return this.blobClient.putFile(`${name}.lua`, files);
