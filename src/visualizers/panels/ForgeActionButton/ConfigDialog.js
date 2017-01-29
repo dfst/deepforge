@@ -144,7 +144,7 @@ define([
             id: 'extensionConfig',
             class: 'extension-config',
             configStructure: ExportFormats[format].getConfigStructure ?
-                ExportFormats[format].getConfigStructure(this._client, this._node) : []
+                ExportFormats[format].getConfigStructure(this._node, this._client) : []
         };
         this._divContainer.find('.extension-config').remove();
 
