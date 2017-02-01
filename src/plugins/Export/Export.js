@@ -151,6 +151,7 @@ define([
                     staticInputs,
                     files;
 
+                this.logger.info(`About to retrieve ${config.format} exporter`);
                 exporter = this.getExporterFor(format);
 
                 staticInputs = config.staticInputs.map(id => {
@@ -165,7 +166,13 @@ define([
                     };
                 });
 
-                files = exporter.main(sections, staticInputs, config.extensionConfig);
+                this.logger.info('Invoking exporter "main" function...');
+                try {
+                    files = exporter.main(sections, staticInputs, config.extensionConfig);
+                } catch (e) {
+                    this.logger.error(`Exporter failed: ${e.toString()}`);
+                    throw e;
+                }
                 // If it returns a string, just put a single file
                 if (typeof files === 'string') {
                     return this.blobClient.putFile(`${name}.lua`, files);

@@ -455,13 +455,12 @@ define([
 
         var exportFormats = Object.keys(ExportFormatDict),
             configDialog = new ConfigDialog(this.client, this._currentNodeId),
-            inputConfig = _.extend({}, metadata),
-            extOptions = [];
+            inputConfig = _.extend({}, metadata);
 
         inputConfig.configStructure = inputOpts;
 
         // Try to get the extension options
-        if (inputOpts.length || exportFormats.length > 1|| extOptions.length) {
+        if (inputOpts.length || exportFormats.length > 1) {
             configDialog.show(inputConfig, (allConfigs) => {
                 var context = this.client.getCurrentPluginContext(pluginId),
                     exportFormat = allConfigs.FormatOptions.exportFormat,
