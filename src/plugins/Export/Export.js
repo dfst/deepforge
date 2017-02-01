@@ -307,7 +307,8 @@ define([
         this.addCodeSerializers(code);
 
         // Define the main input names
-        code.mainInputNames = Object.keys(this.isInputOp).map(id => this._nameFor[id]);
+        code.pipelineName = Object.keys(code.pipelines)[0];
+        code.pipelineInputNames = Object.keys(this.isInputOp).map(id => this._nameFor[id]);
 
         // Add custom class definitions
         this.addCustomClasses(code);
