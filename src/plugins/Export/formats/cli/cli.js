@@ -53,8 +53,7 @@ end`;
         code.push(this.getAllDefinitions(sections));
 
         // Command line specific stuff
-        var pipelineName = Object.keys(sections.pipelines)[0],
-            files = {},
+        var files = {},
             main,
             args,
             staticNames = staticInputs.map(input => input.name),
@@ -62,12 +61,12 @@ end`;
             index = 1;
 
         // Create some names for the inputs
-        args = sections.mainInputNames.map(name => `${sections.deserializerFor[name]}(${name})`);
+        args = sections.pipelineInputNames.map(name => `${sections.deserializerFor[name]}(${name})`);
 
-        main = `local outputs = ${pipelineName}(${args.join(', ')})`;
+        main = `local outputs = ${sections.pipelineName}(${args.join(', ')})`;
 
         // Grab the args from the cli
-        code.push(sections.mainInputNames.map((name, index) => {
+        code.push(sections.pipelineInputNames.map((name, index) => {
             return `local ${name} = arg[${index + 1}]`;
         }).join('\n'));
 
@@ -81,7 +80,7 @@ end`;
         });
 
         // Grab the remaining args from the cli
-        varDefs = varDefs.concat(sections.mainInputNames.map(name => {
+        varDefs = varDefs.concat(sections.pipelineInputNames.map(name => {
             if (!staticNames.includes(name)) {
                 return `local ${name} = arg[${index++}]`;
             }
