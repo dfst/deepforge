@@ -32,9 +32,7 @@ define([
             SRC: 'src',
             DST: 'dst'
         },
-        DECORATORS = {
-            ArtifactFinder: 'ArtifactOpDecorator'
-        },
+        DECORATORS = {},
         WIDGET_NAME = 'EasyDAG';
 
     DECORATORS[CONSTANTS.OP.INPUT] = 'ArtifactOpDecorator';

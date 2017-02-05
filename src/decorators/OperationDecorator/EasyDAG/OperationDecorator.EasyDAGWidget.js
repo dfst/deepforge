@@ -2,9 +2,11 @@
 /*jshint browser: true, camelcase: false*/
 
 define([
+    'deepforge/Constants',
     'decorators/EllipseDecorator/EasyDAG/EllipseDecorator.EasyDAGWidget',
     'css!./OperationDecorator.EasyDAGWidget.css'
 ], function (
+    CONSTANTS,
     DecoratorBase
 ) {
 
@@ -13,6 +15,7 @@ define([
     var OperationDecorator,
         NAME_MARGIN = 25,
         DECORATOR_ID = 'OperationDecorator',
+        OPERATION_COLORS = {},
         PORT_TOOLTIP_OPTS = {
             tipJoint: 'left',
             removeElementsOnHide: true,
@@ -24,8 +27,9 @@ define([
     //     - highlight ports
     //     - unhighlight ports
     //     - report the location of specific ports
+    OPERATION_COLORS[CONSTANTS.OP.OUTPUT] = '#b0bec5';
     OperationDecorator = function (options) {
-        options.color = options.color || '#78909c';
+        options.color = options.color || OPERATION_COLORS[options.node.name] || '#78909c';
         DecoratorBase.call(this, options);
 
         this.id = this._node.id;
