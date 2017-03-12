@@ -213,7 +213,6 @@ var installTorch = function() {
                 var error = result.error || result.stderr ||
                     `Torch install failed with exit code ${result.code}`;
 
-                console.log('stderr', result.stderr);
                 if (result.stderr.includes('unable to access')) {
                     error = `Could not access the torch repository. Are you ` +
                         `connected to the internet?\n`;
