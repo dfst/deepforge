@@ -209,28 +209,35 @@ var installTorch = function() {
         args = `clone https://github.com/torch/distro.git ${tgtDir} --recursive`.split(' ');
 
         return spawn('git', args)
-            .then(code => {
-                if (code !== 0) {
-                    if (code === 128) {
-                        console.error(`${tgtDir} is not empty. ` +
-                            'Please empty it or change the torch directory:\n' +
-                            '\n    deepforge config torch.dir NEW/TORCH/PATH\n');
+            .catch(result => {
+                var error = result.error || result.stderr ||
+                    `Torch install failed with exit code ${result.code}`;
 
-                    }
+                console.log('stderr', result.stderr);
+                if (result.stderr.includes('unable to access')) {
+                    error = `Could not access the torch repository. Are you ` +
+                        `connected to the internet?\n`;
+                } else if (result.code === 128) {
+                    error = `${tgtDir} is not empty. ` +
+                        'Please empty it or change the torch directory:\n' +
+                        '\n    deepforge config torch.dir NEW/TORCH/PATH\n';
 
-                    throw `Torch install Failed with exit code ${code}`;
-                } else {  // continue installation
-                    process.chdir(tgtDir);
-                    return spawn('bash', ['install-deps'])
-                        .then(() => spawn('bash', ['install.sh'], true))
-                        .then(() => {
-                            storeConfig('torch.dir', tgtDir);
-                            console.log('Installed torch. Please close and ' +
-                                're-open your terminal to use DeepForge w/ ' +
-                                'torch support!');
-                            process.exit(0);
-                        });
                 }
+
+                console.error(error);
+                process.exit(result.code);
+            })
+            .then((code, stderr) => {
+                process.chdir(tgtDir);
+                return spawn('bash', ['install-deps'])
+                    .then(() => spawn('bash', ['install.sh'], true))
+                    .then(() => {
+                        storeConfig('torch.dir', tgtDir);
+                        console.log('Installed torch. Please close and ' +
+                            're-open your terminal to use DeepForge w/ ' +
+                            'torch support!');
+                        process.exit(0);
+                    });
             });
     } else {
         return Q();
@@ -243,21 +250,32 @@ var spawn = function(cmd, args, opts) {
         spawnOpts = typeof opts === 'object' ? opts : null,
         forwardStdin = opts === true,
         isOpen = true,
+        stderr = '',
         err;
 
     args = args || [];
     job = spawnOpts ? rawSpawn(cmd, args, spawnOpts) : rawSpawn(cmd, args);
     job.stdout.on('data', data => process.stdout.write(data));
-    job.stderr.on('data', data => process.stderr.write(data));
+    job.stderr.on('data', data => {
+        stderr += data;
+        process.stderr.write(data);
+    });
+
     job.on('close', code => {
         isOpen = false;
-        if (err) {
-            deferred.reject(err, code);
+        if (err || code !== 0) {
+            deferred.reject({
+                code: code,
+                stderr: stderr,
+                error: err
+            });
         } else {
             deferred.resolve(code);
         }
     });
-    job.on('error', e => err = e);
+    job.on('error', e => {
+        err = e;
+    });
 
     if (forwardStdin) {
         process.stdin.on('data', data => {
