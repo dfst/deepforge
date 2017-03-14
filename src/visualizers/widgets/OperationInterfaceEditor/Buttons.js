@@ -89,9 +89,38 @@ define([
         this.selectionManager.deselect();
     };
 
+    // Set the color
+    var SetColor = function(params) {
+        params.title = params.title || 'Set operation color';
+        EasyDAGButtons.Add.call(this, params);
+    };
+    _.extend(SetColor.prototype, EasyDAGButtons.Add.prototype);  // FIXME
+
+    SetColor.prototype._onClick = function(item) {
+        // TODO
+        console.log('setting the color!');
+    };
+
+    SetColor.prototype._render = function() {
+        var lineRadius = EasyDAGButtons.Add.SIZE - EasyDAGButtons.Add.BORDER,
+            btnColor = '#ffcc80';
+
+        if (this.disabled) {
+            btnColor = '#e0e0e0';
+        }
+
+        this.$el
+            .append('circle')
+            .attr('r', EasyDAGButtons.Add.SIZE)
+            .attr('fill', btnColor);
+
+        Icons.addIcon('brush', this.$el, {radius: lineRadius});
+    };
+
     return {
         AddOutput: AddOutput,
         AddInput: AddInput,
+        SetColor: SetColor,
         AddRef: AddRef,
         GoToBase: CommonButtons.GoToBase,
         Delete: Delete
