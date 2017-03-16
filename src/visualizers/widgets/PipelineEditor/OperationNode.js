@@ -9,7 +9,10 @@ define([
 
     'use strict';
     var OperationNode = function(parentEl, desc) {
-        DAGItem.call(this, parentEl, desc);
+        var decoratorOpts = {
+            color: desc.displayColor
+        };
+        DAGItem.call(this, parentEl, desc, decoratorOpts);
         this.inputs = desc.inputs;
         this.outputs = desc.outputs;
         this._visiblePorts = null;
