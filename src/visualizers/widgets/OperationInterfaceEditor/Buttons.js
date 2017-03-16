@@ -3,7 +3,8 @@ define([
     'deepforge/viz/Buttons',
     'widgets/EasyDAG/Buttons',
     'widgets/EasyDAG/Icons',
-    'underscore'
+    'underscore',
+    './lib/spectrum.min'
 ], function(
     CommonButtons,
     EasyDAGButtons,
@@ -93,13 +94,29 @@ define([
     var SetColor = function(params) {
         params.title = params.title || 'Set operation color';
         EasyDAGButtons.Add.call(this, params);
+
+        // Add the click handling
+        $('.set-color-icon').spectrum({
+            change: color => console.log('changed!', color),  // TODO: Update the op color
+            showPaletteOnly: true,
+            showPalette: true,
+            clickoutFiresChange: true,
+            hideAfterPaletteSelect: true,
+
+            color: 'blanchedalmond',  // TODO: Set to the operation's current color
+            palette: [
+                // TODO: get more meaningful colors
+                ['black', 'white', 'blanchedalmond',
+                'rgb(255, 128, 0);', 'hsv 100 70 50'],
+                ['red', 'yellow', 'green', 'blue', 'violet']
+            ]
+
+        });
     };
     _.extend(SetColor.prototype, EasyDAGButtons.Add.prototype);  // FIXME
 
-    SetColor.prototype._onClick = function(item) {
-        // TODO
-        console.log('setting the color!');
-    };
+    SetColor.prototype.BTN_CLASS = 'set-color-icon';
+    SetColor.prototype._onClick = function() {};
 
     SetColor.prototype._render = function() {
         var lineRadius = EasyDAGButtons.Add.SIZE - EasyDAGButtons.Add.BORDER,
