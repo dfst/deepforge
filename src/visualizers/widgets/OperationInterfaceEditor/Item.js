@@ -9,6 +9,8 @@ define([
     
     var Item = function(parentEl, desc) {
         DAGItem.call(this, parentEl, desc);
+        this.decorator.color = desc.displayColor || this.decorator.color;
+
 
         // Show the warnings
         this.$warning = null;
@@ -19,6 +21,7 @@ define([
     _.extend(Item.prototype, DAGItem.prototype);
     
     Item.prototype.update = function(desc) {
+        this.decorator.color = desc.displayColor || this.decorator.color;
         DAGItem.prototype.update.call(this, desc);
         this.updateWarnings();
     };
