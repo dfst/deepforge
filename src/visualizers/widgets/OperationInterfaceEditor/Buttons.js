@@ -1,12 +1,14 @@
 /*globals define*/
 define([
     'deepforge/viz/Buttons',
+    'deepforge/Constants',
     'widgets/EasyDAG/Buttons',
     'widgets/EasyDAG/Icons',
     'underscore',
     './lib/spectrum.min'
 ], function(
     CommonButtons,
+    Constants,
     EasyDAGButtons,
     Icons,
     _
@@ -96,17 +98,18 @@ define([
         EasyDAGButtons.Add.call(this, params);
 
         // Add the click handling
+        var currentColor = this.item.desc.displayColor;
         $('.set-color-icon').spectrum({
-            change: color => console.log('changed!', color),  // TODO: Update the op color
+            change: color => this.onColorChanged(color.toHexString()),
             showPaletteOnly: true,
             showPalette: true,
             clickoutFiresChange: true,
             hideAfterPaletteSelect: true,
 
-            color: 'blanchedalmond',  // TODO: Set to the operation's current color
+            color: currentColor,
             palette: [
                 // TODO: get more meaningful colors
-                ['black', 'white', 'blanchedalmond',
+                [currentColor, 'white', 'blanchedalmond',
                 'rgb(255, 128, 0);', 'hsv 100 70 50'],
                 ['red', 'yellow', 'green', 'blue', 'violet']
             ]
@@ -117,6 +120,15 @@ define([
 
     SetColor.prototype.BTN_CLASS = 'set-color-icon';
     SetColor.prototype._onClick = function() {};
+
+    SetColor.prototype.onColorChanged = function(color) {
+        console.log('changing color to', color);
+        // Set the displayColor attribute to the given hex value
+        this.context.saveAttributeForNode(this.item.id, Constants.DISPLAY_COLOR, color);
+
+        // Update the color of the displayed node
+        // TODO
+    };
 
     SetColor.prototype._render = function() {
         var lineRadius = EasyDAGButtons.Add.SIZE - EasyDAGButtons.Add.BORDER,
