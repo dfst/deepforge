@@ -17,6 +17,12 @@ define([
 
     _.extend(SelectionManager.prototype, EasyDAGSelectionManager.prototype);
 
+    SelectionManager.prototype.deselect = function() {
+        // TODO: Refactor this so it is in a 'destroy' method
+        $('.set-color-icon').spectrum('hide');
+        EasyDAGSelectionManager.prototype.deselect.call(this);
+    };
+
     SelectionManager.prototype.createActionButtons = function(width, height) {
         var selectedType = this.selectedItem.desc.baseName,
             dataNodes,
