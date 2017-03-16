@@ -64,6 +64,17 @@ define([
         return 'PipelineEditor';
     };
 
+    PipelineEditorWidget.prototype.onCreateInitialNode = function() {
+        var initialNodes = this.getValidInitialNodes().map(node => {
+            var colorAttr = node.attributes[CONSTANTS.DISPLAY_COLOR];
+            node.decoratorOpts = {color: colorAttr && colorAttr.value};
+            return {node};
+        });
+
+        AddNodeDialog.prompt(initialNodes)
+            .then(selected => this.createNode(selected.node.id));
+    };
+
     PipelineEditorWidget.prototype.setupItemCallbacks = function() {
         ThumbnailWidget.prototype.setupItemCallbacks.call(this);
         this.ItemClass.prototype.connectPort =
