@@ -11,6 +11,15 @@ define([
     CONSTANTS
 ) {
 
+    var SKIP_ATTRIBUTES = [
+        'code',
+        'stdout',
+        'execFiles',
+        'jobId',
+        'secret',
+        CONSTANTS.LINE_OFFSET,
+        CONSTANTS.DISPLAY_COLOR
+    ];
     var ExecuteJob = function() {
     };
 
@@ -285,13 +294,12 @@ define([
     };
 
     ExecuteJob.prototype.createAttributeFile = function (node, files) {
-        var skip = ['code', 'stdout', 'execFiles', 'jobId', 'secret', CONSTANTS.LINE_OFFSET],
-            numOrBool = /^(-?\d+\.?\d*((e|e-)\d+)?|(true|false))$/,
+        var numOrBool = /^(-?\d+\.?\d*((e|e-)\d+)?|(true|false))$/,
             table;
 
         this.logger.info('Creating attributes file...');
         table = '{\n\t' + this.core.getAttributeNames(node)
-            .filter(attr => skip.indexOf(attr) === -1)
+            .filter(attr => SKIP_ATTRIBUTES.indexOf(attr) === -1)
             .map(name => {
                 var value = this.getAttribute(node, name);
                 if (!numOrBool.test(value)) {
