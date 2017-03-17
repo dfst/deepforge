@@ -14,6 +14,10 @@ define([
     _
 ) {
 
+    var COLOR_PALETTE = [
+        ['#78909c', '#ce93d8', '#ff9100', '#ffb74d', '#ffe0b2'],
+        ['#42a5f5', '#80deea', '#80cbc4', '#a5d6a7', '#69f0ae']
+    ];
     var AddOutput = function(params) {
         params.title = params.title || 'Add operation output';
         EasyDAGButtons.Add.call(this, params);
@@ -107,13 +111,7 @@ define([
             hideAfterPaletteSelect: true,
 
             color: currentColor,
-            palette: [
-                // TODO: get more meaningful colors
-                [currentColor, 'white', 'blanchedalmond',
-                'rgb(255, 128, 0);', 'hsv 100 70 50'],
-                ['red', 'yellow', 'green', 'blue', 'violet']
-            ]
-
+            palette: COLOR_PALETTE
         });
     };
     _.extend(SetColor.prototype, EasyDAGButtons.Add.prototype);  // FIXME
