@@ -1,0 +1,40 @@
+# Start with Ubuntu base image
+FROM node:6.2.2
+MAINTAINER Brian Broll <brian.broll@gmail.com>
+
+# Install basic required tools
+RUN apt-get update && apt-get install -y git mongodb
+
+# Set up mongodb
+RUN mkdir -p /data/db
+
+RUN echo '{"allow_root": true}' > /root/.bowerrc && mkdir -p /root/.config/configstore/ && \
+    echo '{}' > /root/.config/configstore/bower-github.json
+
+RUN mkdir /deepforge
+ADD . /deepforge
+WORKDIR /deepforge
+
+RUN cd $(npm root -g)/npm \
+    && npm install fs-extra \
+    && sed -i -e s/graceful-fs/fs-extra/ -e s/fs.rename/fs.move/ ./lib/utils/rename.js
+
+RUN rm -rf node_modules/ && npm install
+
+EXPOSE 8888
+
+# Set up torch
+RUN apt install sudo && /deepforge/bin/deepforge update -t
+
+
+CMD ['bash', '/deepforge/bin/deepforge', 'start']
+
+#RUN . $HOME/.deepforge/torch/install/bin/torch-activate && deepforge update -t
+
+# mongodb
+# TODO: Make sure we are mounting /data/db!
+
+# add th to the path
+# TODO
+
+#WORKDIR /root/
