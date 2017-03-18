@@ -114,18 +114,14 @@ define([
             palette: COLOR_PALETTE
         });
     };
-    _.extend(SetColor.prototype, EasyDAGButtons.Add.prototype);  // FIXME
+    _.extend(SetColor.prototype, EasyDAGButtons.Add.prototype);
 
     SetColor.prototype.BTN_CLASS = 'set-color-icon';
     SetColor.prototype._onClick = function() {};
 
     SetColor.prototype.onColorChanged = function(color) {
-        console.log('changing color to', color);
         // Set the displayColor attribute to the given hex value
         this.context.saveAttributeForNode(this.item.id, Constants.DISPLAY_COLOR, color);
-
-        // Update the color of the displayed node
-        // TODO
     };
 
     SetColor.prototype._render = function() {
