@@ -32,6 +32,7 @@
     "npm": "^4.0.5",
     "q": "1.4.1",
     "rimraf": "^2.4.0",
+    "tcp-port-used": "^0.1.2",
     "webgme": "^2.7.1",
     "webgme-autoviz": "^2.2.0",
     "webgme-breadcrumbheader": "^2.1.1",
