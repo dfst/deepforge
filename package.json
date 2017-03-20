@@ -1,8 +1,8 @@
 {
   "name": "deepforge",
   "repository": {
-      "type": "git",
-      "url": "https://github.com/deepforge-dev/deepforge.git"
+    "type": "git",
+    "url": "https://github.com/deepforge-dev/deepforge.git"
   },
   "bin": {
     "deepforge": "./bin/deepforge"
