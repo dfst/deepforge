@@ -73,6 +73,9 @@ var createConfigJson = function() {
 
     if (process.argv.length > 2) {
         address = process.argv[2];
+        if (!/^https?:\/\//.test(address)) {
+            address = 'http://' + address;
+        }
     }
 
     config[address] = {};
