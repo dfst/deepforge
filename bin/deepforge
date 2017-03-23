@@ -119,10 +119,11 @@ var isLocalUri = function(protocol, uri) {
         uri.indexOf(protocol + '://127.0.0.1') === 0;
 };
 
-var checkMongo = function(args, notSilent) {
+var checkMongo = function(args, notSilent, mongoUri) {
     // check the webgme config
-    var gmeConfig = require('../config'),
-        mongoUri = gmeConfig.mongo.uri;
+    var gmeConfig = require('../config');
+
+    mongoUri = mongoUri || gmeConfig.mongo.uri;
 
     if (isLocalUri('mongodb', mongoUri)) {
         var match = mongoUri.match(/:([0-9]+)/),
@@ -487,6 +488,7 @@ module.exports = function(cmd) {
     cmds.unshift('node');
     program.parse(cmds);
 };
+module.exports.checkMongo = checkMongo;
 
 if (require.main === module) {
     program.parse(process.argv);
