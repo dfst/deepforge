@@ -141,7 +141,7 @@ var checkMongo = function(args, notSilent, mongoUri) {
             console.log('Starting MongoDB...');
             startMongo(args, port, !notSilent);
         }
-        return tcpPortUsed.waitUntiUsed(port, 100, 800);
+        return tcpPortUsed.waitUntilUsed(+port, 100, 1000);
     } else if (notSilent) {
         console.log(`Cannot start remote mongo locally: ${mongoUri}`);
     } else {
@@ -151,8 +151,6 @@ var checkMongo = function(args, notSilent, mongoUri) {
 };
 
 var startMongo = function(args, port, silent) {
-    // TODO: Make the mongo directory if it doesn't exist
-    // TODO: Make sure mongo started completely!
     var opts = ['--dbpath', p(config.mongo.dir), '--port', port],
         job = rawSpawn('mongod', opts, {cwd: process.env.HOME});
 
