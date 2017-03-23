@@ -81,12 +81,37 @@ describe('cli', function() {
             cli = require('../../bin/deepforge');
         });
 
-        it('should check for running mongo', function() {
-            var calls;
-            callRegister.childProcess.execSync = [];
-            cli('start');
-            calls = callRegister.childProcess.execSync;
-            assert.notEqual(calls.indexOf('pgrep mongod'), -1);
+        it('should check for running mongo', function(done) {
+            var mongoListening = false,
+                mongoUri = 'mongodb://127.0.0.1:2016/deepforge-test',
+                net = require('net'),
+                server = net.createServer(function(socket) {
+                    socket.on('error', err => {
+                        // Only worry about mock server errors if the test hasn't completed
+                        assert(mongoListening);
+                    });
+                    socket.pipe(socket);
+                }),
+                mockStartMongo = function(port) {
+                    server.listen(+port, '127.0.0.1');
+                    mongoListening = true;
+                };
+
+            // Check that 'spawn' node happens after the tcp port has been bound
+            mocks.childProcess.spawn = function(cmd, opts) {
+                if (cmd === 'mongod') {
+                    setTimeout(mockStartMongo, 250, opts[3]);
+                }
+            };
+
+            cli.checkMongo({}, false, mongoUri)
+                .then(() => {
+                    console.log('closing server');
+                    server.close();
+                    assert(mongoListening);
+                    done();
+                })
+                .catch(err => console.error(err));
         });
 
         it('should start mongo if no running mongo', function() {
