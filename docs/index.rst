@@ -12,4 +12,26 @@ Welcome to deepforge's documentation!
 
    getting_started/getting_started.rst
    getting_started/installation.rst
-   getting_started/configuration.rst
+.. add tutorial
+
+.. toctree::
+   :maxdepth: 1
+   :caption: DeepForge Fundamentals
+
+   fundamentals/getting_started.rst
+
+.. should I add something about custom install or advanced features?
+.. toctree::
+   :maxdepth: 1
+   :caption: Deployment
+
+   deployment/getting_started.rst
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Reference
+
+   reference/cli.rst
+   reference/configuration.rst
+   reference/feedback.rst
+   reference/extensions.rst
