@@ -1,4 +1,4 @@
-# Start with Ubuntu base image
+# Basically this is the server with mongo installed
 FROM node:6.2.2
 MAINTAINER Brian Broll <brian.broll@gmail.com>
 
