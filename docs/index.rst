@@ -12,7 +12,7 @@ Welcome to deepforge's documentation!
 
    getting_started/getting_started.rst
    getting_started/quick_start.rst
-.. add tutorial
+   getting_started/hello_cifar.rst
 
 .. toctree::
    :maxdepth: 1
