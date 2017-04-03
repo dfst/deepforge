@@ -11,7 +11,7 @@ Welcome to deepforge's documentation!
    :caption: Getting Started
 
    getting_started/getting_started.rst
-   getting_started/installation.rst
+   getting_started/quick_start.rst
 .. add tutorial
 
 .. toctree::
@@ -25,7 +25,7 @@ Welcome to deepforge's documentation!
    :maxdepth: 1
    :caption: Deployment
 
-   deployment/getting_started.rst
+   deployment/installation.rst
 
 .. toctree::
    :maxdepth: 1
