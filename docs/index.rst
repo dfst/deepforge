@@ -18,7 +18,7 @@ Welcome to deepforge's documentation!
    :maxdepth: 1
    :caption: DeepForge Fundamentals
 
-   fundamentals/getting_started.rst
+   fundamentals/custom_operations.rst
 
 .. should I add something about custom install or advanced features?
 .. toctree::
