@@ -33,5 +33,5 @@ Welcome to deepforge's documentation!
 
    reference/cli.rst
    reference/configuration.rst
-   reference/feedback.rst
+   reference/operation_feedback.rst
    reference/extensions.rst
