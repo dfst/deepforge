@@ -50,7 +50,7 @@ The "train" operation uses the :code:`StochasticGradient` functionality from the
 
 Operation feedback
 ------------------
-Operations in DeepForge can generate metadata about its execution. This metadata is generated during the execution and provided back to the user in real-time. An example of this includes providing real-time plotting feedback of the loss function of a model while training. When implementing an operation in DeepForge, this metadata can be created using the :code:`deepforge` global. Detailed information about the available operation metadata types can be found in the `reference <reference/feedback_mechanisms.rst>`_.
+Operations in DeepForge can generate metadata about its execution. This metadata is generated during the execution and provided back to the user in real-time. An example of this includes providing real-time plotting feedback of the loss function of a model while training. When implementing an operation in DeepForge, this metadata can be created using the :code:`deepforge` global.
 
 .. figure:: graph_example.png
     :align: center
@@ -58,3 +58,4 @@ Operations in DeepForge can generate metadata about its execution. This metadata
 
     An example graph of the loss function while training a neural network
 
+Detailed information about the available operation metadata types can be found in the `reference <reference/feedback_mechanisms.rst>`_.
