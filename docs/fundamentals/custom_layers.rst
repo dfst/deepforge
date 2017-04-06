@@ -51,7 +51,7 @@ Here are a couple best practices to keep in mind when defining custom neural net
 
 In this example, :code:`assert(torch.isTypeOf(action, 'nn.Module'))` enforces that the :code:`action` variable is another neural network layer. After defining the layer, DeepForge will parse the layer definition and create a visual representation for use in the architecture editor. As this assertion enforces that :code:`action` is a neural network layer, DeepForge will update itself accordingly; in this case, editing the attribute will allow the user to hierarchically create nested neural network architectures to be passed as the :code:`action` argument to the constructor.
 
-The second best practice is to make sure to return :code:`self` in any setter functions. An example of this can be found in the setters in the :code:`SpatialMaxPooling` layer shown below:
+The second best practice is to make sure to **return self in any setter functions**. An example of this can be found in the setters in the :code:`SpatialMaxPooling` layer shown below:
 
 .. code-block:: lua
 
@@ -73,4 +73,3 @@ Returning :code:`self` in setter functions is a good convention when defining ne
 
 where :code:`net` is a container like a :code:`Sequential` layer. DeepForge enforces this convention and, if it finds a setter function (which also returns :code:`self`) in the layer definition will expose the internal variable (in this case :code:`ceil_mode`) to the user in the visual editor.
 
-This allows layers to be added to a :code:`Sequential` layer by simply 
