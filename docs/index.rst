@@ -16,7 +16,7 @@ Welcome to deepforge's documentation!
 
 .. toctree::
    :maxdepth: 1
-   :caption: DeepForge Fundamentals
+   :caption: Fundamentals
 
    fundamentals/custom_operations.rst
    fundamentals/custom_data_types.rst
