@@ -19,6 +19,8 @@ Welcome to deepforge's documentation!
    :caption: DeepForge Fundamentals
 
    fundamentals/custom_operations.rst
+   fundamentals/custom_data_types.rst
+   fundamentals/custom_layers.rst
 
 .. should I add something about custom install or advanced features?
 .. toctree::
