@@ -1,7 +1,7 @@
-DeepForge Command Line Interface
-================================
+Command Line Interface
+======================
 
-This document outlines the functionality of the deepforge command line interface (provided after installing deepforge with `npm install -g deepforge`).
+This document outlines the functionality of the deepforge command line interface (provided after installing deepforge with :code:`npm install -g deepforge`).
 
 - Installation Configuration
 - Starting DeepForge or Components
@@ -11,7 +11,7 @@ This document outlines the functionality of the deepforge command line interface
 
 Installation Configuration
 --------------------------
-Installation configuration including the installation location of Torch7 and data storage locations. These can be edited using the `deepforge config` command as shown in the following examples:
+Installation configuration including the installation location of Torch7 and data storage locations. These can be edited using the :code:`deepforge config` command as shown in the following examples:
 
 Printing all the configuration settings:
 
@@ -27,7 +27,7 @@ Printing the value of a configuration setting:
     deepforge config torch.dir
 
 
-Setting a configuration option, such as `torch.dir` can be done with:
+Setting a configuration option, such as :code:`torch.dir` can be done with:
 
 .. code-block:: bash
 
@@ -39,7 +39,7 @@ For more information about the configuration settings, check out the `configurat
 
 Starting DeepForge Components
 -----------------------------
-DeepForge components, such as the server or the workers, can be started with the `deepforge start` command. By default, this command will start all the necessary components to run including the server, a mongo database (if applicable) and a worker.
+DeepForge components, such as the server or the workers, can be started with the :code:`deepforge start` command. By default, this command will start all the necessary components to run including the server, a mongo database (if applicable) and a worker.
 
 The server can be started by itself using
 
@@ -77,11 +77,11 @@ The torch installation can be updated using
     deepforge update --torch
 
 
-DeepForge can be uninstalled using `deepforge uninstall`
+DeepForge can be uninstalled using :code:`deepforge uninstall`
 
 Managing Extensions
 -------------------
-DeepForge extensions can be installed and removed using the `deepforge extensions` subcommand. Extensions can be added, removed and listed as shown below
+DeepForge extensions can be installed and removed using the :code:`deepforge extensions` subcommand. Extensions can be added, removed and listed as shown below
 
 .. code-block:: bash
 
