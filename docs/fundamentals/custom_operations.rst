@@ -48,6 +48,14 @@ On the right of the operation editor is the implementation editor. The implement
 
 The "train" operation uses the :code:`StochasticGradient` functionality from the :code:`nn` package to perform stochastic gradient descent. This operation sets all the parameters using values provided to the operation as either attributes or references. In the implementation, attributes are provided by the :code:`attributes` variable and provides access to the user defined attributes from within the implementation. References are treated similarly to operation inputs and are defined in variables of the same name. This can be seen with the :code:`net` and :code:`criterion` variables in the first line. Finally, operations return a table of their named outputs; in this example, it returns a single output named :code:`net`, that is, the trained neural network.
 
+After defining the interface and implementation, we can now use the "train" operation in our pipelines! An example is shown below.
+
+.. figure:: train_operation.png
+    :align: center
+    :scale: 85 %
+
+    Using the custom "train" operation in a pipeline
+
 Operation feedback
 ------------------
 Operations in DeepForge can generate metadata about its execution. This metadata is generated during the execution and provided back to the user in real-time. An example of this includes providing real-time plotting feedback of the loss function of a model while training. When implementing an operation in DeepForge, this metadata can be created using the :code:`deepforge` global.
