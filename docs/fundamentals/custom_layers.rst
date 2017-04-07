@@ -7,8 +7,6 @@ A new custom layer can be created from the "add layer dialog" in the architectur
 
 After defining the layer in the layer editor, DeepForge will provide this layer in the architecture editor and expose any configurable attributes for the layer. These attributes are parsed from the layer definition.
 
-.. Provide an example of the parsing: TODO
-
 Best Practices
 --------------
 Here are a couple best practices to keep in mind when defining custom neural network layers:
@@ -50,6 +48,20 @@ Here are a couple best practices to keep in mind when defining custom neural net
     end
 
 In this example, :code:`assert(torch.isTypeOf(action, 'nn.Module'))` enforces that the :code:`action` variable is another neural network layer. After defining the layer, DeepForge will parse the layer definition and create a visual representation for use in the architecture editor. As this assertion enforces that :code:`action` is a neural network layer, DeepForge will update itself accordingly; in this case, editing the attribute will allow the user to hierarchically create nested neural network architectures to be passed as the :code:`action` argument to the constructor.
+
+.. figure:: recurrent_attention.png
+    :align: center
+    :scale: 85 %
+
+    RecurrentAttention has attributes for each of the constructor arguments
+
+An example of the generated visual model for the :code:`RecurrentAttention` is provided above. This layer has attributes for each of the constructor arguments defined in its definition. Clicking on the :code:`<none>` value for the :code:`action` attribute will then allow the user to provide layer inputs as shown below.
+
+.. figure:: action_layer.png
+    :align: center
+    :scale: 55 %
+
+    Creating layer inputs for the "action" variable
 
 The second best practice is to make sure to **return self in any setter functions**. An example of this can be found in the setters in the :code:`SpatialMaxPooling` layer shown below:
 
