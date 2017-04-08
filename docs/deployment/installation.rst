@@ -4,6 +4,7 @@ Installation
 DeepForge Component Overview
 ----------------------------
 DeepForge is composed of four main elements:
+
 - *Server*: Main component hosting all the project information and is connected to by the clients
 - *Database*: MongoDB database containing DeepForge, job queue for the workers, etc
 - *Worker*: Slave machine performing the actual machine learning computation

@@ -47,7 +47,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = 'deepforge'
+project = 'DeepForge'
 copyright = '2017, Brian Broll'
 author = 'Brian Broll'
 
