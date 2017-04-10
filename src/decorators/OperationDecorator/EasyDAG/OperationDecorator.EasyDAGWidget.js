@@ -28,8 +28,9 @@ define([
     //     - unhighlight ports
     //     - report the location of specific ports
     OPERATION_COLORS[CONSTANTS.OP.OUTPUT] = '#b0bec5';
+    OPERATION_COLORS[CONSTANTS.OP.INPUT] = '#b0bec5';
     OperationDecorator = function (options) {
-        options.color = options.color || OPERATION_COLORS[options.node.name] || '#78909c';
+        options.color = OPERATION_COLORS[options.node.name] || options.color || '#78909c';
         DecoratorBase.call(this, options);
 
         this.id = this._node.id;

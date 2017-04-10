@@ -15,6 +15,7 @@
         CONTAINED_LAYER_INDEX: 'index',
 
         LINE_OFFSET: 'lineOffset',
+        DISPLAY_COLOR: 'displayColor',
 
         // DeepForge metadata creation in dist execution
         START_CMD: 'deepforge-cmd',

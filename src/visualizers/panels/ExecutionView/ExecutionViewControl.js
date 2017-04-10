@@ -116,6 +116,7 @@ define([
                     allAttrs = {},
                     hiddenAttrs = [
                         CONSTANTS.LINE_OFFSET,
+                        CONSTANTS.DISPLAY_COLOR,
                         'code',
                         'name'
                     ],

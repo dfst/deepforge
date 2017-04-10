@@ -4,9 +4,11 @@
 // adding a "plus" button for creating new objects in line
 
 define([
+    'deepforge/Constants',
     'q',
     'css!./NodePrompter.css'
 ], function(
+    Constants,
     Q
 ) {
 
@@ -271,12 +273,14 @@ define([
     };
 
     var Container = function(svg, node) {  // used for positioning
+        var colorAttr = node.attributes[Constants.DISPLAY_COLOR];
         this.$el = svg.append('g');
         this.x = 0;
         this.y = 0;
         this.node = node;
         this.decorator = new node.Decorator({
             node: node,
+            color: colorAttr && colorAttr.value,
             parentEl: this.$el
         });
     };

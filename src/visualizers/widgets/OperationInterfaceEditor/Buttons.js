@@ -1,16 +1,23 @@
 /*globals define*/
 define([
     'deepforge/viz/Buttons',
+    'deepforge/Constants',
     'widgets/EasyDAG/Buttons',
     'widgets/EasyDAG/Icons',
-    'underscore'
+    'underscore',
+    './lib/spectrum.min'
 ], function(
     CommonButtons,
+    Constants,
     EasyDAGButtons,
     Icons,
     _
 ) {
 
+    var COLOR_PALETTE = [
+        ['#78909c', '#ce93d8', '#ff9100', '#ffb74d', '#ffe0b2'],
+        ['#42a5f5', '#80deea', '#80cbc4', '#a5d6a7', '#69f0ae']
+    ];
     var AddOutput = function(params) {
         params.title = params.title || 'Add operation output';
         EasyDAGButtons.Add.call(this, params);
@@ -89,9 +96,54 @@ define([
         this.selectionManager.deselect();
     };
 
+    // Set the color
+    var SetColor = function(params) {
+        params.title = params.title || 'Set operation color';
+        EasyDAGButtons.Add.call(this, params);
+
+        // Add the click handling
+        var currentColor = this.item.desc.displayColor;
+        $('.set-color-icon').spectrum({
+            change: color => this.onColorChanged(color.toHexString()),
+            showPaletteOnly: true,
+            showPalette: true,
+            clickoutFiresChange: true,
+            hideAfterPaletteSelect: true,
+
+            color: currentColor,
+            palette: COLOR_PALETTE
+        });
+    };
+    _.extend(SetColor.prototype, EasyDAGButtons.Add.prototype);
+
+    SetColor.prototype.BTN_CLASS = 'set-color-icon';
+    SetColor.prototype._onClick = function() {};
+
+    SetColor.prototype.onColorChanged = function(color) {
+        // Set the displayColor attribute to the given hex value
+        this.context.saveAttributeForNode(this.item.id, Constants.DISPLAY_COLOR, color);
+    };
+
+    SetColor.prototype._render = function() {
+        var lineRadius = EasyDAGButtons.Add.SIZE - EasyDAGButtons.Add.BORDER,
+            btnColor = '#ffcc80';
+
+        if (this.disabled) {
+            btnColor = '#e0e0e0';
+        }
+
+        this.$el
+            .append('circle')
+            .attr('r', EasyDAGButtons.Add.SIZE)
+            .attr('fill', btnColor);
+
+        Icons.addIcon('brush', this.$el, {radius: lineRadius});
+    };
+
     return {
         AddOutput: AddOutput,
         AddInput: AddInput,
+        SetColor: SetColor,
         AddRef: AddRef,
         GoToBase: CommonButtons.GoToBase,
         Delete: Delete

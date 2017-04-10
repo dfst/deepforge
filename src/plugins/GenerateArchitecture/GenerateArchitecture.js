@@ -130,7 +130,7 @@ define([
         var args = this.createArgString(layer),
             def = `nn.${layer.name}${args}`,
             type = layer.base.base.name,
-            addedIds,
+            memberIds,
             node,
             name,
             children,
@@ -141,28 +141,32 @@ define([
         // each nested architecture's code to the given container
         if (type === 'Container') {
             // Get the members of the 'addLayers' set
-            addedIds = {};
+            memberIds = {};
             id = layer[SimpleNodeConstants.NODE_PATH];
             node = this._nodeCache[id];
             this.core.getMemberPaths(node, Constants.CONTAINED_LAYER_SET)
-                .forEach(id => addedIds[id] = true);
+                .forEach(id => memberIds[id] = true);
 
             // Get the (sorted) children
             children = layer[SimpleNodeConstants.CHILDREN]
                 .map(child => {  // get (child, index) tuples
-                    var index;
+                    var index = null;
 
                     id = child[SimpleNodeConstants.NODE_PATH];
-                    index = this.core.getMemberRegistry(node, Constants.CONTAINED_LAYER_SET, id, Constants.CONTAINED_LAYER_INDEX);
+                    if (memberIds[id]) {
+                        index = this.core.getMemberRegistry(node,
+                            Constants.CONTAINED_LAYER_SET, id, Constants.CONTAINED_LAYER_INDEX);
+                    }
                     return [child, index];
                 })
-                .filter(pair => pair[1] !== undefined)  // remove non-members
+                .filter(pair => pair[1] !== null)  // remove non-members
                 .sort((a, b) => a[1] < b[1] ? -1 : 1)  // sort by 'index'
                 .map(pair => pair[0]);
 
 
             var addedLayerDefs = '',
                 firstLayer;
+
             for (var i = 0; i < children.length; i++) {
                 id = children[i][SimpleNodeConstants.NODE_PATH];
                 // Get the children!

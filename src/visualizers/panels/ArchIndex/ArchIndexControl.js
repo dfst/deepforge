@@ -28,5 +28,28 @@ define([
         return desc;
     };
 
+    ArchIndexControl.prototype._initWidgetEventHandlers = function () {
+        this._widget.deletePipeline = id => {
+            var node = this._client.getNode(id),
+                name = node.getAttribute('name'),
+                msg = `Deleted "${name}" architecture`;
+
+
+            this._client.startTransaction(msg);
+            this._client.deleteNode(id);
+            this._client.completeTransaction();
+        };
+
+        this._widget.setName = (id, name) => {
+            var oldName = this._client.getNode(id).getAttribute('name'),
+                msg = `Renaming architecture: "${oldName}" -> "${name}"`;
+
+            if (oldName !== name && !/^\s*$/.test(name)) {
+                this._client.startTransaction(msg);
+                this._client.setAttribute(id, 'name', name);
+                this._client.completeTransaction();
+            }
+        };
+    };
     return ArchIndexControl;
 });

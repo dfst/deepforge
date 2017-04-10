@@ -103,6 +103,10 @@ define([
                 delete desc.attributes.code;
             }
 
+            // Handle the display color
+            desc.displayColor = desc.attributes[CONSTANTS.DISPLAY_COLOR].value;
+            delete desc.attributes[CONSTANTS.DISPLAY_COLOR];
+
         } else if (desc.isConnection) {
             // Set src, dst to siblings and add srcPort, dstPort
             desc.srcPort = desc.src;
