@@ -54,4 +54,10 @@ Once the model has been trained, we can test the given model using the :code:`te
 
 After setting the inputs for the :code:`test` pipeline (using the trained model and data from the first two pipelines), we can simply execute this pipeline to test our model. After executing the :code:`test` pipeline, we can view the execution and open the :code:`test` job to view the stdout for the given job. In the :code:`test` operation, this will allow us to view the printed accuracies of the model over each class.
 
+.. figure:: test_results.png
+    :align: center
+    :scale: 65 %
+
+    Viewing the results of the testing operation
+
 And that's it! We have just trained and tested our first neural network model using DeepForge. Although there are still a lot more advanced features that can be used, this should at least familiarize us with some of the core concepts in DeepForge.
