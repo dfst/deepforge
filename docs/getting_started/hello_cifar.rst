@@ -30,6 +30,12 @@ First, we will have to retrieve and prepare the data by running the :code:`downl
 
 Next, we can open the :code:`train` pipeline. Before we execute the pipeline we have to set the input trainning data that we will be using. This is done by selecting the :code:`Input` operation then clicking the value for the :code:`artifact` field. This will provide all the possible options for the input data; for this example, we will want to select the "trainingdata" artifact. After setting the input, we can click on the :code:`train` operation to inspect the hyperparameters we are using and the architecture we are training. Selecting the :code:`Output` operation will allow you to change the name of the resulting artifact of this operation (in this case, a trained model). Finally, we can execute this pipeline like before to train the model.
 
+.. figure:: select_train_data.png
+    :align: center
+    :scale: 65 %
+
+    Selecting the training data for the input to the training pipeline
+
 As this operation trains, we can view the status by viewing the running execution. The easiest way to view the running execution is by clicking the given execution from the execution tray in the bottom left when viewing the originating pipeline.
 
 .. figure:: training_execution.png
@@ -39,6 +45,12 @@ As this operation trains, we can view the status by viewing the running executio
     Viewing the execution of the training pipeline
 
 Once the model has been trained, we can test the given model using the :code:`test` pipeline. In this pipeline, we have a few more inputs to set: "testing data", "model to test" and the "human-readable class labels". If you aren't clear which operation provides which input, you can simply hover over it's connected port on the :code:`test` operation. This will provide a tooltip with the full name of the input.
+
+.. figure:: test_pipeline.png
+    :align: center
+    :scale: 65 %
+
+    Viewing the execution of the testing pipeline
 
 After setting the inputs for the :code:`test` pipeline (using the trained model and data from the first two pipelines), we can simply execute this pipeline to test our model. After executing the :code:`test` pipeline, we can view the execution and open the :code:`test` job to view the stdout for the given job. In the :code:`test` operation, this will allow us to view the printed accuracies of the model over each class.
 
