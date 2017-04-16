@@ -305,7 +305,7 @@ define([
                 if (!numOrBool.test(value)) {
                     value = `"${value}"`;
                 }
-                return [name, value];
+                return [`['${name}']`, value];
             })
             .map(pair => pair.join(' = '))
             .join(',\n\t') + '\n}';
