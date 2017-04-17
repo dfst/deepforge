@@ -56,6 +56,10 @@
       "ValidateArchitecture": {
         "src": "src/plugins/ValidateArchitecture",
         "test": "test/plugins/ValidateArchitecture"
+      },
+      "GenerateJob": {
+        "src": "src/plugins/GenerateJob",
+        "test": "test/plugins/GenerateJob"
       }
     },
     "layouts": {
