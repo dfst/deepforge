@@ -312,6 +312,28 @@ define([
         files['custom-layers.lua'] = code;
     };
 
+    GenerateJob.prototype.getConnectionContainer = function () {
+        var container = this.core.getParent(this.activeNode);
+
+        if (this.isMetaTypeOf(container, this.META.Execution)) {
+            container = this.core.getParent(container);
+        }
+
+        return container;
+    };
+
+    GenerateJob.prototype.getInputPortsFor = function (nodeId) {
+        var container = this.getConnectionContainer();
+
+        // Get the connections to this node
+        return this.core.loadChildren(container)
+            .then(children => {
+                return children.filter(child =>
+                    this.core.getPointerPath(child, 'dst') === nodeId)
+                    .map(conn => this.core.getPointerPath(conn, 'src'));
+            });
+    };
+
     GenerateJob.prototype.createInputs = function (node, files) {
         var tplContents,
             inputs;
@@ -339,9 +361,8 @@ define([
                     // Get the deserialize function. First, try to get it from
                     // the source method (this guarantees that the correct
                     // deserialize method is used despite any auto-upcasting
-                    fromNodeId = this.inputPortsFor[nodeId][0] || nodeId;
-
-                    return this.core.loadByPath(this.rootNode, fromNodeId)
+                    return this.getInputPortsFor(nodeId)
+                        .then(fromNodeId => this.core.loadByPath(this.rootNode, fromNodeId || nodeId)
                         .then(fromNode => {
                             var deserFn,
                                 base,
@@ -499,6 +520,10 @@ define([
             this.logger.error(`Could not generate pointer files for ${this.getAttribute(node, 'name')}: ${e.toString()}`);
             return cb(e);
         });
+    };
+
+    GenerateJob.prototype.getAttribute = function (node, attr) {
+        return this.core.getAttribute(node, attr);
     };
 
     _.extend(GenerateJob.prototype, OperationHelpers.prototype);

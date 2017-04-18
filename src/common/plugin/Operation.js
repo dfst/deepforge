@@ -1,5 +1,6 @@
 // This is a mixin containing helpers for working with operation nodes
 define([],function() {
+
     var OperationOps = function() {
     };
 
