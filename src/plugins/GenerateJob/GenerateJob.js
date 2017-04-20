@@ -5,7 +5,7 @@ define([
     './templates/index',
     'q',
     'underscore',
-    'deepforge/Constants'
+    'deepforge/Constants',
     'deepforge/plugin/Operation',
     'text!./metadata.json',
     'plugin/PluginBase'
@@ -22,7 +22,7 @@ define([
 
     pluginMetadata = JSON.parse(pluginMetadata);
     var OUTPUT_INTERVAL = 1500,
-        STDOUT_FILE = 'job_stdout.txt';
+        STDOUT_FILE = 'job_stdout.txt',
         SKIP_ATTRIBUTES = [
             'code',
             'stdout',
@@ -67,11 +67,20 @@ define([
      * @param {function(string, plugin.PluginResult)} callback - the result callback
      */
     GenerateJob.prototype.main = function (callback) {
+        var files,
+            artifactName,
+            artifact,
+            data = {},
+            inputs,
+            node,
+            name = this.getAttribute(this.activeNode, 'name'),
+            opId = this.core.getPath(this.activeNode);
+
         return this.createOperationFiles(this.activeNode)
             .then(results => {
                     this.logger.info('Created operation files!');
                     files = results;
-                    artifactName = `${name}_${jobId.replace(/\//g, '_')}-execution-files`;
+                    artifactName = `${name}_${opId.replace(/\//g, '_')}-execution-files`;
                     artifact = this.blobClient.createArtifact(artifactName);
 
                     // Add the input assets
@@ -123,7 +132,7 @@ define([
                         .forEach(path => data[path] = files.ptrAssets[path]);
 
                     // Add the executor config
-                    return this.getOutputs(node);
+                    return this.getOutputs(this.activeNode);
                 })
                 .then(outputArgs => {
                     var config,
@@ -179,6 +188,16 @@ define([
                 .then(() => {
                     this.logger.info(`Added execution files for "${artifactName}"`);
                     return artifact.save();
+                })
+                .then(hash => {
+                    // TODO: set success, etc
+                    this.result.setSuccess(true);
+                    callback(null, this.result);
+                })
+                .fail(err => {
+                    console.log('ERROR', err);
+                    // TODO: set success, etc
+                    callback(err, this.result);
                 });
     }; 
 
@@ -226,6 +245,8 @@ define([
                 files['deepforge.lua'] = _.template(Templates.DEEPFORGE)(CONSTANTS);
             });
     };
+
+    console.log('\n\nparsed .5 file!');
 
     GenerateJob.prototype.createClasses = function (node, files) {
         var metaDict = this.core.getAllMetaNodes(this.rootNode),
@@ -362,7 +383,7 @@ define([
                     // the source method (this guarantees that the correct
                     // deserialize method is used despite any auto-upcasting
                     return this.getInputPortsFor(nodeId)
-                        .then(fromNodeId => this.core.loadByPath(this.rootNode, fromNodeId || nodeId)
+                        .then(fromNodeId => this.core.loadByPath(this.rootNode, fromNodeId || nodeId))
                         .then(fromNode => {
                             var deserFn,
                                 base,
@@ -526,7 +547,12 @@ define([
         return this.core.getAttribute(node, attr);
     };
 
+    GenerateJob.prototype.setAttribute = function (node, attr, value) {
+        return this.core.setAttribute(node, attr, value);
+    };
+
     _.extend(GenerateJob.prototype, OperationHelpers.prototype);
 
+    console.log('\n\nparsed entire file!');
     return GenerateJob;
 });

@@ -28,7 +28,7 @@ describe('GenerateJob', function () {
             })
             .then(function () {
                 var importParam = {
-                    projectSeed: testFixture.path.join(testFixture.SEED_DIR, 'EmptyProject.webgmex'),
+                    projectSeed: testFixture.path.join(testFixture.DF_SEED_DIR, 'devProject', 'devProject.webgmex'),
                     projectName: projectName,
                     branchName: 'master',
                     logger: logger,
@@ -53,7 +53,7 @@ describe('GenerateJob', function () {
             .nodeify(done);
     });
 
-    it('should run plugin and update the branch', function (done) {
+    it('should run plugin and NOT update the branch', function (done) {
         var manager = new PluginCliManager(null, logger, gmeConfig),
             pluginConfig = {
             },
@@ -71,9 +71,10 @@ describe('GenerateJob', function () {
 
             project.getBranchHash('test')
                 .then(function (branchHash) {
-                    expect(branchHash).to.not.equal(commitHash);
+                    expect(branchHash).to.equal(commitHash);
                 })
                 .nodeify(done);
         });
     });
+
 });
