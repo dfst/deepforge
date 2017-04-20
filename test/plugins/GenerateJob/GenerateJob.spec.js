@@ -11,6 +11,7 @@ describe('GenerateJob', function () {
         expect = testFixture.expect,
         logger = testFixture.logger.fork('GenerateJob'),
         PluginCliManager = testFixture.WebGME.PluginCliManager,
+        manager = new PluginCliManager(null, logger, gmeConfig),
         projectName = 'testProject',
         pluginName = 'GenerateJob',
         project,
@@ -54,8 +55,7 @@ describe('GenerateJob', function () {
     });
 
     it('should run plugin and NOT update the branch', function (done) {
-        var manager = new PluginCliManager(null, logger, gmeConfig),
-            pluginConfig = {
+        var pluginConfig = {
             },
             context = {
                 project: project,
@@ -74,6 +74,83 @@ describe('GenerateJob', function () {
                     expect(branchHash).to.equal(commitHash);
                 })
                 .nodeify(done);
+        });
+    });
+
+    ////////// Helper Functions //////////
+    var plugin,
+        node,
+        preparePlugin = function(done) {
+            var context = {
+                project: project,
+                commitHash: commitHash,
+                namespace: 'pipeline',
+                branchName: 'test',
+                activeNode: '/K/R/p/m'  // hello world operation
+            };
+
+            return manager.initializePlugin(pluginName)
+                .then(plugin_ => {
+                    plugin = plugin_;
+                    return manager.configurePlugin(plugin, {}, context);
+                })
+                .then(() => node = plugin.activeNode)
+                .nodeify(done);
+        };
+
+    describe('exec files', function() {
+        describe('attribute file', function() {
+            var boolString = /['"](true|false)['"]/g;
+
+            beforeEach(preparePlugin);
+
+            it('should not quote true (s) boolean values', function() {
+                var files = {},
+                    content,
+                    matches;
+
+                plugin.setAttribute(node, 'debug', 'true');
+                plugin.createAttributeFile(node, files);
+                content = files['attributes.lua'];
+                matches = content.match(boolString);
+                expect(matches).to.equal(null);
+            });
+
+            it('should not quote true boolean values', function() {
+                var files = {},
+                    content,
+                    matches;
+
+                plugin.setAttribute(node, 'debug', true);
+                plugin.createAttributeFile(node, files);
+                content = files['attributes.lua'];
+                matches = content.match(boolString);
+                expect(matches).to.equal(null);
+            });
+
+            it('should not quote false (s) boolean values', function() {
+                var files = {},
+                    content,
+                    matches;
+
+                plugin.setAttribute(node, 'debug', 'false');
+                plugin.createAttributeFile(node, files);
+                content = files['attributes.lua'];
+                matches = content.match(boolString);
+                expect(matches).to.equal(null);
+            });
+
+            it('should not quote false boolean values', function() {
+                var files = {},
+                    content,
+                    matches;
+
+                plugin.setAttribute(node, 'debug', false);
+                plugin.createAttributeFile(node, files);
+                content = files['attributes.lua'];
+                matches = content.match(boolString);
+                expect(matches).to.equal(null);
+            });
         });
     });
 
