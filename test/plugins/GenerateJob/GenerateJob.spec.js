@@ -54,21 +54,39 @@ describe('GenerateJob', function () {
             .nodeify(done);
     });
 
-    it('should run plugin and NOT update the branch', function (done) {
-        var pluginConfig = {
-            },
-            context = {
-                project: project,
-                commitHash: commitHash,
-                branchName: 'test',
-                activeNode: '/1',
-            };
+    describe('basic checks', function() {
+        var pluginResult,
+            error;
 
-        manager.executePlugin(pluginName, pluginConfig, context, function (err, pluginResult) {
-            expect(err).to.equal(null);
+        before(function(done) {
+            var pluginConfig = {
+                },
+                context = {
+                    project: project,
+                    commitHash: commitHash,
+                    branchName: 'test',
+                    activeNode: '/1',
+                };
+
+            manager.executePlugin(pluginName, pluginConfig, context, (err, result) => {
+                error = err;
+                pluginResult = result;
+
+                done();
+            });
+        });
+
+        it('should run without error', function () {
+            expect(error).to.equal(null);
             expect(typeof pluginResult).to.equal('object');
             expect(pluginResult.success).to.equal(true);
+        });
 
+        it('should generate artifacts', function () {
+            expect(pluginResult.artifacts[0]).to.not.equal(undefined);
+        });
+
+        it('should NOT update the branch', function (done) {
             project.getBranchHash('test')
                 .then(function (branchHash) {
                     expect(branchHash).to.equal(commitHash);

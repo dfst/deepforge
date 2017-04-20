@@ -190,13 +190,12 @@ define([
                     return artifact.save();
                 })
                 .then(hash => {
-                    // TODO: set success, etc
                     this.result.setSuccess(true);
+                    this.result.addArtifact(hash);
                     callback(null, this.result);
                 })
                 .fail(err => {
-                    console.log('ERROR', err);
-                    // TODO: set success, etc
+                    this.result.setSuccess(false);
                     callback(err, this.result);
                 });
     }; 
