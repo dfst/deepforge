@@ -73,8 +73,12 @@ define([
             data = {},
             inputs,
             node,
-            name = this.getAttribute(this.activeNode, 'name'),
-            opId = this.core.getPath(this.activeNode);
+            name,
+            opId;
+
+        // TODO: if the current node is a job, set the activeNode to the contained operation
+        name = this.getAttribute(this.activeNode, 'name');
+        opId = this.core.getPath(this.activeNode);
 
         return this.createOperationFiles(this.activeNode)
             .then(results => {
@@ -244,8 +248,6 @@ define([
                 files['deepforge.lua'] = _.template(Templates.DEEPFORGE)(CONSTANTS);
             });
     };
-
-    console.log('\n\nparsed .5 file!');
 
     GenerateJob.prototype.createClasses = function (node, files) {
         var metaDict = this.core.getAllMetaNodes(this.rootNode),
@@ -552,6 +554,5 @@ define([
 
     _.extend(GenerateJob.prototype, OperationHelpers.prototype);
 
-    console.log('\n\nparsed entire file!');
     return GenerateJob;
 });
