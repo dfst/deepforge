@@ -9,24 +9,54 @@ define([
     var PtrCodeGen = function() {
     };
 
+    PtrCodeGen.prototype.getCodeGenPluginIdFor = function(node) {
+        var base = this.core.getBase(node),
+            name = this.core.getAttribute(node, 'name'),
+            pluginId;
+
+        //this.logger.debug(`loaded pointer target of ${ptrId}: ${ptrNode}`);
+        pluginId = (this.core.getRegistry(node, 'validPlugins') || '').split(' ').shift();
+        //this.logger.info(`generating code for ${this.core.getAttribute(ptrNode, 'name')} using ${pluginId}`);
+
+        // FIXME:
+        if (this.core.isMetaNode(node) && name === 'Operation') {
+            pluginId = 'GenerateJob';
+        }
+
+        // TODO: Check component config?
+
+        if (pluginId) {
+            return {
+                node: node,
+                pluginId: pluginId
+            };
+        } else if (base) {
+            return this.getCodeGenPluginIdFor(base);
+        } else {
+            return null;
+        }
+    };
+
     PtrCodeGen.prototype.getPtrCodeHash = function(ptrId) {
         return this.core.loadByPath(this.rootNode, ptrId)
             .then(ptrNode => {
                 // Look up the plugin to use
-                var metanode = this.core.getMetaType(ptrNode),
-                    pluginId;
+                var genInfo = this.getCodeGenPluginIdFor(ptrNode);
 
-                this.logger.debug(`loaded pointer target of ${ptrId}: ${ptrNode}`);
-                pluginId = this.core.getRegistry(ptrNode, 'validPlugins').split(' ').shift();
-                this.logger.info(`generating code for ${this.core.getAttribute(ptrNode, 'name')} using ${pluginId}`);
+                if (genInfo.pluginId) {
+                    var context = {
+                        namespace: this.core.getNamespace(genInfo.node),
+                        activeNode: this.core.getPath(ptrNode)
+                    };
 
-                var context = {
-                    namespace: this.core.getNamespace(metanode),
-                    activeNode: this.core.getPath(ptrNode)
-                };
-
-                // Load and run the plugin
-                return this.executePlugin(pluginId, context);
+                    // Load and run the plugin
+                    return this.executePlugin(genInfo.pluginId, context);
+                } else {
+                    var metanode = this.core.getMetaType(ptrNode),
+                        type = this.core.getAttribute(metanode, 'name');
+                    this.logger.warn(`Could not find plugin for ${type}. Will try to proceed anyway`);
+                    return null;
+                }
             })
             .then(hashes => hashes[0]);  // Grab the first asset for now
     };
