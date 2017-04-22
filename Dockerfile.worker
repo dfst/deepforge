@@ -49,15 +49,15 @@ RUN rm -rf node_modules/ && npm install && ln -s /deepforge/bin/deepforge /usr/l
 EXPOSE 8888
 
 # configure the worker
-ENV DEEPFORGE_WORKER_USE_BLOB false
-ENV DEEPFORGE_WORKER_CACHE /worker-cache
-
-RUN deepforge config blob.dir /data/blob && \
+RUN deepforge config blob.dir /data/blob && \  # these should be ignored
     deepforge config mongo.dir /data/db && \
+
+    deepforge config worker.cache.useBlob false && \
+    deepforge config worker.cache.dir /worker-cache && \
     deepforge config torch.dir /root/torch/
 
 # Set up torch
-RUN apt-get update && apt-get install sudo && \
+RUN apt-get update && apt-get install sudo wget && \
     . /root/torch/install/bin/torch-activate && \
     deepforge update -t
 
