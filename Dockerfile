@@ -1,5 +1,5 @@
 # Dockerfile for running the server itself
-FROM node:6.2.2
+FROM node:6.10.1
 MAINTAINER Brian Broll <brian.broll@gmail.com>
 
 RUN echo '{"allow_root": true}' > /root/.bowerrc && mkdir -p /root/.config/configstore/ && \
@@ -17,14 +17,8 @@ RUN rm -rf node_modules/ && npm install && ln -s /deepforge/bin/deepforge /usr/l
 
 EXPOSE 8888
 
-# Set up torch
-RUN apt-get update && apt-get install sudo && echo 'yes' | deepforge start -w && \
-    . /root/.deepforge/torch/install/bin/torch-activate && \
-    deepforge update -t
-
 # Set up the data storage
 RUN deepforge config blob.dir /data/blob && \
     deepforge config mongo.dir /data/db
 
-ENTRYPOINT /bin/bash
 CMD ["deepforge", "start", "--server"]

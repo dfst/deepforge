@@ -52,7 +52,7 @@ EXPOSE 8888
 RUN deepforge config blob.dir /data/blob && \
     deepforge config mongo.dir /data/db && \
     deepforge config worker.cache.useBlob false && \
-    deepforge config worker.cache.dir /worker-cache && \
+    deepforge config worker.cache.dir /deepforge/worker-cache && \
     deepforge config torch.dir /root/torch/
 
 # Set up torch
