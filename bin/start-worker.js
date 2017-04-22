@@ -36,7 +36,6 @@ try {
 } catch (e) {
     // Create dir
     childProcess.spawnSync('ln', ['-s', `${__dirname}/../node_modules`, modules]);
-    return true;
 }
 
 // Check torch support
@@ -73,6 +72,9 @@ var createConfigJson = function() {
 
     if (process.argv.length > 2) {
         address = process.argv[2];
+        if (!/^https?:\/\//.test(address)) {
+            address = 'http://' + address;
+        }
     }
 
     config[address] = {};

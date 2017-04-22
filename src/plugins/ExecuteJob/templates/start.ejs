@@ -213,10 +213,10 @@ requirejs([
             job = null;
             log(`killing process group: ${pid}`);
             process.kill(-pid, 'SIGTERM');
-            if (exitCode !== null) {
-                log(`exiting w/ code ${exitCode}`);
-                process.exit(exitCode);
-            }
+        }
+        if (exitCode !== null) {
+            log(`exiting w/ code ${exitCode}`);
+            process.exit(exitCode);
         }
     };
 

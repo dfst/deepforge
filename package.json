@@ -1,8 +1,8 @@
 {
   "name": "deepforge",
   "repository": {
-      "type": "git",
-      "url": "https://github.com/deepforge-dev/deepforge.git"
+    "type": "git",
+    "url": "https://github.com/deepforge-dev/deepforge.git"
   },
   "bin": {
     "deepforge": "./bin/deepforge"
@@ -17,7 +17,7 @@
     "watch-test": "nodemon --exec 'mocha --recursive test'",
     "build-nn": "node ./utils/nn-parser.js"
   },
-  "version": "1.1.0",
+  "version": "1.2.0",
   "dependencies": {
     "commander": "^2.9.0",
     "dotenv": "^2.0.0",
@@ -32,6 +32,7 @@
     "npm": "^4.0.5",
     "q": "1.4.1",
     "rimraf": "^2.4.0",
+    "tcp-port-used": "^0.1.2",
     "webgme": "^2.7.1",
     "webgme-autoviz": "^2.2.0",
     "webgme-breadcrumbheader": "^2.1.1",

@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 var Command = require('commander').Command,
+    tcpPortUsed = require('tcp-port-used'),
     program = new Command(),
     childProcess = require('child_process'),
     rawSpawn = childProcess.spawn,
@@ -118,32 +119,35 @@ var isLocalUri = function(protocol, uri) {
         uri.indexOf(protocol + '://127.0.0.1') === 0;
 };
 
-var checkMongo = function(args, notSilent) {
+var checkMongo = function(args, notSilent, mongoUri) {
     // check the webgme config
-    var gmeConfig = require('../config'),
-        mongoUri = gmeConfig.mongo.uri;
+    var gmeConfig = require('../config');
+
+    mongoUri = mongoUri || gmeConfig.mongo.uri;
 
     if (isLocalUri('mongodb', mongoUri)) {
+        var match = mongoUri.match(/:([0-9]+)/),
+            port = '80';
+
+        if (match) {
+            port = match[1];
+        }
+
         // Make sure mongo is running locally (using pgrep)
         try {
             execSync('pgrep mongod').toString();
             console.log('MongoDB is already running!');
         } catch (e) {  // no pIds
             console.log('Starting MongoDB...');
-            var match = mongoUri.match(/:([0-9]+)/),
-                port = '80';
-
-            if (match) {
-                port = match[1];
-            }
-
             startMongo(args, port, !notSilent);
         }
+        return tcpPortUsed.waitUntilUsed(+port, 100, 1000);
     } else if (notSilent) {
         console.log(`Cannot start remote mongo locally: ${mongoUri}`);
     } else {
         console.log(`Using remote mongo: ${mongoUri}`);
     }
+    return Q();
 };
 
 var startMongo = function(args, port, silent) {
@@ -294,42 +298,49 @@ program.command('start')
     .option('-w, --worker [url]', 'start a worker and connect to given url. Defaults to local deepforge')
     .option('-m, --mongo', 'start MongoDB')
     .action(args => {
-        var main = path.join(__dirname, 'start-local.js');
+        var main = path.join(__dirname, 'start-local.js'),
+            current = Q();
 
         if (args.port) {
             process.env.PORT = args.port;
         }
 
+        if (args.mongo) {
+            current = current.then(() => checkMongo(args, true));
+        }
+
         if (args.server) {
-            checkMongo(args);
-            main = path.join(__dirname, '..', 'app.js');
-            spawn('node', [main]);
+            current = current
+                .then(() => checkMongo(args))
+                .then(() => {
+                    main = path.join(__dirname, '..', 'app.js');
+                    return spawn('node', [main]);
+                });
         }
 
         if (args.worker) {
             if (hasTorch()) {
-                installTorchExtras().then(() => {
-                    main = path.join(__dirname, 'start-worker.js');
-                    if (args.worker !== true) {
-                        spawn('node', [main, args.worker]);
-                    } else {
-                        spawn('node', [main]);
-                    }
-                });
+                current
+                    .then(() => installTorchExtras())
+                    .then(() => {
+                        main = path.join(__dirname, 'start-worker.js');
+                        if (args.worker !== true) {
+                            spawn('node', [main, args.worker]);
+                        } else {
+                            spawn('node', [main]);
+                        }
+                    });
             } else {
                 installTorch();
             }
         }
 
-        if (args.mongo) {
-            checkMongo(args, true);
-        }
-
         if (!args.server && !args.worker && !args.mongo) {
             // Starting everything
-            checkMongo(args);
+            current = current.then(() => checkMongo(args));
             if (hasTorch()) {
-                installTorchExtras().then(() => spawn('node', [main]));
+                current.then(() => installTorchExtras())
+                    .then(() => spawn('node', [main]));
             } else {
                 installTorch();
             }
@@ -475,6 +486,7 @@ module.exports = function(cmd) {
     cmds.unshift('node');
     program.parse(cmds);
 };
+module.exports.checkMongo = checkMongo;
 
 if (require.main === module) {
     program.parse(process.argv);
