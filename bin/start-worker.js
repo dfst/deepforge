@@ -36,7 +36,6 @@ try {
 } catch (e) {
     // Create dir
     childProcess.spawnSync('ln', ['-s', `${__dirname}/../node_modules`, modules]);
-    return true;
 }
 
 // Check torch support
