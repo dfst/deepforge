@@ -49,9 +49,8 @@ RUN rm -rf node_modules/ && npm install && ln -s /deepforge/bin/deepforge /usr/l
 EXPOSE 8888
 
 # configure the worker
-RUN deepforge config blob.dir /data/blob && \  # these should be ignored
+RUN deepforge config blob.dir /data/blob && \
     deepforge config mongo.dir /data/db && \
-
     deepforge config worker.cache.useBlob false && \
     deepforge config worker.cache.dir /worker-cache && \
     deepforge config torch.dir /root/torch/
@@ -61,5 +60,5 @@ RUN apt-get update && apt-get install sudo wget && \
     . /root/torch/install/bin/torch-activate && \
     deepforge update -t
 
-ENTRYPOINT /bin/bash
-CMD ["deepforge", "start", "--worker"]
+# ENTRYPOINT /bin/bash
+CMD ["deepforge", "start", "--worker", "http://172.17.0.1:8888"]
