@@ -44,21 +44,23 @@ RUN cd $(npm root -g)/npm \
     && npm install fs-extra \
     && sed -i -e s/graceful-fs/fs-extra/ -e s/fs.rename/fs.move/ ./lib/utils/rename.js
 
-RUN rm -rf node_modules/ && npm install && ln -s /deepforge/bin/deepforge /usr/local/bin
-
-EXPOSE 8888
+RUN ln -s /deepforge/bin/deepforge /usr/local/bin
 
 # configure the worker
 RUN deepforge config blob.dir /data/blob && \
     deepforge config mongo.dir /data/db && \
     deepforge config worker.cache.useBlob false && \
     deepforge config worker.cache.dir /deepforge/worker-cache && \
-    deepforge config torch.dir /root/torch/
+    deepforge config torch.dir /root/torch/ && \
+    git config --global user.email "deepforge-worker@deepforge.org" && \
+    git config --global user.name "deepforge-worker"
 
 # Set up torch
 RUN apt-get update && apt-get install sudo wget && \
     . /root/torch/install/bin/torch-activate && \
+    cd /root/torch/ && bash /root/torch/update.sh && \
     deepforge update -t
 
-# ENTRYPOINT /bin/bash
-CMD ["deepforge", "start", "--worker", "http://172.17.0.1:8888"]
+# Uncomment this before final version
+#ENTRYPOINT ["deepforge", "start", "--worker"]
+#CMD ["http://172.17.0.1:8888"]
