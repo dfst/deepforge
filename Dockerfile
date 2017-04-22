@@ -13,7 +13,7 @@ RUN cd $(npm root -g)/npm \
     && npm install fs-extra \
     && sed -i -e s/graceful-fs/fs-extra/ -e s/fs.rename/fs.move/ ./lib/utils/rename.js
 
-RUN rm -rf node_modules/ && npm install && ln -s /deepforge/bin/deepforge /usr/local/bin
+RUN ln -s /deepforge/bin/deepforge /usr/local/bin
 
 EXPOSE 8888
 
