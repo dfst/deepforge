@@ -61,6 +61,5 @@ RUN apt-get update && apt-get install sudo wget && \
     cd /root/torch/ && bash /root/torch/update.sh && \
     deepforge update -t
 
-# Uncomment this before final version
-#ENTRYPOINT ["deepforge", "start", "--worker"]
-#CMD ["http://172.17.0.1:8888"]
+ENTRYPOINT ["deepforge", "start", "--worker"]
+CMD ["http://172.17.0.1:8888"]
