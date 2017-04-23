@@ -24,9 +24,16 @@ Welcome to DeepForge's documentation!
 
 .. toctree::
    :maxdepth: 1
+   :caption: Deployment
+
+   deployment/overview.rst
+   deployment/native.rst
+   deployment/dockerized.rst
+
+.. toctree::
+   :maxdepth: 1
    :caption: Reference
 
-   deployment/installation.rst
    reference/cli.rst
    reference/configuration.rst
    reference/operation_feedback.rst
