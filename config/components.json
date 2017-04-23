@@ -1,4 +1,10 @@
 {
+    "CodeGen": {
+        "Operation": {
+            "pluginId": "GenerateJob",
+            "namespace": "pipeline"
+        }
+    },
     "AutoViz": {
         "preloadIds": [
             "ArchEditor",

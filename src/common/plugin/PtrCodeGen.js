@@ -1,33 +1,38 @@
 /*globals define, requirejs*/
 define([
+    'js/Utils/ComponentSettings',
     'plugin/util',
     'q'
 ], function(
+    ComponentSettings,
     PluginUtils,
     Q
 ) {
+
+    var CodeGen = {};
+    ComponentSettings.resolveWithWebGMEGlobal(CodeGen, 'CodeGen');
+
     var PtrCodeGen = function() {
     };
 
     PtrCodeGen.prototype.getCodeGenPluginIdFor = function(node) {
         var base = this.core.getBase(node),
             name = this.core.getAttribute(node, 'name'),
+            namespace = this.core.getNamespace(node),
             pluginId;
 
         //this.logger.debug(`loaded pointer target of ${ptrId}: ${ptrNode}`);
         pluginId = (this.core.getRegistry(node, 'validPlugins') || '').split(' ').shift();
         //this.logger.info(`generating code for ${this.core.getAttribute(ptrNode, 'name')} using ${pluginId}`);
 
-        // FIXME:
-        if (this.core.isMetaNode(node) && name === 'Operation') {
-            pluginId = 'GenerateJob';
+        if (this.core.isMetaNode(node) && CodeGen[name]) {
+            pluginId = CodeGen[name].pluginId || CodeGen[name];
+            namespace = CodeGen[name].namespace;
         }
-
-        // TODO: Check component config?
 
         if (pluginId) {
             return {
-                node: node,
+                namespace: namespace,
                 pluginId: pluginId
             };
         } else if (base) {
@@ -45,7 +50,7 @@ define([
 
                 if (genInfo.pluginId) {
                     var context = {
-                        namespace: this.core.getNamespace(genInfo.node),
+                        namespace: genInfo.namespace,
                         activeNode: this.core.getPath(ptrNode)
                     };
 
