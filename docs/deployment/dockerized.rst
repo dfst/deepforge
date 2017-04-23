@@ -1,6 +1,6 @@
 Dockerized Installation
 -----------------------
-Each of the components are also available as docker containers.
+Each of the components are also available as docker containers. This page outlines the running of each of the main components as docker containers and connecting them as necessary.
 
 Database
 ~~~~~~~~
@@ -18,6 +18,8 @@ where :code:`/abs/path/to/data` is the path to the mongo data location on the ho
 
 The :code:`<container id>` is the value returned from the original :code:`docker run` command.
 
+When running mongo in a docker container, it is important to mount an external volume (using the :code:`-v` flag) to be used for the actual data (otherwise the data will be lost when the container is stopped).
+
 Server
 ~~~~~~
 The DeepForge server can be started with
@@ -32,10 +34,12 @@ where :code:`172.17.0.2` is the ip address of the mongo container and :code:`/ho
 
 Worker
 ~~~~~~
-Next, workers can be created using
+As workers may require GPU access, they will need to use the nvidia-docker plugin. Workers can be created using
 
 .. code-block:: bash
 
-    docker run -d deepforge/worker http://172.17.0.1:8888
+    nvidia-docker run -d deepforge/worker http://172.17.0.1:8888
 
 where :code:`http://172.17.0.1:8888` is the location of the DeepForge server to which to connect.
+
+**Note**: The :code:`deepforge/worker` image is packaged with cuda 7.5. Depending upon your hardware and nvidia version, you may need to build your own docker image or run the worker natively.
