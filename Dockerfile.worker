@@ -55,7 +55,7 @@ RUN deepforge config blob.dir /data/blob && \
     git config --global user.email "deepforge-worker@deepforge.org" && \
     git config --global user.name "deepforge-worker"
 
-# Set up torch
+# Update torch
 RUN apt-get update && apt-get install sudo wget && \
     . /root/torch/install/bin/torch-activate && \
     cd /root/torch/ && bash /root/torch/update.sh && \

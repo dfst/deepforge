@@ -1,5 +1,5 @@
 # Basically this is the server with mongo installed
-FROM node:6.2.2
+FROM node:6.10.1
 MAINTAINER Brian Broll <brian.broll@gmail.com>
 
 # Install basic required tools
@@ -19,18 +19,24 @@ RUN cd $(npm root -g)/npm \
     && npm install fs-extra \
     && sed -i -e s/graceful-fs/fs-extra/ -e s/fs.rename/fs.move/ ./lib/utils/rename.js
 
-RUN rm -rf node_modules/ && npm install && ln -s /deepforge/bin/deepforge /usr/local/bin
+RUN ln -s /deepforge/bin/deepforge /usr/local/bin
 
 EXPOSE 8888
 
+RUN deepforge config torch.dir /torch/ && mkdir /torch && \
+    deepforge config blob.dir /data/blob && \
+    deepforge config mongo.dir /data/db && \
+    git config --global user.email "deepforge-worker@deepforge.org" && \
+    git config --global user.name "deepforge-worker"
+
 # Set up torch
-RUN apt-get install sudo && echo 'yes' | deepforge start -w && \
-    . /root/.deepforge/torch/install/bin/torch-activate && \
+RUN apt-get update && apt-get install sudo wget && \
+    echo 'yes' | deepforge update -t && \
+    . /root/torch/install/bin/torch-activate && \
     deepforge update -t
 
 # Set up the data storage
 RUN deepforge config blob.dir /data/blob && \
     deepforge config mongo.dir /data/db
 
-ENTRYPOINT /bin/bash
-CMD ["deepforge", "start"]
+ENTRYPOINT ["deepforge", "start"]
