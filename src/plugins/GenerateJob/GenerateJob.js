@@ -7,6 +7,7 @@ define([
     'underscore',
     'deepforge/Constants',
     'deepforge/plugin/Operation',
+    'deepforge/plugin/PtrCodeGen',
     'text!./metadata.json',
     'plugin/PluginBase'
 ], function (
@@ -15,6 +16,7 @@ define([
     _,
     CONSTANTS,
     OperationHelpers,
+    PtrCodeGen,
     pluginMetadata,
     PluginBase
 ) {
@@ -555,7 +557,11 @@ define([
         return this.core.setAttribute(node, attr, value);
     };
 
-    _.extend(GenerateJob.prototype, OperationHelpers.prototype);
+    _.extend(
+        GenerateJob.prototype,
+        OperationHelpers.prototype,
+        PtrCodeGen.prototype
+    );
 
     return GenerateJob;
 });
