@@ -44,8 +44,7 @@ define([
 
     pluginMetadata = JSON.parse(pluginMetadata);
 
-    var OUTPUT_INTERVAL = 1500,
-        STDOUT_FILE = 'job_stdout.txt';
+    var STDOUT_FILE = 'job_stdout.txt';
 
     /**
      * Initializes a new instance of ExecuteJob.
@@ -473,14 +472,8 @@ define([
 
     ExecuteJob.prototype.executeJob = function (job) {
         return this.getOperation(job).then(node => {
-            var jobId = this.core.getPath(job),
-                name = this.getAttribute(node, 'name'),
-                localTypeId = this.getLocalOperationType(node),
-                artifact,
-                artifactName,
-                files,
-                data = {},
-                inputs;
+            var name = this.getAttribute(node, 'name'),
+                localTypeId = this.getLocalOperationType(node);
 
             // Execute any special operation types here - not on an executor
             this.logger.debug(`Executing operation "${name}"`);
@@ -490,11 +483,11 @@ define([
                 // Generate all execution files
                 return this.getPtrCodeHash(this.core.getPath(node))
                     .fail(err => {
-                        this.logger.error(`Could not generate files: ${err}`)
+                        this.logger.error(`Could not generate files: ${err}`);
                         throw err;
                     })
                     .then(hash => {
-                        this.logger.info(`Saved execution files "${artifactName}"`);
+                        this.logger.info(`Saved execution files`);
                         this.result.addArtifact(hash);  // Probably only need this for debugging...
                         this.executeDistOperation(job, node, hash);
                     })

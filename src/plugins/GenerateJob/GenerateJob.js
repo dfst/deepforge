@@ -74,135 +74,136 @@ define([
             artifact,
             data = {},
             inputs,
-            node,
             name,
-            opId;
+            opId,
+            job;
 
         name = this.getAttribute(this.activeNode, 'name');
         opId = this.core.getPath(this.activeNode);
+        job = this.core.getParent(this.activeNode);
 
         return this.createOperationFiles(this.activeNode)
             .then(results => {
-                    this.logger.info('Created operation files!');
-                    files = results;
-                    artifactName = `${name}_${opId.replace(/\//g, '_')}-execution-files`;
-                    artifact = this.blobClient.createArtifact(artifactName);
+                this.logger.info('Created operation files!');
+                files = results;
+                artifactName = `${name}_${opId.replace(/\//g, '_')}-execution-files`;
+                artifact = this.blobClient.createArtifact(artifactName);
 
-                    // Add the input assets
-                    //   - get the metadata (name)
-                    //   - add the given inputs
-                    inputs = Object.keys(files.inputAssets);
+                // Add the input assets
+                //   - get the metadata (name)
+                //   - add the given inputs
+                inputs = Object.keys(files.inputAssets);
 
-                    return Q.all(
-                        inputs.map(input => {  // Get the metadata for each input
-                            var hash = files.inputAssets[input];
+                return Q.all(
+                    inputs.map(input => {  // Get the metadata for each input
+                        var hash = files.inputAssets[input];
 
-                            // data asset for "input"
-                            return this.blobClient.getMetadata(hash)
-                                .fail(err => this.onBlobRetrievalFail(job, input, err));
-                        })
-                    );
-                })
-                .then(mds => {
-                    // Record the large files
-                    var inputData = {},
-                        runsh = '# Bash script to download data files and run job\n' +
-                        'if [ -z "$DEEPFORGE_URL" ]; then\n  echo "Please set DEEPFORGE_URL and' +
-                        ' re-run:"\n  echo ""  \n  echo "  DEEPFORGE_URL=http://my.' +
-                        'deepforge.server.com:8080 bash run.sh"\n  echo ""\n exit 1\nfi\n';
+                        // data asset for "input"
+                        return this.blobClient.getMetadata(hash)
+                            .fail(err => this.onBlobRetrievalFail(job, input, err));
+                    })
+                );
+            })
+            .then(mds => {
+                // Record the large files
+                var inputData = {},
+                    runsh = '# Bash script to download data files and run job\n' +
+                    'if [ -z "$DEEPFORGE_URL" ]; then\n  echo "Please set DEEPFORGE_URL and' +
+                    ' re-run:"\n  echo ""  \n  echo "  DEEPFORGE_URL=http://my.' +
+                    'deepforge.server.com:8080 bash run.sh"\n  echo ""\n exit 1\nfi\n';
 
-                    mds.forEach((metadata, i) => {
-                        // add the hashes for each input
-                        var input = inputs[i], 
-                            hash = files.inputAssets[input],
-                            dataPath = 'inputs/' + input + '/data',
-                            url = this.blobClient.getRelativeDownloadURL(hash);
+                mds.forEach((metadata, i) => {
+                    // add the hashes for each input
+                    var input = inputs[i], 
+                        hash = files.inputAssets[input],
+                        dataPath = 'inputs/' + input + '/data',
+                        url = this.blobClient.getRelativeDownloadURL(hash);
 
-                        inputData[dataPath] = {
-                            req: hash,
-                            cache: metadata.content
+                    inputData[dataPath] = {
+                        req: hash,
+                        cache: metadata.content
+                    };
+
+                    // Add to the run.sh file
+                    runsh += `wget $DEEPFORGE_URL${url} -O ${dataPath}\n`;
+                });
+
+                delete files.inputAssets;
+                files['input-data.json'] = JSON.stringify(inputData, null, 2);
+                runsh += 'th init.lua';
+                files['run.sh'] = runsh;
+
+                // Add pointer assets
+                Object.keys(files.ptrAssets)
+                    .forEach(path => data[path] = files.ptrAssets[path]);
+
+                // Add the executor config
+                return this.getOutputs(this.activeNode);
+            })
+            .then(outputArgs => {
+                var config,
+                    outputs,
+                    fileList,
+                    ptrFiles = Object.keys(files.ptrAssets),
+                    file;
+
+                delete files.ptrAssets;
+                fileList = Object.keys(files).concat(ptrFiles);
+
+                outputs = outputArgs.map(pair => pair[0])
+                    .map(name => {
+                        return {
+                            name: name,
+                            resultPatterns: [`outputs/${name}`]
                         };
-
-                        // Add to the run.sh file
-                        runsh += `wget $DEEPFORGE_URL${url} -O ${dataPath}\n`;
                     });
 
-                    delete files.inputAssets;
-                    files['input-data.json'] = JSON.stringify(inputData, null, 2);
-                    runsh += 'th init.lua';
-                    files['run.sh'] = runsh;
-
-                    // Add pointer assets
-                    Object.keys(files.ptrAssets)
-                        .forEach(path => data[path] = files.ptrAssets[path]);
-
-                    // Add the executor config
-                    return this.getOutputs(this.activeNode);
-                })
-                .then(outputArgs => {
-                    var config,
-                        outputs,
-                        fileList,
-                        ptrFiles = Object.keys(files.ptrAssets),
-                        file;
-
-                    delete files.ptrAssets;
-                    fileList = Object.keys(files).concat(ptrFiles);
-
-                    outputs = outputArgs.map(pair => pair[0])
-                        .map(name => {
-                            return {
-                                name: name,
-                                resultPatterns: [`outputs/${name}`]
-                            };
-                        });
-
-                    outputs.push(
-                        {
-                            name: 'stdout',
-                            resultPatterns: [STDOUT_FILE]
-                        },
-                        {
-                            name: name + '-all-files',
-                            resultPatterns: fileList
-                        }
-                    );
-
-                    config = {
-                        cmd: 'node',
-                        args: ['start.js'],
-                        outputInterval: OUTPUT_INTERVAL,
-                        resultArtifacts: outputs
-                    };
-                    files['executor_config.json'] = JSON.stringify(config, null, 4);
-
-                    // Save the artifact
-                    // Remove empty hashes
-                    for (file in data) {
-                        if (!data[file]) {
-                            this.logger.warn(`Empty data hash has been found for file "${file}". Removing it...`);
-                            delete data[file];
-                        }
+                outputs.push(
+                    {
+                        name: 'stdout',
+                        resultPatterns: [STDOUT_FILE]
+                    },
+                    {
+                        name: name + '-all-files',
+                        resultPatterns: fileList
                     }
-                    return artifact.addObjectHashes(data);
-                })
-                .then(() => {
-                    this.logger.info(`Added ptr/input data hashes for "${artifactName}"`);
-                    return artifact.addFiles(files);
-                })
-                .then(() => {
-                    this.logger.info(`Added execution files for "${artifactName}"`);
-                    return artifact.save();
-                })
-                .then(hash => {
-                    this.result.setSuccess(true);
-                    this.result.addArtifact(hash);
-                    callback(null, this.result);
-                })
-                .fail(err => {
-                    this.result.setSuccess(false);
-                    callback(err, this.result);
-                });
+                );
+
+                config = {
+                    cmd: 'node',
+                    args: ['start.js'],
+                    outputInterval: OUTPUT_INTERVAL,
+                    resultArtifacts: outputs
+                };
+                files['executor_config.json'] = JSON.stringify(config, null, 4);
+
+                // Save the artifact
+                // Remove empty hashes
+                for (file in data) {
+                    if (!data[file]) {
+                        this.logger.warn(`Empty data hash has been found for file "${file}". Removing it...`);
+                        delete data[file];
+                    }
+                }
+                return artifact.addObjectHashes(data);
+            })
+            .then(() => {
+                this.logger.info(`Added ptr/input data hashes for "${artifactName}"`);
+                return artifact.addFiles(files);
+            })
+            .then(() => {
+                this.logger.info(`Added execution files for "${artifactName}"`);
+                return artifact.save();
+            })
+            .then(hash => {
+                this.result.setSuccess(true);
+                this.result.addArtifact(hash);
+                callback(null, this.result);
+            })
+            .fail(err => {
+                this.result.setSuccess(false);
+                callback(err, this.result);
+            });
     }; 
 
     GenerateJob.prototype.createOperationFiles = function (node) {
@@ -382,8 +383,7 @@ define([
                 return Q.all(inputs.map(pair => {
                     var name = pair[0],
                         node = pair[2],
-                        nodeId = this.core.getPath(node),
-                        fromNodeId;
+                        nodeId = this.core.getPath(node);
 
                     // Get the deserialize function. First, try to get it from
                     // the source method (this guarantees that the correct
@@ -489,7 +489,6 @@ define([
 
                 // Set the line offset
                 var lineOffset = this.getLineOffset(files['main.lua'], code);
-                // TODO: FIXME: Should this be set here or in the invoking plugin?
                 this.setAttribute(node, CONSTANTS.LINE_OFFSET, lineOffset);
             });
     };

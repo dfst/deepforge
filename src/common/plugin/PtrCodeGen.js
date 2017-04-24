@@ -9,8 +9,8 @@ define([
 
     var CodeGen = {
         Operation: {
-            pluginId: "GenerateJob",
-            namespace: "pipeline"
+            pluginId: 'GenerateJob',
+            namespace: 'pipeline'
         }
     };
 
