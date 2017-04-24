@@ -24,7 +24,7 @@ define([
             pluginId;
 
         //this.logger.debug(`loaded pointer target of ${ptrId}: ${ptrNode}`);
-        pluginId = (this.core.getRegistry(node, 'validPlugins') || '').split(' ').shift();
+        pluginId = (this.core.getOwnRegistry(node, 'validPlugins') || '').split(' ').shift();
         //this.logger.info(`generating code for ${this.core.getAttribute(ptrNode, 'name')} using ${pluginId}`);
 
         if (this.core.isMetaNode(node) && CodeGen[name]) {
