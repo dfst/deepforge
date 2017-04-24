@@ -1,16 +1,18 @@
 /*globals define, requirejs*/
 define([
-    'js/Utils/ComponentSettings',
     'plugin/util',
     'q'
 ], function(
-    ComponentSettings,
     PluginUtils,
     Q
 ) {
 
-    var CodeGen = {};
-    ComponentSettings.resolveWithWebGMEGlobal(CodeGen, 'CodeGen');
+    var CodeGen = {
+        Operation: {
+            pluginId: "GenerateJob",
+            namespace: "pipeline"
+        }
+    };
 
     var PtrCodeGen = function() {
     };
