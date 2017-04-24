@@ -489,6 +489,10 @@ define([
             } else {
                 // Generate all execution files
                 return this.getPtrCodeHash(this.core.getPath(node))
+                    .fail(err => {
+                        this.logger.error(`Could not generate files: ${err}`)
+                        throw err;
+                    })
                     .then(hash => {
                         this.logger.info(`Saved execution files "${artifactName}"`);
                         this.result.addArtifact(hash);  // Probably only need this for debugging...

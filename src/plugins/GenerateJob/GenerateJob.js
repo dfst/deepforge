@@ -76,7 +76,6 @@ define([
             name,
             opId;
 
-        // TODO: if the current node is a job, set the activeNode to the contained operation
         name = this.getAttribute(this.activeNode, 'name');
         opId = this.core.getPath(this.activeNode);
 
@@ -228,6 +227,10 @@ define([
             .then(() => {
                 this.createAttributeFile(node, files);
                 return Q.ninvoke(this, 'createPointers', node, files);
+            })
+            .fail(err => {
+                this.logger.error(err);
+                throw err;
             });
     };
 
@@ -337,7 +340,7 @@ define([
     GenerateJob.prototype.getConnectionContainer = function () {
         var container = this.core.getParent(this.activeNode);
 
-        if (this.isMetaTypeOf(container, this.META.Execution)) {
+        if (this.isMetaTypeOf(container, this.META.Job)) {
             container = this.core.getParent(container);
         }
 
@@ -352,7 +355,7 @@ define([
             .then(children => {
                 return children.filter(child =>
                     this.core.getPointerPath(child, 'dst') === nodeId)
-                    .map(conn => this.core.getPointerPath(conn, 'src'));
+                    .map(conn => this.core.getPointerPath(conn, 'src'))[0];
             });
     };
 
