@@ -99,6 +99,7 @@ define([
         ).then(config => {
             plugin.initialize(logger, this.blobClient, this.gmeConfig);
             config.core = this.core;
+            config.project = this.project;
             plugin.configure(config);
             return plugin;
         });
