@@ -425,7 +425,9 @@ define([
 
                 return Q.all(hashes.map(pair => 
                     this.blobClient.getMetadata(pair.hash)
-                        .fail(err => this.onBlobRetrievalFail(node, pair.name, err))));
+                        .fail(err => {
+                            throw Error(`BLOB_FETCH_FAILED:${pair.name}`);
+                        })));
             })
             .then(metadatas => {
                 // Create the deserializer

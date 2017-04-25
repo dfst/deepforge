@@ -452,6 +452,7 @@ define([
             children.find(child => this.isMetaTypeOf(child, this.META.Operation)));
     };
 
+    // Handle the blob retrieval failed error
     ExecuteJob.prototype.onBlobRetrievalFail = function (node, input, err) {
         var job = this.core.getParent(node),
             e = `Failed to retrieve "${input}" (${err})`,
@@ -484,6 +485,9 @@ define([
                 return this.getPtrCodeHash(this.core.getPath(node))
                     .fail(err => {
                         this.logger.error(`Could not generate files: ${err}`);
+                        if (err.message.indexOf('BLOB_FETCH_FAILED') > -1) {
+                            this.onBlobRetrievalFail(node, err.message.split(':')[1], err);
+                        }
                         throw err;
                     })
                     .then(hash => {
