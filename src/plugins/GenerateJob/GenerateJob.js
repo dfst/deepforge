@@ -100,7 +100,9 @@ define([
 
                         // data asset for "input"
                         return this.blobClient.getMetadata(hash)
-                            .fail(err => this.onBlobRetrievalFail(job, input, err));
+                            .fail(err => {
+                                throw Error(`BLOB_FETCH_FAILED:${input}`);
+                            });
                     })
                 );
             })
