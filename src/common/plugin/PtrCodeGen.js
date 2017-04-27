@@ -93,7 +93,7 @@ define([
         return PluginUtils.loadNodesAtCommitHash(
             this.project,
             this.core,
-            this.commitHash,
+            this.currentHash,
             this.logger,
             opts
         ).then(config => {
