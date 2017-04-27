@@ -169,6 +169,7 @@ define([
         createNews = Object.keys(types).map(type =>
             this._creationNode(type, types[type], Decorator));
 
+        nodes.sort((a, b) => a.node.name < b.node.name ? -1 : 1);
         nodes = nodes.concat(createNews);
 
         // Sort by layer type
