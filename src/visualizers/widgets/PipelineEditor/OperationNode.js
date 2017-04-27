@@ -9,7 +9,10 @@ define([
 
     'use strict';
     var OperationNode = function(parentEl, desc) {
-        DAGItem.call(this, parentEl, desc);
+        var decoratorOpts = {
+            color: desc.displayColor
+        };
+        DAGItem.call(this, parentEl, desc, decoratorOpts);
         this.inputs = desc.inputs;
         this.outputs = desc.outputs;
         this._visiblePorts = null;
@@ -122,8 +125,10 @@ define([
         this.hidePorts();
     };
 
-    OperationNode.prototype.update = function() {
+    OperationNode.prototype.update = function(desc) {
         DAGItem.prototype.update.apply(this, arguments);
+        this.inputs = desc.inputs;
+        this.outputs = desc.outputs;
         if (this._visiblePorts) {
             var areInputs = this._visiblePorts[1];
             this.showPorts.call(this, null, areInputs);

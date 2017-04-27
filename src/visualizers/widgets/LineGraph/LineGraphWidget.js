@@ -42,16 +42,15 @@ define([
 
             chart.xAxis
                 .tickFormat(d3.format(',r'));
-
-            if (this.options.xAxis) {
-                chart.xAxis
-                    .axisLabel(this.options.xAxis);
-            }
-
             chart.yAxis.tickFormat(d3.format('.02f'));
+
             if (this.options.yAxis) {
                 chart.yAxis
                     .axisLabel(this.options.yAxis);
+            }
+            if (this.options.xAxis) {
+                chart.xAxis
+                    .axisLabel(this.options.xAxis);
             }
 
             var myData = this.getData();
@@ -83,6 +82,9 @@ define([
                     key: desc.name,
                     values: desc.points
                 };
+            } else {
+                this.options.xAxis = desc.xlabel;
+                this.options.yAxis = desc.ylabel;
             }
             this.refreshChart();
         }
@@ -94,11 +96,14 @@ define([
     };
 
     LineGraphWidget.prototype.updateNode = function (desc) {
-        if (desc && this.lineData[desc.id]) {
+        if (this.lineData[desc.id]) {
             this.lineData[desc.id].values = desc.points;
             this.lineData[desc.id].key = desc.name;
-            this.refreshChart();
+        } else {
+            this.options.xAxis = desc.xlabel;
+            this.options.yAxis = desc.ylabel;
         }
+        this.refreshChart();
     };
 
     LineGraphWidget.prototype.onWidgetContainerResize = function(width, height) {
@@ -111,6 +116,17 @@ define([
 
     LineGraphWidget.prototype.updateChartData = function () {
         if (this.$chart && this.chart) {
+
+            if (this.options.yAxis) {
+                this.chart.yAxis
+                    .axisLabel(this.options.yAxis || '');
+            }
+            if (this.options.xAxis) {
+                this.chart.xAxis
+                    .axisLabel(this.options.xAxis || '');
+            }
+
+
             this.$chart
                 .datum(this.getData())
                 .call(this.chart);

@@ -1,4 +1,4 @@
-/* globals _, WebGMEGlobal, define*/
+/* globals _, define*/
 define([
     'widgets/EasyDAG/SelectionManager',
     'deepforge/viz/Buttons'
@@ -7,7 +7,6 @@ define([
     Buttons
 ) {
 
-    var client = WebGMEGlobal.Client;
     var SelectionManager = function() {
         ManagerBase.apply(this, arguments);
     };
@@ -15,8 +14,7 @@ define([
     _.extend(SelectionManager.prototype, ManagerBase.prototype);
 
     SelectionManager.prototype.createActionButtons = function(width, height) {
-        var disabled,
-            btn;
+        var btn;
 
         ManagerBase.prototype.createActionButtons.call(this, width, height);
 
@@ -29,32 +27,18 @@ define([
                 y: height/2
             });
         } else {
-            disabled = !this._isCustomLayer();
             // Check that the base type
             btn = new Buttons.GoToBase({
                 $pEl: this.$selection,
                 context: this._widget,
                 title: 'Edit layer definition',
                 item: this.selectedItem,
-                disabled: disabled,
                 x: width,
                 y: 0
             });
         }
 
         return btn;
-    };
-
-    SelectionManager.prototype._isCustomLayer = function() {
-        var node = client.getNode(this.selectedItem.id),
-            attrNames;
-
-        if (node) {
-            attrNames = node.getAttributeNames();
-            return attrNames.indexOf('code') !== -1;
-        }
-
-        return false;
     };
 
     return SelectionManager;

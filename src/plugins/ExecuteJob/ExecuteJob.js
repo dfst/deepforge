@@ -8,10 +8,10 @@ define([
     'plugin/PluginBase',
     'deepforge/plugin/LocalExecutor',
     'deepforge/plugin/PtrCodeGen',
+    'deepforge/plugin/Operation',
     'deepforge/api/JobLogsClient',
     'deepforge/api/JobOriginClient',
     'deepforge/api/ExecPulseClient',
-    './ExecuteJob.Files',
     './ExecuteJob.Metadata',
     './ExecuteJob.SafeSave',
     'deepforge/Constants',
@@ -26,11 +26,11 @@ define([
     PluginBase,
     LocalExecutor,  // DeepForge operation primitives
     PtrCodeGen,
+    OperationPlugin,
     JobLogsClient,
     JobOriginClient,
     ExecPulseClient,
 
-    ExecuteJobFiles,
     ExecuteJobMetadata,
     ExecuteJobSafeSave,
 
@@ -44,8 +44,7 @@ define([
 
     pluginMetadata = JSON.parse(pluginMetadata);
 
-    var OUTPUT_INTERVAL = 1500,
-        STDOUT_FILE = 'job_stdout.txt';
+    var STDOUT_FILE = 'job_stdout.txt';
 
     /**
      * Initializes a new instance of ExecuteJob.
@@ -453,9 +452,10 @@ define([
             children.find(child => this.isMetaTypeOf(child, this.META.Operation)));
     };
 
-    ExecuteJob.prototype.onBlobRetrievalFail = function (node, input, err) {
+    // Handle the blob retrieval failed error
+    ExecuteJob.prototype.onBlobRetrievalFail = function (node, input) {
         var job = this.core.getParent(node),
-            e = `Failed to retrieve "${input}" (${err})`,
+            e = `Failed to retrieve "${input}" (BLOB_FETCH_FAILED)`,
             consoleErr = `[0;31mFailed to execute operation: ${e}[0m`;
 
         consoleErr += [
@@ -473,14 +473,8 @@ define([
 
     ExecuteJob.prototype.executeJob = function (job) {
         return this.getOperation(job).then(node => {
-            var jobId = this.core.getPath(job),
-                name = this.getAttribute(node, 'name'),
-                localTypeId = this.getLocalOperationType(node),
-                artifact,
-                artifactName,
-                files,
-                data = {},
-                inputs;
+            var name = this.getAttribute(node, 'name'),
+                localTypeId = this.getLocalOperationType(node);
 
             // Execute any special operation types here - not on an executor
             this.logger.debug(`Executing operation "${name}"`);
@@ -488,126 +482,22 @@ define([
                 return this.executeLocalOperation(localTypeId, node);
             } else {
                 // Generate all execution files
-                return this.createOperationFiles(node).then(results => {
-                    this.logger.info('Created operation files!');
-                    files = results;
-                    artifactName = `${name}_${jobId.replace(/\//g, '_')}-execution-files`;
-                    artifact = this.blobClient.createArtifact(artifactName);
-
-                    // Add the input assets
-                    //   - get the metadata (name)
-                    //   - add the given inputs
-                    inputs = Object.keys(files.inputAssets);
-
-                    return Q.all(
-                        inputs.map(input => {  // Get the metadata for each input
-                            var hash = files.inputAssets[input];
-
-                            // data asset for "input"
-                            return this.blobClient.getMetadata(hash)
-                                .fail(err => this.onBlobRetrievalFail(job, input, err));
-                        })
-                    );
-                })
-                .then(mds => {
-                    // Record the large files
-                    var inputData = {},
-                        runsh = '# Bash script to download data files and run job\n' +
-                        'if [ -z "$DEEPFORGE_URL" ]; then\n  echo "Please set DEEPFORGE_URL and' +
-                        ' re-run:"\n  echo ""  \n  echo "  DEEPFORGE_URL=http://my.' +
-                        'deepforge.server.com:8080 bash run.sh"\n  echo ""\n exit 1\nfi\n';
-
-                    mds.forEach((metadata, i) => {
-                        // add the hashes for each input
-                        var input = inputs[i], 
-                            hash = files.inputAssets[input],
-                            dataPath = 'inputs/' + input + '/data',
-                            url = this.blobClient.getRelativeDownloadURL(hash);
-
-                        inputData[dataPath] = {
-                            req: hash,
-                            cache: metadata.content
-                        };
-
-                        // Add to the run.sh file
-                        runsh += `wget $DEEPFORGE_URL${url} -O ${dataPath}\n`;
+                return this.getPtrCodeHash(this.core.getPath(node))
+                    .fail(err => {
+                        this.logger.error(`Could not generate files: ${err}`);
+                        if (err.message.indexOf('BLOB_FETCH_FAILED') > -1) {
+                            this.onBlobRetrievalFail(node, err.message.split(':')[1]);
+                        }
+                        throw err;
+                    })
+                    .then(hash => {
+                        this.logger.info(`Saved execution files`);
+                        this.result.addArtifact(hash);  // Probably only need this for debugging...
+                        this.executeDistOperation(job, node, hash);
+                    })
+                    .fail(e => {
+                        this.onOperationFail(node, `Distributed operation "${name}" failed ${e}`);
                     });
-
-                    delete files.inputAssets;
-                    files['input-data.json'] = JSON.stringify(inputData, null, 2);
-                    runsh += 'th init.lua';
-                    files['run.sh'] = runsh;
-
-                    // Add pointer assets
-                    Object.keys(files.ptrAssets)
-                        .forEach(path => data[path] = files.ptrAssets[path]);
-
-                    // Add the executor config
-                    return this.getOutputs(node);
-                })
-                .then(outputArgs => {
-                    var config,
-                        outputs,
-                        fileList,
-                        ptrFiles = Object.keys(files.ptrAssets),
-                        file;
-
-                    delete files.ptrAssets;
-                    fileList = Object.keys(files).concat(ptrFiles);
-
-                    outputs = outputArgs.map(pair => pair[0])
-                        .map(name => {
-                            return {
-                                name: name,
-                                resultPatterns: [`outputs/${name}`]
-                            };
-                        });
-
-                    outputs.push(
-                        {
-                            name: 'stdout',
-                            resultPatterns: [STDOUT_FILE]
-                        },
-                        {
-                            name: name + '-all-files',
-                            resultPatterns: fileList
-                        }
-                    );
-
-                    config = {
-                        cmd: 'node',
-                        args: ['start.js'],
-                        outputInterval: OUTPUT_INTERVAL,
-                        resultArtifacts: outputs
-                    };
-                    files['executor_config.json'] = JSON.stringify(config, null, 4);
-
-                    // Save the artifact
-                    // Remove empty hashes
-                    for (file in data) {
-                        if (!data[file]) {
-                            this.logger.warn(`Empty data hash has been found for file "${file}". Removing it...`);
-                            delete data[file];
-                        }
-                    }
-                    return artifact.addObjectHashes(data);
-                })
-                .then(() => {
-                    this.logger.info(`Added ptr/input data hashes for "${artifactName}"`);
-                    return artifact.addFiles(files);
-                })
-                .then(() => {
-                    this.logger.info(`Added execution files for "${artifactName}"`);
-                    return artifact.save();
-                })
-                .then(hash => {
-                    this.logger.info(`Saved execution files "${artifactName}"`);
-                    this.result.addArtifact(hash);  // Probably only need this for debugging...
-                    this.executeDistOperation(job, node, hash);
-                })
-                .fail(e => {
-                    this.onOperationFail(node, `Distributed operation "${name}" failed ${e}`);
-                });
             }
         });
     };
@@ -881,32 +771,6 @@ define([
             .fail(e => this.onOperationFail(node, `Operation ${nodeId} failed: ${e}`));
     };
 
-    ExecuteJob.prototype.getOutputs = function (node) {
-        return this.getOperationData(node, this.META.Outputs);
-    };
-
-    ExecuteJob.prototype.getInputs = function (node) {
-        return this.getOperationData(node, this.META.Inputs);
-    };
-
-    ExecuteJob.prototype.getOperationData = function (node, metaType) {
-        // Load the children and the output's children
-        return this.core.loadChildren(node)
-            .then(containers => {
-                var outputs = containers.find(c => this.core.isTypeOf(c, metaType));
-                return outputs ? this.core.loadChildren(outputs) : [];
-            })
-            .then(outputs => {
-                var bases = outputs.map(node => this.core.getMetaType(node));
-                // return [[arg1, Type1, node1], [arg2, Type2, node2]]
-                return outputs.map((node, i) => [
-                    this.getAttribute(node, 'name'),
-                    this.getAttribute(bases[i], 'name'),
-                    node
-                ]);
-            });
-    };
-
     //////////////////////////// Special Operations ////////////////////////////
     ExecuteJob.prototype.executeLocalOperation = function (type, node) {
         // Retrieve the given LOCAL_OP type
@@ -920,7 +784,7 @@ define([
 
     _.extend(
         ExecuteJob.prototype,
-        ExecuteJobFiles.prototype,
+        OperationPlugin.prototype,
         ExecuteJobMetadata.prototype,
         ExecuteJobSafeSave.prototype,
         PtrCodeGen.prototype,

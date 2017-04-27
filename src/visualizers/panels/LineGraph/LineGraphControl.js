@@ -99,6 +99,9 @@ define([
 
                 desc.type = 'line';
                 desc.points = points;
+            } else {
+                desc.xlabel = node.getAttribute('xlabel');
+                desc.ylabel = node.getAttribute('ylabel');
             }
         }
 

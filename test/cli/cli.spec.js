@@ -1,58 +1,59 @@
-var mockery = require('mockery'),
-    assert = require('assert'),
-    path = require('path'),
-    nop = () => {},
-    cli;
+describe('cli', function() {
+    var mockery = require('mockery'),
+        assert = require('assert'),
+        path = require('path'),
+        nop = () => {},
+        cli;
 
-var callRegister = {
-    childProcess: {
-        execSync: []
-    }
-};
-
-var mocks = {
-    childProcess: {},
-    rimraf: {}
-};
-
-var childProcess = {
-    execSync: function(cmd) {
-        callRegister.childProcess.execSync.push(cmd);
-        if (mocks.childProcess.execSync) {
-            return mocks.childProcess.execSync.apply(this, arguments);
+    var callRegister = {
+        childProcess: {
+            execSync: []
         }
-    },
-    spawnSync: function(cmd) {
-        if (cmd === 'luarocks') {
+    };
+
+    var mocks = {
+        childProcess: {},
+        rimraf: {}
+    };
+
+    var childProcess = {
+        execSync: function(cmd) {
+            callRegister.childProcess.execSync.push(cmd);
+            if (mocks.childProcess.execSync) {
+                return mocks.childProcess.execSync.apply(this, arguments);
+            }
+        },
+        spawnSync: function(cmd) {
+            if (cmd === 'luarocks') {
+                return {
+                    stdout: 'rnn'
+                };
+            }
+            return {};
+        },
+        spawn: function() {
+            if (mocks.childProcess.spawn) {
+                mocks.childProcess.spawn.apply(this, arguments);
+            }
             return {
-                stdout: 'rnn'
+                on: () => {},
+                stdout: {
+                    on: () => {}
+                },
+                stderr: {
+                    on: () => {}
+                }
             };
         }
-        return {};
-    },
-    spawn: function() {
-        if (mocks.childProcess.spawn) {
-            mocks.childProcess.spawn.apply(this, arguments);
+    };
+    var rimraf = {};
+    rimraf.sync = function() {
+        if (mocks.rimraf.sync) {
+            mocks.rimraf.sync.apply(this, arguments);
         }
-        return {
-            on: () => {},
-            stdout: {
-                on: () => {}
-            },
-            stderr: {
-                on: () => {}
-            }
-        };
-    }
-};
-var rimraf = {};
-rimraf.sync = function() {
-    if (mocks.rimraf.sync) {
-        mocks.rimraf.sync.apply(this, arguments);
-    }
-};
+    };
 
-describe('cli', function() {
+
     before(function() {
         // create the mocks
         mockery.enable({
@@ -80,12 +81,37 @@ describe('cli', function() {
             cli = require('../../bin/deepforge');
         });
 
-        it('should check for running mongo', function() {
-            var calls;
-            callRegister.childProcess.execSync = [];
-            cli('start');
-            calls = callRegister.childProcess.execSync;
-            assert.notEqual(calls.indexOf('pgrep mongod'), -1);
+        it('should check for running mongo', function(done) {
+            var mongoListening = false,
+                mongoUri = 'mongodb://127.0.0.1:2016/deepforge-test',
+                net = require('net'),
+                server = net.createServer(function(socket) {
+                    socket.on('error', err => {
+                        // Only worry about mock server errors if the test hasn't completed
+                        assert(mongoListening);
+                    });
+                    socket.pipe(socket);
+                }),
+                mockStartMongo = function(port) {
+                    server.listen(+port, '127.0.0.1');
+                    mongoListening = true;
+                };
+
+            // Check that 'spawn' node happens after the tcp port has been bound
+            mocks.childProcess.spawn = function(cmd, opts) {
+                if (cmd === 'mongod') {
+                    setTimeout(mockStartMongo, 250, opts[3]);
+                }
+            };
+
+            cli.checkMongo({}, false, mongoUri)
+                .then(() => {
+                    console.log('closing server');
+                    server.close();
+                    assert(mongoListening);
+                    done();
+                })
+                .catch(err => console.error(err));
         });
 
         it('should start mongo if no running mongo', function() {
@@ -180,9 +206,11 @@ describe('cli', function() {
         });
 
         it('should update deepforge from git if --git set w/ npm', function() {
+            var repo = require('../../package.json').repository.url;
             mocks.childProcess.spawn = (cmd, args) => {
+                // check for the git repo
                 if (cmd === 'npm') {
-                    assert.notEqual(args.indexOf('dfst/deepforge'), -1);
+                    assert.notEqual(args.indexOf(repo), -1);
                 }
             };
             cli('update --git');

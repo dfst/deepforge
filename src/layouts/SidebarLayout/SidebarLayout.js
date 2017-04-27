@@ -48,5 +48,10 @@ define([
         }
     };
 
+    SidebarLayout.prototype._onCenterResize = function() {
+        var width = this._centerPanel.width() - this._sidebarPanel.width();
+        this._canvas.setSize(width, this._centerPanel.height());
+    };
+
     return SidebarLayout;
 });

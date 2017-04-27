@@ -5,7 +5,8 @@ define([
     'panel/FloatingActionButton/styles/Materialize',
     'q',
     'js/RegistryKeys',
-    'deepforge/globals'
+    'deepforge/globals',
+    'deepforge/Constants'
 ], function(
     Materialize,
     Q,
@@ -266,29 +267,23 @@ define([
                 }
             },
             {
-                name: 'Export for local execution',
-                icon: 'play_for_work',
+                name: 'Export Pipeline',
+                icon: 'launch',
                 priority: -1,
                 action: function() {
-                    var pluginId = 'GenerateExecFile',
-                        context = this.client.getCurrentPluginContext(pluginId);
-
-                    // Run the plugin in the browser (set namespace)
-                    context.managerConfig.namespace = 'pipeline';
-                    context.pluginConfig = {};
-                    Q.ninvoke(this.client, 'runBrowserPlugin', pluginId, context)
-                        .then(res => {
-                            var id = this._currentNodeId,
-                                node = this.client.getNode(id),
-                                base = this.client.getNode(node.getBaseId()),
-                                type = base.getAttribute('name'),
-                                name = node.getAttribute('name');
-
-                            // Get the file and download it
-                            this.downloadFromBlob(res.artifacts[0]);
-                            Materialize.toast(`Exported ${name} ${type}!`, 2000);
+                    this.exportPipeline()
+                        .then(result => {
+                            Materialize.toast('Export successful!', 2000);
+                            // Download the result!
+                            this.downloadFromBlob(result.artifacts[0]);
+                            result.__unread = true;
+                            this.results.push(result);
+                            this._updatePluginBtns();
                         })
-                        .fail(err => Materialize.toast(`Export failed: ${err}`, 2000));
+                        .fail(err => {
+                            this.logger.warn('Pipeline export failed:', err);
+                            Materialize.toast(`Export failed: ${err}`, 4000);
+                        });
                 }
             }
         ],

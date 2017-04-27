@@ -173,7 +173,10 @@ define([
             name,
             i = 2;
 
-        basename = basename.replace(/[^\da-zA-Z_]/g, '_');
+        basename = basename
+            .replace(/^\s*/, '')
+            .replace(/\s*$/, '')
+            .replace(/[^\da-zA-Z_]/g, '_');
         name = basename;
 
         // Get a unique name wrt the tags and the other executions

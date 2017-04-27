@@ -7,14 +7,16 @@ define([
     'deepforge/viz/panels/ThumbnailControl',
     'js/NodePropertyNames',
     'js/Utils/ComponentSettings',
-    'underscore'
+    'underscore',
+    'q'
 ], function (
     Constants,
     DeepForge,
     ThumbnailControl,
     nodePropertyNames,
     ComponentSettings,
-    _
+    _,
+    Q
 ) {
 
     'use strict';
@@ -36,6 +38,7 @@ define([
         ThumbnailControl.call(this, options);
         this._config = DEFAULT_CONFIG;
         ComponentSettings.resolveWithWebGMEGlobal(this._config, this.getComponentId());
+        this.validateLayers = _.debounce(() => this.validateArchitecture(), 500);
     };
 
     _.extend(ArchEditorControl.prototype, ThumbnailControl.prototype);
@@ -246,6 +249,29 @@ define([
         this._client.setPointer(connId, 'dst', layerId);
 
         this._client.completeTransaction();
+    };
+
+    ArchEditorControl.prototype._eventCallback = function() {
+        ThumbnailControl.prototype._eventCallback.apply(this, arguments);
+        this.validateLayers();
+    };
+
+    ArchEditorControl.prototype.validateArchitecture = function() {
+        var pluginId = 'ValidateArchitecture',
+            context = this._client.getCurrentPluginContext(pluginId);
+
+        this._logger.info('about to validate arch');
+        // Run the plugin in the browser (set namespace)
+        context.managerConfig.namespace = 'nn';
+        context.pluginConfig = {};
+        Q.ninvoke(this._client, 'runServerPlugin', pluginId, context)
+            .then(res => {
+                var results = res.messages[0].message;
+                if (results.errors !== null) {
+                    this._widget.displayErrors(results.errors);
+                }
+            })
+            .fail(err => this._logger.warn(`Validation failed: ${err}`));
     };
 
     return ArchEditorControl;

@@ -40,10 +40,40 @@ define([
     ArtifactOpDecorator.prototype.DECORATOR_ID = DECORATOR_ID;
 
     ArtifactOpDecorator.prototype.getTargetFilterFnFor = function() {
+        var currentNode,
+            pId,
+            peerIds,
+            currentDataId,
+            targetTypeIds = [];
+
+        // Get all connections from this node's data
+        if (this._node.outputs[0]) {
+            currentNode = this.client.getNode(this._node.id);
+            pId = currentNode.getParentId();
+            peerIds = this.client.getNode(pId).getChildrenIds();
+            currentDataId = this._node.outputs[0].id;
+
+            targetTypeIds = peerIds.map(id => this.client.getNode(id))
+                .filter(node => {
+                    var ptr = node.getPointer('src');
+                    return ptr.to === currentDataId;
+                })
+
+                // Get the target data types
+                .map(node => this.client.getNode(node.getPointer('dst').to).getMetaTypeId());
+        }
+
         return id => {
             var node = this.client.getNode(id),
-                isMetaTgt = node.getId() === node.getMetaTypeId();
-            return isMetaTgt === this.castOpts.metaTgt;
+                isMetaTgt = node.getId() === node.getMetaTypeId(),
+                isValidType = true;
+
+            // make sure it is a type of the target types
+            isValidType = targetTypeIds.reduce((passing, typeId) => {
+                return passing && node.isTypeOf(typeId);
+            }, true);
+
+            return isValidType && isMetaTgt === this.castOpts.metaTgt;
         };
     };
 
