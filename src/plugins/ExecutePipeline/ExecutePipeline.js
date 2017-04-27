@@ -175,6 +175,7 @@ define([
     ExecutePipeline.prototype.resumePipeline = function () {
         var nodes = Object.keys(this.nodes).map(id => this.nodes[id]),
             allJobs = nodes.filter(node => this.core.isTypeOf(node, this.META.Job)),
+            name = this.getAttribute(this.activeNode, 'name'),
             status,
             jobs = {
                 success: [],
@@ -208,6 +209,7 @@ define([
         return Q.all(allJobs.map(job => this.recordOldMetadata(job, true)))
             .then(() => Q.all(jobs.success.map(job => this.getOperation(job))))
             .then(ops => ops.forEach(op => this.updateJobCompletionRecords(op)))
+            .then(() => this.save(`Resuming pipeline execution: ${name}`))
             .then(() => {
                 
                 if (jobs.running.length) {  // Resume all running jobs
@@ -531,10 +533,12 @@ define([
         this.logger.info(`Setting ${jobId} status to "success"`);
         this.logger.info(`There are now ${this.runningJobs} running jobs`);
         this.logger.debug(`Making a commit from ${this.currentHash}`);
+
+        counts = this.updateJobCompletionRecords(opNode);
+
         this.save(`Operation "${name}" in ${this.pipelineName} completed successfully`)
             .then(() => {
 
-                counts = this.updateJobCompletionRecords(opNode);
                 hasReadyOps = counts.indexOf(0) > -1;
 
                 this.logger.debug(`Operation "${name}" completed. ` + 
