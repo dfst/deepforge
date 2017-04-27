@@ -75,12 +75,10 @@ define([
             data = {},
             inputs,
             name,
-            opId,
-            job;
+            opId;
 
         name = this.getAttribute(this.activeNode, 'name');
         opId = this.core.getPath(this.activeNode);
-        job = this.core.getParent(this.activeNode);
 
         return this.createOperationFiles(this.activeNode)
             .then(results => {
@@ -100,7 +98,7 @@ define([
 
                         // data asset for "input"
                         return this.blobClient.getMetadata(hash)
-                            .fail(err => {
+                            .fail(() => {
                                 throw Error(`BLOB_FETCH_FAILED:${input}`);
                             });
                     })
@@ -427,7 +425,7 @@ define([
 
                 return Q.all(hashes.map(pair => 
                     this.blobClient.getMetadata(pair.hash)
-                        .fail(err => {
+                        .fail(() => {
                             throw Error(`BLOB_FETCH_FAILED:${pair.name}`);
                         })));
             })
