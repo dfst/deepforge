@@ -453,9 +453,9 @@ define([
     };
 
     // Handle the blob retrieval failed error
-    ExecuteJob.prototype.onBlobRetrievalFail = function (node, input, err) {
+    ExecuteJob.prototype.onBlobRetrievalFail = function (node, input) {
         var job = this.core.getParent(node),
-            e = `Failed to retrieve "${input}" (${err})`,
+            e = `Failed to retrieve "${input}" (BLOB_FETCH_FAILED)`,
             consoleErr = `[0;31mFailed to execute operation: ${e}[0m`;
 
         consoleErr += [
@@ -486,7 +486,7 @@ define([
                     .fail(err => {
                         this.logger.error(`Could not generate files: ${err}`);
                         if (err.message.indexOf('BLOB_FETCH_FAILED') > -1) {
-                            this.onBlobRetrievalFail(node, err.message.split(':')[1], err);
+                            this.onBlobRetrievalFail(node, err.message.split(':')[1]);
                         }
                         throw err;
                     })
