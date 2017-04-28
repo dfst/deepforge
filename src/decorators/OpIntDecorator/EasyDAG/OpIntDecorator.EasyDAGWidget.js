@@ -34,7 +34,13 @@ define([
             this.enableTooltip(this._node.baseName, 'dark');
         }
         DecoratorBase.prototype.initialize.call(this);
-        this.$name.on('dblclick', this.editName.bind(this));
+        this.$name.on('click', () => {
+            // Operations must already be selected. Otherwise, they will animate
+            // after the edit name box is created and it will be placed incorrectly
+            if (this.expanded || !this.isOperation()) {
+                this.editName();
+            }
+        });
     };
 
     OpIntDecorator.prototype.AttributeField = AttributeField;
