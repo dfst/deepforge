@@ -41,15 +41,15 @@ define([
         this.ItemClass.prototype.changePtrName = (from, to) => this.changePtrName(from, to);
         this.ItemClass.prototype.onSetRefClicked = OperationInterfaceEditorWidget.prototype.onSetRefClicked.bind(this);
 
-        // Hover stuff
-        // TODO
         this.ItemClass.prototype.showHoverButtons = function() {
             var item = this;
             this._widget.showHoverButtons(item);
         };
+
         this.ItemClass.prototype.hideHoverButtons = function() {
             this._widget.hideHoverButtons();
         };
+
         this.ItemClass.prototype.isHoverAllowed = function() {
             return true;
         };

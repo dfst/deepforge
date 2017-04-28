@@ -61,9 +61,11 @@ define([
             var layer = this;
             this._widget.showHoverButtons(layer);
         };
+
         this.ItemClass.prototype.hideHoverButtons = function() {
             this._widget.hideHoverButtons();
         };
+
         this.ItemClass.prototype.isHoverAllowed = function() {
             return !this._widget.isConnecting();
         };

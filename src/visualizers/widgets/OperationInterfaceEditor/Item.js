@@ -11,6 +11,9 @@ define([
         DAGItem.call(this, parentEl, desc);
         this.decorator.color = desc.displayColor || this.decorator.color;
 
+        this._hovering = false;
+        this.$el.on('mouseenter', () => this.onHover());
+        this.$el.on('mouseleave', () => this._hovering && this.onUnhover());
 
         // Show the warnings
         this.$warning = null;
@@ -19,6 +22,18 @@ define([
     };
 
     _.extend(Item.prototype, DAGItem.prototype);
+
+    Item.prototype.onUnhover = function() {
+        this._hovering = false;
+        this.hideHoverButtons();
+    };
+
+    Item.prototype.onHover = function() {
+        if (!this.isSelected()) {
+            this._hovering = true;
+            this.showHoverButtons();
+        }
+    };
     
     Item.prototype.update = function(desc) {
         this.decorator.color = desc.displayColor || this.decorator.color;
@@ -81,6 +96,10 @@ define([
         // Add click listener to set type
         if (this.desc.isUnknown) {
             this.onSetRefClicked(this.desc.name);
+        }
+
+        if (this._hovering) {
+            this.onUnhover();
         }
     };
 
