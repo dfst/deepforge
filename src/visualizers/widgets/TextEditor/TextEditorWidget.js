@@ -1,10 +1,12 @@
 /*globals $, define*/
 /*jshint browser: true*/
 
+// TODO: store code editor configuration in component settings
 define([
     'ace/ace',
     'underscore',
     './completer',
+    'jquery-contextMenu',
     'css!./styles/TextEditorWidget.css'
 ], function (
     ace,
@@ -83,6 +85,44 @@ define([
     TextEditorWidget.prototype._initialize = function () {
         // set widget class
         this._el.addClass(WIDGET_CLASS);
+
+        // Add context menu
+        $.contextMenu('destroy', '.' + WIDGET_CLASS);
+        $.contextMenu({
+            selector: '.' + WIDGET_CLASS,
+            build: $trigger => {
+                return {
+                    items: this.getMenuItemsFor($trigger)
+                };
+            }
+        });
+    };
+
+    TextEditorWidget.prototype.getMenuItemsFor = function () {
+        // TODO: 
+        //  - copy
+        //  - paste
+        //  - theme
+        //  - font
+        //  - font size
+        //  - keybindings
+        //
+        //  maybe some of these should be under a "Settings" option...
+        return {
+            setTheme: {
+                name: 'Theme...',
+                items: {
+                    solarizeLight: {
+                        name: 'Solarize Light',
+                        callback: () => console.log('setting theme to light')
+                    },
+                    solarizeDark: {
+                        name: 'Solarize Dark',
+                        callback: () => console.log('setting theme to dark')
+                    }
+                }
+            }
+        };
     };
 
     TextEditorWidget.prototype.onWidgetContainerResize = function () {
@@ -147,6 +187,7 @@ define([
     /* * * * * * * * Visualizer life cycle callbacks * * * * * * * */
     TextEditorWidget.prototype.destroy = function () {
         this.editor.destroy();
+        $.contextMenu('destroy', '.' + WIDGET_CLASS);
     };
 
     TextEditorWidget.prototype.onActivate = function () {
