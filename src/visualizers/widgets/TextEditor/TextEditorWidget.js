@@ -18,6 +18,7 @@ define([
     var TextEditorWidget,
         WIDGET_CLASS = 'text-editor',
         DEFAULT_SETTINGS = {
+            theme: 'solarized_dark',
             fontSize: 12
         };
 
@@ -73,6 +74,7 @@ define([
         return {
             enableBasicAutocompletion: true,
             enableLiveAutocompletion: true,
+            theme: 'ace/theme/' + this.editorSettings.theme,
             fontSize: this.editorSettings.fontSize + 'pt'
         };
     };
@@ -118,6 +120,13 @@ define([
 
         // TODO: get the component settings
         var fontSizes = [8, 10, 11, 12, 14],
+            themes = [
+                'Solarized Light',
+                'Solarized Dark',
+                'Twilight',
+                'Eclipse',
+                'Monokai'
+            ],
             menuItems = {
             setKeybindings: {
                 name: 'Keybindings...',
@@ -143,16 +152,7 @@ define([
             },
             setTheme: {
                 name: 'Theme...',
-                items: {
-                    solarizeLight: {
-                        name: 'Solarize Light',
-                        callback: () => console.log('setting theme to light')
-                    },
-                    solarizeDark: {
-                        name: 'Solarize Dark',
-                        callback: () => console.log('setting theme to dark')
-                    }
-                }
+                items: {}
             }
         };
 
@@ -169,6 +169,25 @@ define([
                 isHtmlName: isSet,
                 callback: () => {
                     this.editorSettings.fontSize = fontSize;
+                    this.editor.setOptions(this.getEditorOptions());
+                    // TODO
+                }
+            };
+        });
+
+        themes.forEach(name => {
+            var theme = name.toLowerCase().replace(/ /g, '_'),
+                isSet = theme === this.editorSettings.theme;
+
+            if (isSet) {
+                name = '<span style="font-weight: bold">' + name + '</span>';
+            }
+
+            menuItems.setTheme.items[theme] = {
+                name: name,
+                isHtmlName: isSet,
+                callback: () => {
+                    this.editorSettings.theme = theme;
                     this.editor.setOptions(this.getEditorOptions());
                     // TODO
                 }
