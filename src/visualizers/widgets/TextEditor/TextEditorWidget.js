@@ -16,7 +16,10 @@ define([
     'use strict';
 
     var TextEditorWidget,
-        WIDGET_CLASS = 'text-editor';
+        WIDGET_CLASS = 'text-editor',
+        DEFAULT_SETTINGS = {
+            fontSize: 12
+        };
 
     TextEditorWidget = function (logger, container) {
         this._logger = logger.fork('Widget');
@@ -29,6 +32,7 @@ define([
 
         this.readOnly = this.readOnly || false;
         this.editor = ace.edit(this.$editor[0]);
+        this._initialize();
 
         // Get the config from component settings for themes
         this.editor.getSession().setOptions(this.getSessionOptions());
@@ -49,7 +53,6 @@ define([
         this.setReadOnly(this.readOnly);
         this.currentHeader = '';
         this.activeNode = null;
-        this._initialize();
 
         this._logger.debug('ctor finished');
     };
@@ -70,7 +73,7 @@ define([
         return {
             enableBasicAutocompletion: true,
             enableLiveAutocompletion: true,
-            fontSize: '12pt'
+            fontSize: this.editorSettings.fontSize + 'pt'
         };
     };
 
@@ -96,6 +99,10 @@ define([
                 };
             }
         });
+
+        // Create the editor settings
+        // TODO
+        this.editorSettings = _.extend({}, DEFAULT_SETTINGS);
     };
 
     TextEditorWidget.prototype.getMenuItemsFor = function () {
@@ -108,7 +115,32 @@ define([
         //  - keybindings
         //
         //  maybe some of these should be under a "Settings" option...
-        return {
+
+        // TODO: get the component settings
+        var fontSizes = [8, 10, 11, 12, 14],
+            menuItems = {
+            setKeybindings: {
+                name: 'Keybindings...',
+                items: {
+                    ace: {
+                        name: '<span style="font-weight: bold">default</span>',
+                        isHtmlName: true,
+                        callback: () => console.log('setting keybindings to def')
+                    },
+                    vim: {
+                        name: 'vim',
+                        callback: () => console.log('setting keybindings to vim')
+                    },
+                    emacs: {
+                        name: 'emacs',
+                        callback: () => console.log('setting keybindings to emacs')
+                    }
+                }
+            },
+            setFontSize: {
+                name: 'Font...',
+                items: {}
+            },
             setTheme: {
                 name: 'Theme...',
                 items: {
@@ -123,6 +155,27 @@ define([
                 }
             }
         };
+
+        fontSizes.forEach(fontSize => {
+            var name = fontSize + ' pt',
+                isSet = fontSize === this.editorSettings.fontSize;
+
+            if (isSet) {
+                name = '<span style="font-weight: bold">' + name + '</span>';
+            }
+
+            menuItems.setFontSize.items['font' + fontSize] = {
+                name: name,
+                isHtmlName: isSet,
+                callback: () => {
+                    this.editorSettings.fontSize = fontSize;
+                    this.editor.setOptions(this.getEditorOptions());
+                    // TODO
+                }
+            };
+        });
+
+        return menuItems;
     };
 
     TextEditorWidget.prototype.onWidgetContainerResize = function () {
