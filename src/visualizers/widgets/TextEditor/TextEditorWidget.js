@@ -18,6 +18,7 @@ define([
     var TextEditorWidget,
         WIDGET_CLASS = 'text-editor',
         DEFAULT_SETTINGS = {
+            keybindings: 'default',
             theme: 'solarized_dark',
             fontSize: 12
         };
@@ -118,7 +119,6 @@ define([
         //
         //  maybe some of these should be under a "Settings" option...
 
-        // TODO: get the component settings
         var fontSizes = [8, 10, 11, 12, 14],
             themes = [
                 'Solarized Light',
@@ -127,24 +127,15 @@ define([
                 'Eclipse',
                 'Monokai'
             ],
+            keybindings = [
+                'default',
+                'vim',
+                'emacs'
+            ],
             menuItems = {
             setKeybindings: {
                 name: 'Keybindings...',
-                items: {
-                    ace: {
-                        name: '<span style="font-weight: bold">default</span>',
-                        isHtmlName: true,
-                        callback: () => console.log('setting keybindings to def')
-                    },
-                    vim: {
-                        name: 'vim',
-                        callback: () => console.log('setting keybindings to vim')
-                    },
-                    emacs: {
-                        name: 'emacs',
-                        callback: () => console.log('setting keybindings to emacs')
-                    }
-                }
+                items: {}
             },
             setFontSize: {
                 name: 'Font...',
@@ -189,6 +180,26 @@ define([
                 callback: () => {
                     this.editorSettings.theme = theme;
                     this.editor.setOptions(this.getEditorOptions());
+                    // TODO
+                }
+            };
+        });
+
+        keybindings.forEach(name => {
+            var handler = name.toLowerCase().replace(/ /g, '_'),
+                isSet = handler === this.editorSettings.keybindings;
+
+            if (isSet) {
+                name = '<span style="font-weight: bold">' + name + '</span>';
+            }
+
+            menuItems.setKeybindings.items[handler] = {
+                name: name,
+                isHtmlName: isSet,
+                callback: () => {
+                    this.editorSettings.keybindings = handler;
+                    this.editor.setKeyboardHandler(handler === 'default' ?
+                        null : 'ace/keyboard/' + handler);
                     // TODO
                 }
             };
