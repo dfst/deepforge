@@ -135,19 +135,19 @@ define([
                 'emacs'
             ],
             menuItems = {
-            setKeybindings: {
-                name: 'Keybindings...',
-                items: {}
-            },
-            setFontSize: {
-                name: 'Font Size...',
-                items: {}
-            },
-            setTheme: {
-                name: 'Theme...',
-                items: {}
-            }
-        };
+                setKeybindings: {
+                    name: 'Keybindings...',
+                    items: {}
+                },
+                setFontSize: {
+                    name: 'Font Size...',
+                    items: {}
+                },
+                setTheme: {
+                    name: 'Theme...',
+                    items: {}
+                }
+            };
 
         fontSizes.forEach(fontSize => {
             var name = fontSize + ' pt',
