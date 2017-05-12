@@ -6,12 +6,14 @@ define([
     'ace/ace',
     'underscore',
     './completer',
+    'js/Utils/ComponentSettings',
     'jquery-contextMenu',
     'css!./styles/TextEditorWidget.css'
 ], function (
     ace,
     _,
-    Completer
+    Completer,
+    ComponentSettings
 ) {
     'use strict';
 
@@ -104,8 +106,15 @@ define([
         });
 
         // Create the editor settings
-        // TODO
-        this.editorSettings = _.extend({}, DEFAULT_SETTINGS);
+        this.editorSettings = _.extend({}, DEFAULT_SETTINGS),
+        ComponentSettings.resolveWithWebGMEGlobal(
+            this.editorSettings,
+            this.getComponentId()
+        );
+    };
+
+    TextEditorWidget.prototype.getComponentId = function () {
+        return 'TextEditor';
     };
 
     TextEditorWidget.prototype.getMenuItemsFor = function () {
@@ -138,7 +147,7 @@ define([
                 items: {}
             },
             setFontSize: {
-                name: 'Font...',
+                name: 'Font Size...',
                 items: {}
             },
             setTheme: {
@@ -161,7 +170,7 @@ define([
                 callback: () => {
                     this.editorSettings.fontSize = fontSize;
                     this.editor.setOptions(this.getEditorOptions());
-                    // TODO
+                    this.onUpdateEditorSettings();
                 }
             };
         });
@@ -180,7 +189,7 @@ define([
                 callback: () => {
                     this.editorSettings.theme = theme;
                     this.editor.setOptions(this.getEditorOptions());
-                    // TODO
+                    this.onUpdateEditorSettings();
                 }
             };
         });
@@ -200,12 +209,17 @@ define([
                     this.editorSettings.keybindings = handler;
                     this.editor.setKeyboardHandler(handler === 'default' ?
                         null : 'ace/keyboard/' + handler);
-                    // TODO
+                    this.onUpdateEditorSettings();
                 }
             };
         });
 
         return menuItems;
+    };
+
+    TextEditorWidget.prototype.onUpdateEditorSettings = function () {
+        ComponentSettings.overwriteComponentSettings(this.getComponentId(), this.editorSettings,
+            err => err && this._logger.error(`Could not save editor settings: ${err}`));
     };
 
     TextEditorWidget.prototype.onWidgetContainerResize = function () {
