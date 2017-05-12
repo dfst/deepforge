@@ -1,7 +1,6 @@
 /*globals $, define*/
 /*jshint browser: true*/
 
-// TODO: store code editor configuration in component settings
 define([
     'ace/ace',
     'underscore',
@@ -118,12 +117,6 @@ define([
     };
 
     TextEditorWidget.prototype.getMenuItemsFor = function () {
-        //  - copy
-        //  - paste
-        //  - keybindings
-        //
-        //  maybe some of these should be under a "Settings" option...
-
         var fontSizes = [8, 10, 11, 12, 14],
             themes = [
                 'Solarized Light',
