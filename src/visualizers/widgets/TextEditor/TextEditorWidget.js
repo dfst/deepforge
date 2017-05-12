@@ -118,12 +118,8 @@ define([
     };
 
     TextEditorWidget.prototype.getMenuItemsFor = function () {
-        // TODO: 
         //  - copy
         //  - paste
-        //  - theme
-        //  - font
-        //  - font size
         //  - keybindings
         //
         //  maybe some of these should be under a "Settings" option...
@@ -133,6 +129,7 @@ define([
                 'Solarized Light',
                 'Solarized Dark',
                 'Twilight',
+                'Tomorrow Night',
                 'Eclipse',
                 'Monokai'
             ],
