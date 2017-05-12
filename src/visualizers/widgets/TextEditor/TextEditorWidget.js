@@ -39,6 +39,9 @@ define([
 
         // Get the config from component settings for themes
         this.editor.getSession().setOptions(this.getSessionOptions());
+        var handler = this.editorSettings.keybindings;
+        this.editor.setKeyboardHandler(handler === 'default' ?
+            null : 'ace/keyboard/' + handler);
         this.addExtensions();
         this.editor.$blockScrolling = Infinity;
         this.DELAY = 750;
