@@ -1,8 +1,10 @@
 /*globals define, WebGMEGlobal*/
 define([
+    'deepforge/globals',
     'widgets/EasyDAG/Buttons',
     'widgets/EasyDAG/Icons'
 ], function(
+    DeepForge,
     EasyDAGButtons,
     Icons
 ) {
@@ -57,9 +59,79 @@ define([
         return n && n.getBaseId();
     };
 
+    var CloneAndEdit = function(params) {
+        GoToBase.call(this, params);
+    };
+
+    CloneAndEdit.prototype = Object.create(GoToBase.prototype);
+    CloneAndEdit.prototype.BTN_CLASS = 'clone-and-edit';
+
+    CloneAndEdit.prototype._render = function() {
+        var lineRadius = GoToBase.SIZE - GoToBase.BORDER,
+            btnColor = '#a5d6a7';
+
+        if (this.disabled) {
+            btnColor = '#e0e0e0';
+        }
+
+        this.$el
+            .append('circle')
+            .attr('r', GoToBase.SIZE)
+            .attr('fill', btnColor);
+
+        // Show the 'code' icon
+        Icons.addIcon('code', this.$el, {
+            radius: lineRadius
+        });
+    };
+
+    CloneAndEdit.prototype._onClick = function(item) {
+        var node = client.getNode(item.id),
+            baseId = node && node.getBaseId(),
+            base = baseId && client.getNode(baseId),
+            typeId = base && base.getBaseId(),
+            type = typeId && client.getNode(typeId),
+            ctrName,
+            typeName,
+            name,
+            newId;
+
+        // Clone the given node's base and change to it
+        if (type) {
+            typeName = type.getAttribute('name');
+            ctrName = `My${typeName}s`;
+            if (DeepForge.places[ctrName]) {
+                DeepForge.places[ctrName]().then(ctrId => {
+                    type = base.getAttribute('name');
+                    client.startTransaction(`Creating new ${typeName} from ${item.name}`);
+                    newId = client.copyNode(baseId, ctrId);
+                    name = node.getAttribute('name');
+                    client.setAttribute(newId, 'name', 'Copy of ' + name);
+                    DeepForge.register[typeName](newId);
+
+                    client.completeTransaction();
+                    WebGMEGlobal.State.registerActiveObject(newId);
+                });
+            }
+        } else {
+            this._logger.warn('Could not find the base node!');
+        }
+    };
+
+    var Insert = function(params) {
+        EasyDAGButtons.ButtonBase.call(this, params);
+    };
+
+    Insert.prototype = Object.create(EasyDAGButtons.Add.prototype);
+    Insert.prototype._onClick = function(item) {
+        this.onInsertButtonClicked(item);
+    };
+
     return {
         DeleteOne: EasyDAGButtons.DeleteOne,
-        GoToBase: GoToBase
+        GoToBase: GoToBase,
+        CloneAndEdit: CloneAndEdit,
+        Insert: Insert
     };
 });
 

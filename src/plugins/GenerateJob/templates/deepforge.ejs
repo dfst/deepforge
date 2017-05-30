@@ -52,6 +52,14 @@ function Graph:line(name, opts)
     return deepforge._Line(self.id, name, opts)
 end
 
+function Graph:xlabel(name)
+    deepforge._cmd('<%= GRAPH_LABEL_AXIS.X %>', self.id, name)
+end
+
+function Graph:ylabel(name)
+    deepforge._cmd('<%= GRAPH_LABEL_AXIS.Y %>', self.id, name)
+end
+
 -- Image support
 local function saveImage(name, tensor)
     require 'image'

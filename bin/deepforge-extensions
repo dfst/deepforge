@@ -1,0 +1,67 @@
+#!/usr/bin/env node
+
+var Command = require('commander').Command,
+    program = new Command(),
+    extender = require('../utils/extender');
+
+// Supported commands
+//  - add
+//  - remove
+//  - list
+//  - update
+program
+    .command('add <project>')
+    .description('Add an extension to deepforge')
+    .option('-n, --name <name>', 'Project name (if different from <project>)')
+    .action(project => {
+        console.log('loading extension from: ' + project);
+        extender.install(project)
+            .then(extConfig => 
+                console.log(`The ${extConfig.name} extension has been added to deepforge.`))
+            .fail(err => {
+                console.error('Could not install extension:\n');
+                console.error(err);
+                process.exit(1);
+            });
+    });
+
+program
+    .command('remove <name>').alias('rm')
+    .description('Remove an extension from deepforge')
+    .action(name => {
+        try {
+            extender.uninstall(name);
+            console.log(`${name} has been successfully removed!`);
+        } catch (e) {
+            console.error('Could not remove extension:');
+            console.error(e);
+            process.exit(1);
+        }
+    });
+
+program
+    .command('list').alias('ls')
+    .description('List installed deepforge extensions')
+    .action(() => {
+        var allExtConfigs = extender.getExtensionsConfig(),
+            types = Object.keys(allExtConfigs),
+            hasContents = false,
+            names;
+
+        for (var i = types.length; i--;) {
+            names = Object.keys(allExtConfigs[types[i]]);
+            if (names.length) {
+                hasContents = true;
+                console.log(types[i]);
+                for (var j = names.length; j--;) {
+                    console.log(`  ${names[j]}`);
+                }
+            }
+        }
+
+        if (!hasContents) {
+            console.log('No installed extensions');
+        }
+    });
+
+program.parse(process.argv);

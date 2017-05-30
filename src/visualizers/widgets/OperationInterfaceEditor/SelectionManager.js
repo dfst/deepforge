@@ -17,6 +17,12 @@ define([
 
     _.extend(SelectionManager.prototype, EasyDAGSelectionManager.prototype);
 
+    SelectionManager.prototype.deselect = function() {
+        // this would be better in a 'destroy' method...
+        $('.set-color-icon').spectrum('hide');
+        EasyDAGSelectionManager.prototype.deselect.call(this);
+    };
+
     SelectionManager.prototype.createActionButtons = function(width, height) {
         var selectedType = this.selectedItem.desc.baseName,
             dataNodes,
@@ -52,6 +58,14 @@ define([
                 disabled: refNodes.length === 0,
                 x: 2*width/3,
                 y: 0
+            });
+
+            new Buttons.SetColor({  // Set the operation color
+                context: this._widget,
+                $pEl: this.$selection,
+                item: this.selectedItem,
+                x: 0,
+                y: height
             });
         } else {  // Data or pointer...
             new Buttons.Delete({

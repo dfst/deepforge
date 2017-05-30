@@ -42,6 +42,7 @@ define([
         }
         ThumbnailWidget.apply(this, arguments);
         this._emptyMsg = 'Click to add a new layer';
+        this.hasError = {};
     };
 
     _.extend(ArchEditorWidget.prototype, ThumbnailWidget.prototype);
@@ -60,9 +61,11 @@ define([
             var layer = this;
             this._widget.showHoverButtons(layer);
         };
+
         this.ItemClass.prototype.hideHoverButtons = function() {
             this._widget.hideHoverButtons();
         };
+
         this.ItemClass.prototype.isHoverAllowed = function() {
             return !this._widget.isConnecting();
         };
@@ -168,6 +171,7 @@ define([
         createNews = Object.keys(types).map(type =>
             this._creationNode(type, types[type], Decorator));
 
+        nodes.sort((a, b) => a.node.name < b.node.name ? -1 : 1);
         nodes = nodes.concat(createNews);
 
         // Sort by layer type
@@ -215,6 +219,35 @@ define([
         for (var i = itemIds.length; i--;) {
             this.items[itemIds[i]][method]();
         }
+    };
+
+    ArchEditorWidget.prototype.onInsertButtonClicked = function(item) {
+        var nodes = this.getValidInitialNodes();
+        return this.promptLayer(nodes)
+            .then(selected => this.insertLayer(selected.node.id, item.id));
+    };
+
+    ArchEditorWidget.prototype.displayErrors = function(errors) {
+        // For each of the errors, highlight the given nodes
+        var oldErrored = Object.keys(this.hasError),
+            currentErrored = errors.map(err => err.id),
+            newErrored = _.difference(currentErrored, oldErrored),
+            fixedLayers = _.difference(oldErrored, currentErrored);
+
+        this._logger.info('updating displayed errors to', currentErrored);
+        this.hasError = {};
+        newErrored.forEach(id => {
+            if (this.items[id]) {
+                this.items[id].decorator.highlight('red');
+                this.hasError[id] = true;
+            }
+        });
+
+        fixedLayers.forEach(id => {
+            if (this.items[id]) {
+                this.items[id].clear();
+            }
+        });
     };
 
     return ArchEditorWidget;

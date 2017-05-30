@@ -90,6 +90,7 @@ describe('GenerateArchitecture', function () {
             //['/8', 'basic-transfers.lua'],
             //['/M', 'concat-parallel.lua'],
             ['/Q', 'basiccontainer.lua'],
+            ['/P', 'ContainerWithLayerArgs.lua'],
             ['/4', 'requiredOmitted.lua'],
             ['/e', 'googlenet.lua'],
             ['/X', 'overfeat.lua']

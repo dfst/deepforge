@@ -1,6 +1,6 @@
 {
-  "id": "GenerateExecFile",
-  "name": "Generate Execution File",
+  "id": "ValidateArchitecture",
+  "name": "ValidateArchitecture",
   "version": "0.1.0",
   "description": "",
   "icon": {
@@ -8,7 +8,7 @@
     "src": ""
   },
   "disableServerSideExecution": false,
-  "disableBrowserSideExecution": false,
+  "disableBrowserSideExecution": true,
   "writeAccessRequired": false,
   "configStructure": []
 }

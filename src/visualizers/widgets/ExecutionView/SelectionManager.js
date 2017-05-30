@@ -23,7 +23,9 @@ define([
         var jobName = this.selectedItem.desc.name;
 
         // Check if it is an Input or Output job
-        if (jobName !== CONSTANTS.OP.INPUT && jobName !== CONSTANTS.OP.OUTPUT) {
+        if (!this.selectedItem.isConnection && jobName !== CONSTANTS.OP.INPUT &&
+            jobName !== CONSTANTS.OP.OUTPUT) {
+
             new Buttons.Enter({
                 context: this._widget,
                 $pEl: this.$selection,

@@ -15,6 +15,7 @@
         CONTAINED_LAYER_INDEX: 'index',
 
         LINE_OFFSET: 'lineOffset',
+        DISPLAY_COLOR: 'displayColor',
 
         // DeepForge metadata creation in dist execution
         START_CMD: 'deepforge-cmd',
@@ -30,6 +31,10 @@
         GRAPH_CREATE: 'GRAPH',
         GRAPH_PLOT: 'PLOT',
         GRAPH_CREATE_LINE: 'LINE',
+        GRAPH_LABEL_AXIS: {
+            X: 'X',
+            Y: 'Y'
+        },
 
         // Code Generation Constants
         CTOR_ARGS_ATTR: 'ctor_arg_order',

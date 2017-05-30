@@ -11,6 +11,7 @@ describe('CreateExecution', function () {
         expect = testFixture.expect,
         logger = testFixture.logger.fork('CreateExecution'),
         PluginCliManager = testFixture.WebGME.PluginCliManager,
+        manager = new PluginCliManager(null, logger, gmeConfig),
         projectName = 'testProject',
         pluginName = 'CreateExecution',
         project,
@@ -28,7 +29,7 @@ describe('CreateExecution', function () {
             })
             .then(function () {
                 var importParam = {
-                    projectSeed: testFixture.path.join(testFixture.SEED_DIR, 'EmptyProject.webgmex'),
+                    projectSeed: testFixture.path.join(testFixture.DF_SEED_DIR, 'devProject', 'devProject.webgmex'),
                     projectName: projectName,
                     branchName: 'master',
                     logger: logger,
@@ -53,27 +54,49 @@ describe('CreateExecution', function () {
             .nodeify(done);
     });
 
-    it.skip('should run plugin and update the branch', function (done) {
-        var manager = new PluginCliManager(null, logger, gmeConfig),
-            pluginConfig = {
-            },
-            context = {
+    var plugin,
+        node,
+        preparePlugin = function(done) {
+            var context = {
                 project: project,
                 commitHash: commitHash,
+                namespace: 'pipeline',
                 branchName: 'test',
-                activeNode: '/1'
+                activeNode: '/K/R/p'  // hello world job
             };
 
-        manager.executePlugin(pluginName, pluginConfig, context, function (err, pluginResult) {
-            expect(err).to.equal(null);
-            expect(typeof pluginResult).to.equal('object');
-            expect(pluginResult.success).to.equal(true);
+            return manager.initializePlugin(pluginName)
+                .then(plugin_ => {
+                    plugin = plugin_;
+                    return manager.configurePlugin(plugin, {}, context);
+                })
+                .then(() => node = plugin.activeNode)
+                .nodeify(done);
+        };
 
-            project.getBranchHash('test')
-                .then(function (branchHash) {
-                    expect(branchHash).to.not.equal(commitHash);
+    describe('getUniqueExecName', function() {
+
+        before(preparePlugin);
+
+        it('should trim whitespace', function(done) {
+            var name = '   abc   ';
+
+            plugin.getUniqueExecName(name)
+                .then(name => {
+                    expect(name).to.equal('abc');
                 })
                 .nodeify(done);
         });
+
+        it('should replace whitespace with _', function(done) {
+            var name = 'a b c';
+
+            plugin.getUniqueExecName(name)
+                .then(name => {
+                    expect(name).to.equal('a_b_c');
+                })
+                .nodeify(done);
+        });
+
     });
 });

@@ -1,0 +1,21 @@
+<% // Add default format
+formats.unshift({ name: 'cli', main: 'cli.js', displayName: 'Basic CLI' })
+%>
+/* globals define*/
+// The supported export formats and metadata
+define([
+<%= formats.map(function(format) {
+    return '    \'./formats/' + format.name + '/' +
+        path.basename(format.main.replace(/\.js$/, '')) + '\''
+    })
+    .join(',\n') %>
+], function(
+<%= formats.map(function(f, index) { return '    Format' + index; }).join(',\n') %>
+) {
+
+    return {
+<%= formats.map(function(f, index) {
+        return '        \'' + f.displayName + '\': Format' + index;
+    }).join(',\n') %>
+    };
+});

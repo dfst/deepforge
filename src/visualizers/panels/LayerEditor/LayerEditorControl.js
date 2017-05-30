@@ -114,7 +114,7 @@ define([
 
         // Remove old pointers
         node.getPointerNames().filter(ptr => !currentPtrs[ptr])
-            .forEach(ptr => this._client.delMetaPointer(id, ptr));
+            .forEach(ptr => this._client.delPointerMeta(id, ptr));
 
         // Remove old attributes
         setterNames = Object.keys(layerSchema.setters);

@@ -6,6 +6,7 @@ define([
     'widgets/EasyDAG/EasyDAGWidget',
     'widgets/EasyDAG/AddNodeDialog',
     './SelectionManager',
+    './Buttons',
     './Item',
     'underscore',
     'css!./styles/OperationInterfaceEditorWidget.css'
@@ -14,6 +15,7 @@ define([
     EasyDAG,
     AddNodeDialog,
     SelectionManager,
+    Buttons,
     Item,
     _
 ) {
@@ -38,6 +40,20 @@ define([
         // Add ptr rename callback
         this.ItemClass.prototype.changePtrName = (from, to) => this.changePtrName(from, to);
         this.ItemClass.prototype.onSetRefClicked = OperationInterfaceEditorWidget.prototype.onSetRefClicked.bind(this);
+
+        this.ItemClass.prototype.showHoverButtons = function() {
+            var item = this;
+            this._widget.showHoverButtons(item);
+        };
+
+        this.ItemClass.prototype.hideHoverButtons = function() {
+            this._widget.hideHoverButtons();
+        };
+
+        this.ItemClass.prototype.isHoverAllowed = function() {
+            return true;
+        };
+
     };
 
     OperationInterfaceEditorWidget.prototype.onAddItemSelected = function(selected, isInput) {
@@ -124,6 +140,58 @@ define([
         // Remove connection selection
         var conn = this.connections[desc.id];
         conn.$el.on('click', null);
+    };
+
+    // Hover buttons
+    OperationInterfaceEditorWidget.prototype.showHoverButtons = function(item) {
+        var dataNodes = this.allDataTypeIds(),
+            refNodes = this.allValidReferences(),
+            height = item.height,
+            cx = item.width/2;
+
+        if (this.$hoverBtns) {
+            this.hideHoverButtons();
+        }
+
+        this.$hoverBtns = item.$el
+            .append('g')
+            .attr('class', 'hover-container');
+
+        if (item.desc.baseName === 'Operation') {
+            new Buttons.AddOutput({  // Add output data
+                context: this,
+                $pEl: this.$hoverBtns,
+                disabled: dataNodes.length === 0,
+                item: item,
+                x: cx,
+                y: height
+            });
+
+            new Buttons.AddInput({  // Add input data
+                context: this,
+                $pEl: this.$hoverBtns,
+                disabled: dataNodes.length === 0,
+                item: item,
+                x: item.width/3,
+                y: 0
+            });
+
+            new Buttons.AddRef({  // Add reference
+                context: this,
+                $pEl: this.$hoverBtns,
+                disabled: refNodes.length === 0,
+                item: item,
+                x: 2*item.width/3,
+                y: 0
+            });
+        }
+    };
+
+    OperationInterfaceEditorWidget.prototype.hideHoverButtons = function() {
+        if (this.$hoverBtns) {
+            this.$hoverBtns.remove();
+            this.$hoverBtns = null;
+        }
     };
 
     return OperationInterfaceEditorWidget;

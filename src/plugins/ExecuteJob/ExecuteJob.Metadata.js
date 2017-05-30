@@ -30,6 +30,30 @@ define([
         this._metadata[id] = graph;
     };
 
+    ExecuteJob.prototype[CONSTANTS.GRAPH_LABEL_AXIS.X] = function (job, id) {
+        var name = Array.prototype.slice.call(arguments, 2).join(' '),
+            jobId = this.core.getPath(job),
+            graph;
+
+        id = jobId + '/' + id;
+        this.logger.info(`Labeling the x-axis of ${id}: ${name}`);
+
+        graph = this._metadata[id];
+        this.setAttribute(graph, 'xlabel', name);
+    };
+
+    ExecuteJob.prototype[CONSTANTS.GRAPH_LABEL_AXIS.Y] = function (job, id) {
+        var name = Array.prototype.slice.call(arguments, 2).join(' '),
+            jobId = this.core.getPath(job),
+            graph;
+
+        id = jobId + '/' + id;
+        this.logger.info(`Labeling the y-axis of ${id}: ${name}`);
+
+        graph = this._metadata[id];
+        this.setAttribute(graph, 'ylabel', name);
+    };
+
     ExecuteJob.prototype[CONSTANTS.GRAPH_PLOT] = function (job, id, x, y) {
         var jobId = this.core.getPath(job),
             nonNum = /[^\d-\.]*/g,

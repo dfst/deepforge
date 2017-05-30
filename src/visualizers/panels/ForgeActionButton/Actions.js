@@ -5,7 +5,8 @@ define([
     'panel/FloatingActionButton/styles/Materialize',
     'q',
     'js/RegistryKeys',
-    'deepforge/globals'
+    'deepforge/globals',
+    'deepforge/Constants'
 ], function(
     Materialize,
     Q,
@@ -263,6 +264,26 @@ define([
                 priority: 2,
                 action: function() {
                     this.addOperation();
+                }
+            },
+            {
+                name: 'Export Pipeline',
+                icon: 'launch',
+                priority: -1,
+                action: function() {
+                    this.exportPipeline()
+                        .then(result => {
+                            Materialize.toast('Export successful!', 2000);
+                            // Download the result!
+                            this.downloadFromBlob(result.artifacts[0]);
+                            result.__unread = true;
+                            this.results.push(result);
+                            this._updatePluginBtns();
+                        })
+                        .fail(err => {
+                            this.logger.warn('Pipeline export failed:', err);
+                            Materialize.toast(`Export failed: ${err}`, 4000);
+                        });
                 }
             }
         ],

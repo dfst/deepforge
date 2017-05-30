@@ -8,6 +8,7 @@ require('dotenv').load({silent: true});
 
 // Add/overwrite any additional settings here
 config.server.port = +process.env.PORT || config.server.port;
+config.server.timeout = 0;
 config.mongo.uri = process.env.MONGO_URI || config.mongo.uri;
 config.blob.fsDir = process.env.DEEPFORGE_BLOB_DIR || config.blob.fsDir;
 

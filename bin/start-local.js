@@ -13,8 +13,8 @@ if (gmeConfig.blob.type === 'FS') {
 }
 
 process.env.NODE_ENV = 'local';
-execJob = spawn('npm', [
-    'start'
+execJob = spawn('node', [
+    path.join(__dirname, '..', 'app.js')
 ], env);
 execJob.stdout.pipe(process.stdout);
 execJob.stderr.pipe(process.stderr);

@@ -32,9 +32,7 @@ define([
             SRC: 'src',
             DST: 'dst'
         },
-        DECORATORS = {
-            ArtifactFinder: 'ArtifactOpDecorator'
-        },
+        DECORATORS = {},
         WIDGET_NAME = 'EasyDAG';
 
     DECORATORS[CONSTANTS.OP.INPUT] = 'ArtifactOpDecorator';
@@ -662,9 +660,9 @@ define([
             items = this._client.getAllMetaNodes()
                 .filter(node => node.isTypeOf(criterionId));
 
-            return items.map(id => {
+            return items.map(node => {
                 return {
-                    node: this._getObjectDescriptor(id)
+                    node: this._getObjectDescriptor(node.getId())
                 };
             });
         } else {

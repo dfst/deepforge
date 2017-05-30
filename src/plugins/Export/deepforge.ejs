@@ -1,0 +1,47 @@
+-- Instantiate the deepforge object
+deepforge = {}
+
+function deepforge.initialize()
+    require 'nn'
+    require 'rnn'
+    <%= initCode %>
+end
+
+-- Graph support
+torch.class('deepforge.Graph')
+
+function deepforge.Graph:__init(name)
+    -- nop
+end
+
+torch.class('deepforge._Line')
+
+function deepforge._Line:__init(graphId, name, opts)
+   -- nop
+end
+
+function deepforge._Line:add(x, y)
+   -- nop
+end
+
+function deepforge.Graph:line(name, opts)
+    return deepforge._Line(self.id, name, opts)
+end
+
+-- Image support
+function deepforge.image(name, tensor)
+   -- nop
+end
+
+torch.class('deepforge.Image')
+function deepforge.Image:__init(name, tensor)
+   -- nop
+end
+
+function deepforge.Image:update(tensor)
+   -- nop
+end
+
+function deepforge.Image:title(name)
+   -- nop
+end

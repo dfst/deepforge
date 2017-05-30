@@ -80,16 +80,16 @@ define([
     // This next function retrieves the relevant node information for the widget
     ArtifactIndexControl.prototype._getObjectDescriptor = function (nodeId) {
         var node = this._client.getNode(nodeId),
-            base,
+            type,
             hash,
             objDescriptor;
 
         if (node) {
-            base = this._client.getNode(node.getBaseId());
+            type = this._client.getNode(node.getMetaTypeId());
             hash = node.getAttribute('data');
             objDescriptor = {
                 id: node.getId(),
-                type: base ? base.getAttribute('name') : 'n/a',
+                type: type ? type.getAttribute('name') : 'n/a',
                 name: node.getAttribute('name'),
                 createdAt: node.getAttribute('createdAt'),
                 dataURL: this.blobClient.getDownloadURL(hash),

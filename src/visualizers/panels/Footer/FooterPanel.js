@@ -1,19 +1,15 @@
-/*globals define, _, WebGMEGlobal, $ */
+/*globals define, _, $ */
 /*jshint browser: true*/
 
 define([
     'js/PanelBase/PanelBase',
     'js/Widgets/NetworkStatus/NetworkStatusWidget',
     'js/Widgets/BranchStatus/BranchStatusWidget',
-    'js/Widgets/BranchSelector/BranchSelectorWidget',
-    'js/Widgets/KeyboardManager/KeyboardManagerWidget',
     './FilteredNotificationWidget'
 ], function (
     PanelBase,
     NetworkStatusWidget,
     BranchStatusWidget,
-    BranchSelectorWidget,
-    KeyboardManagerWidget,
     NotificationWidget
 ) {
 
@@ -47,7 +43,6 @@ define([
             navBarInner = $('<div/>', {class: 'navbar-inner'}),
             separator = $('<div class="spacer pull-right"></div>'),
             widgetPlaceHolder = $('<div class="pull-right"></div>'),
-            keyBoardManagerEl,
             networkStatusEl,
             branchStatusEl,
             notificationEl;
@@ -57,13 +52,6 @@ define([
 
         //padding from screen right edge
         navBarInner.append(separator.clone());
-
-        //keyboard enable/disbale widget (NOTE: only on non touch device)
-        if (WebGMEGlobal.SUPPORTS_TOUCH !== true) {
-            keyBoardManagerEl = widgetPlaceHolder.clone();
-            new KeyboardManagerWidget(keyBoardManagerEl);
-            navBarInner.append(keyBoardManagerEl).append(separator.clone());
-        }
 
         networkStatusEl = widgetPlaceHolder.clone();
         new NetworkStatusWidget(networkStatusEl, this._client);
