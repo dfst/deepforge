@@ -130,7 +130,7 @@ define([
 
                 delete files.inputAssets;
                 files['input-data.json'] = JSON.stringify(inputData, null, 2);
-                runsh += 'th init.lua';
+                runsh += 'python init.py';
                 files['run.sh'] = runsh;
 
                 // Add pointer assets
@@ -209,14 +209,14 @@ define([
     GenerateJob.prototype.createOperationFiles = function (node) {
         var files = {};
         // For each operation, generate the output files:
-        //   inputs/<arg-name>/init.lua  (respective data deserializer)
-        //   pointers/<name>/init.lua  (result of running the main plugin on pointer target - may need a rename)
+        //   inputs/<arg-name>/init.py  (respective data deserializer)
+        //   pointers/<name>/init.py  (result of running the main plugin on pointer target - may need a rename)
         //   outputs/<name>/  (make dirs for each of the outputs)
-        //   outputs/init.lua  (serializers for data outputs)
+        //   outputs/init.py  (serializers for data outputs)
         //
-        //   attributes.lua (returns lua table of operation attributes)
-        //   init.lua (main file -> calls main and serializes outputs)
-        //   <name>.lua (entry point -> calls main operation code)
+        //   attributes.py (returns py table of operation attributes)
+        //   init.py (main file -> calls main and serializes outputs)
+        //   <name>.py (entry point -> calls main operation code)
 
         // add the given files
         this.logger.info('About to create dist execution files');
@@ -248,10 +248,10 @@ define([
                 content.name = name;
                 content.outputs = outputs;
 
-                files['init.lua'] = _.template(Templates.ENTRY)(content);
+                files['init.py'] = _.template(Templates.ENTRY)(content);
 
                 // Create the deepforge file
-                files['deepforge.lua'] = _.template(Templates.DEEPFORGE)(CONSTANTS);
+                files['deepforge.py'] = _.template(Templates.DEEPFORGE)(CONSTANTS);
             });
     };
 
@@ -294,17 +294,17 @@ define([
 
             return inheritanceLvl[aId] > inheritanceLvl[bId];
         }).map(node =>
-            `require './${this.getAttribute(node, 'name')}.lua'`
+            `require './${this.getAttribute(node, 'name')}.py'`
         ).join('\n');
 
         // Create the class files
         classNodes.forEach(node => {
             var name = this.getAttribute(node, 'name');
-            files[`classes/${name}.lua`] = this.getAttribute(node, 'code');
+            files[`classes/${name}.py`] = this.getAttribute(node, 'code');
         });
 
         // Create the custom layers file
-        files['classes/init.lua'] = code;
+        files['classes/init.py'] = code;
     };
 
     GenerateJob.prototype.getTypeDictFor = function (name, metanodes) {
@@ -337,7 +337,7 @@ define([
             .map(node => this.getAttribute(node, 'code')).join('\n');
 
         // Create the custom layers file
-        files['custom-layers.lua'] = code;
+        files['custom-layers.py'] = code;
     };
 
     GenerateJob.prototype.getConnectionContainer = function () {
@@ -374,8 +374,8 @@ define([
                 //
                 // For each input,
                 //  - create the deserializer
-                //  - put it in inputs/<name>/init.lua
-                //  - copy the data asset to /inputs/<name>/init.lua
+                //  - put it in inputs/<name>/init.py
+                //  - copy the data asset to /inputs/<name>/init.py
                 inputs = allInputs
                     .filter(pair => !!this.getAttribute(pair[2], 'data'));  // remove empty inputs
 
@@ -434,7 +434,7 @@ define([
                 tplContents.forEach((ctnt, i) => {
                     // Get the name of the given asset
                     ctnt.filename = metadatas[i].name;
-                    files['inputs/' + ctnt.name + '/init.lua'] = _.template(Templates.DESERIALIZE)(ctnt);
+                    files['inputs/' + ctnt.name + '/init.py'] = _.template(Templates.DESERIALIZE)(ctnt);
                 });
                 return files;
             });
@@ -442,8 +442,8 @@ define([
 
     GenerateJob.prototype.createOutputs = function (node, files) {
         // For each of the output types, grab their serialization functions and
-        // create the `outputs/init.lua` file
-        this.logger.info('Creating outputs/init.lua...');
+        // create the `outputs/init.py` file
+        this.logger.info('Creating outputs/init.py...');
         return this.getOutputs(node)
             .then(outputs => {
                 var outputTypes = outputs
@@ -455,13 +455,13 @@ define([
                         if (this.isMetaTypeOf(node, this.META.Complex)) {
                             // Complex objects are expected to define their own
                             // serialize methods
-                            serFn = 'if data ~= nil then data:serialize(path) end';
+                            serFn = 'if data != None then data.serialize(path) end';
                         }
 
                         return [tuple[1], serFn];
                     });
 
-                files['outputs/init.lua'] = _.template(Templates.SERIALIZE)({types: outputTypes});
+                files['outputs/init.py'] = _.template(Templates.SERIALIZE)({types: outputTypes});
             });
     };
 
@@ -487,10 +487,10 @@ define([
                 // Add remaining code
                 content.code = code;
 
-                files['main.lua'] = _.template(Templates.MAIN)(content);
+                files['main.py'] = _.template(Templates.MAIN)(content);
 
                 // Set the line offset
-                var lineOffset = this.getLineOffset(files['main.lua'], code);
+                var lineOffset = this.getLineOffset(files['main.py'], code);
                 this.setAttribute(node, CONSTANTS.LINE_OFFSET, lineOffset);
             });
     };
@@ -519,7 +519,7 @@ define([
             .map(pair => pair.join(' = '))
             .join(',\n\t') + '\n}';
 
-        files['attributes.lua'] = `-- attributes of ${this.getAttribute(node, 'name')}\nreturn ${table}`;
+        files['attributes.py'] = `-- attributes of ${this.getAttribute(node, 'name')}\nreturn ${table}`;
     };
 
     GenerateJob.prototype.createPointers = function (node, files, cb) {
@@ -540,7 +540,7 @@ define([
             var name = this.getAttribute(node, 'name');
             this.logger.info(`Pointer generation for ${name} FINISHED!`);
             resultHashes.forEach((hash, index) => {
-                files.ptrAssets[`pointers/${pointers[index]}/init.lua`] = hash;
+                files.ptrAssets[`pointers/${pointers[index]}/init.py`] = hash;
             });
             return cb(null, files);
         })
