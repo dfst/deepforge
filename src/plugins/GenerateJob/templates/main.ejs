@@ -1,12 +1,17 @@
--- load custom layers and classes
-deepforge.initialize()
+# load custom layers and classes
+# from deepforge import deepforge
 
--- input data<% inputs.forEach(function(pair) { var input = pair[0], isNil = pair[1];%>
-local <%= input %> = <% if (isNil) { %>nil<% } else { %>require './inputs/<%= input %>'<%}}); %>
+# deepforge.initialize()
 
--- load references<% pointers.forEach(function(pair) { var pointer = pair[0], isNil = pair[1];%>
-local <%= pointer %> = <% if (isNil) { %>nil<% } else { %>require './pointers/<%= pointer %>'<%}}); %>
-local attributes = require './attributes'
+# input data<% inputs.forEach(function(pair) { var input = pair[0], isNil = pair[1];%>
+<%= input %> = <% if (isNil) { %>nil<% } else { %>require './inputs/<%= input %>'<%}}); %>
 
--- main operation code for <%= name %>
-<%= code %>
+# load references<% pointers.forEach(function(pair) { var pointer = pair[0], isNil = pair[1];%>
+from pointers import <%= pointer %>
+<%}); %>
+
+from attributes import attributes
+
+def run():
+    # main operation code for <%= name %>
+    <%= code.replace(/\n/g, '\n    ') %>

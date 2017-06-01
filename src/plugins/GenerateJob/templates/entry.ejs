@@ -1,16 +1,15 @@
--- Instantiate the deepforge object
-require './deepforge'
+import main
 
--- run the <%= name %> and serialize the results
+# run the <%= name %> and serialize the results
 print('\n############### Running "<%= name.replace(/'/g, '\\\'') %>" Operation ############### ')
-results = require './main'
+main.run()
 print('############### "<%= name.replace(/'/g, '\\\'') %>" Operation Complete! ###############')
 
--- serialize by type
-outputs = require './outputs'
+# serialize by type
+import outputs
 <% outputs.forEach(pair => { 
     var name = pair[0],
         type = pair[1];
 %>
-outputs.<%= type %>('<%= name %>', results.<%= name %>)
+outputs.<%= type %>('<%= name %>', results['<%= name %>'])
 <% }); %>

@@ -522,9 +522,9 @@ define([
                 return [`'${name}'`, value];
             })
             .map(pair => pair.join(': '))
-            .join(',\n\t') + '\n}';
+            .join(',\n    ') + '\n}';
 
-        files['attributes.py'] = `-- attributes of ${this.getAttribute(node, 'name')}\nreturn ${table}`;
+        files['attributes.py'] = `# attributes of ${this.getAttribute(node, 'name')}\nattributes = ${table}`;
     };
 
     GenerateJob.prototype.createPointers = function (node, files, cb) {
