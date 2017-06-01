@@ -504,6 +504,7 @@ define([
 
     GenerateJob.prototype.createAttributeFile = function (node, files) {
         var numOrBool = /^(-?\d+\.?\d*((e|e-)\d+)?|(true|false))$/,
+            isBool = /^(true|false)$/,
             table;
 
         this.logger.info('Creating attributes file...');
@@ -514,9 +515,13 @@ define([
                 if (!numOrBool.test(value)) {
                     value = `"${value}"`;
                 }
-                return [`['${name}']`, value];
+                if (isBool.test(value)) {  // Convert to python bool
+                    value = value.toString();
+                    value = value[0].toUpperCase() + value.slice(1);
+                }
+                return [`'${name}'`, value];
             })
-            .map(pair => pair.join(' = '))
+            .map(pair => pair.join(': '))
             .join(',\n\t') + '\n}';
 
         files['attributes.py'] = `-- attributes of ${this.getAttribute(node, 'name')}\nreturn ${table}`;
