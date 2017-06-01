@@ -185,6 +185,7 @@ var startMongo = function(args, port, silent) {
 };
 
 var hasTorch = function() {
+    return true;
     var result = childProcess.spawnSync('th', ['--help']);
     return !result.error;
 };
