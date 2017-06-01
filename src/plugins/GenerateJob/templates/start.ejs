@@ -229,8 +229,9 @@ requirejs([
         cleanup();
         process.exit(130);
     });
-    process.on('uncaughtException', () => {
+    process.on('uncaughtException', err => {
         log('received "uncaughtException" event')
+        log(err);
         cleanup();
     });
 
@@ -238,8 +239,8 @@ requirejs([
     prepareCache()
         .then(() => Q.all(inputPaths.map(ipath => getData(ipath, inputData[ipath]))))
         .then(() => {
-            // Run 'th init.lua' and merge the stdout, stderr
-            job = spawn('th', ['init.lua'], {detached: true});
+            // Run 'python init.lua' and merge the stdout, stderr
+            job = spawn('python', ['init.py'], {detached: true});
             job.stdout.on('data', onStdout);
             job.stderr.on('data', onStderr);
             job.on('close', code => {

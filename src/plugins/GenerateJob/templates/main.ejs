@@ -14,4 +14,4 @@ from attributes import attributes
 
 def run():
     # main operation code for <%= name %>
-    <%= code.replace(/\n/g, '\n    ') %>
+    <%= (code || '').replace(/\n/g, '\n    ') %>

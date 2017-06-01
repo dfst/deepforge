@@ -219,7 +219,7 @@ define([
         //   <name>.py (entry point -> calls main operation code)
 
         // add the given files
-        this.logger.info('About to create dist execution files');
+        this.logger.info('About to generate operation execution files');
         files['start.js'] = _.template(Templates.START)(CONSTANTS);
         return this.createEntryFile(node, files)
             .then(() => this.createClasses(node, files))
