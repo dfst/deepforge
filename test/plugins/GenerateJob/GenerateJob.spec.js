@@ -192,11 +192,14 @@ describe('GenerateJob', function () {
 
                 plugin.setAttribute(node, 'debug', false);
                 plugin.createAttributeFile(node, files);
-                content = files['attributes.lua'];
+                content = files['attributes.py'];
                 matches = content.match(boolString);
                 expect(matches).to.equal(null);
             });
         });
     });
 
+    // TODO: What else should I test?
+    // run a hello world example (use golem?)
+ 
 });

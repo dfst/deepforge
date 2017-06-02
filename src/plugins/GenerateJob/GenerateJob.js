@@ -318,6 +318,7 @@ define([
         return isType;
     };
 
+    // TODO: update this to nn modules
     GenerateJob.prototype.createCustomLayers = function (node, files) {
         var metaDict = this.core.getAllMetaNodes(this.rootNode),
             isCustomLayer,

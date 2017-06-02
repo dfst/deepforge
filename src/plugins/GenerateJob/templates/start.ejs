@@ -239,7 +239,7 @@ requirejs([
     prepareCache()
         .then(() => Q.all(inputPaths.map(ipath => getData(ipath, inputData[ipath]))))
         .then(() => {
-            // Run 'python init.lua' and merge the stdout, stderr
+            // Run 'python init.py' and merge the stdout, stderr
             job = spawn('python', ['init.py'], {detached: true});
             job.stdout.on('data', onStdout);
             job.stderr.on('data', onStderr);
