@@ -1,0 +1,18 @@
+--- 
+services: 
+  mongo: 
+    image: mongo
+    volumes: 
+      - "$HOME/.deepforge/data:/data/db"
+  server: 
+    environment: 
+      - "MONGO_URI=mongodb://mongo:27017/deepforge"
+    image: deepforge/server
+    ports: 
+      - "8888:8888"
+    volumes: 
+      - "$HOME/.deepforge/blob:/data/blob"
+  worker: 
+    command: "http://server:8888"
+    image: deepforge/worker
+version: "2"
