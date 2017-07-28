@@ -12,7 +12,8 @@ Will brython replace Cython one day?  Only time will tell.
 
 var fs = require('fs'),
     path = require('path'),
-    brythonSrcPath = path.join(__dirname, '..', '..', 'node_modules', 'brython', 'www', 'src', 'brython.js');
+    //brythonSrcPath = path.join(__dirname, '..', '..', 'node_modules', 'brython', 'www', 'src', 'brython.js');
+    brythonSrcPath = path.join(__dirname, 'brython.js');
 
 document={};
 document.getElementsByTagName = () => [{src: ''}];

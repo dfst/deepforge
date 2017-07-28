@@ -294,6 +294,7 @@ define([
 
             return inheritanceLvl[aId] > inheritanceLvl[bId];
         }).map(node =>
+            // FIXME: update this
             `require './${this.getAttribute(node, 'name')}.py'`
         ).join('\n');
 
