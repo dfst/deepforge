@@ -327,6 +327,9 @@
       },
       "devProject": {
         "src": "src/seeds/devProject"
+      },
+      "minimal": {
+        "src": "src/seeds/minimal"
       }
     },
     "routers": {
