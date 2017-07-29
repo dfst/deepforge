@@ -10,8 +10,10 @@
 from pointers import <%= pointer %>
 <%}); %>
 
+from operations import <%= name %>Operation
 from attributes import attributes
 
 def run():
     # main operation code for <%= name %>
-    <%= (code || '').replace(/\n/g, '\n    ') %>
+    operation = <%= name %>Operation()
+    operation.execute()

@@ -490,6 +490,7 @@ define([
                 content.code = code;
 
                 files['main.py'] = _.template(Templates.MAIN)(content);
+                files['operations.py'] = code;
 
                 // Set the line offset
                 var lineOffset = this.getLineOffset(files['main.py'], code);
