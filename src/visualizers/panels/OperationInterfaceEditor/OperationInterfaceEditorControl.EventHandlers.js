@@ -66,22 +66,17 @@ define([
             .filter(node => !node.isAbstract());
     };
 
-    OperationInterfaceEditorEvents.prototype.getValidSuccessors = function(nodeId, isInput) {
-        var dataTypeIds;
-
+    OperationInterfaceEditorEvents.prototype.getValidSuccessors = function(nodeId) {
         if (nodeId !== this._currentNodeId) {
             return [];
         }
 
-        // Return all data types in the meta
-        // If input, include abstract types
-        dataTypeIds = this.allDataTypeIds(isInput);
+        var dataNode = this._client.getAllMetaNodes()
+            .find(node => node.getAttribute('name') === 'Data');
 
-        return dataTypeIds.map(id => {
-            return {
-                node: this._getObjectDescriptor(id)
-            };
-        });
+        return [{
+            node: this._getObjectDescriptor(dataNode.getId())
+        }];
     };
 
     OperationInterfaceEditorEvents.prototype._getDataName = function(cntrId, typeId) {

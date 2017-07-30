@@ -61,32 +61,8 @@ define([
     };
 
     OperationInterfaceEditorWidget.prototype.onAddButtonClicked = function(item, isInput) {
-        var successorPairs = this.getValidSuccessors(item.id, isInput),
-            newClass = this.getCreationNode('Complex', NEW_CLASS_ID),
-            newPrim = this.getCreationNode('Primitive', NEW_PRIM_ID),
-            opts = {};
-
-        // TODO: change this....
-        // Add the 'Create Class' node
-        successorPairs.push(newClass);
-        successorPairs.push(newPrim);
-
-        // Add tabs
-        opts.tabs = ['Primitive', 'Classes'];
-        opts.tabFilter = (tab, pair) => {
-            return pair.node.isPrimitive === (tab === 'Primitive');
-        };
-
-        AddNodeDialog.prompt(successorPairs, opts)
-            .then(selected => {
-                if (selected.node.id === NEW_CLASS_ID) {
-                    DeepForge.create.Complex();
-                } else if (selected.node.id === NEW_PRIM_ID) {
-                    DeepForge.create.Primitive();
-                } else {
-                    this.onAddItemSelected(selected, isInput);
-                }
-            });
+        var successorPairs = this.getValidSuccessors(item.id, isInput);
+        return this.onAddItemSelected(successorPairs[0], isInput);
     };
 
     OperationInterfaceEditorWidget.prototype.onDeactivate = function() {
