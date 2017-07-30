@@ -66,6 +66,7 @@ define([
             newPrim = this.getCreationNode('Primitive', NEW_PRIM_ID),
             opts = {};
 
+        // TODO: change this....
         // Add the 'Create Class' node
         successorPairs.push(newClass);
         successorPairs.push(newPrim);
@@ -144,8 +145,7 @@ define([
 
     // Hover buttons
     OperationInterfaceEditorWidget.prototype.showHoverButtons = function(item) {
-        var dataNodes = this.allDataTypeIds(),
-            refNodes = this.allValidReferences(),
+        var refNodes = this.allValidReferences(),
             height = item.height,
             cx = item.width/2;
 
@@ -161,7 +161,6 @@ define([
             new Buttons.AddOutput({  // Add output data
                 context: this,
                 $pEl: this.$hoverBtns,
-                disabled: dataNodes.length === 0,
                 item: item,
                 x: cx,
                 y: height
@@ -170,7 +169,6 @@ define([
             new Buttons.AddInput({  // Add input data
                 context: this,
                 $pEl: this.$hoverBtns,
-                disabled: dataNodes.length === 0,
                 item: item,
                 x: item.width/3,
                 y: 0
