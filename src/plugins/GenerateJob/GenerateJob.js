@@ -130,7 +130,7 @@ define([
 
                 delete files.inputAssets;
                 files['input-data.json'] = JSON.stringify(inputData, null, 2);
-                runsh += 'python init.py';
+                runsh += 'python main.py';
                 files['run.sh'] = runsh;
 
                 // Add pointer assets
@@ -221,11 +221,11 @@ define([
         // add the given files
         this.logger.info('About to generate operation execution files');
         files['start.js'] = _.template(Templates.START)(CONSTANTS);
+        files['outputs/README'] = 'output data serialized here';
         return this.createEntryFile(node, files)
             .then(() => this.createClasses(node, files))
             .then(() => this.createCustomLayers(node, files))
             .then(() => this.createInputs(node, files))
-            .then(() => this.createOutputs(node, files))
             .then(() => this.createMainFile(node, files))
             .then(() => {
                 this.createAttributeFile(node, files);
@@ -238,7 +238,8 @@ define([
     };
 
     GenerateJob.prototype.createEntryFile = function (node, files) {
-        this.logger.info('Creating entry files...');
+        this.logger.info('Creating deepforge.py file...');
+        files['deepforge.py'] = _.template(Templates.DEEPFORGE)(CONSTANTS);
         return this.getOutputs(node)
             .then(outputs => {
                 var name = this.getAttribute(node, 'name'),
@@ -246,12 +247,9 @@ define([
 
                 // inputs and outputs
                 content.name = name;
-                content.outputs = outputs;
-
-                files['init.py'] = _.template(Templates.ENTRY)(content);
+                content.outputs = outputs.map(output => output[0]);
 
                 // Create the deepforge file
-                files['deepforge.py'] = _.template(Templates.DEEPFORGE)(CONSTANTS);
             });
     };
 
@@ -442,41 +440,16 @@ define([
             });
     };
 
-    GenerateJob.prototype.createOutputs = function (node, files) {
-        // For each of the output types, grab their serialization functions and
-        // create the `outputs/init.py` file
-        this.logger.info('Creating outputs/init.py...');
-        return this.getOutputs(node)
-            .then(outputs => {
-                var outputTypes = outputs
-                // Get the serialize functions for each
-                    .map(tuple => {
-                        var node = tuple[2],
-                            serFn = this.getAttribute(node, 'serialize');
-
-                        if (this.isMetaTypeOf(node, this.META.Complex)) {
-                            // Complex objects are expected to define their own
-                            // serialize methods
-                            serFn = 'if data != None then data.serialize(path) end';
-                        }
-
-                        return [tuple[1], serFn];
-                    });
-
-                files['outputs/init.py'] = _.template(Templates.SERIALIZE)({types: outputTypes});
-            });
-    };
-
     GenerateJob.prototype.createMainFile = function (node, files) {
         this.logger.info('Creating main file...');
+        var content = {};
         return this.getInputs(node)
             .then(inputs => {
                 var name = this.getAttribute(node, 'name'),
                     code = this.getAttribute(node, 'code'),
-                    pointers = this.core.getPointerNames(node).filter(ptr => ptr !== 'base'),
-                    content = {
-                        name: name
-                    };
+                    pointers = this.core.getPointerNames(node).filter(ptr => ptr !== 'base');
+
+                content.name = name;
 
                 // Get input data arguments
                 content.inputs = inputs
@@ -488,12 +461,16 @@ define([
 
                 // Add remaining code
                 content.code = code;
+                return this.getOutputs(node);
+            })
+            .then(outputs => {
+                content.outputs = outputs.map(output => output[0]);
 
                 files['main.py'] = _.template(Templates.MAIN)(content);
-                files['operations.py'] = code;
+                files['operations.py'] = content.code;
 
                 // Set the line offset
-                var lineOffset = this.getLineOffset(files['main.py'], code);
+                var lineOffset = 0;
                 this.setAttribute(node, CONSTANTS.LINE_OFFSET, lineOffset);
             });
     };

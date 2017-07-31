@@ -12,8 +12,14 @@ from pointers import <%= pointer %>
 
 from operations import <%= name %>Operation
 from attributes import attributes
+import pickle
 
-def run():
-    # main operation code for <%= name %>
-    operation = <%= name %>Operation()
-    operation.execute()
+# main operation code for <%= name %>
+operation = <%= name %>Operation()
+print('\n############### Running "<%= name.replace(/'/g, '\\\'') %>" Operation ############### ')
+<%= outputs.length ? outputs.join(', ') : 'result' %> = operation.execute()
+print('############### "<%= name.replace(/'/g, '\\\'') %>" Operation Complete! ###############')
+
+<% outputs.forEach(name => { %>
+pickle.dump(<%= name %>, open('outputs/<%= name %>', 'wb'))
+<% }); %>

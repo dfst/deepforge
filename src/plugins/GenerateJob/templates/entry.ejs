@@ -1,15 +1,7 @@
 import main
+import pickle
 
 # run the <%= name %> and serialize the results
-print('\n############### Running "<%= name.replace(/'/g, '\\\'') %>" Operation ############### ')
-main.run()
-print('############### "<%= name.replace(/'/g, '\\\'') %>" Operation Complete! ###############')
 
 # serialize by type
 import outputs
-<% outputs.forEach(pair => { 
-    var name = pair[0],
-        type = pair[1];
-%>
-outputs.<%= type %>('<%= name %>', results['<%= name %>'])
-<% }); %>

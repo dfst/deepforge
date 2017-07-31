@@ -109,7 +109,7 @@ requirejs([
     var onStderr = function(data) {
         var text = data.toString();
         // Filter out directory label from stack traces
-        process.stdout.write(text.replace(/\.\.\.\/.*\/(main|deepforge|init).lua/g, '$1'));
+        process.stdout.write(text.replace(/\.\.\.\/.*\/(main|deepforge|init).py/g, '$1'));
     };
 
     var onStdout = function(data) {
@@ -239,8 +239,8 @@ requirejs([
     prepareCache()
         .then(() => Q.all(inputPaths.map(ipath => getData(ipath, inputData[ipath]))))
         .then(() => {
-            // Run 'python init.py' and merge the stdout, stderr
-            job = spawn('python', ['init.py'], {detached: true});
+            // Run 'python main.py' and merge the stdout, stderr
+            job = spawn('python', ['main.py'], {detached: true});
             job.stdout.on('data', onStdout);
             job.stderr.on('data', onStderr);
             job.on('close', code => {
