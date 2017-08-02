@@ -11,8 +11,8 @@ var spawn = require('child_process').spawn,
 ['error', 'warn', 'info', 'log', 'debug'].forEach(method => logger[method] = log);
 
 // Get the BlobClient...
-var COMMAND_PREFIX = '<%= START_CMD %>',
-    IMAGE = '<%= IMAGE.PREFIX %>',
+var COMMAND_PREFIX = '<%= CONSTANTS.START_CMD %>',
+    IMAGE = '<%= CONSTANTS.IMAGE.PREFIX %>',
     requirejs = require('webgme').requirejs,
     remainingImageCount = 0,
     exitCode = null;
@@ -35,13 +35,22 @@ requirejs([
 
     // Create CACHE_DIR if it doesn't exist
     var prepareCache = function() {
-    var dirs = CACHE_DIR.replace(/\/$/, '').split('/'),
-        cacheParent;
+        var dirs = CACHE_DIR.replace(/\/$/, '').split('/'),
+            cacheParent;
 
         dirs.pop();
         cacheParent = dirs.join('/');
         return makeIfNeeded(cacheParent).then(() => makeIfNeeded(CACHE_DIR));
     };
+
+    var prepareInputsOutputs = function() {
+        var dirs = ['inputs', <% inputs.forEach(function(input) { %>
+            'inputs/<%= input %>',
+            <% }) %>
+            'outputs'];
+        return Q.all(dirs.map(dir => makeIfNeeded(dir)));
+    };
+
 
     var makeIfNeeded = function(dir) {
         var deferred = Q.defer(),
@@ -237,6 +246,7 @@ requirejs([
 
     // Request the data from the blob
     prepareCache()
+        .then(prepareInputsOutputs)
         .then(() => Q.all(inputPaths.map(ipath => getData(ipath, inputData[ipath]))))
         .then(() => {
             // Run 'python main.py' and merge the stdout, stderr

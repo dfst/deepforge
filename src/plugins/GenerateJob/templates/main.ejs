@@ -1,10 +1,11 @@
+import pickle
 # load custom layers and classes
 # from deepforge import deepforge
 
 # deepforge.initialize()
 
 # input data<% inputs.forEach(function(pair) { var input = pair[0], isNil = pair[1];%>
-<%= input %> = <% if (isNil) { %>nil<% } else { %>require './inputs/<%= input %>'<%}}); %>
+<%= input %> = <% if (isNil) { %>None<% } else { %>pickle.load(open('./inputs/<%= input %>/data', 'rb')) <%}}); %>
 
 # load references<% pointers.forEach(function(pair) { var pointer = pair[0], isNil = pair[1];%>
 from pointers import <%= pointer %>
@@ -12,12 +13,15 @@ from pointers import <%= pointer %>
 
 from operations import <%= name %>Operation
 from attributes import attributes
-import pickle
 
 # main operation code for <%= name %>
 operation = <%= name %>Operation()
 print('\n############### Running "<%= name.replace(/'/g, '\\\'') %>" Operation ############### ')
-<%= outputs.length ? outputs.join(', ') : 'result' %> = operation.execute()
+<%= outputs.length ? outputs.join(', ') : 'result' %> = operation.execute(<%= inputs.map(function(pair) {
+    var name = pair[0],
+        isNone = pair[1];
+    return isNone ? 'None' : name;
+})%>)
 print('############### "<%= name.replace(/'/g, '\\\'') %>" Operation Complete! ###############')
 
 <% outputs.forEach(name => { %>

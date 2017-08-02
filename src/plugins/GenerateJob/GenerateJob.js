@@ -107,16 +107,24 @@ define([
             .then(mds => {
                 // Record the large files
                 var inputData = {},
-                    runsh = '# Bash script to download data files and run job\n' +
-                    'if [ -z "$DEEPFORGE_URL" ]; then\n  echo "Please set DEEPFORGE_URL and' +
-                    ' re-run:"\n  echo ""  \n  echo "  DEEPFORGE_URL=http://my.' +
-                    'deepforge.server.com:8080 bash run.sh"\n  echo ""\n exit 1\nfi\n';
+                    runsh = [
+                        '# Bash script to download data files and run job',
+                        'if [ -z "$DEEPFORGE_URL" ]; then',
+                        '  echo "Please set DEEPFORGE_URL and re-run:"',
+                        '  echo ""',
+                        '  echo "  DEEPFORGE_URL=http://my.deepforge.server.com:8080 bash run.sh"',
+                        '  echo ""',
+                        '  exit 1',
+                        'fi',
+                        'mkdir outputs\n'
+                    ].join('\n');
 
                 mds.forEach((metadata, i) => {
                     // add the hashes for each input
                     var input = inputs[i], 
                         hash = files.inputAssets[input],
-                        dataPath = 'inputs/' + input + '/data',
+                        dataDir = 'inputs/' + input + '/',
+                        dataPath = dataDir + 'data',
                         url = this.blobClient.getRelativeDownloadURL(hash);
 
                     inputData[dataPath] = {
@@ -125,6 +133,7 @@ define([
                     };
 
                     // Add to the run.sh file
+                    runsh += `mkdir -p ${dataDir}\n`;
                     runsh += `wget $DEEPFORGE_URL${url} -O ${dataPath}\n`;
                 });
 
@@ -220,8 +229,6 @@ define([
 
         // add the given files
         this.logger.info('About to generate operation execution files');
-        files['start.js'] = _.template(Templates.START)(CONSTANTS);
-        files['outputs/README'] = 'output data serialized here';
         return this.createEntryFile(node, files)
             .then(() => this.createClasses(node, files))
             .then(() => this.createCustomLayers(node, files))
@@ -379,6 +386,10 @@ define([
                 inputs = allInputs
                     .filter(pair => !!this.getAttribute(pair[2], 'data'));  // remove empty inputs
 
+                files['start.js'] = _.template(Templates.START)({
+                    CONSTANTS,
+                    inputs: inputs.map(pair => pair[0])
+                });
                 files.inputAssets = {};  // data assets
                 return Q.all(inputs.map(pair => {
                     var name = pair[0],
@@ -414,28 +425,11 @@ define([
             })
             .then(_tplContents => {
                 tplContents = _tplContents;
-                var hashes = inputs.map(pair => {
+                inputs.forEach(pair => {
                     var hash = this.getAttribute(pair[2], 'data');
                     files.inputAssets[pair[0]] = hash;
-                    return {
-                        hash: hash,
-                        name: pair[0]
-                    };
                 });
 
-                return Q.all(hashes.map(pair => 
-                    this.blobClient.getMetadata(pair.hash)
-                        .fail(() => {
-                            throw Error(`BLOB_FETCH_FAILED:${pair.name}`);
-                        })));
-            })
-            .then(metadatas => {
-                // Create the deserializer
-                tplContents.forEach((ctnt, i) => {
-                    // Get the name of the given asset
-                    ctnt.filename = metadatas[i].name;
-                    files['inputs/' + ctnt.name + '/init.py'] = _.template(Templates.DESERIALIZE)(ctnt);
-                });
                 return files;
             });
     };
