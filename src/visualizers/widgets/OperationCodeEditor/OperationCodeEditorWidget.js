@@ -47,7 +47,7 @@ define([
             header.push(refs);
         }
         header.push('');
-        header.push('The following will be executed when the operation is run:');
+        header.push('The \'execute\' method will be called when the operation is run');
 
         return this.comment(header.join('\n'));
     };
