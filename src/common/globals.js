@@ -59,8 +59,14 @@ define([
     var createNamedNode = function(baseId, parentId, isMeta) {
         var newId = client.createNode({parentId, baseId}),
             baseNode = client.getNode(baseId),
-            basename = 'New' + baseNode.getAttribute('name'),
-            newName = getUniqueName(parentId, basename);
+            basename,
+            newName;
+
+        basename = 'New';
+        if (baseNode.getAttribute('name') !== 'Operation') {
+            basename += baseNode.getAttribute('name');
+        }
+        newName = getUniqueName(parentId, basename);
 
         // If instance, make the first char lowercase
         if (!isMeta) {
