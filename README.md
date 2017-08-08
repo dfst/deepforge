@@ -21,17 +21,13 @@ Additional features include:
 - Facilitates defining custom layers 
 
 ## Quick Start
-Deepforge requires NodeJS v6 (we recommend installing NodeJS using [nvm](https://github.com/creationix/nvm)). After installing NodeJS using nvm, simply run
-
+The easiest way to start deepforge is using [docker-compose](https://docs.docker.com/compose/). Using docker-compose, deepforge can be started with
 ```
-npm install -g deepforge
+wget https://raw.githubusercontent.com/deepforge-dev/deepforge/master/docker-compose.yml
+docker-compose up
 ```
 
-Finally, start deepforge with `deepforge start`and navigate to [http://localhost:8888](http://localhost:8888) to start using DeepForge! For more, detailed instructions, check out the [wiki](https://github.com/dfst/deepforge/wiki/Installation-Guide).
-
-**Note**: running deepforge w/ `deepforge start` will also require [MongoDB](https://www.mongodb.com/download-center?jmp=nav#community) to be installed locally.
-
-Also, be sure to check out the other available features of the `deepforge` cli; it can be used to update, manage your torch installation, uninstall deepforge and run individual components!
+Finally, navigate to [http://localhost:8888](http://localhost:8888) to start using DeepForge! For more detailed instructions and other installation options, check out the [docs](http://deepforge.readthedocs.io/en/latest/deployment/overview.html).
 
 ## Additional Resources
 - [Intro to DeepForge Slides](https://docs.google.com/presentation/d/10_y5O3gHXSATfjHVLJg7dOdrz-tAXNWjlxhJ5SlA0ic/edit?usp=sharing)
