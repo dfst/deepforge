@@ -12,7 +12,11 @@ services:
       - "8888:8888"
     volumes: 
       - "$HOME/.deepforge/blob:/data/blob"
+    depends_on:
+      - mongo
   worker: 
     command: "http://server:8888"
     image: deepforge/worker
+    depends_on:
+      - server
 version: "2"
