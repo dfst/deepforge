@@ -1,11 +1,17 @@
 /* globals define*/
+var isNodeJs = typeof module === 'object' && module.exports;
 (function(root, factory){
     if(typeof define === 'function' && define.amd) {
         // TODO: Load the brython script
         define(['./brython'], function(brython){
+            if (isNodeJs) {
+                brython.$py_module_path['__main__']='./';
+            } else {
+                brython = window.__BRYTHON__;
+            }
             return (root.OperationParser = factory(brython, console.assert));
         });
-    } else if(typeof module === 'object' && module.exports) {
+    } else if(isNodeJs) {
         var brython = require('./node-brython'),
             assert = require('assert');
 
@@ -35,13 +41,10 @@
         return node.type === 'class';
     }
 
-    function isInitFn(node) {
-        return node.type === 'def' && node.name === '__init__';
-    }
-
     function getBaseClass(node) {
         assert(node.type === 'class');
-        return node.args.tree[0].tree[0].tree[0].value;
+        var baseNode = node.args.tree[0];
+        return baseNode ? baseNode.tree[0].tree[0].value : null;
     }
 
     function parseOperationAst(root) {
@@ -59,9 +62,6 @@
 
                 traverse(node.parent.node, n => {
                     if (n.type === 'def' && n.name === 'execute') {
-                        console.log('found method');
-                        console.log(Object.keys(n));
-
                         schema.methods[n.name] = n.args.map(arg => {
                             return {
                                 name: arg,
@@ -83,22 +83,22 @@
         return schema;
     }
 
+    OperationParser._traverse = traverse;
     OperationParser._getClass = function(src) {
     };
 
     OperationParser._getAst = function(src) {
-        brython.$py_module_path['__main__']='./';
         var ast = brython.py2js(src,'__main__', '__main__', '__builtins__');
         return ast;
     };
 
     OperationParser.parse = function(src) {
         try {
-            brython.$py_module_path['__main__']='./';
             var ast = brython.py2js(src,'__main__', '__main__', '__builtins__');
             var schema = parseOperationAst(ast);
             return schema;
         } catch (e) {
+            console.error('operation parsing failed:', e);
             return null;
         }
     };
