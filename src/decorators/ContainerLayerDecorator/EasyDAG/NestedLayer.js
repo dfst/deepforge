@@ -42,8 +42,8 @@ define([
             embedded: true,
             widget: this.widget
         });
-        this.control._onUnload = () => {
-            ArchEditor.prototype._onUnload.apply(this.control, arguments);
+        this.control._onUnload = id => {
+            ArchEditor.prototype._onUnload.call(this.control, id);
             // If it was the last node, remove it
             var node = this.control._client.getNode(this.id);
             if (node.getChildrenIds().length === 0) {
