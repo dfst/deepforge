@@ -62,12 +62,14 @@ var isNodeJs = typeof module === 'object' && module.exports;
 
                 traverse(node.parent.node, n => {
                     if (n.type === 'def' && n.name === 'execute') {
+                        delete n.parent;
                         schema.methods[n.name] = n.args.map(arg => {
                             return {
                                 name: arg,
                                 type: null  // TODO
                             };
-                        });
+                        })
+                        .filter((node, index) => !(node.name === 'self' && index === 0));
                         // TODO: get the outputs of the method...
                     }
                 });
