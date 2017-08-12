@@ -71,26 +71,9 @@ define([
             return [];
         }
 
-        var dataNode = this._client.getAllMetaNodes()
-            .find(node => node.getAttribute('name') === 'Data');
-
         return [{
-            node: this._getObjectDescriptor(dataNode.getId())
+            node: this._getObjectDescriptor(this.getDataTypeId())
         }];
-    };
-
-    OperationInterfaceEditorEvents.prototype._getDataName = function(cntrId, typeId) {
-        var otherIds = this._client.getNode(cntrId).getChildrenIds(),
-            otherNames = otherIds.map(id => this._client.getNode(id).getAttribute('name')),
-            baseName = this._client.getNode(typeId).getAttribute('name').toLowerCase(),
-            name = baseName,
-            i = 1;
-
-        while (otherNames.indexOf(name) !== -1) {
-            i++;
-            name = baseName + '_' + i;
-        }
-        return name;
     };
 
     OperationInterfaceEditorEvents.prototype.getRefName = function(node, basename) {
@@ -188,26 +171,8 @@ define([
         this._client.completeTransaction();
     };
 
-    OperationInterfaceEditorEvents.prototype._createConnectedNode = function(typeId, isInput) {
-        var node = this._client.getNode(this._currentNodeId),
-            name = node.getAttribute('name'),
-            cntrs = node.getChildrenIds(),
-            cntrType = isInput ? 'Inputs' : 'Outputs',
-            cntrId = cntrs.find(id => this.hasMetaName(id, cntrType)),
-            dataName = this._getDataName(cntrId, typeId),
-            msg;
-
-        msg = `Adding ${isInput ? 'input' : 'output'} "${dataName}" to ${name} interface`;
-        this._client.startTransaction(msg);
-        var id = this._client.createNode({
-            parentId: cntrId,
-            baseId: typeId
-        });
-
-        // Set the name of the new input
-        this._client.setAttribute(id, 'name', dataName);
-
-        this._client.completeTransaction();
+    OperationInterfaceEditorEvents.prototype._createConnectedNode = function(typeId, isInput, baseName, silent) {
+        return this.createIONode(this._currentNodeId, typeId, isInput, baseName, silent);
     };
 
     return OperationInterfaceEditorEvents;

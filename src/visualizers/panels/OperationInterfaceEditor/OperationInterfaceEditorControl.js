@@ -10,7 +10,7 @@ define([
     'panels/EasyDAG/EasyDAGControl',
     'js/Constants',
     'deepforge/Constants',
-    'deepforge/lua',
+    'deepforge/OperationParser',
     'deepforge/viz/OperationControl',
     './OperationInterfaceEditorControl.EventHandlers',
     './Colors',
@@ -19,7 +19,7 @@ define([
     EasyDAGControl,
     GME_CONSTANTS,
     CONSTANTS,
-    luajs,
+    OperationParser,
     OperationControl,
     OperationInterfaceEditorControlEvents,
     COLORS,
@@ -229,20 +229,13 @@ define([
 
             code = this._client.getNode(this._currentNodeId).getAttribute('code');
             try {
-                ast = luajs.parser.parse(code);
-                for (var i = variableIds.length; i--;) {
-                    wasUsed = this._usage[variableIds[i]];
-                    name = this._client.getNode(variableIds[i]).getAttribute('name');
-
-                    isUsed = this._inputs[variableIds[i]] ?
-                        this.isUsedInput(name, ast) :
-                        this.isUsedOutput(name, ast);
-                    if (isUsed !== wasUsed) {
-                        this._onUpdate(variableIds[i]);
-                    }
-                }
+                // Parse the operation implementation for visual cues
+                // TODO
+                // Parse the operation implementation and detect change in inputs/outputs
+                var schema = OperationParser.parse(code);
+                console.log(schema);
             } catch (e) {
-                this._logger.debug(`failed parsing lua: ${e}`);
+                this._logger.debug(`failed parsing operation: ${e}`);
             }
 
         } else if (this.containedInCurrent(gmeId) && this.hasMetaName(gmeId, 'Data')) {
@@ -390,8 +383,9 @@ define([
         // verify that it is not used only in the left side of an assignment
         if (hasText) {
             try {
-                ast = ast || luajs.parser.parse(code);
-                return isInput ? this.isUsedVariable(name, ast) : this.isReturnValue(name, ast);
+                return true;
+                //ast = ast || luajs.parser.parse(code);
+                //return isInput ? this.isUsedVariable(name, ast) : this.isReturnValue(name, ast);
             } catch(e) {
                 this._logger.debug(`failed parsing lua: ${e}`);
                 return null;
@@ -406,17 +400,18 @@ define([
         var isUsed = false,
             checker;
 
-        checker = luajs.codegen.traverse((curr, parent) => {
-            if (curr.type === 'variable' && curr.val === name) {
-                // Ignore if it is being assigned...
-                if (parent.type === 'stat.assignment') {
-                    isUsed = isUsed || parent.right.indexOf(curr) !== -1;
-                } else {
-                    isUsed = true;
-                }
-            }
-            return curr;
-        });
+        return true;
+        //checker = luajs.codegen.traverse((curr, parent) => {
+            //if (curr.type === 'variable' && curr.val === name) {
+                //// Ignore if it is being assigned...
+                //if (parent.type === 'stat.assignment') {
+                    //isUsed = isUsed || parent.right.indexOf(curr) !== -1;
+                //} else {
+                    //isUsed = true;
+                //}
+            //}
+            //return curr;
+        //});
 
         checker(node);
         return isUsed;

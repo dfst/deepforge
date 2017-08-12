@@ -5,6 +5,7 @@ define([
     'panels/TextEditor/TextEditorControl',
     'text!./boilerplate.ejs',
     'deepforge/viz/OperationControl',
+    'deepforge/OperationParser',
     'deepforge/viz/Execute',
     'deepforge/Constants',
     'underscore'
@@ -12,6 +13,7 @@ define([
     TextEditorControl,
     CodeTemplate,
     OperationControl,
+    OperationParser,
     Execute,
     CONSTANTS,
     _
@@ -73,6 +75,36 @@ define([
     OperationCodeEditorControl.prototype._onUpdate = function (id) {
         if (id === this._currentNodeId || this.hasMetaName(id, 'Data')) {
             TextEditorControl.prototype._onUpdate.call(this, this._currentNodeId);
+        }
+    };
+
+    OperationCodeEditorControl.prototype.saveTextFor = function (id, code) {
+        try {
+            // Parse the operation implementation and detect change in inputs/outputs
+            var schema = OperationParser.parse(code),
+                oldInputs = this.getDataNames(this._currentNodeId, true),
+                currentInputs = schema.inputs.map(input => input.name),
+                newInputs = _.difference(currentInputs, oldInputs),
+                rmInputs = _.difference(oldInputs, currentInputs),
+                name = this._client.getNode(this._currentNodeId).getAttribute('name');
+
+            // Check for input nodes to remove
+            if (rmInputs.length || newInputs.length) {
+                var msg = `Updating operation implementation for ${name}`;
+
+                console.log(msg);
+                this._client.startTransaction(msg);
+                TextEditorControl.prototype.saveTextFor.call(this, id, code, true);
+
+                rmInputs.forEach(input => this.removeInputData(this._currentNodeId, input));
+
+                // Check for input nodes to add
+                newInputs.map(input => this.addInputData(this._currentNodeId, input));
+                this._client.completeTransaction();
+            }
+        } catch (e) {
+            this._logger.debug(`failed parsing operation: ${e}`);
+            return TextEditorControl.prototype.saveTextFor.call(this, id, code);
         }
     };
 
