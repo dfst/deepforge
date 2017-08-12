@@ -71,6 +71,33 @@ define([
         this.setTitle(name || '');
     };
 
+    OperationEditorPanel.prototype.editTitle = function () {
+        this.$panelHeaderTitle.editInPlace({
+            css: {
+                'z-index': 1000
+            },
+            onChange: (oldValue, newValue) => {
+                var nodeId = this.currentNodeId(),
+                    type = this.currentBaseName(),
+                    words = newValue.split(' '),
+                    msg;
+
+                if (words.length > 1) {
+                    newValue = words.map(word => word[0].toUpperCase() + word.substring(1)).join('');
+                }
+
+                newValue = newValue.replace(/Operation$/, '');
+                msg = `Renamed ${type}: ${oldValue} -> ${newValue}`;
+
+                if (!/^\s*$/.test(newValue)) {
+                    this._client.startTransaction(msg);
+                    this._client.setAttribute(nodeId, 'name', newValue);
+                    this._client.completeTransaction();
+                }
+            }
+        });
+    };
+
     OperationEditorPanel.prototype.getPanels = function () {
         return [InterfaceEditor, CodeEditor];
     };
