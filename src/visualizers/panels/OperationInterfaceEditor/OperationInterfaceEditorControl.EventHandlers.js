@@ -1,9 +1,11 @@
 /*globals define*/
 define([
     'panels/EasyDAG/EasyDAGControl.WidgetEventHandlers',
+    'deepforge/OperationParser',
     './Colors'
 ], function(
     EasyDAGControlEventHandlers,
+    OperationParser,
     COLORS
 ) {
     'use strict';
@@ -174,18 +176,44 @@ define([
     };
 
     OperationInterfaceEditorEvents.prototype._createConnectedNode = function(typeId, isInput, baseName) {
-        var name = this._client.getNode(this._currentNodeId).getAttribute('name'),
+        var node = this._client.getNode(this._currentNodeId),
+            name = node.getAttribute('name'),
             msg = `Updating the interface of ${name}`,
-            id;
+            code = node.getAttribute('code'),
+            lines = code.split('\n'),
+            id,
+            schema = OperationParser.parse(code),
+            pos,
+            argLen,
+            inputName;
 
-        this._client.startTransation(msg);
+        // Update the source code if the inputs/outputs changed
+        // we know that we are adding a node, so we don't need to do 
+        // the comparing and diffing current vs new
+
+        this._client.startTransaction(msg);
         id = this.createIONode(this._currentNodeId, typeId, isInput, baseName, true);
 
-        // TODO: update the code
-        // How can I do this? Can I parse the code to find the indices of the args
-        // to the 'execute' fn?
+        if (isInput) {
+            inputName = this._client.getNode(id).getAttribute('name');
+            // TODO: if no arguments, don't add the ','
+            if (schema.inputs.length) {
+                pos = schema.inputs[schema.inputs.length-1].pos;
+                argLen = schema.inputs[schema.inputs.length-1].name.length;
+                var line = lines[pos.line-1];
 
-        this._client.completeTransation();
+                lines[pos.line-1] = line.substring(0, pos.col + argLen) +
+                    ', ' + inputName + line.substring(pos.col + argLen);
+
+                this._client.setAttribute(this._currentNodeId, 'code', lines.join('\n'));
+            } else {
+                // TODO
+            }
+        } else {
+            // TODO: add output!
+        }
+
+        this._client.completeTransaction();
 
         return id;
     };

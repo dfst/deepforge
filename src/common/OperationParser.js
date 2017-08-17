@@ -42,9 +42,14 @@ var isNodeJs = typeof module === 'object' && module.exports;
         // add inputs
         schema.methods[name].inputs = node.args.args.map(arg => {
             return {
-                name: arg.id.v
+                name: arg.id.v,
+                pos: {
+                    line: arg.lineno,
+                    col: arg.col_offset
+                }
             };
         });
+        console.log(node.args.args);
 
         // add outputs
         var ret = node.body.find(node => isNodeType(node, 'Return_'));
@@ -59,7 +64,11 @@ var isNodeJs = typeof module === 'object' && module.exports;
             if (!isNameNode && index > 0) name + '_' + index;
 
             return {
-                name: name
+                name: name,
+                pos: {
+                    line: arg.lineno,
+                    col: arg.col_offset
+                }
             };
         });
     }
@@ -85,6 +94,7 @@ var isNodeJs = typeof module === 'object' && module.exports;
 
         schema.inputs = schema.methods.execute.inputs;
         schema.outputs = schema.methods.execute.outputs;
+        schema.ast = ast;
         return schema;
     }
 
