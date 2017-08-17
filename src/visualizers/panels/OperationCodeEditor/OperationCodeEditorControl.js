@@ -84,22 +84,34 @@ define([
             var schema = OperationParser.parse(code),
                 oldInputs = this.getDataNames(this._currentNodeId, true),
                 currentInputs = schema.inputs.map(input => input.name),
-                newInputs = _.difference(currentInputs, oldInputs),
-                rmInputs = _.difference(oldInputs, currentInputs),
-                name = this._client.getNode(this._currentNodeId).getAttribute('name');
+                name = this._client.getNode(this._currentNodeId).getAttribute('name'),
+                newInputs,
+                rmInputs,
+                oldOutputs = this.getDataNames(this._currentNodeId),
+                currentOutputs = schema.outputs.map(input => input.name),
+                newOutputs,
+                rmOutputs;
 
             // Check for input nodes to remove
-            if (rmInputs.length || newInputs.length) {
+            if (currentInputs[0] === 'self') currentInputs.shift();
+            newInputs = _.difference(currentInputs, oldInputs);
+            rmInputs = _.difference(oldInputs, currentInputs);
+            newOutputs = _.difference(currentOutputs, oldOutputs);
+            rmOutputs = _.difference(oldOutputs, currentOutputs);
+
+            if (rmInputs.length || newInputs.length || rmOutputs.length || newOutputs.length) {
                 var msg = `Updating operation implementation for ${name}`;
 
-                console.log(msg);
                 this._client.startTransaction(msg);
                 TextEditorControl.prototype.saveTextFor.call(this, id, code, true);
 
+                // update the inputs
                 rmInputs.forEach(input => this.removeInputData(this._currentNodeId, input));
-
-                // Check for input nodes to add
                 newInputs.map(input => this.addInputData(this._currentNodeId, input));
+
+                // update the outputs
+                rmOutputs.forEach(output => this.removeOutputData(this._currentNodeId, output));
+                newOutputs.map(output => this.addOutputData(this._currentNodeId, output));
                 this._client.completeTransaction();
             }
         } catch (e) {

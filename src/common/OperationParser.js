@@ -1,23 +1,17 @@
-/* globals define*/
+/* globals define, Sk*/
 var isNodeJs = typeof module === 'object' && module.exports;
 (function(root, factory){
     if(typeof define === 'function' && define.amd) {
-        // TODO: Load the brython script
-        define(['./brython'], function(brython){
-            if (isNodeJs) {
-                brython.$py_module_path['__main__']='./';
-            } else {
-                brython = window.__BRYTHON__;
-            }
-            return (root.OperationParser = factory(brython, console.assert));
+        define(['./skulpt.min'], function(){
+            return (root.OperationParser = factory(Sk));
         });
     } else if(isNodeJs) {
-        var brython = require('./node-brython'),
-            assert = require('assert');
+        require('./skulpt.min');
 
-        module.exports = (root.OperationParser = factory(brython, assert));
+        module.exports = (root.OperationParser = factory(Sk));
     }
-}(this, function(brython, assert) {
+}(this, function(Sk) {
+    Sk.python3 = true;
     var OperationParser = {};
 
     // The provided tree gives us contexts which can have associated 'C'
@@ -37,68 +31,75 @@ var isNodeJs = typeof module === 'object' && module.exports;
         }
     }
 
-    function isClass(node) {
-        return node.type === 'class';
+    function isNodeType(node, name) {
+        return node.constructor.name === name;
     }
 
-    function getBaseClass(node) {
-        assert(node.type === 'class');
-        var baseNode = node.args.tree[0];
-        return baseNode ? baseNode.tree[0].tree[0].value : null;
+    function parseFn(node, schema) {
+        var name = node.name.v;
+
+        schema.methods[name] = {};
+        // add inputs
+        schema.methods[name].inputs = node.args.args.map(arg => {
+            return {
+                name: arg.id.v
+            };
+        });
+
+        // add outputs
+        var ret = node.body.find(node => isNodeType(node, 'Return_'));
+        var retVals = [];
+        if (ret) {
+            retVals = ret.value && isNodeType(ret.value, 'Tuple') ? ret.value.elts : [ret];
+        }
+
+        schema.methods[name].outputs = retVals.map((arg, index) => {
+            var isNameNode = isNodeType(arg, 'Name');
+            var name = isNameNode ? arg.id.v : 'result';
+            if (!isNameNode && index > 0) name + '_' + index;
+
+            return {
+                name: name
+            };
+        });
     }
 
-    function parseOperationAst(root) {
+    function parseOperationAst(ast) {
         var schema = {
             name: null,
             base: null,
             methods: {}
         };
 
-        traverse(root, node => {
-            // Get the class for the given function
-            if (isClass(node)) {
-                schema.name = node.name;
-                schema.base = getBaseClass(node);
+        // Find the class definition
+        var classDef = ast.body.find(node => isNodeType(node, 'ClassDef'));
+        if (classDef) {
+            schema.name = classDef.name.v;
 
-                traverse(node.parent.node, n => {
-                    if (n.type === 'def' && n.name === 'execute') {
-                        delete n.parent;
-                        schema.methods[n.name] = n.args.map(arg => {
-                            return {
-                                name: arg,
-                                type: null  // TODO
-                            };
-                        })
-                        .filter((node, index) => !(node.name === 'self' && index === 0));
-                        // TODO: get the outputs of the method...
-                    }
-                });
-            }
+            // TODO: what if fn is inherited?
+            classDef.body
+                .filter(node => isNodeType(node, 'FunctionDef'))
+                .forEach(node => parseFn(node, schema));
 
-            // How can I get from the class ctx to the methods?
-            if (node.type === 'def') {
-                var clazz = node.scope.C.tree.find(ctx => ctx.type === 'class');
-            }
-        });
+        }
 
-        schema.inputs = schema.methods.execute;
+        schema.inputs = schema.methods.execute.inputs;
+        schema.outputs = schema.methods.execute.outputs;
         return schema;
     }
 
     OperationParser._traverse = traverse;
-    OperationParser._getClass = function(src) {
-    };
-
-    OperationParser._getAst = function(src) {
-        var ast = brython.py2js(src,'__main__', '__main__', '__builtins__');
+    OperationParser._getAst = function(src, filename) {
+        filename = filename || 'operation.py';
+        var cst = Sk.parse(filename, src).cst;
+        var ast = Sk.astFromParse(cst, filename);
         return ast;
     };
 
-    OperationParser.parse = function(src) {
+    OperationParser.parse = function(src, filename) {
         try {
-            var ast = brython.py2js(src,'__main__', '__main__', '__builtins__');
-            var schema = parseOperationAst(ast);
-            return schema;
+            var ast = this._getAst(src, filename);
+            return  parseOperationAst(ast);
         } catch (e) {
             console.error('operation parsing failed:', e);
             return null;

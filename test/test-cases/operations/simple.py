@@ -1,4 +1,5 @@
 class TrainOperation():
 
-    def execute(self, number: int):
+    # TODO: add type hints
+    def execute(self, number):
         return 20

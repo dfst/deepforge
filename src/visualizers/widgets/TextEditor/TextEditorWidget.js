@@ -240,11 +240,18 @@ define([
     TextEditorWidget.prototype.addNode = function (desc) {
         // Set the current text based on the given
         // Create the header
-        var header = this.getHeader(desc);
+        var header = this.getHeader(desc),
+            content,
+            newContent = header + '\n' + desc.text,
+            //patches = diff.diffChars(content, newContent),
+            cursorPos;
 
+        // TODO: if we are updating the value, we should make sure the cursor position
+        // remains in the same spot (ie, diff the text and update the positions
+        // based on the size of the patches
         this.activeNode = desc.id;
         this.silent = true;
-        this.editor.setValue(header + '\n' + desc.text, 2);
+        this.editor.setValue(newContent, 2);
         this.silent = false;
         this.currentHeader = header;
     };

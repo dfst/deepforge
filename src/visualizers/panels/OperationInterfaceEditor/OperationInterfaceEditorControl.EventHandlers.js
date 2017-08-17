@@ -1,7 +1,9 @@
 /*globals define*/
 define([
+    'panels/EasyDAG/EasyDAGControl.WidgetEventHandlers',
     './Colors'
 ], function(
+    EasyDAGControlEventHandlers,
     COLORS
 ) {
     'use strict';
@@ -171,8 +173,28 @@ define([
         this._client.completeTransaction();
     };
 
-    OperationInterfaceEditorEvents.prototype._createConnectedNode = function(typeId, isInput, baseName, silent) {
-        return this.createIONode(this._currentNodeId, typeId, isInput, baseName, silent);
+    OperationInterfaceEditorEvents.prototype._createConnectedNode = function(typeId, isInput, baseName) {
+        var name = this._client.getNode(this._currentNodeId).getAttribute('name'),
+            msg = `Updating the interface of ${name}`,
+            id;
+
+        this._client.startTransation(msg);
+        id = this.createIONode(this._currentNodeId, typeId, isInput, baseName, true);
+
+        // TODO: update the code
+        // How can I do this? Can I parse the code to find the indices of the args
+        // to the 'execute' fn?
+
+        this._client.completeTransation();
+
+        return id;
+    };
+
+    OperationInterfaceEditorEvents.prototype._deleteNode = function(nodeId) {
+        // TODO: update the code on input deletion
+        console.log('TODO: update the source code...');
+        // If the input name is used in the code, maybe just comment it out in the args
+        return EasyDAGControlEventHandlers.prototype._deleteNode.apply(this, arguments);
     };
 
     return OperationInterfaceEditorEvents;

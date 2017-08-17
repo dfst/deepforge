@@ -117,5 +117,19 @@ define([
         }
     };
 
+    OperationControl.prototype.addOutputData = function(opId, name) {
+        return this.createIONode(opId, this.getDataTypeId(), false, name, true);
+    };
+
+    OperationControl.prototype.removeOutputData = function(opId, name) {
+        var cntrId = this.getDataContainerId(opId),
+            otherIds = this._client.getNode(cntrId).getChildrenIds(),
+            dataId = otherIds.find(id => this._client.getNode(id).getAttribute('name') === name);
+
+        if (dataId) {  // ow, data not found
+            this._client.deleteNode(dataId);
+        }
+    };
+
     return OperationControl;
 });

@@ -3,7 +3,8 @@ from typing import Tuple
 
 class ExampleOperation(Operation):
 
-    def execute(hello: str, world: str, count: int) -> Tuple[str, int]:
+    # TODO: add the type hints
+    def execute(hello, world, count):
         # Doing things
         concat = hello + world
         return concat, count
