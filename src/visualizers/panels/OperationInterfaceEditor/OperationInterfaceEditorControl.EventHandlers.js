@@ -255,7 +255,9 @@ define([
                 line = lines[match.pos.line-1];
 
                 startIndex = prev ? prev.pos.col + prev.value.toString().length : match.pos.col;
-                endIndex = match.pos.col + name.length;
+                endIndex = i === 0 && i < ios.length ?
+                    ios[i+1].pos.col :
+                    match.pos.col + match.value.toString().length;
                 lines[match.pos.line-1] = line.substring(0, startIndex) +
                     line.substring(endIndex);
                 this._client.setAttribute(this._currentNodeId, 'code', lines.join('\n'));
