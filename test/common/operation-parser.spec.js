@@ -61,6 +61,10 @@ describe.only('OperationParser', function() {
             assert.equal(schema.outputs.length, 1);
         });
 
+        it.only('should provide the value', function() {
+            assert.equal(schema.outputs[0].value, '20');
+        });
+
         it('should detect two inputs', function() {
             assert.equal(schema.inputs.length, 2);
         });

@@ -113,6 +113,8 @@ define([
                 rmOutputs.forEach(output => this.removeOutputData(this._currentNodeId, output));
                 newOutputs.map(output => this.addOutputData(this._currentNodeId, output));
                 this._client.completeTransaction();
+            } else {
+                return TextEditorControl.prototype.saveTextFor.call(this, id, code);
             }
         } catch (e) {
             this._logger.debug(`failed parsing operation: ${e}`);

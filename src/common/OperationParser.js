@@ -43,6 +43,7 @@ var isNodeJs = typeof module === 'object' && module.exports;
         schema.methods[name].inputs = node.args.args.map(arg => {
             return {
                 name: arg.id.v,
+                value: arg.id.v,
                 pos: {
                     line: arg.lineno,
                     col: arg.col_offset
@@ -54,16 +55,22 @@ var isNodeJs = typeof module === 'object' && module.exports;
         var ret = node.body.find(node => isNodeType(node, 'Return_'));
         var retVals = [];
         if (ret) {
-            retVals = ret.value && isNodeType(ret.value, 'Tuple') ? ret.value.elts : [ret];
+            retVals = ret.value && isNodeType(ret.value, 'Tuple') ?
+                ret.value.elts : [ret.value];
         }
 
         schema.methods[name].outputs = retVals.map((arg, index) => {
             var isNameNode = isNodeType(arg, 'Name');
             var name = isNameNode ? arg.id.v : 'result';
-            if (!isNameNode && index > 0) name + '_' + index;
+            if (!isNameNode && index > 0) {
+                name + '_' + index;
+            }
+
+            var value = isNodeType(arg, 'Num') ? arg.n.v : name;
 
             return {
                 name: name,
+                value: value,
                 pos: {
                     line: arg.lineno,
                     col: arg.col_offset
@@ -106,13 +113,13 @@ var isNodeJs = typeof module === 'object' && module.exports;
     };
 
     OperationParser.parse = function(src, filename) {
-        try {
+        //try {
             var ast = this._getAst(src, filename);
             return  parseOperationAst(ast);
-        } catch (e) {
-            console.error('operation parsing failed:', e);
-            return null;
-        }
+        //} catch (e) {
+            //console.error('operation parsing failed:', e);
+            //return null;
+        //}
     };
 
     return OperationParser;

@@ -231,33 +231,38 @@ define([
         // If the input name is used in the code, maybe just comment it out in the args
         this._client.startTransaction(msg);
         if (isInput) {
-            var input,
-                prev,
-                line,
-                startIndex,
-                endIndex;
-
-            for (var i = 0; i < schema.inputs.length; i++) {
-                input = schema.inputs[i];
-                prev = schema.inputs[i-1];
-
-                if (input.name === dataName) {
-                    line = lines[input.pos.line-1];
-
-                    startIndex = prev ? prev.pos.col + prev.name.length : input.pos.col;
-                    endIndex = input.pos.col + dataName.length;
-                    lines[input.pos.line-1] = line.substring(0, startIndex) +
-                        line.substring(endIndex);
-                    this._client.setAttribute(this._currentNodeId, 'code', lines.join('\n'));
-                    break;
-                }
-            }
+            this._removeIOCode(lines, schema.inputs, dataName);
         } else {
-            // TODO
+            this._removeIOCode(lines, schema.outputs, dataName);
         }
         this._client.deleteNode(nodeId);
         //EasyDAGControlEventHandlers.prototype._deleteNode.apply(this, nodeId, true);
         this._client.completeTransaction();
+    };
+
+    OperationInterfaceEditorEvents.prototype._removeIOCode = function(lines, ios, name) {
+        var match,
+            prev,
+            line,
+            startIndex,
+            endIndex;
+
+        for (var i = 0; i < ios.length; i++) {
+            match = ios[i];
+            prev = ios[i-1];
+
+            if (match.name === name) {
+                line = lines[match.pos.line-1];
+
+                startIndex = prev ? prev.pos.col + prev.value.toString().length : match.pos.col;
+                endIndex = match.pos.col + name.length;
+                lines[match.pos.line-1] = line.substring(0, startIndex) +
+                    line.substring(endIndex);
+                this._client.setAttribute(this._currentNodeId, 'code', lines.join('\n'));
+                return true;
+            }
+        }
+        return false;
     };
 
     return OperationInterfaceEditorEvents;
