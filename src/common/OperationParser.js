@@ -49,7 +49,6 @@ var isNodeJs = typeof module === 'object' && module.exports;
                 }
             };
         });
-        console.log(node.args.args);
 
         // add outputs
         var ret = node.body.find(node => isNodeType(node, 'Return_'));

@@ -219,10 +219,45 @@ define([
     };
 
     OperationInterfaceEditorEvents.prototype._deleteNode = function(nodeId) {
-        // TODO: update the code on input deletion
-        console.log('TODO: update the source code...');
+        var dataName = this._client.getNode(nodeId).getAttribute('name'),
+            node = this._client.getNode(this._currentNodeId),
+            name = node.getAttribute('name'),
+            isInput = this.isInputData(nodeId),
+            msg = `Updating the interface of ${name}`,
+            code = node.getAttribute('code'),
+            lines = code.split('\n'),
+            schema = OperationParser.parse(code);
+
         // If the input name is used in the code, maybe just comment it out in the args
-        return EasyDAGControlEventHandlers.prototype._deleteNode.apply(this, arguments);
+        this._client.startTransaction(msg);
+        if (isInput) {
+            var input,
+                prev,
+                line,
+                startIndex,
+                endIndex;
+
+            for (var i = 0; i < schema.inputs.length; i++) {
+                input = schema.inputs[i];
+                prev = schema.inputs[i-1];
+
+                if (input.name === dataName) {
+                    line = lines[input.pos.line-1];
+
+                    startIndex = prev ? prev.pos.col + prev.name.length : input.pos.col;
+                    endIndex = input.pos.col + dataName.length;
+                    lines[input.pos.line-1] = line.substring(0, startIndex) +
+                        line.substring(endIndex);
+                    this._client.setAttribute(this._currentNodeId, 'code', lines.join('\n'));
+                    break;
+                }
+            }
+        } else {
+            // TODO
+        }
+        this._client.deleteNode(nodeId);
+        //EasyDAGControlEventHandlers.prototype._deleteNode.apply(this, nodeId, true);
+        this._client.completeTransaction();
     };
 
     return OperationInterfaceEditorEvents;

@@ -131,5 +131,10 @@ define([
         }
     };
 
+    OperationControl.prototype.isInputData = function(nodeId) {
+        var node = this._client.getNode(nodeId);
+        return this.hasMetaName(node.getParentId(), 'Inputs');
+    };
+
     return OperationControl;
 });
