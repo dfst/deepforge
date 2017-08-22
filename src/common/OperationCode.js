@@ -41,15 +41,56 @@ var isNodeJs = typeof module === 'object' && module.exports;
     };
 
     OperationCode.prototype.removeInput = function(name) {
-        // TODO
+        if (!this._schema) this.updateSchema();
+
+        return this._removeIOCode(this._schema.inputs, name);
     };
 
     OperationCode.prototype.removeOutput = function(name) {
-        // TODO
+        if (!this._schema) this.updateSchema();
+
+        return this._removeIOCode(this._schema.outputs, name);
+    };
+
+    OperationCode.prototype._removeIOCode = function(ios, name) {
+        var match,
+            prev,
+            line,
+            startIndex,
+            endIndex;
+
+        for (var i = 0; i < ios.length; i++) {
+            match = ios[i];
+            prev = ios[i-1];
+
+            if (match.name === name) {
+                line = this._lines[match.pos.line-1];
+
+                startIndex = prev ? prev.pos.col + prev.value.toString().length : match.pos.col;
+                endIndex = i < ios.length-1 ? ios[i+1].pos.col :
+                    match.pos.col + match.value.toString().length;
+                this._lines[match.pos.line-1] = line.substring(0, startIndex) +
+                    line.substring(endIndex);
+
+                this.clearSchema();
+                return match;
+            }
+        }
+        return null;
     };
 
     OperationCode.prototype.addInput = function(name) {
-        // TODO
+        if (!this._schema) this.updateSchema();
+
+        var schema = this._schema;
+        var pos = schema.inputs[schema.inputs.length-1].pos;
+        var argLen = schema.inputs[schema.inputs.length-1].name.length;
+        var line = this._lines[pos.line-1];
+
+        this._lines[pos.line-1] = line.substring(0, pos.col + argLen) +
+            ', ' + name + line.substring(pos.col + argLen);
+
+        this.clearSchema();
     };
 
     OperationCode.prototype.addOutput = function(name) {
@@ -105,24 +146,26 @@ var isNodeJs = typeof module === 'object' && module.exports;
                 ret.value.elts : [ret.value];
         }
 
-        schema.methods[name].outputs = retVals.map((arg, index) => {
-            var isNameNode = this._isNodeType(arg, 'Name');
-            var name = isNameNode ? arg.id.v : 'result';
-            if (!isNameNode && index > 0) {
-                name + '_' + index;
-            }
-
-            var value = this._isNodeType(arg, 'Num') ? arg.n.v : name;
-
-            return {
-                name: name,
-                value: value,
-                pos: {
-                    line: arg.lineno,
-                    col: arg.col_offset
+        schema.methods[name].outputs = retVals
+            .filter(node => !!node)
+            .map((arg, index) => {
+                var isNameNode = this._isNodeType(arg, 'Name');
+                var name = isNameNode ? arg.id.v : 'result';
+                if (!isNameNode && index > 0) {
+                    name + '_' + index;
                 }
-            };
-        });
+
+                var value = this._isNodeType(arg, 'Num') ? arg.n.v : name;
+
+                return {
+                    name: name,
+                    value: value,
+                    pos: {
+                        line: arg.lineno,
+                        col: arg.col_offset
+                    }
+                };
+            });
     };
 
     OperationCode.prototype.updateSchema = function () {
@@ -130,6 +173,7 @@ var isNodeJs = typeof module === 'object' && module.exports;
     };
 
     OperationCode.prototype.clearSchema = function () {
+        this._ast = null;
         this._schema = null;
     };
 
