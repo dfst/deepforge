@@ -1,11 +1,11 @@
 /*globals define*/
 define([
     'panels/EasyDAG/EasyDAGControl.WidgetEventHandlers',
-    'deepforge/OperationParser',
+    'deepforge/OperationCode',
     './Colors'
 ], function(
     EasyDAGControlEventHandlers,
-    OperationParser,
+    OperationCode,
     COLORS
 ) {
     'use strict';
@@ -180,12 +180,9 @@ define([
             name = node.getAttribute('name'),
             msg = `Updating the interface of ${name}`,
             code = node.getAttribute('code'),
-            lines = code.split('\n'),
             id,
-            schema = OperationParser.parse(code),
-            pos,
-            argLen,
-            inputName;
+            operation = new OperationCode(code),
+            dataName;
 
         // Update the source code if the inputs/outputs changed
         // we know that we are adding a node, so we don't need to do 
@@ -193,24 +190,12 @@ define([
 
         this._client.startTransaction(msg);
         id = this.createIONode(this._currentNodeId, typeId, isInput, baseName, true);
+        dataName = this._client.getNode(id).getAttribute('name');
 
         if (isInput) {
-            inputName = this._client.getNode(id).getAttribute('name');
-            // TODO: if no arguments, don't add the ','
-            if (schema.inputs.length) {
-                pos = schema.inputs[schema.inputs.length-1].pos;
-                argLen = schema.inputs[schema.inputs.length-1].name.length;
-                var line = lines[pos.line-1];
-
-                lines[pos.line-1] = line.substring(0, pos.col + argLen) +
-                    ', ' + inputName + line.substring(pos.col + argLen);
-
-                this._client.setAttribute(this._currentNodeId, 'code', lines.join('\n'));
-            } else {
-                // TODO
-            }
+            operation.addInput(dataName);
         } else {
-            // TODO: add output!
+            operation.addOutput(dataName);
         }
 
         this._client.completeTransaction();
@@ -225,46 +210,23 @@ define([
             isInput = this.isInputData(nodeId),
             msg = `Updating the interface of ${name}`,
             code = node.getAttribute('code'),
-            lines = code.split('\n'),
-            schema = OperationParser.parse(code);
+            operation = new OperationCode(code);
 
         // If the input name is used in the code, maybe just comment it out in the args
         this._client.startTransaction(msg);
-        if (isInput) {
-            this._removeIOCode(lines, schema.inputs, dataName);
-        } else {
-            this._removeIOCode(lines, schema.outputs, dataName);
+        try {
+            if (isInput) {
+                operation.removeInput(dataName);
+            } else {
+                operation.removeOutput(dataName);
+            }
+            this._client.setAttribute(this._currentNodeId, 'code', operation.getCode());
+        } catch(e) {
+            this.logger.debug(`could not update the code - invalid python!: ${e}`);
         }
         this._client.deleteNode(nodeId);
         //EasyDAGControlEventHandlers.prototype._deleteNode.apply(this, nodeId, true);
         this._client.completeTransaction();
-    };
-
-    OperationInterfaceEditorEvents.prototype._removeIOCode = function(lines, ios, name) {
-        var match,
-            prev,
-            line,
-            startIndex,
-            endIndex;
-
-        for (var i = 0; i < ios.length; i++) {
-            match = ios[i];
-            prev = ios[i-1];
-
-            if (match.name === name) {
-                line = lines[match.pos.line-1];
-
-                startIndex = prev ? prev.pos.col + prev.value.toString().length : match.pos.col;
-                endIndex = i === 0 && i < ios.length ?
-                    ios[i+1].pos.col :
-                    match.pos.col + match.value.toString().length;
-                lines[match.pos.line-1] = line.substring(0, startIndex) +
-                    line.substring(endIndex);
-                this._client.setAttribute(this._currentNodeId, 'code', lines.join('\n'));
-                return true;
-            }
-        }
-        return false;
     };
 
     return OperationInterfaceEditorEvents;

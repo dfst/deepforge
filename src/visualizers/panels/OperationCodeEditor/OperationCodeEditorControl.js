@@ -5,7 +5,7 @@ define([
     'panels/TextEditor/TextEditorControl',
     'text!./boilerplate.ejs',
     'deepforge/viz/OperationControl',
-    'deepforge/OperationParser',
+    'deepforge/OperationCode',
     'deepforge/viz/Execute',
     'deepforge/Constants',
     'underscore'
@@ -13,7 +13,7 @@ define([
     TextEditorControl,
     CodeTemplate,
     OperationControl,
-    OperationParser,
+    OperationCode,
     Execute,
     CONSTANTS,
     _
@@ -82,14 +82,14 @@ define([
         try {
             // Parse the operation implementation and detect change in inputs/outputs
             // TODO: Update this to use the code object
-            var schema = OperationParser.parse(code),
+            var operation = new OperationCode(code),
                 oldInputs = this.getDataNames(this._currentNodeId, true),
-                currentInputs = schema.inputs.map(input => input.name),
+                currentInputs = operation.getInputs().map(input => input.name),
                 name = this._client.getNode(this._currentNodeId).getAttribute('name'),
                 newInputs,
                 rmInputs,
                 oldOutputs = this.getDataNames(this._currentNodeId),
-                currentOutputs = schema.outputs.map(input => input.name),
+                currentOutputs = operation.getOutputs().map(input => input.name),
                 newOutputs,
                 rmOutputs;
 
