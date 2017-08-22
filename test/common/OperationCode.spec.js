@@ -45,6 +45,23 @@ describe('OperationCode', function() {
         });
     });
 
+    describe('multi-anon-results', function() {
+        before(function() {
+            var filePath = path.join(__dirname, '..', 'test-cases', 'operations', 'multi-anon-results.py');
+            var example = fs.readFileSync(filePath, 'utf8');
+            operation = new OperationCode(example);
+        });
+
+        it('should parse multiple return values', function() {
+            assert.equal(operation.getOutputs().length, 2);
+        });
+
+        it('should create unique names for each', function() {
+            var [first, second] = operation.getOutputs();
+            assert.notEqual(first.name, second.name);
+        });
+    });
+
     describe('simple', function() {
         var code;
 

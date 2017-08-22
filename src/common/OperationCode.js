@@ -157,7 +157,7 @@ var isNodeJs = typeof module === 'object' && module.exports;
                 var isNameNode = this._isNodeType(arg, 'Name');
                 var name = isNameNode ? arg.id.v : 'result';
                 if (!isNameNode && index > 0) {
-                    name + '_' + index;
+                    name += '_' + index;
                 }
 
                 var value = this._isNodeType(arg, 'Num') ? arg.n.v : name;
