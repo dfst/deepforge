@@ -45,7 +45,6 @@ describe('OperationCode', function() {
         });
     });
 
-    // TODO: test rm input/outpu
     describe('simple', function() {
         var code;
 
@@ -54,24 +53,26 @@ describe('OperationCode', function() {
             code = fs.readFileSync(filePath, 'utf8');
         });
 
-        beforeEach(function() {
-            operation = new OperationCode(code);
-        });
+        describe('parsing', function() {
+            beforeEach(function() {
+                operation = new OperationCode(code);
+            });
 
-        it('should not require base class', function() {
-            assert.equal(operation.getBase(), null);
-        });
+            it('should not require base class', function() {
+                assert.equal(operation.getBase(), null);
+            });
 
-        it('should detect one output', function() {
-            assert.equal(operation.getOutputs().length, 1);
-        });
+            it('should detect one output', function() {
+                assert.equal(operation.getOutputs().length, 1);
+            });
 
-        it('should provide the value', function() {
-            assert.equal(operation.getOutputs()[0].value, '20');
-        });
+            it('should provide the value', function() {
+                assert.equal(operation.getOutputs()[0].value, '20');
+            });
 
-        it('should detect two inputs', function() {
-            assert.equal(operation.getInputs().length, 2);
+            it('should detect two inputs', function() {
+                assert.equal(operation.getInputs().length, 2);
+            });
         });
 
         describe('addInput', function() {
@@ -94,6 +95,29 @@ describe('OperationCode', function() {
             it('should have an additional input arg', function() {
                 var inputs = operation.getInputs();
                 assert.equal(inputs.length, 3);
+            });
+        });
+
+        describe('addOutput', function() {
+            var operation;
+
+            before(function() {
+                operation = new OperationCode(code);
+                operation.addOutput('myNewOutput');
+            });
+
+            it('should clear schema', function() {
+                assert(!operation._schema);
+            });
+
+            it('should add input to `execute` fn', function() {
+                var code = operation.getCode();
+                assert(code.includes('myNewOutput'));
+            });
+
+            it('should have an additional input arg', function() {
+                var inputs = operation.getOutputs();
+                assert.equal(inputs.length, 2);
             });
         });
 
@@ -125,7 +149,7 @@ describe('OperationCode', function() {
 
         });
 
-        describe.only('removeOutput', function() {
+        describe('removeOutput', function() {
             var operation,
                 result;
 

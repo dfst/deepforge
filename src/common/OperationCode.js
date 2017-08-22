@@ -82,19 +82,24 @@ var isNodeJs = typeof module === 'object' && module.exports;
     OperationCode.prototype.addInput = function(name) {
         if (!this._schema) this.updateSchema();
 
-        var schema = this._schema;
-        var pos = schema.inputs[schema.inputs.length-1].pos;
-        var argLen = schema.inputs[schema.inputs.length-1].name.length;
+        return this._addIOCode(this._schema.inputs, name);
+    };
+
+    OperationCode.prototype.addOutput = function(name) {
+        if (!this._schema) this.updateSchema();
+
+        return this._addIOCode(this._schema.outputs, name);
+    };
+
+    OperationCode.prototype._addIOCode = function(ios, name) {
+        var pos = ios[ios.length-1].pos;
+        var argLen = ios[ios.length-1].name.length;
         var line = this._lines[pos.line-1];
 
         this._lines[pos.line-1] = line.substring(0, pos.col + argLen) +
             ', ' + name + line.substring(pos.col + argLen);
 
         this.clearSchema();
-    };
-
-    OperationCode.prototype.addOutput = function(name) {
-        // TODO
     };
 
     OperationCode.prototype.renameInput = function(oldName, name) {
