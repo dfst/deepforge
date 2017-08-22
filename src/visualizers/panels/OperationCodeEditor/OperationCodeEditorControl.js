@@ -81,6 +81,7 @@ define([
     OperationCodeEditorControl.prototype.saveTextFor = function (id, code) {
         try {
             // Parse the operation implementation and detect change in inputs/outputs
+            // TODO: Update this to use the code object
             var schema = OperationParser.parse(code),
                 oldInputs = this.getDataNames(this._currentNodeId, true),
                 currentInputs = schema.inputs.map(input => input.name),

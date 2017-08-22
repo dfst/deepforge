@@ -1,9 +1,9 @@
-describe.only('OperationParser', function() {
+describe.only('OperationCode', function() {
     var fs = require('fs');
     var path = require('path');
     var assert = require('assert');
-    var parser = require('../../src/common/OperationParser');
-    var schema;
+    var OperationCode = require('../../src/common/OperationCode');
+    var operation;
 
     describe('example', function() {
         before(function() {
@@ -11,36 +11,36 @@ describe.only('OperationParser', function() {
             var filePath = path.join(__dirname, '..', 'test-cases', 'operations', 'example.py');
             var example = fs.readFileSync(filePath, 'utf8');
 
-            schema = parser.parse(example);
+            operation = new OperationCode(example);
         });
 
         it('should parse the correct name', function() {
-            assert.equal(schema.name, 'ExampleOperation');
+            assert.equal(operation.getName(), 'ExampleOperation');
         });
 
         it.skip('should parse the correct base', function() {
-            assert.equal(schema.base, 'Operation');
+            assert.equal(operation.getBase(), 'Operation');
         });
 
         describe('execute', function() {
             it('should parse the input names', function() {
                 const names = ['hello', 'world', 'count'];
-                assert.deepEqual(schema.inputs.map(input => input.name), names);
+                assert.deepEqual(operation.getInputs().map(input => input.name), names);
             });
 
             it.skip('should parse the input types', function() {
                 const types = ['str', 'str', 'int'];
-                assert.deepEqual(schema.inputs.map(input => input.type), types);
+                assert.deepEqual(operation.getInputs().map(input => input.type), types);
             });
 
             it('should parse the output names', function() {
                 const names = ['concat', 'count'];
-                assert.deepEqual(schema.outputs.map(output => output.name), names);
+                assert.deepEqual(operation.getOutputs().map(output => output.name), names);
             });
 
             it.skip('should parse the output types', function() {
                 const types = ['str', 'int'];
-                assert.deepEqual(schema.outputs.map(output => output.type), types);
+                assert.deepEqual(operation.getOutputs().map(output => output.type), types);
             });
         });
     });
@@ -50,23 +50,24 @@ describe.only('OperationParser', function() {
             var filePath = path.join(__dirname, '..', 'test-cases', 'operations', 'simple.py');
             var example = fs.readFileSync(filePath, 'utf8');
 
-            schema = parser.parse(example);
+            operation = new OperationCode(example);
         });
 
         it('should not require base class', function() {
-            assert.equal(schema.base, null);
+            assert.equal(operation.getBase(), null);
         });
 
         it('should detect one output', function() {
-            assert.equal(schema.outputs.length, 1);
+            assert.equal(operation.getOutputs().length, 1);
         });
 
         it.only('should provide the value', function() {
-            assert.equal(schema.outputs[0].value, '20');
+            assert.equal(operation.getOutputs()[0].value, '20');
         });
 
         it('should detect two inputs', function() {
-            assert.equal(schema.inputs.length, 2);
+            assert.equal(operation.getInputs().length, 2);
         });
     });
+
 });
