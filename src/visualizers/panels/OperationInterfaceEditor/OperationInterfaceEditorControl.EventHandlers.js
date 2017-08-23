@@ -229,5 +229,32 @@ define([
         this._client.completeTransaction();
     };
 
+    OperationInterfaceEditorEvents.prototype._saveAttributeForNode = function(nodeId, attr, value) {
+        // If nodeId is an input data node, rename the input
+        // If nodeId is an output data node, rename the output
+        var isDataNode = nodeId.indexOf(this._currentNodeId) === 0,
+            node = this._client.getNode(this._currentNodeId),
+            code = node.getAttribute('code'),
+            msg;
+
+        if (isDataNode && attr === 'name') {  // rename input/output
+            var operation = new OperationCode(code),
+                dataNode = this._client.getNode(nodeId),
+                oldName = dataNode.getAttribute(attr);
+
+            operation.rename(oldName, value);
+
+            msg = `Renaming ${oldName}->${value} in ${name}`;
+            this._client.startTransaction(msg);
+            EasyDAGControlEventHandlers.prototype._saveAttributeForNode.apply(this, arguments);
+            this._client.setAttribute(this._currentNodeId, 'code', operation.getCode());
+            this._client.completeTransaction();
+        } else if (nodeId === this._currentNodeId) {  // edit operation attributes
+            // TODO: rename operation
+            // TODO: set operation attribute default
+            EasyDAGControlEventHandlers.prototype._saveAttributeForNode.apply(this, arguments);
+        }
+    };
+
     return OperationInterfaceEditorEvents;
 });

@@ -10,7 +10,6 @@ define([
     'panels/EasyDAG/EasyDAGControl',
     'js/Constants',
     'deepforge/Constants',
-    'deepforge/OperationParser',
     'deepforge/viz/OperationControl',
     './OperationInterfaceEditorControl.EventHandlers',
     './Colors',
@@ -19,7 +18,6 @@ define([
     EasyDAGControl,
     GME_CONSTANTS,
     CONSTANTS,
-    OperationParser,
     OperationControl,
     OperationInterfaceEditorControlEvents,
     COLORS,
@@ -232,8 +230,8 @@ define([
                 // Parse the operation implementation for visual cues
                 // TODO
                 // Parse the operation implementation and detect change in inputs/outputs
-                var schema = OperationParser.parse(code);
-                console.log(schema);
+                //var schema = OperationParser.parse(code);
+                //console.log(schema);
             } catch (e) {
                 this._logger.debug(`failed parsing operation: ${e}`);
             }
@@ -368,11 +366,13 @@ define([
 
     ////////////////////// Unused input checking //////////////////////
     OperationInterfaceEditorControl.prototype.isUsedInput = function(name, ast) {
-        return this._isUsed(name, true, ast);
+        return true;
+        //return this._isUsed(name, true, ast);
     };
 
     OperationInterfaceEditorControl.prototype.isUsedOutput = function(name, ast) {
-        return this._isUsed(name, false, ast);
+        return true;
+        //return this._isUsed(name, false, ast);
     };
 
     OperationInterfaceEditorControl.prototype._isUsed = function(name, isInput, ast) {

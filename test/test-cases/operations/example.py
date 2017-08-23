@@ -8,3 +8,7 @@ class ExampleOperation(Operation):
         # Doing things
         concat = hello + world
         return concat, count
+
+    def other_method(a, b, c):
+        # Doing things
+        return a+b/c

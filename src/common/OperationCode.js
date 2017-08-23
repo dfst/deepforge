@@ -67,6 +67,7 @@ var isNodeJs = typeof module === 'object' && module.exports;
                 line = this._lines[match.pos.line-1];
 
                 startIndex = prev ? prev.pos.col + prev.value.toString().length : match.pos.col;
+                // only remove the following ',' if first input/output
                 endIndex = i === 0 && i < ios.length-1 ? ios[i+1].pos.col :
                     match.pos.col + match.value.toString().length;
                 this._lines[match.pos.line-1] = line.substring(0, startIndex) +
@@ -102,12 +103,19 @@ var isNodeJs = typeof module === 'object' && module.exports;
         this.clearSchema();
     };
 
-    OperationCode.prototype.renameInput = function(oldName, name) {
-        // TODO: rename the variable throughout the body
-    };
+    OperationCode.prototype.rename = function(oldName, name) {
+        if (!this._schema) this.updateSchema();
+        if (!this._schema.methods.execute) return;
 
-    OperationCode.prototype.renameOutput = function(oldName, name) {
-        // TODO: rename the variable throughout the body
+        var fnSchema = this._schema.methods.execute;
+        var startLine = fnSchema.bounds.start.line - 1;
+        var endLine = fnSchema.bounds.end ? fnSchema.bounds.end.line - 1 : this._lines.length;
+        var pattern = new RegExp('\\b' + oldName + '\\b');
+
+        for (var i = startLine; i < endLine; i++) {
+            this._lines[i] = this._lines[i].replace(pattern, name);
+        }
+        this.clearSchema();
     };
 
     OperationCode.prototype.getCode = function() {
@@ -127,7 +135,7 @@ var isNodeJs = typeof module === 'object' && module.exports;
         return node.constructor.name === name;
     };
 
-    OperationCode.prototype._parseFn = function (node, schema) {
+    OperationCode.prototype._parseFn = function (node, schema, next) {
         var name = node.name.v;
 
         schema.methods[name] = {};
@@ -171,6 +179,20 @@ var isNodeJs = typeof module === 'object' && module.exports;
                     }
                 };
             });
+
+        // Get the function location
+        schema.methods[name].bounds = {};
+        schema.methods[name].bounds.start = {
+            line: node.lineno,
+            col: node.col_offset
+        };
+
+        if (next) {
+            schema.methods[name].bounds.end = {
+                line: next.lineno,
+                col: next.col_offset
+            };
+        }
     };
 
     OperationCode.prototype.updateSchema = function () {
@@ -196,9 +218,12 @@ var isNodeJs = typeof module === 'object' && module.exports;
             schema.name = classDef.name.v;
 
             // TODO: what if fn is inherited?
-            classDef.body
-                .filter(node => this._isNodeType(node, 'FunctionDef'))
-                .forEach(node => this._parseFn(node, schema));
+            var nodes = classDef.body;
+            for (var i = 0; i < nodes.length; i++) {
+                if (this._isNodeType(nodes[i], 'FunctionDef')) {
+                    this._parseFn(nodes[i], schema, nodes[i+1]);
+                }
+            }
 
         }
 

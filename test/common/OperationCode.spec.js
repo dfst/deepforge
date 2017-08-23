@@ -1,4 +1,4 @@
-describe('OperationCode', function() {
+describe.only('OperationCode', function() {
     var fs = require('fs');
     var path = require('path');
     var assert = require('assert');
@@ -26,10 +26,10 @@ describe('OperationCode', function() {
 
         });
 
-        describe('renameInput', function() {
+        describe('rename', function() {
             before(function() {
                 operation = new OperationCode(code);
-                operation.renameInput('hello', 'goodbye');
+                operation.rename('hello', 'goodbye');
             });
 
             it('should rename input arg', function() {
