@@ -67,7 +67,7 @@ var isNodeJs = typeof module === 'object' && module.exports;
                 line = this._lines[match.pos.line-1];
 
                 startIndex = prev ? prev.pos.col + prev.value.toString().length : match.pos.col;
-                endIndex = i < ios.length-1 ? ios[i+1].pos.col :
+                endIndex = i === 0 && i < ios.length-1 ? ios[i+1].pos.col :
                     match.pos.col + match.value.toString().length;
                 this._lines[match.pos.line-1] = line.substring(0, startIndex) +
                     line.substring(endIndex);

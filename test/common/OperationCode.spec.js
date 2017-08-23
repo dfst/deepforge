@@ -6,23 +6,59 @@ describe('OperationCode', function() {
     var operation;
 
     describe('example', function() {
+        var code;
+
         before(function() {
             // load the example
             var filePath = path.join(__dirname, '..', 'test-cases', 'operations', 'example.py');
-            var example = fs.readFileSync(filePath, 'utf8');
-
-            operation = new OperationCode(example);
+            code = fs.readFileSync(filePath, 'utf8');
         });
 
-        it('should parse the correct name', function() {
-            assert.equal(operation.getName(), 'ExampleOperation');
+        describe('removeInput', function() {
+            before(function() {
+                operation = new OperationCode(code);
+                operation.removeInput('world');
+            });
+
+            it('should have 2 remaining inputs', function() {
+                assert.equal(operation.getInputs().length, 2);
+            });
+
         });
 
-        it.skip('should parse the correct base', function() {
-            assert.equal(operation.getBase(), 'Operation');
+        describe('renameInput', function() {
+            before(function() {
+                operation = new OperationCode(code);
+                operation.renameInput('hello', 'goodbye');
+            });
+
+            it('should rename input arg', function() {
+                var inputs = operation.getInputs();
+                var oldInput = inputs.find(input => input.name === 'hello');
+                var newInput = inputs.find(input => input.name === 'goodbye');
+
+                assert(!oldInput);
+                assert(newInput);
+            });
+
+            it('should rename occurrences in the fn', function() {
+                assert(!operation.getCode().includes('hello'));
+            });
         });
 
-        describe('execute', function() {
+        describe('parsing', function() {
+            before(function() {
+                operation = new OperationCode(code);
+            });
+
+            it('should parse the correct name', function() {
+                assert.equal(operation.getName(), 'ExampleOperation');
+            });
+
+            it.skip('should parse the correct base', function() {
+                assert.equal(operation.getBase(), 'Operation');
+            });
+
             it('should parse the input names', function() {
                 const names = ['hello', 'world', 'count'];
                 assert.deepEqual(operation.getInputs().map(input => input.name), names);
