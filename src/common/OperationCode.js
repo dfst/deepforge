@@ -11,6 +11,8 @@ var isNodeJs = typeof module === 'object' && module.exports;
         module.exports = (root.OperationParser = factory(Sk));
     }
 }(this, function(Sk) {
+    var MAIN_FN = 'execute';
+    var CTOR_FN = '__init__';
     var OperationCode = function(code, filename) {
         this._lines = code.split('\n');
         this.filename = filename;
@@ -28,28 +30,34 @@ var isNodeJs = typeof module === 'object' && module.exports;
         return this._schema.base;
     };
 
-    OperationCode.prototype.getOutputs = function() {
+    OperationCode.prototype.getArguments = function(method) {
         if (!this._schema) this.updateSchema();
+        if (!this._schema.methods[method]) return null;
 
-        return this._schema.outputs.slice();
+        return this._schema.methods[method].inputs.slice();
+    };
+
+    OperationCode.prototype.getReturnValues = function(method) {
+        if (!this._schema) this.updateSchema();
+        if (!this._schema.methods[method]) return null;
+
+        return this._schema.methods[method].outputs.slice();
+    };
+
+    OperationCode.prototype.getOutputs = function() {
+        return this.getReturnValues(MAIN_FN);
     };
 
     OperationCode.prototype.getInputs = function() {
-        if (!this._schema) this.updateSchema();
-
-        return this._schema.inputs.slice();
+        return this.getArguments(MAIN_FN);
     };
 
     OperationCode.prototype.removeInput = function(name) {
-        if (!this._schema) this.updateSchema();
-
-        return this._removeIOCode(this._schema.inputs, name);
+        return this._removeIOCode(this.getInputs(), name);
     };
 
     OperationCode.prototype.removeOutput = function(name) {
-        if (!this._schema) this.updateSchema();
-
-        return this._removeIOCode(this._schema.outputs, name);
+        return this._removeIOCode(this.getOutputs(), name);
     };
 
     OperationCode.prototype._removeIOCode = function(ios, name) {
@@ -81,33 +89,96 @@ var isNodeJs = typeof module === 'object' && module.exports;
     };
 
     OperationCode.prototype.addInput = function(name) {
-        if (!this._schema) this.updateSchema();
-
-        return this._addIOCode(this._schema.inputs, name);
+        return this.addArgument(MAIN_FN, name);
     };
 
     OperationCode.prototype.addOutput = function(name) {
-        if (!this._schema) this.updateSchema();
-
-        return this._addIOCode(this._schema.outputs, name);
+        return this.addReturnValue(MAIN_FN, name);
     };
 
-    OperationCode.prototype._addIOCode = function(ios, name) {
-        var pos = ios[ios.length-1].pos;
-        var argLen = ios[ios.length-1].name.length;
-        var line = this._lines[pos.line-1];
+    OperationCode.prototype.addArgument = function(method, name) {
+        return this._addIOCode(method, name, true);
+    };
 
-        this._lines[pos.line-1] = line.substring(0, pos.col + argLen) +
-            ', ' + name + line.substring(pos.col + argLen);
+    OperationCode.prototype.addReturnValue = function(method, name) {
+        return this._addIOCode(method, name, false);
+    };
+
+    OperationCode.prototype.addMethod = function(method) {
+        // TODO: get the position at the top of the class def
+        var line = this._schema.body.pos.line - 1,
+            indentSize = this._schema.body.pos.col,
+            indent = new Array(indentSize+1).join(' '),
+            snippet = indent + `def ${method}():`,
+            body = new Array(indentSize+5).join(' ') + 'return';
+
+        this._lines.splice(line-1, 0, '');
+        this._lines.splice(line-1, 0, snippet);
+        this._lines.splice(line, 0, body);
+
+        this.clearSchema();
+    };
+
+    OperationCode.prototype.hasMethod = function(method) {
+        if (!this._schema) this.updateSchema();
+        return this._schema.methods[method];
+    };
+
+    OperationCode.prototype._addIOCode = function(method, name, isInput) {
+        if (!this.hasMethod(method)) this.addMethod(method);
+
+        this.updateSchema();
+
+        var ios = this._schema.methods[method][isInput ? 'inputs' : 'outputs'].slice(),
+            node = this._schema.methods[method].node,
+            content = name,
+            line,
+            startIndex,
+            endIndex,
+            lineIndex;
+
+        if (ios.length) {
+            var pos = ios[ios.length-1].pos;
+            var argLen = ios[ios.length-1].name.length;
+
+            line = this._lines[pos.line-1];
+            startIndex = pos.col + argLen;
+            endIndex = pos.col + argLen;
+            content = ', ' + name;
+            lineIndex = pos.line - 1;
+        } else if (isInput) {
+            console.log(node);
+            //startIndex = ;
+            //endIndex = ;
+        } else {
+            var body = this._schema.methods[method].node.body;
+            var ret = body.find(node => this._isNodeType(node, 'Return_'))
+            if (ret) {
+                lineIndex = ret.lineno-1;
+                startIndex = endIndex = ret.col_offset + 6;
+                content = ' ' + content;
+            } else {  // add to the end of the body (no return statement)
+                var lastNode = body[body.length-1];
+                var indent = new Array(lastNode.col_offset+1).join(' ');
+
+                lineIndex = lastNode.lineno;
+                this._lines.splice(lineIndex, 0, '');
+                startIndex = endIndex = 0;
+                content = indent + 'return ' + content;
+            }
+        }
+
+        line = this._lines[lineIndex];
+        this._lines[lineIndex] = line.substring(0, startIndex) + content +
+            line.substring(endIndex);
 
         this.clearSchema();
     };
 
     OperationCode.prototype.rename = function(oldName, name) {
-        if (!this._schema) this.updateSchema();
-        if (!this._schema.methods.execute) return;
+        if (!this.hasMethod(MAIN_FN)) return;
 
-        var fnSchema = this._schema.methods.execute;
+        var fnSchema = this._schema.methods[MAIN_FN];
         var startLine = fnSchema.bounds.start.line - 1;
         var endLine = fnSchema.bounds.end ? fnSchema.bounds.end.line - 1 : this._lines.length;
         var pattern = new RegExp('\\b' + oldName + '\\b');
@@ -193,10 +264,12 @@ var isNodeJs = typeof module === 'object' && module.exports;
                 col: next.col_offset
             };
         }
+
+        schema.methods[name].node = node;
     };
 
     OperationCode.prototype.updateSchema = function () {
-        this._schema = this.getSchema();
+        if (!this._schema) this._schema = this.getSchema();
     };
 
     OperationCode.prototype.clearSchema = function () {
@@ -224,14 +297,31 @@ var isNodeJs = typeof module === 'object' && module.exports;
                     this._parseFn(nodes[i], schema, nodes[i+1]);
                 }
             }
+            schema.body = {
+                pos: {
+                    line: nodes[0].lineno,
+                    col: nodes[0].col_offset,
+                }
+            };
 
         }
 
-        schema.inputs = schema.methods.execute.inputs;
-        schema.outputs = schema.methods.execute.outputs;
         schema.ast = ast;
 
         return schema;
+    };
+
+    /////////////////////// Attributes /////////////////////// 
+    OperationCode.prototype.addAttribute = function(name, value) {
+        return this._addIOCode(CTOR_FN, name, true);
+    };
+
+    OperationCode.prototype.removeAttribute = function(name) {
+        // TODO
+    };
+
+    OperationCode.prototype.getAttributes = function() {
+        return this.getArguments(CTOR_FN);
     };
 
     return OperationCode;

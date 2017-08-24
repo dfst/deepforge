@@ -413,7 +413,7 @@ define([
             //return curr;
         //});
 
-        checker(node);
+        //checker(node);
         return isUsed;
     };
 

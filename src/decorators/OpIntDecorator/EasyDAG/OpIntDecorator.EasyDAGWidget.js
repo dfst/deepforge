@@ -103,6 +103,7 @@ define([
             () => this.deleteAttribute(name));
     };
 
+    // TODO: implement this in the widget controller (so we can update the op code)
     OpIntDecorator.prototype.deleteAttribute = function(name) {
         var opName = this._node.attributes.name.value,
             msg = `Deleting "${name}" attribute from "${opName}" operation`;
@@ -113,6 +114,7 @@ define([
         this.client.completeTransaction();
     };
 
+    // TODO: implement this in the widget controller (so we can update the op code)
     OpIntDecorator.prototype.setAttributeMeta = function(name, desc) {
         var schema,
             opName = this._node.attributes.name.value,

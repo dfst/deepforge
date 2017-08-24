@@ -252,6 +252,7 @@ define([
         } else if (nodeId === this._currentNodeId) {  // edit operation attributes
             // TODO: rename operation
             // TODO: set operation attribute default
+            console.log('setting attr', arguments);
             EasyDAGControlEventHandlers.prototype._saveAttributeForNode.apply(this, arguments);
         }
     };

@@ -1,4 +1,4 @@
-describe.only('OperationCode', function() {
+describe('OperationCode', function() {
     var fs = require('fs');
     var path = require('path');
     var assert = require('assert');
@@ -24,6 +24,28 @@ describe.only('OperationCode', function() {
                 assert.equal(operation.getInputs().length, 2);
             });
 
+        });
+
+        describe('attributes', function() {
+            describe('add', function() {
+                beforeEach(function() {
+                    operation = new OperationCode(code);
+                });
+
+                it('should add argument to __init__ method', function() {
+                    operation.addAttribute('number');
+                    var attrs = operation.getAttributes();
+                    // TODO
+                });
+
+                it('should set the default value', function() {
+                    // TODO
+                });
+            });
+
+            // TODO: add attribute
+            // TODO: remove attribute
+            // TODO: rename attribute?
         });
 
         describe('rename', function() {
@@ -96,6 +118,103 @@ describe.only('OperationCode', function() {
             var [first, second] = operation.getOutputs();
             assert.notEqual(first.name, second.name);
         });
+    });
+
+    describe('no-inputs/outputs', function() {
+        var code;
+
+        before(function() {
+            var filePath = path.join(__dirname, '..', 'test-cases', 'operations', 'no-inputs.py');
+            code = fs.readFileSync(filePath, 'utf8');
+        });
+
+        describe('parsing', function() {
+            beforeEach(function() {
+                operation = new OperationCode(code);
+            });
+
+            it('should not require base class', function() {
+                assert.equal(operation.getBase(), null);
+            });
+
+            it('should detect zero output', function() {
+                assert.equal(operation.getOutputs().length, 0);
+            });
+
+            it('should detect zero inputs', function() {
+                assert.equal(operation.getInputs().length, 0);
+            });
+        });
+
+        describe('addInput', function() {
+            var operation;
+
+            before(function() {
+                operation = new OperationCode(code);
+                operation.addInput('first');
+            });
+
+            it('should clear schema', function() {
+                assert(!operation._schema);
+            });
+
+            it('should add input to `execute` fn', function() {
+                var code = operation.getCode();
+                assert(code.includes('first'));
+            });
+
+            it('should have an additional input arg', function() {
+                var inputs = operation.getInputs();
+                assert.equal(inputs.length, 1);
+            });
+        });
+
+        describe('addOutput', function() {
+            var operation;
+
+            describe('lone return', function() {
+                before(function() {
+                    operation = new OperationCode(code);
+                    operation.addOutput('myNewOutput');
+                });
+
+                it('should clear schema', function() {
+                    assert(!operation._schema);
+                });
+
+                it('should add input to `execute` fn', function() {
+                    var code = operation.getCode();
+                    assert(code.includes('myNewOutput'));
+                });
+
+                it('should have an additional input arg', function() {
+                    var inputs = operation.getOutputs();
+                    assert.equal(inputs.length, 1);
+                });
+            });
+
+            describe.only('no return', function() {
+                before(function() {
+                    operation = new OperationCode(code);
+                    operation.addReturnValue('no_return', 'myNewOutput');
+                });
+
+                it('should clear schema', function() {
+                    assert(!operation._schema);
+                });
+
+                it('should add input to `execute` fn', function() {
+                    var code = operation.getCode();
+                    assert(code.includes('myNewOutput'));
+                });
+
+                it('should have an additional input arg', function() {
+                    var outputs = operation.getReturnValues('no_return');
+                    assert.equal(outputs.length, 1);
+                });
+            });
+        });
+
     });
 
     describe('simple', function() {
