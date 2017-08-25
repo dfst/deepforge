@@ -1,4 +1,4 @@
-describe('OperationCode', function() {
+describe.only('OperationCode', function() {
     var fs = require('fs');
     var path = require('path');
     var assert = require('assert');
@@ -193,7 +193,7 @@ describe('OperationCode', function() {
                 });
             });
 
-            describe.only('no return', function() {
+            describe('no return', function() {
                 before(function() {
                     operation = new OperationCode(code);
                     operation.addReturnValue('no_return', 'myNewOutput');

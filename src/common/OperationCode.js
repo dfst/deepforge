@@ -131,6 +131,7 @@ var isNodeJs = typeof module === 'object' && module.exports;
 
         var ios = this._schema.methods[method][isInput ? 'inputs' : 'outputs'].slice(),
             node = this._schema.methods[method].node,
+            body = node.body,
             content = name,
             line,
             startIndex,
@@ -147,12 +148,14 @@ var isNodeJs = typeof module === 'object' && module.exports;
             content = ', ' + name;
             lineIndex = pos.line - 1;
         } else if (isInput) {
-            console.log(node);
-            //startIndex = ;
-            //endIndex = ;
+            var first = body[0];
+            lineIndex = first.lineno - 2;
+            line = this._lines[lineIndex];
+            this._lines[lineIndex] = line.replace(/\).*?:/, name + '):');
+
+            return this.clearSchema();
         } else {
-            var body = this._schema.methods[method].node.body;
-            var ret = body.find(node => this._isNodeType(node, 'Return_'))
+            var ret = body.find(node => this._isNodeType(node, 'Return_'));
             if (ret) {
                 lineIndex = ret.lineno-1;
                 startIndex = endIndex = ret.col_offset + 6;
