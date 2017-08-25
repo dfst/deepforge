@@ -181,7 +181,7 @@ define([
             msg = `Updating the interface of ${name}`,
             code = node.getAttribute('code'),
             id,
-            operation = new OperationCode(code),
+            operation,
             dataName;
 
         // Update the source code if the inputs/outputs changed
@@ -192,12 +192,18 @@ define([
         id = this.createIONode(this._currentNodeId, typeId, isInput, baseName, true);
         dataName = this._client.getNode(id).getAttribute('name');
 
-        if (isInput) {
-            operation.addInput(dataName);
-        } else {
-            operation.addOutput(dataName);
-        }
+        try {
+            operation = new OperationCode(code);
+            if (isInput) {
+                operation.addInput(dataName);
+            } else {
+                operation.addOutput(dataName);
+            }
 
+            this._client.setAttribute(this._currentNodeId, 'code', operation.getCode());
+        } catch(e) {
+            this.logger.debug(`could not update the code - invalid python!: ${e}`);
+        }
         this._client.completeTransaction();
 
         return id;
