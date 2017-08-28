@@ -54,6 +54,16 @@ define([
             return true;
         };
 
+        this.ItemClass.prototype.setAttributeMeta = function(name, desc) {
+            var item = this;
+            this._widget.setAttributeMeta(item.id, name || desc.name, desc);
+        };
+
+        this.ItemClass.prototype.deleteAttribute = function(name) {
+            var item = this;
+            this._widget.deleteAttribute(item.id, name);
+        };
+
     };
 
     OperationInterfaceEditorWidget.prototype.onAddItemSelected = function(selected, isInput) {

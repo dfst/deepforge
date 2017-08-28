@@ -17,6 +17,9 @@ define([
         this._widget.changePtrName = this.changePtrName.bind(this);
         this._widget.removePtr = this.removePtr.bind(this);
         this._widget.getCreationNode = this.getCreationNode.bind(this);
+
+        this._widget.setAttributeMeta = this.setAttributeMeta.bind(this);
+        this._widget.deleteAttribute = this.deleteAttribute.bind(this);
     };
 
     OperationInterfaceEditorEvents.prototype.getCreationNode = function(type, id) {
@@ -262,6 +265,81 @@ define([
             console.log('setting attr', arguments);
             EasyDAGControlEventHandlers.prototype._saveAttributeForNode.apply(this, arguments);
         }
+    };
+
+    OperationInterfaceEditorEvents.prototype.getOperationCode = function() {
+        var node = this._client.getNode(this._currentNodeId),
+            code = node.getAttribute('code'),
+            operation = new OperationCode(code);
+
+        return operation;
+    };
+
+    OperationInterfaceEditorEvents.prototype.getOperationName = function() {
+        return this._client.getNode(this._currentNodeId).getAttribute('name');
+    };
+
+    OperationInterfaceEditorEvents.prototype.setAttributeMeta = function(nodeId, name, desc) {
+        var schema,
+            opName = this.getOperationName(),
+            msg = `Updating "${name}" attribute in "${opName}" operation`;
+
+        // Create the schema from the desc
+        schema = {
+            type: desc.type,
+            min: desc.min,
+            max: desc.max,
+            regexp: desc.regexp
+        };
+
+        if (desc.isEnum) {
+            schema.enum = desc.enumValues;
+        }
+
+        // Update the operation's attribute
+        this._client.startTransaction(msg);
+
+        if (name !== desc.name) {  // Renaming attribute
+            if (name) {
+                this._client.delAttributeMeta(nodeId, name);
+                this._client.delAttribute(nodeId, name);
+            }
+            name = desc.name;
+        }
+
+        this._client.setAttributeMeta(nodeId, name, schema);
+        this._client.setAttribute(nodeId, name, desc.defaultValue);
+
+        // update the operation code
+        try {
+            var operation = this.getOperationCode();
+            operation.addAttribute(name, desc.defaultValue);
+            this._client.setAttribute(this._currentNodeId, 'code', operation.getCode());
+        } catch(e) {
+            this.logger.debug(`could not update the code - invalid python!: ${e}`);
+        }
+
+        this._client.completeTransaction();
+    };
+
+    OperationInterfaceEditorEvents.prototype.deleteAttribute = function(nodeId, name) {
+        var opName = this._client.getNode(nodeId).getAttribute('name'),
+            msg = `Deleting "${name}" attribute from "${opName}" operation`;
+
+        this._client.startTransaction(msg);
+        this._client.delAttributeMeta(nodeId, name);
+        this._client.delAttribute(nodeId, name);
+
+        // update the operation code
+        try {
+            var operation = this.getOperationCode();
+            operation.removeAttribute(name);
+            this._client.setAttribute(this._currentNodeId, 'code', operation.getCode());
+        } catch(e) {
+            this.logger.debug(`could not update the code - invalid python!: ${e}`);
+        }
+
+        this._client.completeTransaction();
     };
 
     return OperationInterfaceEditorEvents;
