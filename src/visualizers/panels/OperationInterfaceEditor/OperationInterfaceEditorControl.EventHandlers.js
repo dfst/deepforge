@@ -252,6 +252,7 @@ define([
 
             msg = `Renaming ${oldName}->${value} in ${name}`;
             this._client.startTransaction(msg);
+            // TODO: if any of the inputs have the same name, they should also be renamed
             EasyDAGControlEventHandlers.prototype._saveAttributeForNode.apply(this, arguments);
             this._client.setAttribute(this._currentNodeId, 'code', operation.getCode());
             this._client.completeTransaction();

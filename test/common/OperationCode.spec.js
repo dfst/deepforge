@@ -35,17 +35,15 @@ describe.only('OperationCode', function() {
                 it('should add argument to __init__ method', function() {
                     operation.addAttribute('number');
                     var attrs = operation.getAttributes();
-                    // TODO
+                    assert(attrs.find(attr => attr.name === 'number'));
                 });
 
                 it('should set the default value', function() {
-                    // TODO
+                    operation.addAttribute('number', 50);
+                    var code = operation.getCode();
+                    assert(code.includes('number=50'));
                 });
             });
-
-            // TODO: add attribute
-            // TODO: remove attribute
-            // TODO: rename attribute?
         });
 
         describe('rename', function() {
@@ -238,7 +236,7 @@ describe.only('OperationCode', function() {
                 assert.equal(operation.getOutputs().length, 1);
             });
 
-            it('should provide the value', function() {
+            it.skip('should provide the value', function() {
                 assert.equal(operation.getOutputs()[0].value, '20');
             });
 
@@ -306,11 +304,11 @@ describe.only('OperationCode', function() {
                 assert.equal(result.name, 'number');
             });
 
-            it('should only have one remaining argument', function() {
+            it('should have one remaining argument', function() {
                 assert.equal(operation.getInputs().length, 1);
             });
 
-            it('should only not have removed argument', function() {
+            it('should have removed argument', function() {
                 assert(!operation.getCode().includes('number'));
             });
 
@@ -338,7 +336,7 @@ describe.only('OperationCode', function() {
                 assert.equal(operation.getOutputs().length, 0);
             });
 
-            it('should only not have removed argument', function() {
+            it('should have removed argument', function() {
                 assert(!operation.getCode().includes('20'));
             });
 
@@ -347,6 +345,33 @@ describe.only('OperationCode', function() {
                 assert.equal(result, null);
             });
 
+        });
+
+        describe('attributes', function() {
+            describe('remove', function() {
+                beforeEach(function() {
+                    operation = new OperationCode(code);
+                });
+
+                it('should remove argument from __init__ method', function() {
+                    operation.removeAttribute('attr');
+                    var attrs = operation.getAttributes();
+                    assert(!attrs.find(attr => attr.name === 'attr'));
+                });
+
+                it('should remove argument w/ default value', function() {
+                    operation.removeAttribute('withDefault');
+                    var attrs = operation.getAttributes();
+                    assert(!attrs.find(attr => attr.name === 'withDefault'));
+                });
+
+                it('should remove default value', function() {
+                    operation.removeAttribute('withDefault');
+                    var code = operation.getCode();
+                    assert(!code.includes('5'));
+                });
+            });
+            // TODO: rename attribute?
         });
     });
 

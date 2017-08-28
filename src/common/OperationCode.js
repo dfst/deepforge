@@ -74,10 +74,10 @@ var isNodeJs = typeof module === 'object' && module.exports;
             if (match.name === name) {
                 line = this._lines[match.pos.line-1];
 
-                startIndex = prev ? prev.pos.col + prev.value.toString().length : match.pos.col;
+                startIndex = prev ? prev.pos.col + prev.len : match.pos.col;
                 // only remove the following ',' if first input/output
                 endIndex = i === 0 && i < ios.length-1 ? ios[i+1].pos.col :
-                    match.pos.col + match.value.toString().length;
+                    match.pos.col + match.len;
                 this._lines[match.pos.line-1] = line.substring(0, startIndex) +
                     line.substring(endIndex);
 
@@ -96,8 +96,18 @@ var isNodeJs = typeof module === 'object' && module.exports;
         return this.addReturnValue(MAIN_FN, name);
     };
 
-    OperationCode.prototype.addArgument = function(method, name) {
-        return this._addIOCode(method, name, true);
+    OperationCode.prototype.addArgument = function(method, name, value) {
+        var pos = this._addIOCode(method, name, true);
+
+        if (value) {  // set the default value
+            var line = this._lines[pos.line-1];
+            var col = pos.col + name.length;
+            value = value.toString();
+
+            this._lines[pos.line-1] = line.substring(0, col) + '=' + value +
+                line.substring(col);
+        }
+        return pos;
     };
 
     OperationCode.prototype.addReturnValue = function(method, name) {
@@ -105,7 +115,8 @@ var isNodeJs = typeof module === 'object' && module.exports;
     };
 
     OperationCode.prototype.addMethod = function(method) {
-        // TODO: get the position at the top of the class def
+        // get the position at the top of the class def and
+        // add a method right below it
         var line = this._schema.body.pos.line - 1,
             indentSize = this._schema.body.pos.col,
             indent = new Array(indentSize+1).join(' '),
@@ -149,11 +160,17 @@ var isNodeJs = typeof module === 'object' && module.exports;
             lineIndex = pos.line - 1;
         } else if (isInput) {
             var first = body[0];
+
             lineIndex = first.lineno - 2;
             line = this._lines[lineIndex];
+            startIndex = line.match(/\).*?:/).index;
             this._lines[lineIndex] = line.replace(/\).*?:/, name + '):');
 
-            return this.clearSchema();
+            this.clearSchema();
+            return {
+                line: lineIndex + 1,
+                col: startIndex
+            };
         } else {
             var ret = body.find(node => this._isNodeType(node, 'Return_'));
             if (ret) {
@@ -176,6 +193,10 @@ var isNodeJs = typeof module === 'object' && module.exports;
             line.substring(endIndex);
 
         this.clearSchema();
+        return {
+            line: lineIndex + 1,
+            col: startIndex
+        };
     };
 
     OperationCode.prototype.rename = function(oldName, name) {
@@ -214,10 +235,23 @@ var isNodeJs = typeof module === 'object' && module.exports;
 
         schema.methods[name] = {};
         // add inputs
-        schema.methods[name].inputs = node.args.args.map(arg => {
+        var argLen = node.args.args.length;
+        var offset = argLen - node.args.defaults.length;
+        var len;
+
+        schema.methods[name].inputs = node.args.args.map((arg, i) => {
+            // get the default value and position
+            i = i - offset;
+            if (i >= 0) {
+                var def = node.args.defaults[i];
+                len = def.col_offset - arg.col_offset + 1;  // add the '='
+            } else {
+                len = arg.id.v.length;
+            }
             return {
                 name: arg.id.v,
-                value: arg.id.v,
+                default: def,
+                len: len,
                 pos: {
                     line: arg.lineno,
                     col: arg.col_offset
@@ -246,7 +280,7 @@ var isNodeJs = typeof module === 'object' && module.exports;
 
                 return {
                     name: name,
-                    value: value,
+                    len: value.toString().length,
                     pos: {
                         line: arg.lineno,
                         col: arg.col_offset
@@ -316,11 +350,11 @@ var isNodeJs = typeof module === 'object' && module.exports;
 
     /////////////////////// Attributes /////////////////////// 
     OperationCode.prototype.addAttribute = function(name, value) {
-        return this._addIOCode(CTOR_FN, name, true);
+        return this.addArgument(CTOR_FN, name, value);
     };
 
     OperationCode.prototype.removeAttribute = function(name) {
-        // TODO
+        return this._removeIOCode(this.getAttributes(), name);
     };
 
     OperationCode.prototype.getAttributes = function() {
