@@ -44,6 +44,41 @@ describe.only('OperationCode', function() {
                     assert(code.includes('number=50'));
                 });
             });
+
+            describe('setAttributeDefault', function() {
+                beforeEach(function() {
+                    operation = new OperationCode(code);
+                });
+
+                it('should set the default value', function() {
+                    operation.addAttribute('number');
+                    operation.setAttributeDefault('number', 50);
+                    var code = operation.getCode();
+                    assert(code.includes('number=50'));
+                });
+
+                it('should change the default value', function() {
+                    operation.addAttribute('number');
+                    operation.setAttributeDefault('number', 50);
+                    operation.setAttributeDefault('number', 7);
+                    var code = operation.getCode();
+                    assert(code.includes('number=7)'));
+                });
+
+                it('should add quotes to default string', function() {
+                    operation.addAttribute('number');
+                    operation.setAttributeDefault('number', 'hello');
+                    var code = operation.getCode();
+                    assert(code.includes('number=\'hello\')'));
+                });
+
+                it('should convert boolean to python bool', function() {
+                    operation.addAttribute('number');
+                    operation.setAttributeDefault('number', true);
+                    var code = operation.getCode();
+                    assert(code.includes('number=True)'));
+                });
+            });
         });
 
         describe('rename', function() {

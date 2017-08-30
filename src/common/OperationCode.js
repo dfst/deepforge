@@ -110,6 +110,67 @@ var isNodeJs = typeof module === 'object' && module.exports;
         return pos;
     };
 
+    OperationCode.prototype.setAttributeDefault = function(name, value) {
+        return this.setDefaultValue(OperationCode.CTOR_FN, name, value);
+    };
+
+    OperationCode.prototype.setDefaultValue = function(method, name, value) {
+        if (!this._schema) this.updateSchema();
+
+        var inputs = this.getArguments(method);
+        if (inputs === null) throw 'method "' + method + '" not found!';
+
+        var input = inputs.find(node => node.name === name);
+        if (!input) {
+            throw 'method "' + method + '" does not have argument "' + 
+                name + '" not found!';
+        }
+
+        if (input.default) this.removeDefaultValue(method, name);
+
+        var pos = input.pos;
+        var line = this._lines[pos.line-1];
+        var col = pos.col + name.length;
+        value = this._serializeAsPython(value);
+
+        this._lines[pos.line-1] = line.substring(0, col) + '=' + value +
+            line.substring(col);
+
+        this.clearSchema();
+    };
+
+    OperationCode.types = {};
+    OperationCode.types.string = value => '\'' + value + '\'';
+    OperationCode.types.boolean = value => value ? 'True' : 'False';
+    OperationCode.prototype._serializeAsPython = function(value) {
+        var type = typeof value;
+        if (OperationCode.types[type]) {
+            return OperationCode.types[type](value);
+        }
+        return value.toString();
+    };
+
+    OperationCode.prototype.removeDefaultValue = function(method, name) {
+        if (!this._schema) this.updateSchema();
+
+        var inputs = this.getArguments(method);
+        var input = inputs.find(node => node.name === name);
+
+        // remove the default value
+        if (input.default) {
+            var start = input.pos.col + input.name.length;
+            var end = input.default.col_offset + input.default.n.v.toString().length;
+            this._removeChunk(input.default.lineno-1, start, end);
+        }
+        this.clearSchema();
+    };
+
+    OperationCode.prototype._removeChunk = function(lineIndex, start, end) {
+        var line = this._lines[lineIndex];
+
+        this._lines[lineIndex] = line.substring(0, start) + line.substring(end);
+    };
+
     OperationCode.prototype.addReturnValue = function(method, name) {
         return this._addIOCode(method, name, false);
     };
