@@ -11,12 +11,12 @@ var isNodeJs = typeof module === 'object' && module.exports;
         module.exports = (root.OperationParser = factory(Sk));
     }
 }(this, function(Sk) {
-    var MAIN_FN = 'execute';
-    var CTOR_FN = '__init__';
     var OperationCode = function(code, filename) {
         this._lines = code.split('\n');
         this.filename = filename;
     };
+    OperationCode.MAIN_FN = 'execute';
+    OperationCode.CTOR_FN = '__init__';
 
     OperationCode.prototype.getName = function() {
         if (!this._schema) this.updateSchema();
@@ -45,11 +45,11 @@ var isNodeJs = typeof module === 'object' && module.exports;
     };
 
     OperationCode.prototype.getOutputs = function() {
-        return this.getReturnValues(MAIN_FN);
+        return this.getReturnValues(OperationCode.MAIN_FN);
     };
 
     OperationCode.prototype.getInputs = function() {
-        return this.getArguments(MAIN_FN);
+        return this.getArguments(OperationCode.MAIN_FN);
     };
 
     OperationCode.prototype.removeInput = function(name) {
@@ -89,11 +89,11 @@ var isNodeJs = typeof module === 'object' && module.exports;
     };
 
     OperationCode.prototype.addInput = function(name) {
-        return this.addArgument(MAIN_FN, name);
+        return this.addArgument(OperationCode.MAIN_FN, name);
     };
 
     OperationCode.prototype.addOutput = function(name) {
-        return this.addReturnValue(MAIN_FN, name);
+        return this.addReturnValue(OperationCode.MAIN_FN, name);
     };
 
     OperationCode.prototype.addArgument = function(method, name, value) {
@@ -199,10 +199,24 @@ var isNodeJs = typeof module === 'object' && module.exports;
         };
     };
 
-    OperationCode.prototype.rename = function(oldName, name) {
-        if (!this.hasMethod(MAIN_FN)) return;
+    OperationCode.prototype.renameIn = function(method, oldName, name) {
+        if (!this.hasMethod(method)) return;
 
-        var fnSchema = this._schema.methods[MAIN_FN];
+        var fnSchema = this._schema.methods[method];
+        var startLine = fnSchema.bounds.start.line - 1;
+        var endLine = fnSchema.bounds.end ? fnSchema.bounds.end.line - 1 : this._lines.length;
+        var pattern = new RegExp('\\b' + oldName + '\\b');
+
+        for (var i = startLine; i < endLine; i++) {
+            this._lines[i] = this._lines[i].replace(pattern, name);
+        }
+        this.clearSchema();
+    };
+
+    OperationCode.prototype.rename = function(oldName, name) {
+        if (!this.hasMethod(OperationCode.MAIN_FN)) return;
+
+        var fnSchema = this._schema.methods[OperationCode.MAIN_FN];
         var startLine = fnSchema.bounds.start.line - 1;
         var endLine = fnSchema.bounds.end ? fnSchema.bounds.end.line - 1 : this._lines.length;
         var pattern = new RegExp('\\b' + oldName + '\\b');
@@ -350,7 +364,7 @@ var isNodeJs = typeof module === 'object' && module.exports;
 
     /////////////////////// Attributes /////////////////////// 
     OperationCode.prototype.addAttribute = function(name, value) {
-        return this.addArgument(CTOR_FN, name, value);
+        return this.addArgument(OperationCode.CTOR_FN, name, value);
     };
 
     OperationCode.prototype.removeAttribute = function(name) {
@@ -358,7 +372,7 @@ var isNodeJs = typeof module === 'object' && module.exports;
     };
 
     OperationCode.prototype.getAttributes = function() {
-        return this.getArguments(CTOR_FN);
+        return this.getArguments(OperationCode.CTOR_FN);
     };
 
     return OperationCode;

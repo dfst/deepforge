@@ -282,6 +282,8 @@ define([
     OperationInterfaceEditorEvents.prototype.setAttributeMeta = function(nodeId, name, desc) {
         var schema,
             opName = this.getOperationName(),
+            isRename = name !== desc.name,
+            isNewAttribute = name === null,
             msg = `Updating "${name}" attribute in "${opName}" operation`;
 
         // Create the schema from the desc
@@ -299,7 +301,22 @@ define([
         // Update the operation's attribute
         this._client.startTransaction(msg);
 
-        if (name !== desc.name) {  // Renaming attribute
+        // update the operation code
+        try {
+            var operation = this.getOperationCode();
+            if (isRename) {
+                operation.renameIn(OperationCode.CTOR_FN, name, desc.name);
+            } else if (isNewAttribute) {
+                operation.addAttribute(name, desc.defaultValue);
+            } else {  // change default?
+                // TODO
+            }
+            this._client.setAttribute(this._currentNodeId, 'code', operation.getCode());
+        } catch(e) {
+            this.logger.debug(`could not update the code - invalid python!: ${e}`);
+        }
+
+        if (isRename) {  // Renaming attribute
             if (name) {
                 this._client.delAttributeMeta(nodeId, name);
                 this._client.delAttribute(nodeId, name);
@@ -309,15 +326,6 @@ define([
 
         this._client.setAttributeMeta(nodeId, name, schema);
         this._client.setAttribute(nodeId, name, desc.defaultValue);
-
-        // update the operation code
-        try {
-            var operation = this.getOperationCode();
-            operation.addAttribute(name, desc.defaultValue);
-            this._client.setAttribute(this._currentNodeId, 'code', operation.getCode());
-        } catch(e) {
-            this.logger.debug(`could not update the code - invalid python!: ${e}`);
-        }
 
         this._client.completeTransaction();
     };
