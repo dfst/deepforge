@@ -56,7 +56,7 @@ define([
 
         this.ItemClass.prototype.setAttributeMeta = function(name, desc) {
             var item = this;
-            this._widget.setAttributeMeta(item.id, name || desc.name, desc);
+            this._widget.setAttributeMeta(item.id, name, desc);
         };
 
         this.ItemClass.prototype.deleteAttribute = function(name) {

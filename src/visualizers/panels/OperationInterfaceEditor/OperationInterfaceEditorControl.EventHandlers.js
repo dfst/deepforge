@@ -282,7 +282,7 @@ define([
     OperationInterfaceEditorEvents.prototype.setAttributeMeta = function(nodeId, name, desc) {
         var schema,
             opName = this.getOperationName(),
-            isRename = name !== desc.name,
+            isRename = name && name !== desc.name,
             isNewAttribute = name === null,
             msg = `Updating "${name}" attribute in "${opName}" operation`;
 
@@ -307,10 +307,9 @@ define([
             if (isRename) {
                 operation.renameIn(OperationCode.CTOR_FN, name, desc.name);
             } else if (isNewAttribute) {
-                operation.addAttribute(name, desc.defaultValue);
-            } else {  // change default?
-                // TODO
+                operation.addAttribute(desc.name);
             }
+            operation.setAttributeDefault(desc.name, desc.defaultValue);
             this._client.setAttribute(this._currentNodeId, 'code', operation.getCode());
         } catch(e) {
             this.logger.debug(`could not update the code - invalid python!: ${e}`);
@@ -324,8 +323,8 @@ define([
             name = desc.name;
         }
 
-        this._client.setAttributeMeta(nodeId, name, schema);
-        this._client.setAttribute(nodeId, name, desc.defaultValue);
+        this._client.setAttributeMeta(nodeId, desc.name, schema);
+        this._client.setAttribute(nodeId, desc.name, desc.defaultValue);
 
         this._client.completeTransaction();
     };
