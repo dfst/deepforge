@@ -65,6 +65,13 @@ describe.only('OperationCode', function() {
                     assert(code.includes('number=7)'));
                 });
 
+                it('should remove string defaults', function() {
+                    operation.addAttribute('number', 'hello');
+                    operation.removeAttributeDefault('number');
+                    var code = operation.getCode();
+                    assert(code.includes('number)'));
+                });
+
                 it('should add quotes to default string', function() {
                     operation.addAttribute('number');
                     operation.setAttributeDefault('number', 'hello');

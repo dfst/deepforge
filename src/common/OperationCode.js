@@ -100,12 +100,7 @@ var isNodeJs = typeof module === 'object' && module.exports;
         var pos = this._addIOCode(method, name, true);
 
         if (value) {  // set the default value
-            var line = this._lines[pos.line-1];
-            var col = pos.col + name.length;
-            value = value.toString();
-
-            this._lines[pos.line-1] = line.substring(0, col) + '=' + value +
-                line.substring(col);
+            this.setAttributeDefault(name, value);
         }
         return pos;
     };
@@ -150,6 +145,22 @@ var isNodeJs = typeof module === 'object' && module.exports;
         return value.toString();
     };
 
+    OperationCode.lengthOf = {};
+    OperationCode.lengthOf.Str = node => node.s.v.length + 2;
+    OperationCode.lengthOf.Num = node => node.n.v.toString().length;
+    OperationCode.lengthOf.Name = node => node.id.v.length;
+    OperationCode.prototype._getValueLength = function(node) {
+        var type = node.constructor.name;
+        if (OperationCode.lengthOf[type]) {
+            return OperationCode.lengthOf[type](node);
+        }
+        return node.toString().length;
+    };
+
+    OperationCode.prototype.removeAttributeDefault = function(name) {
+        return this.removeDefaultValue(OperationCode.CTOR_FN, name);
+    };
+
     OperationCode.prototype.removeDefaultValue = function(method, name) {
         if (!this._schema) this.updateSchema();
 
@@ -159,7 +170,7 @@ var isNodeJs = typeof module === 'object' && module.exports;
         // remove the default value
         if (input.default) {
             var start = input.pos.col + input.name.length;
-            var end = input.default.col_offset + input.default.n.v.toString().length;
+            var end = input.default.col_offset + this._getValueLength(input.default);
             this._removeChunk(input.default.lineno-1, start, end);
         }
         this.clearSchema();
