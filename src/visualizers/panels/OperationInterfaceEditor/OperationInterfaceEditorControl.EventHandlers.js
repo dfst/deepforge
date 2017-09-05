@@ -114,7 +114,7 @@ define([
         try {  // add new input argument
             // TODO: ensure no name collisions
             var operation = this.getOperationCode();
-            operation.addAttribute(ptrName);
+            operation.addReference(ptrName);
             this._client.setAttribute(this._currentNodeId, 'code', operation.getCode());
         } catch(e) {
             this.logger.debug(`could not update the code - invalid python!: ${e}`);
@@ -167,6 +167,9 @@ define([
 
         this._client.startTransaction(msg);
 
+        this.updateCode(operation =>
+            operation.renameIn(OperationCode.CTOR_FN, from, to));
+
         // Currently, this will not update children already using old name...
         this._client.delPointerMeta(this._currentNodeId, from);
         this._client.delPointer(this._currentNodeId, from);
@@ -184,6 +187,8 @@ define([
         // Currently, this will not update children already using old name...
         this._client.delPointerMeta(this._currentNodeId, name);
         this._client.delPointer(this._currentNodeId, name);
+
+        this.updateCode(operation => operation.removeReference(name));
         this._client.completeTransaction();
     };
 
@@ -282,6 +287,16 @@ define([
             operation = new OperationCode(code);
 
         return operation;
+    };
+
+    OperationInterfaceEditorEvents.prototype.updateCode = function(fn) {
+        try {
+            var operation = this.getOperationCode();
+            fn(operation);
+            this._client.setAttribute(this._currentNodeId, 'code', operation.getCode());
+        } catch(e) {
+            this.logger.debug(`could not update the code - invalid python!: ${e}`);
+        }
     };
 
     OperationInterfaceEditorEvents.prototype.getOperationName = function() {

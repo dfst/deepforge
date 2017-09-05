@@ -100,6 +100,10 @@ var isNodeJs = typeof module === 'object' && module.exports;
         this._addIOCode(method, name, true, value);
     };
 
+    OperationCode.prototype.removeArgument = function(method, name) {
+        return this._removeIOCode(this.getArguments(method), name);
+    };
+
     OperationCode.prototype.setAttributeDefault = function(name, value) {
         return this.setDefaultValue(OperationCode.CTOR_FN, name, value);
     };
@@ -450,13 +454,14 @@ var isNodeJs = typeof module === 'object' && module.exports;
         return this.removeArgument(OperationCode.CTOR_FN, name);
     };
 
-    OperationCode.prototype.removeArgument = function(method, name) {
-        return this._removeIOCode(this.getArguments(method), name);
-    };
-
     OperationCode.prototype.getAttributes = function() {
         return this.getArguments(OperationCode.CTOR_FN);
     };
+
+    /////////////////////// Reference /////////////////////// 
+    OperationCode.prototype.addReference = OperationCode.prototype.addAttribute;
+    OperationCode.prototype.removeReference = OperationCode.prototype.removeAttribute;
+    OperationCode.prototype.getReferences = OperationCode.prototype.getAttributes;
 
     return OperationCode;
 }));
