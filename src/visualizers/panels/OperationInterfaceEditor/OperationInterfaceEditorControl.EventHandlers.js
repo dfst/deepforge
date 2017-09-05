@@ -111,14 +111,7 @@ define([
 
         console.log('adding ref', ptrName, '(', targetId, ')');
         this._client.startTransaction(msg);
-        try {  // add new input argument
-            // TODO: ensure no name collisions
-            var operation = this.getOperationCode();
-            operation.addReference(ptrName);
-            this._client.setAttribute(this._currentNodeId, 'code', operation.getCode());
-        } catch(e) {
-            this.logger.debug(`could not update the code - invalid python!: ${e}`);
-        }
+        this.updateCode(operation => operation.addReference(ptrName));
         this._client.setPointerMeta(this._currentNodeId, ptrName, {
             min: 1,
             max: 1,
@@ -196,9 +189,7 @@ define([
         var node = this._client.getNode(this._currentNodeId),
             name = node.getAttribute('name'),
             msg = `Updating the interface of ${name}`,
-            code = node.getAttribute('code'),
             id,
-            operation,
             dataName;
 
         // Update the source code if the inputs/outputs changed
@@ -209,17 +200,10 @@ define([
         id = this.createIONode(this._currentNodeId, typeId, isInput, baseName, true);
         dataName = this._client.getNode(id).getAttribute('name');
 
-        try {
-            operation = new OperationCode(code);
-            if (isInput) {
-                operation.addInput(dataName);
-            } else {
-                operation.addOutput(dataName);
-            }
-
-            this._client.setAttribute(this._currentNodeId, 'code', operation.getCode());
-        } catch(e) {
-            this.logger.debug(`could not update the code - invalid python!: ${e}`);
+        if (isInput) {
+            this.updateCode(operation => operation.addInput(dataName));
+        } else {
+            this.updateCode(operation => operation.addOutput(dataName));
         }
         this._client.completeTransaction();
 
@@ -256,26 +240,23 @@ define([
         // If nodeId is an input data node, rename the input
         // If nodeId is an output data node, rename the output
         var isDataNode = nodeId.indexOf(this._currentNodeId) === 0,
-            operation = this.getOperationCode(),
             msg;
 
         if (isDataNode && attr === 'name') {  // rename input/output
             var dataNode = this._client.getNode(nodeId),
                 oldName = dataNode.getAttribute(attr);
 
-            operation.rename(oldName, value);
-
             msg = `Renaming ${oldName}->${value} in ${name}`;
             this._client.startTransaction(msg);
+
+            this.updateCode(operation => operation.rename(oldName, value));
             // TODO: if any of the inputs have the same name, they should also be renamed
             EasyDAGControlEventHandlers.prototype._saveAttributeForNode.apply(this, arguments);
-            this._client.setAttribute(this._currentNodeId, 'code', operation.getCode());
             this._client.completeTransaction();
         } else if (nodeId === this._currentNodeId) {  // edit operation attributes
             msg = `Setting attribute default ${attr}->${value} in ${name}`;
             this._client.startTransaction(msg);
-            operation.setAttributeDefault(attr, value);
-            this._client.setAttribute(this._currentNodeId, 'code', operation.getCode());
+            this.updateCode(operation => operation.setAttributeDefault(attr, value));
             EasyDAGControlEventHandlers.prototype._saveAttributeForNode.apply(this, arguments);
             this._client.completeTransaction();
         }
@@ -326,18 +307,14 @@ define([
         this._client.startTransaction(msg);
 
         // update the operation code
-        try {
-            var operation = this.getOperationCode();
+        this.updateCode(operation => {
             if (isRename) {
                 operation.renameIn(OperationCode.CTOR_FN, name, desc.name);
             } else if (isNewAttribute) {
                 operation.addAttribute(desc.name);
             }
             operation.setAttributeDefault(desc.name, desc.defaultValue);
-            this._client.setAttribute(this._currentNodeId, 'code', operation.getCode());
-        } catch(e) {
-            this.logger.debug(`could not update the code - invalid python!: ${e}`);
-        }
+        });
 
         if (isRename) {  // Renaming attribute
             if (name) {
@@ -362,14 +339,7 @@ define([
         this._client.delAttribute(nodeId, name);
 
         // update the operation code
-        try {
-            var operation = this.getOperationCode();
-            operation.removeAttribute(name);
-            this._client.setAttribute(this._currentNodeId, 'code', operation.getCode());
-        } catch(e) {
-            this.logger.debug(`could not update the code - invalid python!: ${e}`);
-        }
-
+        this.updateCode(operation => operation.removeAttribute(name));
         this._client.completeTransaction();
     };
 
