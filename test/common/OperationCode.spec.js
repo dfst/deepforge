@@ -43,6 +43,52 @@ describe.only('OperationCode', function() {
                     var code = operation.getCode();
                     assert(code.includes('number=50'));
                 });
+
+            });
+
+            describe('multiple args', function() {
+                beforeEach(function() {
+                    operation = new OperationCode(code);
+                    operation.addAttribute('first', 50);
+                });
+
+                it('should add non-default argument before default args', function() {
+                    operation.addAttribute('test');
+                    var code = operation.getCode();
+                    assert(code.includes('test, first=50'));
+                });
+
+                it('should re-order args as needed when removing default values', function() {
+                    operation.addAttribute('test', true);
+                    operation.removeAttributeDefault('test');
+                    var code = operation.getCode(),
+                        firstIndex = code.indexOf('first'),
+                        testIndex = code.indexOf('test');
+
+                    assert(code.includes('first=50'));
+                    assert(firstIndex > testIndex);
+                });
+
+                it('should add default argument after default args', function() {
+                    operation.addAttribute('test', true);
+                    var code = operation.getCode(),
+                        firstIndex = code.indexOf('first'),
+                        testIndex = code.indexOf('test');
+
+                    assert(firstIndex < testIndex);
+                });
+
+                it('should add multiple default args', function() {
+                    operation.addAttribute('test', true);
+                    operation.addAttribute('t2', 'hello');
+                    operation.addAttribute('t3', 12);
+
+                    var code = operation.getCode();
+
+                    assert(code.includes('test=True'));
+                    assert(code.includes('t2=\'hello\''));
+                    assert(code.includes('t3=12'));
+                });
             });
 
             describe('setAttributeDefault', function() {

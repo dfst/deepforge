@@ -22,9 +22,7 @@ define([
     'use strict';
 
     var OperationInterfaceEditorWidget,
-        WIDGET_CLASS = 'operation-interface-editor',
-        NEW_CLASS_ID = '__NEW_CLASS__',
-        NEW_PRIM_ID = '__NEW_PRIM__';
+        WIDGET_CLASS = 'operation-interface-editor';
 
     OperationInterfaceEditorWidget = function (logger, container) {
         container.addClass(WIDGET_CLASS);

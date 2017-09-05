@@ -109,7 +109,16 @@ define([
             ptrName = this.getRefName(opNode, desiredName),
             msg = `Adding ref "${ptrName}" to operation "${opNode.getAttribute('name')}"`;
 
+        console.log('adding ref', ptrName, '(', targetId, ')');
         this._client.startTransaction(msg);
+        try {  // add new input argument
+            // TODO: ensure no name collisions
+            var operation = this.getOperationCode();
+            operation.addAttribute(ptrName);
+            this._client.setAttribute(this._currentNodeId, 'code', operation.getCode());
+        } catch(e) {
+            this.logger.debug(`could not update the code - invalid python!: ${e}`);
+        }
         this._client.setPointerMeta(this._currentNodeId, ptrName, {
             min: 1,
             max: 1,

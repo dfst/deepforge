@@ -97,12 +97,7 @@ var isNodeJs = typeof module === 'object' && module.exports;
     };
 
     OperationCode.prototype.addArgument = function(method, name, value) {
-        var pos = this._addIOCode(method, name, true);
-
-        if (value) {  // set the default value
-            this.setAttributeDefault(name, value);
-        }
-        return pos;
+        this._addIOCode(method, name, true, value);
     };
 
     OperationCode.prototype.setAttributeDefault = function(name, value) {
@@ -162,18 +157,8 @@ var isNodeJs = typeof module === 'object' && module.exports;
     };
 
     OperationCode.prototype.removeDefaultValue = function(method, name) {
-        if (!this._schema) this.updateSchema();
-
-        var inputs = this.getArguments(method);
-        var input = inputs.find(node => node.name === name);
-
-        // remove the default value
-        if (input.default) {
-            var start = input.pos.col + input.name.length;
-            var end = input.default.col_offset + this._getValueLength(input.default);
-            this._removeChunk(input.default.lineno-1, start, end);
-        }
-        this.clearSchema();
+        this.removeArgument(method, name);
+        this.addArgument(method, name);
     };
 
     OperationCode.prototype._removeChunk = function(lineIndex, start, end) {
@@ -207,7 +192,7 @@ var isNodeJs = typeof module === 'object' && module.exports;
         return this._schema.methods[method];
     };
 
-    OperationCode.prototype._addIOCode = function(method, name, isInput) {
+    OperationCode.prototype._addIOCode = function(method, name, isInput, value) {
         if (!this.hasMethod(method)) this.addMethod(method);
 
         this.updateSchema();
@@ -221,14 +206,36 @@ var isNodeJs = typeof module === 'object' && module.exports;
             endIndex,
             lineIndex;
 
+        if (value !== undefined) {
+            content = content + '=' + this._serializeAsPython(value);
+        }
+
         if (ios.length) {
+            if (value === undefined) {
+                var nonDefaults = ios.filter(input => !input.default);
+
+                if (nonDefaults.length) {
+                    ios = nonDefaults;
+                } else {  // add it as the first arg
+                    var regex = new RegExp('\\(.*?' + ios[0].name);
+                    lineIndex = this._schema.methods[method].bounds.start.line-1;
+
+                    // Replace the first arg with this one (and the first arg)
+                    line = this._lines[lineIndex];
+                    content = '(' + content + ', ' + ios[0].name;
+                    this._lines[lineIndex] = line.replace(regex, content);
+
+                    return this.clearSchema();
+                }
+            }
+
             var pos = ios[ios.length-1].pos;
-            var argLen = ios[ios.length-1].name.length;
+            var argLen = ios[ios.length-1].len;
 
             line = this._lines[pos.line-1];
             startIndex = pos.col + argLen;
             endIndex = pos.col + argLen;
-            content = ', ' + name;
+            content = ', ' + content;
             lineIndex = pos.line - 1;
         } else if (isInput) {
             var first = body[0];
@@ -236,7 +243,7 @@ var isNodeJs = typeof module === 'object' && module.exports;
             lineIndex = first.lineno - 2;
             line = this._lines[lineIndex];
             startIndex = line.match(/\).*?:/).index;
-            this._lines[lineIndex] = line.replace(/\).*?:/, name + '):');
+            this._lines[lineIndex] = line.replace(/\).*?:/, content + '):');
 
             this.clearSchema();
             return {
@@ -330,7 +337,7 @@ var isNodeJs = typeof module === 'object' && module.exports;
             i = i - offset;
             if (i >= 0) {
                 var def = node.args.defaults[i];
-                len = def.col_offset - arg.col_offset + 1;  // add the '='
+                len = def.col_offset - arg.col_offset + this._getValueLength(def);
             } else {
                 len = arg.id.v.length;
             }
@@ -440,7 +447,11 @@ var isNodeJs = typeof module === 'object' && module.exports;
     };
 
     OperationCode.prototype.removeAttribute = function(name) {
-        return this._removeIOCode(this.getAttributes(), name);
+        return this.removeArgument(OperationCode.CTOR_FN, name);
+    };
+
+    OperationCode.prototype.removeArgument = function(method, name) {
+        return this._removeIOCode(this.getArguments(method), name);
     };
 
     OperationCode.prototype.getAttributes = function() {
