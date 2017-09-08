@@ -1,9 +1,14 @@
 /* globals define */
 // A mixin containing helpers for working with operations
 define([
+    'deepforge/Constants',
+    'js/Constants'
 ], function(
+    CONSTANTS,
+    GME_CONSTANTS
 ) {
     'use strict';
+
     var OperationControl = function() {
     };
 
@@ -134,6 +139,65 @@ define([
     OperationControl.prototype.isInputData = function(nodeId) {
         var node = this._client.getNode(nodeId);
         return this.hasMetaName(node.getParentId(), 'Inputs');
+    };
+
+    // References and attributes
+    OperationControl.prototype.getCurrentReferences = function(opId) {
+        var node = this._client.getNode(opId);
+
+        return node.getPointerNames()
+            .filter(name => name !== GME_CONSTANTS.POINTER_BASE);
+    };
+
+    OperationControl.prototype.removeReference = function(opId, name) {
+        this._client.delPointerMeta(opId, name);
+        this._client.delPointer(opId, name);
+    };
+
+    var RESERVED_ATTRIBUTES = [
+        CONSTANTS.DISPLAY_COLOR,
+        CONSTANTS.LINE_OFFSET,
+        'name',
+        'code'
+    ];
+    OperationControl.prototype.getAttributeNames = function(opId) {
+        var node = this._client.getNode(opId);
+        return node.getAttributeNames()
+            .filter(name => RESERVED_ATTRIBUTES.indexOf(name) === -1);
+    };
+
+    OperationControl.prototype.getAttribute = function(opId, name) {
+        return {
+            name: name,
+            type: 'string',
+            value: 'TEST'
+        };
+    };
+
+    OperationControl.prototype.addAttribute = function(opId, name, value) {
+        var type = 'string';
+
+        // Set the defaultValue
+        if (value !== undefined) {
+            type = typeof value;
+
+            // Figure out the type
+            if (type === 'number') {
+                type = parseInt(value) === value ? 'integer' : 'float';
+            }
+        }
+        this._client.setAttributeMeta(opId, name, {type: type});
+        this._client.setAttribute(opId, name, value);
+    };
+
+    OperationControl.prototype.removeAttribute = function(opId, name) {
+        this._client.delAttributeMeta(opId, name);
+        this._client.delAttribute(opId, name);
+    };
+
+    OperationControl.prototype.setAttributeDefault = function(opId, name, value) {
+        this.removeAttribute(opId, name);
+        this.addAttribute(opId, name, value);
     };
 
     return OperationControl;
