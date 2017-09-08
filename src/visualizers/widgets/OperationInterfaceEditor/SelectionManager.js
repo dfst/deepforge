@@ -60,13 +60,15 @@ define([
                 y: 0
             });
 
-            new Buttons.SetColor({  // Set the operation color
-                context: this._widget,
-                $pEl: this.$selection,
-                item: this.selectedItem,
-                x: 0,
-                y: height
-            });
+            if (this.selectedItem.desc.displayColor) {
+                new Buttons.SetColor({  // Set the operation color
+                    context: this._widget,
+                    $pEl: this.$selection,
+                    item: this.selectedItem,
+                    x: 0,
+                    y: height
+                });
+            }
         } else {  // Data or pointer...
             new Buttons.Delete({
                 context: this._widget,
