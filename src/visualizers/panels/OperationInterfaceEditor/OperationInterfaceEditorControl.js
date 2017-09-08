@@ -155,7 +155,8 @@ define([
             // Remove DeepForge hidden attributes
             delete desc.attributes.code;
             delete desc.attributes[CONSTANTS.LINE_OFFSET];
-            desc.displayColor = desc.attributes[CONSTANTS.DISPLAY_COLOR].value;
+            desc.displayColor = desc.attributes[CONSTANTS.DISPLAY_COLOR] ?
+                desc.attributes[CONSTANTS.DISPLAY_COLOR].value : '#78909c';
             delete desc.attributes[CONSTANTS.DISPLAY_COLOR];
         }
 

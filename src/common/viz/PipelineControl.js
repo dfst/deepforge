@@ -104,7 +104,8 @@ define([
             }
 
             // Handle the display color
-            desc.displayColor = desc.attributes[CONSTANTS.DISPLAY_COLOR].value;
+            desc.displayColor = desc.attributes[CONSTANTS.DISPLAY_COLOR] ?
+                desc.attributes[CONSTANTS.DISPLAY_COLOR].value : '#78909c';
             delete desc.attributes[CONSTANTS.DISPLAY_COLOR];
 
         } else if (desc.isConnection) {
