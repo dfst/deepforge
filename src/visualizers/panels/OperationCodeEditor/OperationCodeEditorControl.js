@@ -95,12 +95,8 @@ define([
 
             this._client.startTransaction(msg);
             // update the attributes
-            // TODO
-            //
-            // If a new ctor arg shows up, assume it is an attribute (default type: string)
-            // Infer type based off default value
-            // TODO
-            //
+            // If a new ctor arg shows up, assume it is an attribute (default
+            // type: string) and infer type based off default value
             var oldAttrs = this.getAttributeNames(this._currentNodeId),
                 value,
                 index,
@@ -112,6 +108,7 @@ define([
                 if (index === -1) {
                     // make sure it isn't a reference
                     if (refs.indexOf(attr.name) === -1) {
+                        value = null;
                         if (attr.default) {
                             if (attr.default._astname === 'Name' && /True|False/.test(attr.default.id.v)) {
                                 value = attr.default.id.v === 'True';
@@ -127,10 +124,11 @@ define([
                     oldAttrs.splice(index, 1);
                 }
             }
-            // TODO: handle the remaining oldAttrs (to remove)
+            // remove old attributes
+            oldAttrs.forEach(name =>  this.removeAttribute(this._currentNodeId, name));
 
             // update the references (removal only)
-            var oldRefs = _.difference(refs, allAttrs);
+            var oldRefs = _.difference(refs, allAttrs.map(attr => attr.name));
             oldRefs.forEach(name => this.removeReference(this._currentNodeId, name));
 
             // update the inputs
@@ -158,16 +156,10 @@ define([
     };
 
     OperationCodeEditorControl.prototype.synchronize = function(l1, l2, addFn, rmFn) {
-        var changes = this.getChangedValues(l1, l2);
-        changes[0].forEach(addFn);
-        changes[1].forEach(rmFn);
-    };
-
-    OperationCodeEditorControl.prototype.getChangedValues = function(newList, oldList) {
-        return [
-            _.difference(newList, oldList),  // new elements (to create)
-            _.difference(oldList, newList)  // old elements (to remove)
-        ];
+        var newElements = _.difference(l1, l2);
+        var oldElements = _.difference(l2, l1);
+        newElements.forEach(addFn);
+        oldElements.forEach(rmFn);
     };
 
     OperationCodeEditorControl.prototype.getOperationAttributes = function () {
