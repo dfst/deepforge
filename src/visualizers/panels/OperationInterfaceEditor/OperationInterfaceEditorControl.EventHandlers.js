@@ -178,8 +178,7 @@ define([
 
         this._client.startTransaction(msg);
         // Currently, this will not update children already using old name...
-        this._client.delPointerMeta(this._currentNodeId, name);
-        this._client.delPointer(this._currentNodeId, name);
+        this.removeReference(this._currentNodeId, name);
 
         this.updateCode(operation => operation.removeReference(name));
         this._client.completeTransaction();
@@ -324,6 +323,7 @@ define([
             name = desc.name;
         }
 
+        // TODO: what is the default value for the schema?
         this._client.setAttributeMeta(nodeId, desc.name, schema);
         this._client.setAttribute(nodeId, desc.name, desc.defaultValue);
 
@@ -335,8 +335,7 @@ define([
             msg = `Deleting "${name}" attribute from "${opName}" operation`;
 
         this._client.startTransaction(msg);
-        this._client.delAttributeMeta(nodeId, name);
-        this._client.delAttribute(nodeId, name);
+        this.removeAttribute(nodeId, name);
 
         // update the operation code
         this.updateCode(operation => operation.removeAttribute(name));

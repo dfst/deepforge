@@ -294,8 +294,7 @@ define([
 
         // Get the pointers that should exist [name, target]
         this.loadMeta();
-        newPtrs = node.getPointerNames()
-            .filter(name => name !== GME_CONSTANTS.POINTER_BASE)
+        newPtrs = this.getCurrentReferences(this._currentNodeId)
             .map(name => this.getPtrDescriptor(name));
 
         // Compare them to the existing...

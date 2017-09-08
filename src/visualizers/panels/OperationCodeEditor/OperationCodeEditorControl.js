@@ -83,44 +83,91 @@ define([
             // Parse the operation implementation and detect change in inputs/outputs
             // TODO: Update this to use the code object
             var operation = new OperationCode(code),
-                oldInputs = this.getDataNames(this._currentNodeId, true),
                 currentInputs = operation.getInputs().map(input => input.name),
-                name = this._client.getNode(this._currentNodeId).getAttribute('name'),
-                newInputs,
-                rmInputs,
-                oldOutputs = this.getDataNames(this._currentNodeId),
-                currentOutputs = operation.getOutputs().map(input => input.name),
-                newOutputs,
-                rmOutputs;
+                name = this._client.getNode(this._currentNodeId).getAttribute('name');
 
             // Check for input nodes to remove
             if (currentInputs[0] === 'self') currentInputs.shift();
-            newInputs = _.difference(currentInputs, oldInputs);
-            rmInputs = _.difference(oldInputs, currentInputs);
-            newOutputs = _.difference(currentOutputs, oldOutputs);
-            rmOutputs = _.difference(oldOutputs, currentOutputs);
 
-            if (rmInputs.length || newInputs.length || rmOutputs.length || newOutputs.length) {
-                var msg = `Updating operation implementation for ${name}`;
+            var msg = `Updating ${name} operation code`;
+            var refs = this.getCurrentReferences(this._currentNodeId);
+            var allAttrs = operation.getAttributes();
 
-                this._client.startTransaction(msg);
-                TextEditorControl.prototype.saveTextFor.call(this, id, code, true);
+            this._client.startTransaction(msg);
+            // update the attributes
+            // TODO
+            //
+            // If a new ctor arg shows up, assume it is an attribute (default type: string)
+            // Infer type based off default value
+            // TODO
+            //
+            var oldAttrs = this.getAttributeNames(this._currentNodeId),
+                value,
+                index,
+                attr;
 
-                // update the inputs
-                rmInputs.forEach(input => this.removeInputData(this._currentNodeId, input));
-                newInputs.map(input => this.addInputData(this._currentNodeId, input));
-
-                // update the outputs
-                rmOutputs.forEach(output => this.removeOutputData(this._currentNodeId, output));
-                newOutputs.map(output => this.addOutputData(this._currentNodeId, output));
-                this._client.completeTransaction();
-            } else {
-                return TextEditorControl.prototype.saveTextFor.call(this, id, code);
+            for (var i = 0; i < allAttrs.length; i++) {
+                attr = allAttrs[i];
+                index = oldAttrs.indexOf(attr.name);
+                if (index === -1) {
+                    // make sure it isn't a reference
+                    if (refs.indexOf(attr.name) === -1) {
+                        if (attr.default) {
+                            if (attr.default._astname === 'Name' && /True|False/.test(attr.default.id.v)) {
+                                value = attr.default.id.v === 'True';
+                            } else if (attr.default._astname === 'Num') {
+                                value = attr.default.n.v;
+                            } else if (attr.default._astname === 'str') {
+                                value = attr.default.s.v;
+                            }
+                        }
+                        this.addAttribute(this._currentNodeId, attr.name, value);
+                    }
+                } else {
+                    oldAttrs.splice(index, 1);
+                }
             }
+            // TODO: handle the remaining oldAttrs (to remove)
+
+            // update the references (removal only)
+            var oldRefs = _.difference(refs, allAttrs);
+            oldRefs.forEach(name => this.removeReference(this._currentNodeId, name));
+
+            // update the inputs
+            this.synchronize(
+                currentInputs,
+                this.getDataNames(this._currentNodeId, true),
+                input => this.addInputData(this._currentNodeId, input),
+                input => this.removeInputData(this._currentNodeId, input)
+            );
+
+            // update the outputs
+            this.synchronize(
+                operation.getOutputs().map(input => input.name),
+                this.getDataNames(this._currentNodeId),
+                output => this.removeOutputData(this._currentNodeId, output),
+                output => this.addOutputData(this._currentNodeId, output)
+            );
+
+            TextEditorControl.prototype.saveTextFor.call(this, id, code, true);
+            this._client.completeTransaction();
         } catch (e) {
             this._logger.debug(`failed parsing operation: ${e}`);
             return TextEditorControl.prototype.saveTextFor.call(this, id, code);
         }
+    };
+
+    OperationCodeEditorControl.prototype.synchronize = function(l1, l2, addFn, rmFn) {
+        var changes = this.getChangedValues(l1, l2);
+        changes[0].forEach(addFn);
+        changes[1].forEach(rmFn);
+    };
+
+    OperationCodeEditorControl.prototype.getChangedValues = function(newList, oldList) {
+        return [
+            _.difference(newList, oldList),  // new elements (to create)
+            _.difference(oldList, newList)  // old elements (to remove)
+        ];
     };
 
     OperationCodeEditorControl.prototype.getOperationAttributes = function () {
