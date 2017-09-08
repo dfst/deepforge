@@ -20,6 +20,7 @@ define([
         DECORATOR_ID = 'OpIntDecorator';
 
     OpIntDecorator = function (options) {
+        options.color = options.color || '#78909c';
         DecoratorBase.call(this, options);
     };
 
