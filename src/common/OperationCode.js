@@ -255,7 +255,7 @@ var isNodeJs = typeof module === 'object' && module.exports;
                 col: startIndex
             };
         } else {
-            var ret = body.find(node => this._isNodeType(node, 'Return_'));
+            var ret = body.find(node => OperationCode.isNodeType(node, 'Return_'));
             if (ret) {
                 lineIndex = ret.lineno-1;
                 startIndex = endIndex = ret.col_offset + 6;
@@ -323,7 +323,7 @@ var isNodeJs = typeof module === 'object' && module.exports;
         return this._ast = ast;
     };
 
-    OperationCode.prototype._isNodeType = function (node, name) {
+    OperationCode.isNodeType = function (node, name) {
         return node.constructor.name === name;
     };
 
@@ -357,23 +357,23 @@ var isNodeJs = typeof module === 'object' && module.exports;
         });
 
         // add outputs
-        var ret = node.body.find(node => this._isNodeType(node, 'Return_'));
+        var ret = node.body.find(node => OperationCode.isNodeType(node, 'Return_'));
         var retVals = [];
         if (ret) {
-            retVals = ret.value && this._isNodeType(ret.value, 'Tuple') ?
+            retVals = ret.value && OperationCode.isNodeType(ret.value, 'Tuple') ?
                 ret.value.elts : [ret.value];
         }
 
         schema.methods[name].outputs = retVals
             .filter(node => !!node)
             .map((arg, index) => {
-                var isNameNode = this._isNodeType(arg, 'Name');
+                var isNameNode = OperationCode.isNodeType(arg, 'Name');
                 var name = isNameNode ? arg.id.v : 'result';
                 if (!isNameNode && index > 0) {
                     name += '_' + index;
                 }
 
-                var value = this._isNodeType(arg, 'Num') ? arg.n.v : name;
+                var value = OperationCode.isNodeType(arg, 'Num') ? arg.n.v : name;
 
                 return {
                     name: name,
@@ -420,14 +420,14 @@ var isNodeJs = typeof module === 'object' && module.exports;
         var ast = this.getAst();
 
         // Find the class definition
-        var classDef = ast.body.find(node => this._isNodeType(node, 'ClassDef'));
+        var classDef = ast.body.find(node => OperationCode.isNodeType(node, 'ClassDef'));
         if (classDef) {
             schema.name = classDef.name.v;
 
             // TODO: what if fn is inherited?
             var nodes = classDef.body;
             for (var i = 0; i < nodes.length; i++) {
-                if (this._isNodeType(nodes[i], 'FunctionDef')) {
+                if (OperationCode.isNodeType(nodes[i], 'FunctionDef')) {
                     this._parseFn(nodes[i], schema, nodes[i+1]);
                 }
             }
