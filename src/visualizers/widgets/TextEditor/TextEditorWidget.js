@@ -241,19 +241,31 @@ define([
         // Set the current text based on the given
         // Create the header
         var header = this.getHeader(desc),
-            content,
             newContent = header + '\n' + desc.text,
-            //patches = diff.diffChars(content, newContent),
-            cursorPos;
+            oldContent,
+            selection;
 
-        // TODO: if we are updating the value, we should make sure the cursor position
-        // remains in the same spot (ie, diff the text and update the positions
-        // based on the size of the patches
         this.activeNode = desc.id;
         this.silent = true;
+
+        oldContent = this.editor.getValue();
+        selection = this.editor.session.selection.toJSON();
+
         this.editor.setValue(newContent, 2);
+
+        selection = this.getAdjustedSelection(oldContent, newContent, selection);
+        this.editor.session.selection.fromJSON(selection);
+
         this.silent = false;
         this.currentHeader = header;
+    };
+
+    TextEditorWidget.prototype.getAdjustedSelection = function (oldText, newText, selection) {
+        // if we are updating the value, we should make sure the cursor position
+        // remains in the same spot (ie, diff the text and update the positions
+        // based on the size of the patches
+        // TODO
+        return selection;
     };
 
     TextEditorWidget.prototype.saveText = function () {
