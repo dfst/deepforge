@@ -32,20 +32,10 @@ define([
 
     OperationCodeEditorWidget.prototype.getHeader = function (desc) {
         // Add comment about the inputs, attributes and references
-        var inputs = desc.inputs.map(pair => `${pair[0]} (${pair[1]})`).join('\n'),
-            refs = desc.references.map(name => `${name}`).join('\n'),
-            header = [
-                `Editing "${desc.name}" Implementation`
-            ];
+        var header = [
+            `Editing "${desc.name}" Implementation`
+        ];
 
-        if (inputs.length) {
-            header.push('');
-            header.push('Defined variables:');
-            header.push(inputs);
-        }
-        if (refs) {
-            header.push(refs);
-        }
         header.push('');
         header.push('The \'execute\' method will be called when the operation is run');
 
