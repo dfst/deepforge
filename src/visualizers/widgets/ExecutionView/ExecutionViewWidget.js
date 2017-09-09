@@ -23,6 +23,7 @@ define([
     ExecutionViewWidget = function (logger, container) {
         container.addClass(WIDGET_CLASS);
         EasyDAGWidget.call(this, logger, container);
+        this.logger = this._logger;
         this.isSnapshot = true;
         this.originName = null;
         this.originTime = null;

@@ -27,6 +27,7 @@ define([
     OperationInterfaceEditorWidget = function (logger, container) {
         container.addClass(WIDGET_CLASS);
         EasyDAG.call(this, logger, container);
+        this.logger = this._logger;
     };
 
     _.extend(OperationInterfaceEditorWidget.prototype, EasyDAG.prototype);

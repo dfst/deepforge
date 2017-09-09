@@ -29,7 +29,7 @@ define([
         };
 
     TextEditorWidget = function (logger, container) {
-        this._logger = logger.fork('Widget');
+        this.logger = logger.fork('Widget');
 
         this.language = this.language || 'python';
         this._el = container;
@@ -65,7 +65,7 @@ define([
         this.currentHeader = '';
         this.activeNode = null;
 
-        this._logger.debug('ctor finished');
+        this.logger.debug('ctor finished');
     };
 
     TextEditorWidget.prototype.addExtensions = function () {
@@ -217,7 +217,7 @@ define([
 
     TextEditorWidget.prototype.onUpdateEditorSettings = function () {
         ComponentSettings.overwriteComponentSettings(this.getComponentId(), this.editorSettings,
-            err => err && this._logger.error(`Could not save editor settings: ${err}`));
+            err => err && this.logger.error(`Could not save editor settings: ${err}`));
     };
 
     TextEditorWidget.prototype.onWidgetContainerResize = function () {
@@ -269,7 +269,7 @@ define([
         if (typeof this.activeNode === 'string') {
             this.saveTextFor(this.activeNode, text);
         } else {
-            this._logger.error(`Active node is invalid! (${this.activeNode})`);
+            this.logger.error(`Active node is invalid! (${this.activeNode})`);
         }
     };
 
@@ -301,11 +301,11 @@ define([
     };
 
     TextEditorWidget.prototype.onActivate = function () {
-        this._logger.debug('TextEditorWidget has been activated');
+        this.logger.debug('TextEditorWidget has been activated');
     };
 
     TextEditorWidget.prototype.onDeactivate = function () {
-        this._logger.debug('TextEditorWidget has been deactivated');
+        this.logger.debug('TextEditorWidget has been deactivated');
     };
 
     TextEditorWidget.prototype.setReadOnly = function (isReadOnly) {

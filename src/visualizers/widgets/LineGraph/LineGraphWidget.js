@@ -12,14 +12,14 @@ define([
         WIDGET_CLASS = 'line-graph';
 
     LineGraphWidget = function (logger, container) {
-        this._logger = logger.fork('Widget');
+        this.logger = logger.fork('Widget');
 
         this.$el = container;
 
         this.lineData = {};
         this._initialize();
 
-        this._logger.debug('ctor finished');
+        this.logger.debug('ctor finished');
     };
 
     LineGraphWidget.prototype._initialize = function () {
@@ -147,11 +147,11 @@ define([
     };
 
     LineGraphWidget.prototype.onActivate = function () {
-        this._logger.debug('LineGraphWidget has been activated');
+        this.logger.debug('LineGraphWidget has been activated');
     };
 
     LineGraphWidget.prototype.onDeactivate = function () {
-        this._logger.debug('LineGraphWidget has been deactivated');
+        this.logger.debug('LineGraphWidget has been deactivated');
     };
 
     return LineGraphWidget;

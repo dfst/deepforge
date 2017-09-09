@@ -102,7 +102,7 @@ define([
             dstPort = dstItem.inputs.find(port => port.id === desc.dstPort);
 
             if (!dstPort) {
-                this._logger.error(`Could not find port ${desc.dstPort}`);
+                this.logger.error(`Could not find port ${desc.dstPort}`);
                 return;
             }
 
@@ -182,18 +182,18 @@ define([
     };
 
     PipelineEditorWidget.prototype.connectPort = function(nodeId, id, isOutput) {
-        this._logger.info('port ' + id + ' has been clicked! (', isOutput, ')');
+        this.logger.info('port ' + id + ' has been clicked! (', isOutput, ')');
         if (this.PORT_STATE === STATE.DEFAULT) {
             this.srcPortToConnectArgs = arguments;
             return this.startPortConnection(nodeId, id, isOutput);
         } else if (this._selectedPort !== id) {
-            this._logger.info('connecting ' + this._selectedPort + ' to ' + id);
+            this.logger.info('connecting ' + this._selectedPort + ' to ' + id);
             var src = !isOutput ? this._selectedPort : id,
                 dst = isOutput ? this._selectedPort : id;
 
             this.createConnection(src, dst);
         } else if (!this._selectedPort) {
-            this._logger.error(`Invalid connection state: ${this.PORT_STATE} w/ ${this._selectedPort}`);
+            this.logger.error(`Invalid connection state: ${this.PORT_STATE} w/ ${this._selectedPort}`);
         }
 
         this.resetPortState();

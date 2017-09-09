@@ -7,6 +7,7 @@ define([
 
     var ThumbnailWidget = function() {
         EasyDAGWidget.apply(this, arguments);
+        this.logger = this._logger;
     };
 
     ThumbnailWidget.prototype = Object.create(EasyDAGWidget.prototype);
