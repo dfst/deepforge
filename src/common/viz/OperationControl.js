@@ -160,17 +160,24 @@ define([
         'name',
         'code'
     ];
+
     OperationControl.prototype.getAttributeNames = function(opId) {
         var node = this._client.getNode(opId);
         return node.getAttributeNames()
             .filter(name => RESERVED_ATTRIBUTES.indexOf(name) === -1);
     };
 
+    OperationControl.prototype.getAttributes = function(opId) {
+        return this.getAttributeNames(opId).map(name => this.getAttribute(opId, name));
+    };
+
     OperationControl.prototype.getAttribute = function(opId, name) {
+        var node = this._client.getNode(opId);
+        var schema = node.getAttributeMeta(name);
         return {
             name: name,
-            type: 'string',
-            value: 'TEST'
+            type: schema.type,
+            value: node.getAttribute(name)
         };
     };
 
