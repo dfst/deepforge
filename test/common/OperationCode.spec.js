@@ -14,6 +14,28 @@ describe.only('OperationCode', function() {
             code = fs.readFileSync(filePath, 'utf8');
         });
 
+        describe('name', function() {
+            beforeEach(function() {
+                operation = new OperationCode(code);
+            });
+
+            it('should get the correct name', function() {
+                assert.equal(operation.getName(), 'ExampleOperation');
+            });
+
+            it('should set the name', function() {
+                operation.setName('NewName');
+                assert.equal(operation.getName(), 'NewName');
+            });
+
+            it('should set the name in the code', function() {
+                operation.setName('NewName');
+                var code = operation.getCode();
+                assert(!code.includes('ExampleOperation'));
+                assert(code.includes('NewName'));
+            });
+        });
+
         describe('removeInput', function() {
             before(function() {
                 operation = new OperationCode(code);

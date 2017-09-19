@@ -21,7 +21,29 @@ var isNodeJs = typeof module === 'object' && module.exports;
     OperationCode.prototype.getName = function() {
         if (!this._schema) this.updateSchema();
 
-        return this._schema.name;
+        return this._schema.name.v;
+    };
+
+    OperationCode.prototype.setName = function(name) {
+        // pretty hacky... just using regex for now...
+        var lineIndex = -1;
+        var line;
+        for (var i = this._lines.length; i--;) {
+            if (this._lines[i].indexOf('class ') !== -1) {
+                lineIndex = i;
+            }
+        }
+
+        if (lineIndex !== -1) {
+            line = this._lines[lineIndex];
+            this._lines[lineIndex] = line.replace(/class[\s]+[^\s:]+/, 'class ' + name);
+        } else {  // no class def -> create one!
+            this._lines.push('class ' + name + ':');
+            this._lines.push('    def ' + OperationCode.CTOR_FN + '():');
+            this._lines.push('        print(\'hello\')');
+        }
+
+        this.clearSchema();
     };
 
     OperationCode.prototype.getBase = function() {
@@ -422,7 +444,7 @@ var isNodeJs = typeof module === 'object' && module.exports;
         // Find the class definition
         var classDef = ast.body.find(node => OperationCode.isNodeType(node, 'ClassDef'));
         if (classDef) {
-            schema.name = classDef.name.v;
+            schema.name = classDef.name;
 
             // TODO: what if fn is inherited?
             var nodes = classDef.body;
