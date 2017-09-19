@@ -7,6 +7,7 @@ define([
     'panels/TilingViz/TilingVizPanel',
     'panels/OperationCodeEditor/OperationCodeEditorPanel',
     'panels/OperationInterfaceEditor/OperationInterfaceEditorPanel',
+    'deepforge/viz/OperationControl',
     'js/Constants',
     'underscore'
 ], function (
@@ -15,6 +16,7 @@ define([
     TilingViz,
     CodeEditor,
     InterfaceEditor,
+    OperationControl,
     CONSTANTS,
     _
 ) {
@@ -42,6 +44,7 @@ define([
     _.extend(
         OperationEditorPanel.prototype,
         RenameablePanel.prototype,
+        OperationControl.prototype,
         TilingViz.prototype
     );
 
@@ -86,11 +89,12 @@ define([
                     newValue = words.map(word => word[0].toUpperCase() + word.substring(1)).join('');
                 }
 
-                newValue = newValue.replace(/Operation$/, '');
                 msg = `Renamed ${type}: ${oldValue} -> ${newValue}`;
 
                 if (!/^\s*$/.test(newValue)) {
                     this._client.startTransaction(msg);
+                    // Update the operation code
+                    this.updateCode(operation => operation.setName(newValue));
                     this._client.setAttribute(nodeId, 'name', newValue);
                     this._client.completeTransaction();
                 }

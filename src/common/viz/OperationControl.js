@@ -1,9 +1,11 @@
 /* globals define */
 // A mixin containing helpers for working with operations
 define([
+    'deepforge/OperationCode',
     'deepforge/Constants',
     'js/Constants'
 ], function(
+    OperationCode,
     CONSTANTS,
     GME_CONSTANTS
 ) {
@@ -205,6 +207,24 @@ define([
     OperationControl.prototype.setAttributeDefault = function(opId, name, value) {
         this.removeAttribute(opId, name);
         this.addAttribute(opId, name, value);
+    };
+
+    OperationControl.prototype.getOperationCode = function(nodeId) {
+        var node = this._client.getNode(nodeId || this._currentNodeId),
+            code = node.getAttribute('code'),
+            operation = new OperationCode(code);
+
+        return operation;
+    };
+
+    OperationControl.prototype.updateCode = function(fn, nodeId) {
+        try {
+            var operation = this.getOperationCode(nodeId);
+            fn(operation);
+            this._client.setAttribute(nodeId || this._currentNodeId, 'code', operation.getCode());
+        } catch(e) {
+            this.logger.debug(`could not update the code - invalid python!: ${e}`);
+        }
     };
 
     return OperationControl;

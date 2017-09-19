@@ -261,24 +261,6 @@ define([
         }
     };
 
-    OperationInterfaceEditorEvents.prototype.getOperationCode = function() {
-        var node = this._client.getNode(this._currentNodeId),
-            code = node.getAttribute('code'),
-            operation = new OperationCode(code);
-
-        return operation;
-    };
-
-    OperationInterfaceEditorEvents.prototype.updateCode = function(fn) {
-        try {
-            var operation = this.getOperationCode();
-            fn(operation);
-            this._client.setAttribute(this._currentNodeId, 'code', operation.getCode());
-        } catch(e) {
-            this.logger.debug(`could not update the code - invalid python!: ${e}`);
-        }
-    };
-
     OperationInterfaceEditorEvents.prototype.getOperationName = function() {
         return this._client.getNode(this._currentNodeId).getAttribute('name');
     };
