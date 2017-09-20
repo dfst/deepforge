@@ -238,20 +238,27 @@ define([
     OperationInterfaceEditorEvents.prototype._saveAttributeForNode = function(nodeId, attr, value) {
         // If nodeId is an input data node, rename the input
         // If nodeId is an output data node, rename the output
-        var isDataNode = nodeId.indexOf(this._currentNodeId) === 0,
+        var isDataNode = nodeId !== this._currentNodeId && nodeId.indexOf(this._currentNodeId) === 0,
             msg;
 
-        if (isDataNode && attr === 'name') {  // rename input/output
-            var dataNode = this._client.getNode(nodeId),
-                oldName = dataNode.getAttribute(attr);
+        if (attr === 'name') {  // rename input/output
+            if (isDataNode) {
+                var dataNode = this._client.getNode(nodeId),
+                    oldName = dataNode.getAttribute(attr);
 
-            msg = `Renaming ${oldName}->${value} in ${name}`;
-            this._client.startTransaction(msg);
+                msg = `Renaming ${oldName}->${value} in ${name}`;
+                this._client.startTransaction(msg);
 
-            this.updateCode(operation => operation.rename(oldName, value));
-            // TODO: if any of the inputs have the same name, they should also be renamed
-            EasyDAGControlEventHandlers.prototype._saveAttributeForNode.apply(this, arguments);
-            this._client.completeTransaction();
+                this.updateCode(operation => operation.rename(oldName, value));
+                // TODO: if any of the inputs have the same name, they should also be renamed
+                EasyDAGControlEventHandlers.prototype._saveAttributeForNode.apply(this, arguments);
+                this._client.completeTransaction();
+            } else {
+                this._client.startTransaction(`Renaming ${oldName}->${value}`);
+                this.updateCode(operation => operation.setName(value));
+                EasyDAGControlEventHandlers.prototype._saveAttributeForNode.apply(this, arguments);
+                this._client.completeTransaction();
+            }
         } else if (nodeId === this._currentNodeId) {  // edit operation attributes
             msg = `Setting attribute default ${attr}->${value} in ${name}`;
             this._client.startTransaction(msg);
