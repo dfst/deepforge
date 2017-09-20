@@ -81,7 +81,6 @@ define([
     OperationCodeEditorControl.prototype.saveTextFor = function (id, code) {
         try {
             // Parse the operation implementation and detect change in inputs/outputs
-            // TODO: Update this to use the code object
             var operation = new OperationCode(code),
                 currentInputs = operation.getInputs().map(input => input.name),
                 name = this._client.getNode(this._currentNodeId).getAttribute('name');
@@ -97,35 +96,31 @@ define([
             // update the attributes
             // If a new ctor arg shows up, assume it is an attribute (default
             // type: string) and infer type based off default value
-            var oldAttrs = this.getAttributeNames(this._currentNodeId),
-                value,
+            var oldAttrs = this.getAttributes(),
+                oldAttrNames = oldAttrs.map(attr => attr.name),
                 index,
                 attr;
 
+            // check if the attributes have changed
             for (var i = 0; i < allAttrs.length; i++) {
                 attr = allAttrs[i];
-                index = oldAttrs.indexOf(attr.name);
+                index = oldAttrNames.indexOf(attr.name);
                 if (index === -1) {
                     // make sure it isn't a reference
                     if (refs.indexOf(attr.name) === -1) {
-                        value = null;
-                        if (attr.default) {
-                            if (attr.default._astname === 'Name' && /True|False/.test(attr.default.id.v)) {
-                                value = attr.default.id.v === 'True';
-                            } else if (attr.default._astname === 'Num') {
-                                value = attr.default.n.v;
-                            } else if (attr.default._astname === 'str') {
-                                value = attr.default.s.v;
-                            }
-                        }
-                        this.addAttribute(this._currentNodeId, attr.name, value);
+                        this.addAttribute(this._currentNodeId, attr.name, attr.value);
                     }
-                } else {
+                } else if (attr.value === oldAttrs[index].value) {
                     oldAttrs.splice(index, 1);
+                    oldAttrNames.splice(index, 1);
+                } else {  // attribute default value changed
+                    this.setAttributeDefault(this._currentNodeId, attr.name, attr.value);
+                    oldAttrs.splice(index, 1);
+                    oldAttrNames.splice(index, 1);
                 }
             }
             // remove old attributes
-            oldAttrs.forEach(name =>  this.removeAttribute(this._currentNodeId, name));
+            oldAttrNames.forEach(name =>  this.removeAttribute(this._currentNodeId, name));
 
             // update the references (removal only)
             var oldRefs = _.difference(refs, allAttrs.map(attr => attr.name));

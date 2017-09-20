@@ -178,6 +178,18 @@ var isNodeJs = typeof module === 'object' && module.exports;
         return node.toString().length;
     };
 
+    OperationCode.toJsValue = function(node) {
+        var astname = node && node._astname;
+
+        if (astname === 'Name' && /True|False/.test(node.id.v)) {
+            return node.id.v === 'True';
+        } else if (astname === 'Num') {
+            return node.n.v;
+        } else if (astname === 'str') {
+            return node.s.v;
+        }
+    };
+
     OperationCode.prototype.removeAttributeDefault = function(name) {
         return this.removeDefaultValue(OperationCode.CTOR_FN, name);
     };
@@ -477,7 +489,13 @@ var isNodeJs = typeof module === 'object' && module.exports;
     };
 
     OperationCode.prototype.getAttributes = function() {
-        return this.getArguments(OperationCode.CTOR_FN);
+        return this.getArguments(OperationCode.CTOR_FN)
+            .map(attr => {
+                return {
+                    name: attr.name,
+                    value: OperationCode.toJsValue(attr.default)
+                };
+            });
     };
 
     /////////////////////// Reference /////////////////////// 

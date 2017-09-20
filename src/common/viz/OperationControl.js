@@ -170,6 +170,7 @@ define([
     };
 
     OperationControl.prototype.getAttributes = function(opId) {
+        opId = opId === undefined ? this._currentNodeId : opId;
         return this.getAttributeNames(opId).map(name => this.getAttribute(opId, name));
     };
 
@@ -187,14 +188,16 @@ define([
         var type = 'string';
 
         // Set the defaultValue
-        if (value !== undefined) {
-            type = typeof value;
-
-            // Figure out the type
-            if (type === 'number') {
-                type = parseInt(value) === value ? 'integer' : 'float';
-            }
+        if (value === undefined) {
+            value = null;
         }
+        type = typeof value;
+
+        // Figure out the type
+        if (type === 'number') {
+            type = parseInt(value) === value ? 'integer' : 'float';
+        }
+
         this._client.setAttributeMeta(opId, name, {type: type});
         this._client.setAttribute(opId, name, value);
     };

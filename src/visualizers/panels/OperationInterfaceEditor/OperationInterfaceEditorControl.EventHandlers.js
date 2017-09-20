@@ -312,7 +312,6 @@ define([
             name = desc.name;
         }
 
-        // TODO: what is the default value for the schema?
         this._client.setAttributeMeta(nodeId, desc.name, schema);
         this._client.setAttribute(nodeId, desc.name, desc.defaultValue);
 
