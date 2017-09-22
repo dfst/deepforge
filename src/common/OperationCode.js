@@ -322,7 +322,7 @@ var isNodeJs = typeof module === 'object' && module.exports;
         var fnSchema = this._schema.methods[method];
         var startLine = fnSchema.bounds.start.line - 1;
         var endLine = fnSchema.bounds.end ? fnSchema.bounds.end.line - 1 : this._lines.length;
-        var pattern = new RegExp('\\b' + oldName + '\\b');
+        var pattern = new RegExp('\\b' + oldName + '\\b', 'g');
 
         for (var i = startLine; i < endLine; i++) {
             this._lines[i] = this._lines[i].replace(pattern, name);
@@ -336,7 +336,7 @@ var isNodeJs = typeof module === 'object' && module.exports;
         var fnSchema = this._schema.methods[OperationCode.MAIN_FN];
         var startLine = fnSchema.bounds.start.line - 1;
         var endLine = fnSchema.bounds.end ? fnSchema.bounds.end.line - 1 : this._lines.length;
-        var pattern = new RegExp('\\b' + oldName + '\\b');
+        var pattern = new RegExp('\\b' + oldName + '\\b', 'g');
 
         for (var i = startLine; i < endLine; i++) {
             this._lines[i] = this._lines[i].replace(pattern, name);
