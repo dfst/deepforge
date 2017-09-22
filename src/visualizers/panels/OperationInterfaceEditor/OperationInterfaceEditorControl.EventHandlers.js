@@ -250,8 +250,14 @@ define([
                 this._client.startTransaction(msg);
 
                 this.updateCode(operation => operation.rename(oldName, value));
-                // TODO: if any of the inputs have the same name, they should also be renamed
-                EasyDAGControlEventHandlers.prototype._saveAttributeForNode.apply(this, arguments);
+                // if any of the inputs have the same name, they should also be renamed.
+                // We are assuming that they are likely using the same variable
+                // and we don't want to change the behavior of the code...
+                var dataNodes = this.getInputNodes().concat(this.getOutputNodes());
+                var matching = dataNodes.filter(node => node.getAttribute('name') === oldName);
+                matching.forEach(node =>
+                    EasyDAGControlEventHandlers.prototype._saveAttributeForNode.call(this, node.getId(), attr, value)
+                );
                 this._client.completeTransaction();
             } else {
                 this._client.startTransaction(`Renaming ${oldName}->${value}`);

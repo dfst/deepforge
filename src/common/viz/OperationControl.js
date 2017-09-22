@@ -230,5 +230,17 @@ define([
         }
     };
 
+    OperationControl.prototype.getInputNodes = function(nodeId) {
+        nodeId = nodeId || this._currentNodeId;
+        var node = this._client.getNode(nodeId);
+        return this.getOperationInputs(node).map(id => this._client.getNode(id));
+    };
+
+    OperationControl.prototype.getOutputNodes = function(nodeId) {
+        nodeId = nodeId || this._currentNodeId;
+        var node = this._client.getNode(nodeId);
+        return this.getOperationOutputs(node).map(id => this._client.getNode(id));
+    };
+
     return OperationControl;
 });
