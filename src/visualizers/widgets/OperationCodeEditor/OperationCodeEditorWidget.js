@@ -42,24 +42,7 @@ define([
         return this.comment(header.join('\n'));
     };
 
-    OperationCodeEditorWidget.prototype.canAddReturnTmpl = function (desc) {
-        return desc.outputs.length &&
-            (!desc.ownText || desc.ownText.indexOf('return') === -1);
-    };
-
-    OperationCodeEditorWidget.prototype.updateText = function (desc) {
-        if (this.canAddReturnTmpl(desc)) {
-            // Add the return template 
-            desc.text += '\n\nreturn {\n' +
-                desc.outputs.map((pair, i) =>
-                    `   ${pair[0]} = nil${i === desc.outputs.length-1 ? '' : ','}  -- ${pair[1]}`).join('\n') +
-                '\n}';
-                
-        }
-    };
-
     OperationCodeEditorWidget.prototype.addNode = function (desc) {
-        this.updateText(desc);
         TextEditorWidget.prototype.addNode.call(this, desc);
         this.updateOffset();
     };
@@ -85,6 +68,7 @@ define([
             getBasicCompletions = completer.getCompletionsFor,
             self = this;
 
+        // TODO: update completions for python stuff
         completer.getCompletionsFor = function(obj) {
             if (obj === 'attributes') {
                 return self.getOperationAttributes().map(attr => {
