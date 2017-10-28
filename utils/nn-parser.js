@@ -28,7 +28,10 @@ if (exists.sync(configPath)) {  // Check the deepforge config
     config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
     torchPath = (config.torch && config.torch.dir) || (configDir + 'torch');
 }
-torchPath += `/install/share/lua/5.1/${outputName}/`;
+// FIXME: Get the pytorch root path...
+torchPath = process.env.HOME + '/projects/pytorch';
+// check 'modules', 'parallel'
+torchPath += '/torch/nn/';
 
 console.log(`parsing ${outputName} from ${torchPath}`);
 
@@ -51,14 +54,18 @@ var lookupType = function(layer){
     return layerType || 'Misc';
 };
 
-fs.readdir(torchPath, function(err,files){
-    if(err) throw err;
-    var layers,
+var parseLayerFiles = function(layerDir) {
+    var files = fs.readdirSync(layerDir),
+        layers,
         layerByName = {};
 
-    layers = files.filter(filename => path.extname(filename) === '.lua')
-        .map(filename => fs.readFileSync(torchPath + filename, 'utf8'))
+    console.log('parsing', layerDir);
+    layers = files.filter(filename => path.extname(filename) === '.py' &&
+            filename[0] !== '_')
+        .map(filename => fs.readFileSync(layerDir + filename, 'utf8'))
         .map(code => LayerParser.parse(code))
+        .filter(list => list !== null)
+        .reduce((l1, l2) => l1.concat(l2), [])
         .filter(layer => !!layer && layer.name);
 
     layers.forEach(layer => {
@@ -104,17 +111,27 @@ fs.readdir(torchPath, function(err,files){
         }
     });
     layers = layers.filter(layer => !SKIP_LAYERS[layer.name]);
+    return layers;
+};
 
-    outputDst += outputName + '.json';
-    // eslint-disable-next-line no-console
-    console.log('Saved nn interface to ' + outputDst);
-    fs.writeFileSync(outputDst, JSON.stringify(layers, null, 2));
+var layers = ['modules']
+    .map(dir => torchPath + dir + '/')
+    .map(path => parseLayerFiles(path))
+    .reduce((l1, l2) => l1.concat(l2))
+    .filter(layer => layer.name[0] !== '_');  // skip hidden/abstract layers
 
-    // Update the CreateTorchMeta index
-    var updateSchemas = `${__dirname}/../src/plugins/CreateTorchMeta/update-schemas.js`,
-        job = require('child_process').fork(updateSchemas);
 
-    job.on('close', code => {
-        process.exit(code);
-    });
+// eslint-disable-next-line no-console
+console.log('discovered', layers.length, 'layers');
+outputDst += outputName + '.json';
+// eslint-disable-next-line no-console
+console.log('Saved nn interface to ' + outputDst);
+fs.writeFileSync(outputDst, JSON.stringify(layers, null, 2));
+
+// Update the CreateTorchMeta index
+var updateSchemas = `${__dirname}/../src/plugins/CreateTorchMeta/update-schemas.js`,
+    job = require('child_process').fork(updateSchemas);
+
+job.on('close', code => {
+    process.exit(code);
 });

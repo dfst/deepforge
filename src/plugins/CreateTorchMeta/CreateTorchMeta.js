@@ -205,9 +205,10 @@ define([
     };
 
     // Some helper methods w/ attribute handling
-    var LUA_TO_GME = {
+    var PYTHON_TO_GME = {
         boolean: 'boolean',
-        number: 'float',
+        float: 'float',
+        int: 'integer',
         string: 'string'
     };
 
@@ -301,7 +302,7 @@ define([
             attrs.forEach(name => {
                 desc = {};
                 defVal = defaults.hasOwnProperty(name) ? defaults[name] : '';
-                type = LUA_TO_GME[types[name]];
+                type = PYTHON_TO_GME[types[name]];
                 if (type) {
                     desc.type = type;
                 }
@@ -375,6 +376,11 @@ define([
         if (schema.max !== undefined) {
             // Set the min, max
             schema.max = +schema.max;
+        }
+        // Add the enum for booleans so we use python style True/False
+        if (schema.type === 'boolean') {
+            schema.enum = ['True', 'False'];
+            schema.type = 'string';
         }
 
         // Create the attribute and set the schema

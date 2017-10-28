@@ -24,7 +24,7 @@ define([
         WIDGET_CLASS = 'root-viz';
 
     RootVizWidget = function (logger, container) {
-        this._logger = logger.fork('Widget');
+        this.logger = logger.fork('Widget');
 
         this.$el = container;
 
@@ -45,7 +45,7 @@ define([
         this.nodes = {};
         this._initialize();
 
-        this._logger.debug('ctor finished');
+        this.logger.debug('ctor finished');
     };
 
     RootVizWidget.prototype.getComponentId = function() {

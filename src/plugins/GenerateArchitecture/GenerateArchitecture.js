@@ -49,10 +49,6 @@ define([
         this.LayerDict = createLayerDict(this.core, this.META);
         this.uniqueId = 2;
         this.varnames = {net: true};
-        this.definitions = [
-            'require \'nn\'',
-            'require \'rnn\''
-        ];
 
         return PluginBase.prototype.main.apply(this, arguments);
     };
@@ -76,6 +72,11 @@ define([
             result = {},
             code = '';
 
+        this.definitions = [
+            'import torch',
+            'import torch.nn as nn'
+        ];
+
         // Add an index to each layer
         layers.forEach((l, index) => l[INDEX] = index);
 
@@ -85,6 +86,7 @@ define([
             code += this.genLayerDefinitions(layers);
         }
 
+        // TODO: Define the network w/ 'class ARCHITECTURE_NAME'
         this.logger.debug('Generating architecture code...');
         code += this.genArchCode(layers);
         this.logger.debug('Prepending hoisted code...');

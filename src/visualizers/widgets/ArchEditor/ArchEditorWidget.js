@@ -234,7 +234,7 @@ define([
             newErrored = _.difference(currentErrored, oldErrored),
             fixedLayers = _.difference(oldErrored, currentErrored);
 
-        this._logger.info('updating displayed errors to', currentErrored);
+        this.logger.info('updating displayed errors to', currentErrored);
         this.hasError = {};
         newErrored.forEach(id => {
             if (this.items[id]) {

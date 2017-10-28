@@ -18,6 +18,10 @@ define([
 
     var TextEditorWidget,
         WIDGET_CLASS = 'text-editor',
+        LINE_COMMENT = {
+            python: '#',
+            lua: '--'
+        },
         DEFAULT_SETTINGS = {
             keybindings: 'default',
             theme: 'solarized_dark',
@@ -25,8 +29,9 @@ define([
         };
 
     TextEditorWidget = function (logger, container) {
-        this._logger = logger.fork('Widget');
+        this.logger = logger.fork('Widget');
 
+        this.language = this.language || 'python';
         this._el = container;
         this._el.css({height: '100%'});
         this.$editor = $('<div/>');
@@ -60,7 +65,7 @@ define([
         this.currentHeader = '';
         this.activeNode = null;
 
-        this._logger.debug('ctor finished');
+        this.logger.debug('ctor finished');
     };
 
     TextEditorWidget.prototype.addExtensions = function () {
@@ -86,8 +91,8 @@ define([
 
     TextEditorWidget.prototype.getSessionOptions = function () {
         return {
-            mode: 'ace/mode/lua',
-            tabSize: 3,
+            mode: 'ace/mode/' + this.language,
+            tabSize: 4,
             useSoftTabs: true
         };
     };
@@ -212,7 +217,7 @@ define([
 
     TextEditorWidget.prototype.onUpdateEditorSettings = function () {
         ComponentSettings.overwriteComponentSettings(this.getComponentId(), this.editorSettings,
-            err => err && this._logger.error(`Could not save editor settings: ${err}`));
+            err => err && this.logger.error(`Could not save editor settings: ${err}`));
     };
 
     TextEditorWidget.prototype.onWidgetContainerResize = function () {
@@ -220,20 +225,47 @@ define([
     };
 
     // Adding/Removing/Updating items
+    TextEditorWidget.prototype.comment = function (text) {
+        var prefix = LINE_COMMENT[this.language] + ' ';
+        return text.replace(
+            new RegExp('^(' + LINE_COMMENT[this.language] + ')?','mg'),
+            prefix
+        );
+    };
+
     TextEditorWidget.prototype.getHeader = function (desc) {
-        return `-- Editing "${desc.name}"`;
+        return this.comment(`Editing "${desc.name}"`);
     };
 
     TextEditorWidget.prototype.addNode = function (desc) {
         // Set the current text based on the given
         // Create the header
-        var header = this.getHeader(desc);
+        var header = this.getHeader(desc),
+            newContent = header + '\n' + desc.text,
+            oldContent,
+            selection;
 
         this.activeNode = desc.id;
         this.silent = true;
-        this.editor.setValue(header + '\n' + desc.text, 2);
+
+        oldContent = this.editor.getValue();
+        selection = this.editor.session.selection.toJSON();
+
+        this.editor.setValue(newContent, 2);
+
+        selection = this.getAdjustedSelection(oldContent, newContent, selection);
+        this.editor.session.selection.fromJSON(selection);
+
         this.silent = false;
         this.currentHeader = header;
+    };
+
+    TextEditorWidget.prototype.getAdjustedSelection = function (oldText, newText, selection) {
+        // if we are updating the value, we should make sure the cursor position
+        // remains in the same spot (ie, diff the text and update the positions
+        // based on the size of the patches
+        // TODO
+        return selection;
     };
 
     TextEditorWidget.prototype.saveText = function () {
@@ -249,7 +281,7 @@ define([
         if (typeof this.activeNode === 'string') {
             this.saveTextFor(this.activeNode, text);
         } else {
-            this._logger.error(`Active node is invalid! (${this.activeNode})`);
+            this.logger.error(`Active node is invalid! (${this.activeNode})`);
         }
     };
 
@@ -281,11 +313,11 @@ define([
     };
 
     TextEditorWidget.prototype.onActivate = function () {
-        this._logger.debug('TextEditorWidget has been activated');
+        this.logger.debug('TextEditorWidget has been activated');
     };
 
     TextEditorWidget.prototype.onDeactivate = function () {
-        this._logger.debug('TextEditorWidget has been deactivated');
+        this.logger.debug('TextEditorWidget has been deactivated');
     };
 
     TextEditorWidget.prototype.setReadOnly = function (isReadOnly) {

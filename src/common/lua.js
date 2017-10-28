@@ -3234,7 +3234,7 @@ function runScripts(){
 
 if (window.addEventListener){
     window.addEventListener("DOMContentLoaded", runScripts, false);
-} else {
+} else if (window.attachEvent) {
     window.attachEvent("onload", runScripts);
 }
 

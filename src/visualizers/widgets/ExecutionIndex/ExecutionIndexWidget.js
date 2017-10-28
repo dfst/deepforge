@@ -17,7 +17,7 @@ define([
         WIDGET_CLASS = 'execution-index';
 
     ExecutionIndexWidget = function (logger, container) {
-        this._logger = logger.fork('Widget');
+        this.logger = logger.fork('Widget');
 
         this.$el = container;
 
@@ -26,7 +26,7 @@ define([
         this.checkedIds = [];
         this._initialize();
 
-        this._logger.debug('ctor finished');
+        this.logger.debug('ctor finished');
     };
 
     ExecutionIndexWidget.prototype._initialize = function () {
@@ -46,7 +46,7 @@ define([
         this.$execList = this.$table.find('.execs-content');
 
         // Create the graph in the right half
-        this.lineGraph = new LineGraphWidget(this._logger, this.$right);
+        this.lineGraph = new LineGraphWidget(this.logger, this.$right);
         this.defaultSelection = null;
         this.hasRunning = false;
     };
@@ -57,7 +57,7 @@ define([
             WebGMEGlobal.State.registerActiveObject(id);
             event.stopPropagation();
         }
-        this._logger.warn('No node id found for node-nav!');
+        this.logger.warn('No node id found for node-nav!');
     };
 
     ExecutionIndexWidget.prototype.onExecutionClicked = function (event) {
@@ -67,7 +67,7 @@ define([
 
         while (!target.getAttribute('data-id')) {
             if (!target.parentNode) {
-                this._logger.error('could not find execution id for ' + event);
+                this.logger.error('could not find execution id for ' + event);
                 return;
             }
             target = target.parentNode;
@@ -93,7 +93,7 @@ define([
             height: height
         });
         this.lineGraph.onWidgetContainerResize(width/2, height);
-        this._logger.debug('Widget is resizing...');
+        this.logger.debug('Widget is resizing...');
     };
 
     // Adding/Removing/Updating items
@@ -156,7 +156,7 @@ define([
             row.append(td);
         }
 
-        this._logger.debug(`Adding execution ${desc.name} (${desc.id}) to list`);
+        this.logger.debug(`Adding execution ${desc.name} (${desc.id}) to list`);
         this.$execList.append(row);
         row.addClass(statusClass);
 
@@ -300,7 +300,7 @@ define([
                 // ie, it has started running
                 this.updateSelected(desc);
             }
-            this._logger.debug(`setting execution ${desc.id} to ${desc.status}`);
+            this.logger.debug(`setting execution ${desc.id} to ${desc.status}`);
 
             node.statusClass = Utils.ClassForJobStatus[desc.status];
             node.desc = desc;
@@ -314,11 +314,11 @@ define([
     };
 
     ExecutionIndexWidget.prototype.onActivate = function () {
-        this._logger.debug('ExecutionIndexWidget has been activated');
+        this.logger.debug('ExecutionIndexWidget has been activated');
     };
 
     ExecutionIndexWidget.prototype.onDeactivate = function () {
-        this._logger.debug('ExecutionIndexWidget has been deactivated');
+        this.logger.debug('ExecutionIndexWidget has been deactivated');
     };
 
     return ExecutionIndexWidget;

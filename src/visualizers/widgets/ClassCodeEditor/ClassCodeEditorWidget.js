@@ -19,9 +19,7 @@ define([
     _.extend(ClassCodeEditorWidget.prototype, TextEditorWidget.prototype);
 
     ClassCodeEditorWidget.prototype.getHeader = function(desc) {
-        return [
-            `-- The class definition for ${desc.name}`
-        ].join('\n');
+        return this.comment(`The class definition for ${desc.name}`);
     };
 
     ClassCodeEditorWidget.prototype.updateNode = function() {

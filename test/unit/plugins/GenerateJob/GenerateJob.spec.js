@@ -118,7 +118,7 @@ describe('GenerateJob', function () {
 
     describe('exec files', function() {
         describe('attribute file', function() {
-            var boolString = /['"](true|false)['"]/g;
+            var boolString = /['"](True|False)['"]/g;
 
             beforeEach(preparePlugin);
 
@@ -129,9 +129,36 @@ describe('GenerateJob', function () {
 
                 plugin.setAttribute(node, 'debug', 'true');
                 plugin.createAttributeFile(node, files);
-                content = files['attributes.lua'];
+                content = files['attributes.py'];
                 matches = content.match(boolString);
                 expect(matches).to.equal(null);
+            });
+
+            describe('boolean to python boolean', function() {
+
+                it('should convert true to True', function() {
+                    var files = {},
+                        content,
+                        matches;
+
+                    plugin.setAttribute(node, 'debug', 'true');
+                    plugin.createAttributeFile(node, files);
+                    content = files['attributes.py'];
+                    matches = content.includes('True');
+                    expect(matches).to.equal(true);
+                });
+
+                it('should convert false to False', function() {
+                    var files = {},
+                        content,
+                        matches;
+
+                    plugin.setAttribute(node, 'debug', 'False');
+                    plugin.createAttributeFile(node, files);
+                    content = files['attributes.py'];
+                    matches = content.includes('False');
+                    expect(matches).to.equal(true);
+                });
             });
 
             it('should not quote true boolean values', function() {
@@ -141,7 +168,7 @@ describe('GenerateJob', function () {
 
                 plugin.setAttribute(node, 'debug', true);
                 plugin.createAttributeFile(node, files);
-                content = files['attributes.lua'];
+                content = files['attributes.py'];
                 matches = content.match(boolString);
                 expect(matches).to.equal(null);
             });
@@ -153,7 +180,7 @@ describe('GenerateJob', function () {
 
                 plugin.setAttribute(node, 'debug', 'false');
                 plugin.createAttributeFile(node, files);
-                content = files['attributes.lua'];
+                content = files['attributes.py'];
                 matches = content.match(boolString);
                 expect(matches).to.equal(null);
             });
@@ -165,11 +192,14 @@ describe('GenerateJob', function () {
 
                 plugin.setAttribute(node, 'debug', false);
                 plugin.createAttributeFile(node, files);
-                content = files['attributes.lua'];
+                content = files['attributes.py'];
                 matches = content.match(boolString);
                 expect(matches).to.equal(null);
             });
         });
     });
 
+    // TODO: What else should I test?
+    // run a hello world example (use golem?)
+ 
 });

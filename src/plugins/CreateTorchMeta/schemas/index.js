@@ -1,13 +1,10 @@
 /*globals define*/
 define([
-    'text!./nn.json',
-    'text!./rnn.json'
+    'text!./nn.json'
 ], function(
-    nn,
-    rnn
+    nn
 ) {
     return {
-        nn: nn,
-        rnn: rnn
+        nn: nn
     };
 });
