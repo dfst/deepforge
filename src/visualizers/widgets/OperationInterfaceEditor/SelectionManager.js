@@ -71,16 +71,6 @@ define([
                 x: cx,
                 y: 0
             });
-
-            if (!this.selectedItem.desc.isPointer) {
-                new Buttons.GoToBase({
-                    context: this._widget,
-                    $pEl: this.$selection,
-                    item: this.selectedItem,
-                    x: width,
-                    y: 0
-                });
-            }
         }
     };
 
