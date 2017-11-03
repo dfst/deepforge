@@ -1,17 +1,9 @@
 {
   "components": {
     "plugins": {
-      "ImportTorch": {
-        "src": "src/plugins/ImportTorch",
-        "test": "test/plugins/ImportTorch"
-      },
       "CreateTorchMeta": {
         "src": "src/plugins/CreateTorchMeta",
         "test": "test/plugins/CreateTorchMeta"
-      },
-      "GenerateArchitecture": {
-        "src": "src/plugins/GenerateArchitecture",
-        "test": "test/plugins/GenerateArchitecture"
       },
       "GenerateYaml": {
         "src": "src/plugins/GenerateYaml",
