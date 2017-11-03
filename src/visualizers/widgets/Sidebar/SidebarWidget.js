@@ -19,7 +19,7 @@ define([
         CATEGORIES = [
             'pipelines',
             'executions',
-            'architectures',
+            'resources',
             'artifacts'
         ];
 

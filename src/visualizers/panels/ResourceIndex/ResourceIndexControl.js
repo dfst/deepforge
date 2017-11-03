@@ -4,12 +4,12 @@ define([
 ], function(
     PipelineIndexControl
 ) {
-    var ArchIndexControl = function() {
+    var ResourceIndexControl = function() {
         PipelineIndexControl.apply(this, arguments);
     };
 
-    ArchIndexControl.prototype = Object.create(PipelineIndexControl.prototype);
-    ArchIndexControl.prototype._getObjectDescriptor = function (nodeId) {
+    ResourceIndexControl.prototype = Object.create(PipelineIndexControl.prototype);
+    ResourceIndexControl.prototype._getObjectDescriptor = function (nodeId) {
         var node = this._client.getNode(nodeId),
             base,
             desc;
@@ -28,7 +28,7 @@ define([
         return desc;
     };
 
-    ArchIndexControl.prototype._initWidgetEventHandlers = function () {
+    ResourceIndexControl.prototype._initWidgetEventHandlers = function () {
         this._widget.deletePipeline = id => {
             var node = this._client.getNode(id),
                 name = node.getAttribute('name'),
@@ -51,5 +51,5 @@ define([
             }
         };
     };
-    return ArchIndexControl;
+    return ResourceIndexControl;
 });

@@ -4,22 +4,22 @@
 define([
     'js/PanelBase/PanelBaseWithHeader',
     'js/PanelManager/IActivePanel',
-    'widgets/ArchIndex/ArchIndexWidget',
-    'panels/ArchIndex/ArchIndexControl'
+    'widgets/ResourceIndex/ResourceIndexWidget',
+    'panels/ResourceIndex/ResourceIndexControl'
 ], function (
     PanelBaseWithHeader,
     IActivePanel,
-    ArchIndexWidget,
-    ArchIndexControl
+    ResourceIndexWidget,
+    ResourceIndexControl
 ) {
     'use strict';
 
-    var ArchIndexPanel;
+    var ResourceIndexPanel;
 
-    ArchIndexPanel = function (layoutManager, params) {
+    ResourceIndexPanel = function (layoutManager, params) {
         var options = {};
         //set properties from options
-        options[PanelBaseWithHeader.OPTIONS.LOGGER_INSTANCE_NAME] = 'ArchIndexPanel';
+        options[PanelBaseWithHeader.OPTIONS.LOGGER_INSTANCE_NAME] = 'ResourceIndexPanel';
         options[PanelBaseWithHeader.OPTIONS.FLOATING_TITLE] = true;
 
         //call parent's constructor
@@ -35,22 +35,22 @@ define([
     };
 
     //inherit from PanelBaseWithHeader
-    _.extend(ArchIndexPanel.prototype, PanelBaseWithHeader.prototype);
-    _.extend(ArchIndexPanel.prototype, IActivePanel.prototype);
+    _.extend(ResourceIndexPanel.prototype, PanelBaseWithHeader.prototype);
+    _.extend(ResourceIndexPanel.prototype, IActivePanel.prototype);
 
-    ArchIndexPanel.prototype._initialize = function () {
+    ResourceIndexPanel.prototype._initialize = function () {
         var self = this;
 
         //set Widget title
         this.setTitle('');
 
-        this.widget = new ArchIndexWidget(this.logger, this.$el);
+        this.widget = new ResourceIndexWidget(this.logger, this.$el);
 
         this.widget.setTitle = function (title) {
             self.setTitle(title);
         };
 
-        this.control = new ArchIndexControl({
+        this.control = new ResourceIndexControl({
             logger: this.logger,
             client: this._client,
             embedded: this._embedded,
@@ -62,18 +62,18 @@ define([
 
     /* OVERRIDE FROM WIDGET-WITH-HEADER */
     /* METHOD CALLED WHEN THE WIDGET'S READ-ONLY PROPERTY CHANGES */
-    ArchIndexPanel.prototype.onReadOnlyChanged = function (isReadOnly) {
+    ResourceIndexPanel.prototype.onReadOnlyChanged = function (isReadOnly) {
         //apply parent's onReadOnlyChanged
         PanelBaseWithHeader.prototype.onReadOnlyChanged.call(this, isReadOnly);
 
     };
 
-    ArchIndexPanel.prototype.onResize = function (width, height) {
+    ResourceIndexPanel.prototype.onResize = function (width, height) {
         this.logger.debug('onResize --> width: ' + width + ', height: ' + height);
     };
 
     /* * * * * * * * Visualizer life cycle callbacks * * * * * * * */
-    ArchIndexPanel.prototype.destroy = function () {
+    ResourceIndexPanel.prototype.destroy = function () {
         this.control.destroy();
         this.widget.destroy();
 
@@ -82,19 +82,19 @@ define([
         WebGMEGlobal.Toolbar.refresh();
     };
 
-    ArchIndexPanel.prototype.onActivate = function () {
+    ResourceIndexPanel.prototype.onActivate = function () {
         this.widget.onActivate();
         this.control.onActivate();
         WebGMEGlobal.KeyboardManager.setListener(this.widget);
         WebGMEGlobal.Toolbar.refresh();
     };
 
-    ArchIndexPanel.prototype.onDeactivate = function () {
+    ResourceIndexPanel.prototype.onDeactivate = function () {
         this.widget.onDeactivate();
         this.control.onDeactivate();
         WebGMEGlobal.KeyboardManager.setListener(undefined);
         WebGMEGlobal.Toolbar.refresh();
     };
 
-    return ArchIndexPanel;
+    return ResourceIndexPanel;
 });

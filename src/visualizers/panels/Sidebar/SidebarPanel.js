@@ -22,7 +22,7 @@ define([
         CATEGORY_TO_PLACE = {
             pipelines: 'MyPipelines',
             executions: 'MyExecutions',
-            architectures: 'MyArchitectures',
+            resources: 'MyResources',
             artifacts: 'MyArtifacts'
         };
 

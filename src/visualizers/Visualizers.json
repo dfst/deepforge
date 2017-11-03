@@ -72,9 +72,9 @@
     "DEBUG_ONLY": false
   },
   {
-    "id": "ArchitectureIndex",
-    "title": "ArchitectureIndex",
-    "panel": "panels/ArchIndex/ArchIndexPanel",
+    "id": "ResourceIndex",
+    "title": "ResourceIndex",
+    "panel": "panels/ResourceIndex/ResourceIndexPanel",
     "DEBUG_ONLY": false
   },
   {
@@ -135,12 +135,6 @@
     "id": "ArtifactIndex",
     "title": "ArtifactIndex",
     "panel": "panels/ArtifactIndex/ArtifactIndexPanel",
-    "DEBUG_ONLY": false
-  },
-  {
-    "id": "ArchIndex",
-    "title": "ArchIndex",
-    "panel": "panels/ArchIndex/ArchIndexPanel",
     "DEBUG_ONLY": false
   },
   {

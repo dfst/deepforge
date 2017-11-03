@@ -113,10 +113,9 @@ define([
     DeepForge.places = {};
     var TYPE_TO_CONTAINER = {
         
-        Architecture: 'MyArchitectures',
+        Architecture: 'MyResources',
         Pipeline: 'MyPipelines',
         Execution: 'MyExecutions',
-        Layer: 'MyLayers',
         Artifact: 'MyArtifacts',
         Operation: 'MyOperations',
         Primitive: 'MyDataTypes',
@@ -223,40 +222,6 @@ define([
         });
     };
 
-    var createCustomLayer = function(typeName) {
-        var metanodes = client.getAllMetaNodes(),
-            msg = `Created new custom ${typeName} layer`,
-            newId,
-            customLayerId,
-            baseId,
-            name,
-            i = metanodes.length;
-
-        while (i-- && !(baseId && customLayerId)) {
-            name = metanodes[i].getAttribute('name');
-            if (name === 'CustomLayer') {
-                customLayerId = metanodes[i].getId();
-            } else if (name === typeName) {
-                baseId = metanodes[i].getId();
-            }
-        }
-
-        return DeepForge.places.MyLayers()
-            .then(id => {
-
-                client.startTransaction(msg);
-
-                newId = createNamedNode(baseId, id, true);
-                addToMetaSheet(newId, 'CustomLayers');
-                client.addMixin(newId, customLayerId);
-                client.setRegistry(newId, REGISTRY_KEYS.IS_ABSTRACT, false);
-
-                client.completeTransaction();
-
-                WebGMEGlobal.State.registerActiveObject(newId);
-            });
-    };
-
     // Creating Artifacts
     var UPLOAD_PLUGIN = 'ImportArtifact',
         DATA_TYPE_CONFIG = {
@@ -329,7 +294,6 @@ define([
         };
     });
 
-    DeepForge.create.Layer = createCustomLayer;
     DeepForge.create.Artifact = uploadArtifact;
 
     //////////////////// DeepForge prev locations ////////////////////

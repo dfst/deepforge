@@ -246,12 +246,12 @@
         "secondary": false,
         "widget": "src/visualizers/widgets/ArtifactIndex"
       },
-      "ArchIndex": {
-        "src": "panels/ArchIndex/ArchIndexPanel",
-        "title": "ArchIndex",
-        "panel": "src/visualizers/panels/ArchIndex",
+      "ResourceIndex": {
+        "src": "panels/ResourceIndex/ResourceIndexPanel",
+        "title": "ResourceIndex",
+        "panel": "src/visualizers/panels/ResourceIndex",
         "secondary": false,
-        "widget": "src/visualizers/widgets/ArchIndex"
+        "widget": "src/visualizers/widgets/ResourceIndex"
       },
       "ForwardViz": {
         "src": "panels/ForwardViz/ForwardVizPanel",
