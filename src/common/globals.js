@@ -72,7 +72,7 @@ define([
         newName = getUniqueName(parentId, basename);
 
         if (baseNode.getAttribute('name') === 'Operation') {
-            code = GetOperationCode({name: 'newName'});
+            code = GetOperationCode({name: newName});
             client.setAttribute(newId, 'code', code);
         }
 
