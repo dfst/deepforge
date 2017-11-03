@@ -62,10 +62,7 @@ define([
             basename,
             newName;
 
-        basename = 'New';
-        if (baseNode.getAttribute('name') !== 'Operation') {
-            basename += baseNode.getAttribute('name');
-        }
+        basename = 'New' + baseNode.getAttribute('name');
         newName = getUniqueName(parentId, basename);
 
         // If instance, make the first char lowercase
