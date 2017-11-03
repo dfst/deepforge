@@ -10,6 +10,7 @@ define([
 ) {
     'use strict';
     var OperationInterfaceEditorEvents = function() {
+        this.logger = this._logger;
         this._widget.allDataTypeIds = this.allDataTypeIds.bind(this);
         this._widget.allValidReferences = this.allValidReferences.bind(this);
         this._widget.addRefTo = this.addRefTo.bind(this);
