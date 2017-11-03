@@ -3,7 +3,6 @@
 
 define([
     'panels/TextEditor/TextEditorControl',
-    'text!./boilerplate.ejs',
     'deepforge/viz/OperationControl',
     'deepforge/OperationCode',
     'deepforge/viz/Execute',
@@ -11,7 +10,6 @@ define([
     'underscore'
 ], function (
     TextEditorControl,
-    CodeTemplate,
     OperationControl,
     OperationCode,
     Execute,
@@ -22,7 +20,6 @@ define([
     'use strict';
 
     var OperationCodeEditorControl;
-    var GenerateBoilerplate = _.template(CodeTemplate);
 
     OperationCodeEditorControl = function (options) {
         options.attributeName = 'code';
@@ -54,10 +51,6 @@ define([
         desc.outputs = this.getOperationOutputs(node).map(id => this.formatIO(id));
         desc.references = node.getPointerNames().filter(name => name !== 'base');
 
-        // Create the boilerplate operation code, if applicable
-        if (!desc.ownText) {
-            desc.text = GenerateBoilerplate(desc);
-        }
         return desc;
     };
 

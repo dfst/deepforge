@@ -2,20 +2,25 @@
 // This file creates the DeepForge namespace and defines basic actions
 define([
     'panel/FloatingActionButton/styles/Materialize',
+    'text!./NewOperationCode.ejs',
     'js/RegistryKeys',
     'js/Panels/MetaEditor/MetaEditorConstants',
     'js/Constants',
+    'underscore',
     'q'
 ], function(
     Materialize,
+    DefaultCodeTpl,
     REGISTRY_KEYS,
     META_CONSTANTS,
     CONSTANTS,
+    _,
     Q
 ) {
     var DeepForge = {},
         placesTerritoryId,
         client = WebGMEGlobal.Client,
+        GetOperationCode = _.template(DefaultCodeTpl),
         PLACE_NAMES;
 
     // Helper functions
@@ -60,10 +65,16 @@ define([
         var newId = client.createNode({parentId, baseId}),
             baseNode = client.getNode(baseId),
             basename,
-            newName;
+            newName,
+            code;
 
         basename = 'New' + baseNode.getAttribute('name');
         newName = getUniqueName(parentId, basename);
+
+        if (baseNode.getAttribute('name') === 'Operation') {
+            code = GetOperationCode({name: 'newName'});
+            client.setAttribute(newId, 'code', code);
+        }
 
         // If instance, make the first char lowercase
         if (!isMeta) {
