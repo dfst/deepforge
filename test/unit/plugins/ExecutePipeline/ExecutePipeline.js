@@ -13,7 +13,7 @@ describe('ExecutePipeline', function () {
     var gmeConfig = testFixture.getGmeConfig(),
         expect = testFixture.expect,
         Q = testFixture.Q,
-        PULSE = require('../../../src/common/Constants').PULSE,
+        PULSE = require('../../../../src/common/Constants').PULSE,
         logger = testFixture.logger.fork('ExecutePipeline'),
         PluginCliManager = testFixture.WebGME.PluginCliManager,
         manager = new PluginCliManager(null, logger, gmeConfig),

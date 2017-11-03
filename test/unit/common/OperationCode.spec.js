@@ -1,8 +1,8 @@
-describe.only('OperationCode', function() {
+describe('OperationCode', function() {
     var fs = require('fs');
     var path = require('path');
     var assert = require('assert');
-    var OperationCode = require('../../src/common/OperationCode');
+    var OperationCode = require('../../../src/common/OperationCode');
     var operation;
 
     describe('example', function() {

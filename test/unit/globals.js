@@ -10,7 +10,7 @@ var testFixture = require('webgme/test/_globals'),
     path = require('path'),
     fs = require('fs'),
     exists = require('exists-file'),
-    WEBGME_CONFIG_PATH = '../config';
+    WEBGME_CONFIG_PATH = '../../config';
 
 // This flag will make sure the config.test.js is being used
 // process.env.NODE_ENV = 'test'; // This is set by the require above, overwrite it here.
@@ -36,7 +36,7 @@ testFixture.requirejs.config({
 });
 testFixture.getGmeConfig = getGmeConfig;
 
-testFixture.DF_SEED_DIR = testFixture.path.join(__dirname, '..', 'src', 'seeds');
+testFixture.DF_SEED_DIR = testFixture.path.join(__dirname, '..', '..', 'src', 'seeds');
 
 testFixture.mkdir = function(dir) {
     var dirs = path.resolve(dir).split(path.sep),

@@ -63,8 +63,8 @@ describe('cli', function() {
         mockery.registerMock('child_process', childProcess);
         mockery.registerMock('rimraf', rimraf);
         // Clear node's cache
-        delete require.cache[require.resolve('../../bin/deepforge')];
-        cli = require('../../bin/deepforge');
+        delete require.cache[require.resolve('../../../bin/deepforge')];
+        cli = require('../../../bin/deepforge');
     });
 
     it('should display help message if no args', function() {
@@ -77,8 +77,8 @@ describe('cli', function() {
             mocks.childProcess.spawn = nop;
             mocks.childProcess.execSync = () => '123';
             mocks.rimraf.sync = nop;
-            delete require.cache[require.resolve('../../bin/deepforge')];
-            cli = require('../../bin/deepforge');
+            delete require.cache[require.resolve('../../../bin/deepforge')];
+            cli = require('../../../bin/deepforge');
         });
 
         it('should check for running mongo', function(done) {
@@ -206,7 +206,7 @@ describe('cli', function() {
         });
 
         it('should update deepforge from git if --git set w/ npm', function() {
-            var repo = require('../../package.json').repository.url;
+            var repo = require('../../../package.json').repository.url;
             mocks.childProcess.spawn = (cmd, args) => {
                 // check for the git repo
                 if (cmd === 'npm') {

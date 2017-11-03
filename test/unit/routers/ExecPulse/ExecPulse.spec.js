@@ -1,12 +1,12 @@
 /*jshint node:true, mocha:true*/
 describe('ExecPulse', function() {
     var testFixture = require('../../globals'),  // TODO: May need to change this if not created from webgme-cli
-        PULSE = require('../../../src/common/Constants').PULSE,
+        PULSE = require('../../../../src/common/Constants').PULSE,
         superagent = testFixture.superagent,
         expect = testFixture.expect,
         gmeConfig = testFixture.getGmeConfig(),
         server = testFixture.WebGME.standaloneServer(gmeConfig),
-        mntPt = require('../../../webgme-setup.json').components.routers.ExecPulse.mount,
+        mntPt = require('../../../../webgme-setup.json').components.routers.ExecPulse.mount,
         urlFor = function(action) {
             return [
                 server.getUrl(),

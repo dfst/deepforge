@@ -12,7 +12,7 @@ describe('ExecuteJob', function () {
         projectName = 'testProject',
         pluginName = 'ExecuteJob',
         manager = new PluginCliManager(null, logger, gmeConfig),
-        PULSE = require('../../../src/common/Constants').PULSE,
+        PULSE = require('../../../../src/common/Constants').PULSE,
         project,
         gmeAuth,
         storage,
