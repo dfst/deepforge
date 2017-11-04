@@ -251,19 +251,20 @@ define([
             .map(node => node.getAttribute('name'));
 
         // Add the target type to the pluginMetadata...
-        var metadata = WebGMEGlobal.allPluginsMetadata[UPLOAD_PLUGIN],
-            config = metadata.configStructure
-                .find(opt => opt.name === DATA_TYPE_CONFIG.name);
+        var metadata = WebGMEGlobal.allPluginsMetadata[UPLOAD_PLUGIN];
+            //config = metadata.configStructure
+                //.find(opt => opt.name === DATA_TYPE_CONFIG.name);
 
-        if (!config) {
-            config = DATA_TYPE_CONFIG;
-            WebGMEGlobal.allPluginsMetadata[UPLOAD_PLUGIN].configStructure.push(config);
-        }
+        // TODO: maybe autocomplete on the existing data types?
+        //if (!config) {
+            //config = DATA_TYPE_CONFIG;
+            //WebGMEGlobal.allPluginsMetadata[UPLOAD_PLUGIN].configStructure.push(config);
+        //}
 
-        config.valueItems = dataTypes;
-        config.value = dataTypes[0];
+        //config.valueItems = dataTypes;
+        //config.value = dataTypes[0];
 
-        WebGMEGlobal.InterpreterManager.configureAndRun(metadata, (result) => {
+        WebGMEGlobal.InterpreterManager.configureAndRun(metadata, result => {
             var msg = 'Artifact upload complete!';
             if (!result) {
                 return;
