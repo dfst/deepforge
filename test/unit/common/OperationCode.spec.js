@@ -28,6 +28,11 @@ describe('OperationCode', function() {
                 assert.equal(operation.getName(), 'NewName');
             });
 
+            it('should not remove the parens', function() {
+                operation.setName('NewName');
+                assert(operation.getCode().includes('class NewName('));
+            });
+
             it('should set the name in the code', function() {
                 operation.setName('NewName');
                 var code = operation.getCode();

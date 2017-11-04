@@ -36,7 +36,7 @@ var isNodeJs = typeof module === 'object' && module.exports;
 
         if (lineIndex !== -1) {
             line = this._lines[lineIndex];
-            this._lines[lineIndex] = line.replace(/class[\s]+[^\s:]+/, 'class ' + name);
+            this._lines[lineIndex] = line.replace(/class[\s]+[^\s(:]+/, 'class ' + name);
         } else {  // no class def -> create one!
             this._lines.push('class ' + name + ':');
             this._lines.push('    def ' + OperationCode.CTOR_FN + '():');
