@@ -1,10 +1,6 @@
 {
   "components": {
     "plugins": {
-      "CreateTorchMeta": {
-        "src": "src/plugins/CreateTorchMeta",
-        "test": "test/plugins/CreateTorchMeta"
-      },
       "GenerateYaml": {
         "src": "src/plugins/GenerateYaml",
         "test": "test/plugins/GenerateYaml"
@@ -28,10 +24,6 @@
       "ImportArtifact": {
         "src": "src/plugins/ImportArtifact",
         "test": "test/plugins/ImportArtifact"
-      },
-      "GenerateCriterion": {
-        "src": "src/plugins/GenerateCriterion",
-        "test": "test/plugins/GenerateCriterion"
       },
       "ExecuteJob": {
         "src": "src/plugins/ExecuteJob",
