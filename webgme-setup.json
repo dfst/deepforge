@@ -310,6 +310,9 @@
       },
       "minimal": {
         "src": "src/seeds/minimal"
+      },
+      "tests": {
+        "src": "src/seeds/tests"
       }
     },
     "routers": {
