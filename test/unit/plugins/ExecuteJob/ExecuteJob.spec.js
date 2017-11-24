@@ -1,9 +1,9 @@
 /*jshint node:true, mocha:true*/
 
 'use strict';
-var testFixture = require('../../globals');
 
 describe('ExecuteJob', function () {
+    const testFixture = require('../../../globals');
     var gmeConfig = testFixture.getGmeConfig(),
         expect = testFixture.expect,
         Q = testFixture.Q,

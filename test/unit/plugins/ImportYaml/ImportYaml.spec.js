@@ -4,7 +4,7 @@
  */
 
 'use strict';
-var testFixture = require('../../globals'),
+var testFixture = require('../../../globals'),
     path = testFixture.path,
     fs = require('fs'),
     BASE_DIR = testFixture.DF_SEED_DIR;

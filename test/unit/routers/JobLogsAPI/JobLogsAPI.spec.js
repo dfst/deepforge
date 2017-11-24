@@ -1,4 +1,4 @@
-var testFixture = require('../../globals'),
+var testFixture = require('../../../globals'),
     superagent = testFixture.superagent,
     Q = testFixture.Q,
     expect = testFixture.expect,

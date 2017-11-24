@@ -1,4 +1,4 @@
-var testFixture = require('../../globals'),
+var testFixture = require('../../../globals'),
     expect = testFixture.expect,
     gmeConfig = testFixture.getGmeConfig(),
     server = testFixture.WebGME.standaloneServer(gmeConfig),

@@ -14,11 +14,13 @@
     "local": "node ./bin/start-local.js",
     "worker": "node ./bin/start-worker.js",
     "test": "mkdir ./test-tmp; mocha --recursive test/unit",
+    "test-int": "ENV=test ./node_modules/.bin/chimp --mocha --path test/features",
     "watch-test": "nodemon --exec 'mocha --recursive test'",
     "build-nn": "node ./utils/nn-parser.js"
   },
   "version": "1.4.2",
   "dependencies": {
+    "chimp": "^0.50.2",
     "commander": "^2.9.0",
     "dotenv": "^2.0.0",
     "exists-file": "^2.1.0",
