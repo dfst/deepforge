@@ -489,13 +489,13 @@ var isNodeJs = typeof module === 'object' && module.exports;
     };
 
     OperationCode.prototype.getAttributes = function() {
-        return this.getArguments(OperationCode.CTOR_FN)
-            .map(attr => {
-                return {
-                    name: attr.name,
-                    value: OperationCode.toJsValue(attr.default)
-                };
-            });
+        var args = this.getArguments(OperationCode.CTOR_FN) || [];
+        return args.map(attr => {
+            return {
+                name: attr.name,
+                value: OperationCode.toJsValue(attr.default)
+            };
+        });
     };
 
     /////////////////////// Reference /////////////////////// 
