@@ -95,6 +95,14 @@ describe('Operations', function() {
                 browser.waitForVisible(S.INT.ADD_INPUT, 10000);
                 browser.leftClick(S.INT.ADD_INPUT);
                 browser.waitForVisible(S.INT.INPUT, 2000);
+            });
+
+            it('should update code on add input', function() {
+                browser.waitForVisible(S.INT.OPERATION, 10000);
+                browser.leftClick(S.INT.OPERATION);
+                browser.waitForVisible(S.INT.ADD_INPUT, 10000);
+                browser.leftClick(S.INT.ADD_INPUT);
+                browser.waitForVisible(S.INT.INPUT, 2000);
                 // check the code value
                 let code = browser.execute(function() {
                     var ace = requirejs('ace/ace');
@@ -114,9 +122,6 @@ describe('Operations', function() {
                     .split(')')[0]
                     .split(',').length;
                 assert.equal(execArgCount, 2);  // self, data
-            });
-
-            it('should update code on add input', function() {
             });
 
             it('should update code on add output', function() {
