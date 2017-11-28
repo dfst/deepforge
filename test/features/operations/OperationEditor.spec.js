@@ -7,6 +7,8 @@ describe('Operations', function() {
     const utils = require('../utils');
     const URL = utils.getUrl(PROJECT_NAME);
     const logger = testFixture.logger.fork('ExecuteJob');
+    //const Operation = require('../../../src/common/OperationCode');
+    const assert = require('assert');
 
     //const assert = require('assert');
     const S = require('../selectors');
@@ -15,6 +17,7 @@ describe('Operations', function() {
     let project;
     let commitHash;
 
+    this.timeout(10000);
     before(function(done) {
         testFixture.clearDBAndGetGMEAuth(gmeConfig, PROJECT_NAME)
             .then(function (gmeAuth_) {
@@ -75,23 +78,45 @@ describe('Operations', function() {
     });
 
     describe('editing', function() {
-        let url = utils.getUrl(PROJECT_NAME, '/k/D', 'test');
+        let url = utils.getUrl(PROJECT_NAME, '/k/8', 'test');
 
         describe('interface editor', function() {
             beforeEach(function(done) {
                 project.getBranchHash('test')
                     .then(commitHash => project.deleteBranch('test', commitHash))
                     .then(() => project.createBranch('test', commitHash))
-                    .then(() => {
-                        browser.url(url);
-                        browser.waitForVisible('.operation-interface-editor', 2000);
-                    })
+                    .then(() => browser.url(url))
                     .nodeify(done);
             });
 
+            it('should add input to interface', function() {
+                browser.waitForVisible(S.INT.OPERATION, 10000);
+                browser.leftClick(S.INT.OPERATION);
+                browser.waitForVisible(S.INT.ADD_INPUT, 10000);
+                browser.leftClick(S.INT.ADD_INPUT);
+                browser.waitForVisible(S.INT.INPUT, 2000);
+                // check the code value
+                let code = browser.execute(function() {
+                    var ace = requirejs('ace/ace');
+                    var editor = ace.edit($('.ace_editor')[0]);
+                    
+                    return editor.getSession().getValue();
+                }).value;
+
+                // FIXME: it would be ideal to use the same operation parser
+                // rather than regex checking
+                //
+                //let operation = new Operation(code);
+                //let inputs = operation.getInputs();
+                //assert.equal(inputs.length, 1);
+                let execArgCount = code.match(/execute.*?:/)[0]
+                    .split('(')[1]
+                    .split(')')[0]
+                    .split(',').length;
+                assert.equal(execArgCount, 2);  // self, data
+            });
+
             it('should update code on add input', function() {
-                browser.click(S.INT.OPERATION);
-                // TODO: click on the new input icon
             });
 
             it('should update code on add output', function() {
@@ -113,7 +138,7 @@ describe('Operations', function() {
             // TODO: create a new branch for each?
             // Should I create all the branches at the beginning or import a new project each time?
             it('should add input to model', function() {
-                browser.keys()
+                browser.execute()
                 // TODO: add input to 'execute' method
                 // TODO: check that it shows in the interface editor
             });
