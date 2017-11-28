@@ -131,8 +131,8 @@ define([
             this.synchronize(
                 operation.getOutputs().map(input => input.name),
                 this.getDataNames(this._currentNodeId),
-                output => this.removeOutputData(this._currentNodeId, output),
-                output => this.addOutputData(this._currentNodeId, output)
+                output => this.addOutputData(this._currentNodeId, output),
+                output => this.removeOutputData(this._currentNodeId, output)
             );
 
             TextEditorControl.prototype.saveTextFor.call(this, id, code, true);
