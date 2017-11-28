@@ -7,10 +7,9 @@ describe('Operations', function() {
     const utils = require('../utils');
     const URL = utils.getUrl(PROJECT_NAME);
     const logger = testFixture.logger.fork('ExecuteJob');
-    //const Operation = require('../../../src/common/OperationCode');
+    const Operation = require('../../../src/common/OperationCode');
     const assert = require('assert');
 
-    //const assert = require('assert');
     const S = require('../selectors');
     let storage;
     let gmeAuth;
@@ -79,6 +78,12 @@ describe('Operations', function() {
 
     describe('editing', function() {
         let url = utils.getUrl(PROJECT_NAME, '/k/8', 'test');
+        let getCurrentCode = function() {
+            var ace = requirejs('ace/ace');
+            var editor = ace.edit($('.ace_editor')[0]);
+            
+            return editor.getSession().getValue();
+        };
 
         describe('interface editor', function() {
             beforeEach(function(done) {
@@ -103,28 +108,33 @@ describe('Operations', function() {
                 browser.waitForVisible(S.INT.ADD_INPUT, 10000);
                 browser.leftClick(S.INT.ADD_INPUT);
                 browser.waitForVisible(S.INT.INPUT, 2000);
-                // check the code value
-                let code = browser.execute(function() {
-                    var ace = requirejs('ace/ace');
-                    var editor = ace.edit($('.ace_editor')[0]);
-                    
-                    return editor.getSession().getValue();
-                }).value;
 
-                // FIXME: it would be ideal to use the same operation parser
-                // rather than regex checking
-                //
-                //let operation = new Operation(code);
-                //let inputs = operation.getInputs();
-                //assert.equal(inputs.length, 1);
-                let execArgCount = code.match(/execute.*?:/)[0]
-                    .split('(')[1]
-                    .split(')')[0]
-                    .split(',').length;
-                assert.equal(execArgCount, 2);  // self, data
+                // check the code value
+                let code = browser.execute(getCurrentCode).value;
+                let operation = new Operation(code);
+                let inputs = operation.getInputs();
+                assert.equal(inputs.length, 2);
             });
 
             it('should update code on add output', function() {
+                browser.waitForVisible(S.INT.OPERATION, 10000);
+                browser.leftClick(S.INT.OPERATION);
+                browser.waitForVisible(S.INT.ADD_OUTPUT, 10000);
+                browser.leftClick(S.INT.ADD_OUTPUT);
+                browser.waitForVisible(S.INT.OUTPUT, 2000);
+            });
+
+            it('should update interface on add output', function() {
+                browser.waitForVisible(S.INT.OPERATION, 10000);
+                browser.leftClick(S.INT.OPERATION);
+                browser.waitForVisible(S.INT.ADD_OUTPUT, 10000);
+                browser.leftClick(S.INT.ADD_OUTPUT);
+                browser.waitForVisible(S.INT.OUTPUT, 2000);
+
+                // Check that the execute method now returns an output
+                let code = browser.execute(getCurrentCode).value;
+                let operation = new Operation(code);
+                assert.equal(operation.getOutputs().length, 1);
             });
         });
 
