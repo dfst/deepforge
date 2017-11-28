@@ -28,9 +28,15 @@ define([
 
     OpIntDecorator.prototype.DECORATOR_ID = DECORATOR_ID;
     OpIntDecorator.prototype.initialize = function() {
-        if (!this.isOperation() && this._node.baseName) {
+        if (this.isOperation()) {
+            this.color = '#2196f3';
+            // TODO: set the class
+            this.className += ' operation';
+        } else if (this._node.baseName) {
             // On hover, show the type
             this.enableTooltip(this._node.baseName, 'dark');
+            // TODO: check if input/output
+            this.className += ' operation-data';
         }
         DecoratorBase.prototype.initialize.call(this);
         this.$name.on('click', () => {
