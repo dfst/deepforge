@@ -6,9 +6,9 @@ var isNodeJs = typeof module === 'object' && module.exports;
             return (root.OperationParser = factory(Sk));
         });
     } else if(isNodeJs) {
-        require('./skulpt.min');
+        const Sk = require('skulpt');
 
-        module.exports = (root.OperationParser = factory(Sk));
+        module.exports = factory(Sk);
     }
 }(this, function(Sk) {
     var OperationCode = function(code, filename) {
