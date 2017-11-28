@@ -6,6 +6,7 @@ module.exports = {
         ADD_INPUT: '.operation-interface-editor .add-operation-input circle',
         ADD_OUTPUT: '.operation-interface-editor .add-operation-output circle',
         INPUT: '.operation-interface-editor .operation-data',
-        OUTPUT: '.operation-interface-editor .operation-data'
+        OUTPUT: '.operation-interface-editor .operation-data',
+        ATTR_NAME: '.operation-interface-editor .attr-title'
     }
 };

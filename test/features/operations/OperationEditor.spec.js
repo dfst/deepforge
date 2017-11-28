@@ -84,6 +84,11 @@ describe('Operations', function() {
             
             return editor.getSession().getValue();
         };
+        let setCurrentCode = function(code) {
+            var ace = requirejs('ace/ace');
+            var editor = ace.edit($('.ace_editor')[0]);
+            return editor.getSession().setValue(code);
+        };
 
         describe('interface editor', function() {
             beforeEach(function(done) {
@@ -138,7 +143,7 @@ describe('Operations', function() {
             });
         });
 
-        describe.skip('code editor', function() {
+        describe('code editor', function() {
             beforeEach(function(done) {
                 project.getBranchHash('test')
                     .then(commitHash => project.deleteBranch('test', commitHash))
@@ -153,13 +158,55 @@ describe('Operations', function() {
             // TODO: create a new branch for each?
             // Should I create all the branches at the beginning or import a new project each time?
             it('should add input to model', function() {
-                browser.execute()
-                // TODO: add input to 'execute' method
-                // TODO: check that it shows in the interface editor
+                // get the code from the editor
+                browser.waitForVisible('.operation-interface-editor', 20000);
+                let code = browser.execute(getCurrentCode).value;
+                let operation = new Operation(code);
+
+                // add input to 'execute' method
+                operation.addInput('newInput');
+
+                // set the code in the editor 
+                code = operation.getCode();
+                browser.execute(setCurrentCode, code).value;
+
+                // check that it shows in the interface editor
+                browser.waitForVisible(S.INT.INPUT, 20000);
+            });
+
+            it('should add output to operation', function() {
+                // get the code from the editor
+                browser.waitForVisible('.operation-interface-editor', 20000);
+                let code = browser.execute(getCurrentCode).value;
+                let operation = new Operation(code);
+
+                // add input to 'execute' method
+                operation.addOutput('result');
+
+                // set the code in the editor 
+                code = operation.getCode();
+                browser.execute(setCurrentCode, code).value;
+
+                // check that it shows in the interface editor
+                browser.waitForVisible(S.INT.OUTPUT, 20000);
             });
 
             it('should add attribute to operation', function() {
-                // TODO: check that it shows in the interface editor
+                // get the code from the editor
+                browser.waitForVisible('.operation-interface-editor', 20000);
+                let code = browser.execute(getCurrentCode).value;
+                let operation = new Operation(code);
+
+                // add input to 'execute' method
+                operation.addAttribute('newAttribute');
+
+                // set the code in the editor 
+                code = operation.getCode();
+                browser.execute(setCurrentCode, code).value;
+
+                // check that it shows in the interface editor
+                browser.leftClick(S.INT.OPERATION);
+                browser.waitForVisible(S.INT.ATTR_NAME, 20000);
             });
         });
     });
@@ -173,7 +220,6 @@ describe('Operations', function() {
         //});
 
         it('should create project', function(done) {
-            this.timeout(100000);
             browser.url(URL);
             browser.waitForVisible('.btn-create-new', 10000);
             setTimeout(done, 5000);
