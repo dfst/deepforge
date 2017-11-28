@@ -463,6 +463,19 @@ describe('OperationCode', function() {
         });
 
         describe('attributes', function() {
+            describe('get', function() {
+                beforeEach(function() {
+                    let filePath = path.join(__dirname, '..', 'test-cases', 'operations', 'example.py');
+                    let code = fs.readFileSync(filePath, 'utf8');
+                    operation = new OperationCode(code);
+                });
+
+                it('should return empty array if no ctor', function() {
+                    var attrs = operation.getAttributes();
+                    assert.equal(attrs.length, 0);
+                });
+            });
+
             describe('remove', function() {
                 beforeEach(function() {
                     operation = new OperationCode(code);
