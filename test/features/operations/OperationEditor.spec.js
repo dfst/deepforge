@@ -155,7 +155,6 @@ describe('Operations', function() {
                     .nodeify(done);
             });
 
-            // TODO: create a new branch for each?
             // Should I create all the branches at the beginning or import a new project each time?
             it('should add input to model', function() {
                 // get the code from the editor
@@ -174,7 +173,7 @@ describe('Operations', function() {
                 browser.waitForVisible(S.INT.INPUT, 20000);
             });
 
-            it('should add output to operation', function() {
+            it('should add output to model', function() {
                 // get the code from the editor
                 browser.waitForVisible('.operation-interface-editor', 20000);
                 let code = browser.execute(getCurrentCode).value;
@@ -191,7 +190,7 @@ describe('Operations', function() {
                 browser.waitForVisible(S.INT.OUTPUT, 20000);
             });
 
-            it('should add attribute to operation', function() {
+            it('should add attribute to model', function() {
                 // get the code from the editor
                 browser.waitForVisible('.operation-interface-editor', 20000);
                 let code = browser.execute(getCurrentCode).value;
@@ -208,6 +207,31 @@ describe('Operations', function() {
                 browser.leftClick(S.INT.OPERATION);
                 browser.waitForVisible(S.INT.ATTR_NAME, 20000);
             });
+
+            // Set attribute default values
+            it('should add attribute (w/ default) to model', function() {
+                // get the code from the editor
+                browser.waitForVisible('.operation-interface-editor', 20000);
+                let code = browser.execute(getCurrentCode).value;
+                let operation = new Operation(code);
+
+                // add input to 'execute' method
+                operation.addAttribute('newAttribute', 10);
+
+                // set the code in the editor 
+                code = operation.getCode();
+                browser.execute(setCurrentCode, code).value;
+
+                // check that it shows in the interface editor
+                browser.leftClick(S.INT.OPERATION);
+                // TODO: check for the default value
+                browser.waitForVisible(S.INT.ATTR_VALUE, 20000);
+                let value = browser.getText(S.INT.ATTR_VALUE);
+                assert.equal(value, '10');
+            });
+
+            // remove attributes
+            // TODO
         });
     });
 
