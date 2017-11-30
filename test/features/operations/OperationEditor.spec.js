@@ -224,13 +224,45 @@ describe('Operations', function() {
 
                 // check that it shows in the interface editor
                 browser.leftClick(S.INT.OPERATION);
-                // TODO: check for the default value
+                // check for the default value
                 browser.waitForVisible(S.INT.ATTR_VALUE, 20000);
                 let value = browser.getText(S.INT.ATTR_VALUE);
                 assert.equal(value, '10');
             });
 
-            // remove attributes
+            // add attribute with 'self' set
+            it('should ignore "self" when first arg in ctor', function() {
+                // get the code from the editor
+                browser.waitForVisible('.operation-interface-editor', 20000);
+                let code = browser.execute(getCurrentCode).value;
+                let operation = new Operation(code);
+
+                // add input to 'execute' method
+                operation.addAttribute('self');
+
+                // set the code in the editor 
+                code = operation.getCode();
+                browser.execute(setCurrentCode, code).value;
+
+                // check that there is no attribute in the interface editor
+                browser.leftClick(S.INT.OPERATION);
+                browser.waitForVisible(S.INT.CREATE_ATTR, 20000);
+                assert(!browser.isVisible(S.INT.ATTR_NAME));
+            });
+
+            // add reference (only from int editor)
+            // TODO
+
+            // remove attributes (need a new test op)
+            // TODO
+
+            // remove inputs (need a new test op)
+            // TODO
+
+            // remove outputs (need a new test op)
+            // TODO
+
+            // remove reference (need a new test op)
             // TODO
         });
     });

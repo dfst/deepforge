@@ -65,6 +65,12 @@ describe('OperationCode', function() {
                     assert(attrs.find(attr => attr.name === 'number'));
                 });
 
+                it('should add `self` argument to __init__ method', function() {
+                    operation.addAttribute('number');
+                    let code = operation.getCode();
+                    assert(code.includes('__init__(self'));
+                });
+
                 it('should set the default value', function() {
                     operation.addAttribute('number', 50);
                     var code = operation.getCode();
