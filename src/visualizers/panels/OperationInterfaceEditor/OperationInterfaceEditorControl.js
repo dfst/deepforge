@@ -145,6 +145,7 @@ define([
             var cntr = this._client.getNode(cntrType).getAttribute('name');
 
             desc.container = cntr.toLowerCase();
+            desc.isInput = desc.container === 'inputs';
             desc.attributes = {};
 
         } else if (desc.id === this._currentNodeId) {
@@ -163,7 +164,7 @@ define([
             desc.color = this.getDescColor(gmeId);
             desc.isPrimitive = this.hasMetaName(gmeId, 'Primitive');
 
-            var used = desc.container === 'inputs' ?
+            var used = desc.isInput ?
                 this.isUsedInput(desc.name) : this.isUsedOutput(desc.name);
             if (used !== null) {
                 desc.used = used;
@@ -173,7 +174,7 @@ define([
                     this._usage[desc.id] : true;
             }
 
-            this._inputs[desc.id] = desc.container === 'inputs';
+            this._inputs[desc.id] = desc.isInput;
         }
         return desc;
     };

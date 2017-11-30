@@ -35,8 +35,13 @@ define([
         } else if (this._node.baseName) {
             // On hover, show the type
             this.enableTooltip(this._node.baseName, 'dark');
-            // TODO: check if input/output
+            // check if input/output
             this.className += ' operation-data';
+            if (this._node.isInput) {
+                this.className += ' operation-input';
+            } else {
+                this.className += ' operation-output';
+            }
         }
         DecoratorBase.prototype.initialize.call(this);
         this.$name.on('click', () => {
