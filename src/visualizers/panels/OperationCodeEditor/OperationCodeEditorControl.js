@@ -86,6 +86,11 @@ define([
             var allAttrs = operation.getAttributes();
 
             this._client.startTransaction(msg);
+            // update the name
+            if (operation.getName() !== name) {
+                this._client.setAttribute(this._currentNodeId, 'name', operation.getName());
+            }
+
             // update the attributes
             // If a new ctor arg shows up, assume it is an attribute (default
             // type: string) and infer type based off default value

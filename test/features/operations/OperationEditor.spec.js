@@ -272,6 +272,16 @@ describe('Operations', function() {
 
             // remove reference (need a new test op)
             // TODO
+
+            it('should update model on rename', function() {
+                const newName = 'TestRename';
+                browser.url(existingOperationUrl);
+                updateOpCode(operation => operation.setName(newName));
+                browser.waitUntil(function() {
+                    const title = browser.getText(S.PANEL_TITLE);
+                    return title === newName;
+                }, 15000, 'Expected output node to be removed within 1.5s');
+            });
         });
     });
 
