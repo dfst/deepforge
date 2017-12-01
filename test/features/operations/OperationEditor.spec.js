@@ -16,7 +16,7 @@ describe('Operations', function() {
     let project;
     let commitHash;
 
-    this.timeout(10000);
+    this.timeout(20000);
     before(function(done) {
         testFixture.clearDBAndGetGMEAuth(gmeConfig, PROJECT_NAME)
             .then(function (gmeAuth_) {
@@ -96,52 +96,98 @@ describe('Operations', function() {
                 project.getBranchHash('test')
                     .then(commitHash => project.deleteBranch('test', commitHash))
                     .then(() => project.createBranch('test', commitHash))
-                    .then(() => browser.url(newOperationUrl))
                     .nodeify(done);
             });
 
-            it('should add input to interface', function() {
-                browser.waitForVisible(S.INT.OPERATION, 10000);
-                browser.leftClick(S.INT.OPERATION);
-                browser.waitForVisible(S.INT.ADD_INPUT, 10000);
-                browser.leftClick(S.INT.ADD_INPUT);
-                browser.waitForVisible(S.INT.INPUT, 2000);
+            describe('add input', function() {
+                before(function() {
+                    browser.url(newOperationUrl);
+                    browser.waitForVisible(S.INT.OPERATION, 10000);
+                    browser.leftClick(S.INT.OPERATION);
+                    browser.waitForVisible(S.INT.ADD_INPUT, 10000);
+                    browser.leftClick(S.INT.ADD_INPUT);
+                });
+
+                it('should add input to interface', function() {
+                    browser.waitForVisible(S.INT.INPUT, 2000);
+                });
+
+                it('should update code on add input', function() {
+                    browser.waitForVisible(S.INT.INPUT, 2000);
+
+                    // check the code value
+                    let code = browser.execute(getCurrentCode).value;
+                    let operation = new Operation(code);
+                    let inputs = operation.getInputs();
+                    assert.equal(inputs.length, 2);
+                });
             });
 
-            it('should update code on add input', function() {
-                browser.waitForVisible(S.INT.OPERATION, 10000);
-                browser.leftClick(S.INT.OPERATION);
-                browser.waitForVisible(S.INT.ADD_INPUT, 10000);
-                browser.leftClick(S.INT.ADD_INPUT);
-                browser.waitForVisible(S.INT.INPUT, 2000);
+            describe('add output', function() {
 
-                // check the code value
-                let code = browser.execute(getCurrentCode).value;
-                let operation = new Operation(code);
-                let inputs = operation.getInputs();
-                assert.equal(inputs.length, 2);
+                before(function() {
+                    browser.url(newOperationUrl);
+                    browser.waitForVisible(S.INT.OPERATION, 10000);
+                    browser.leftClick(S.INT.OPERATION);
+                    browser.waitForVisible(S.INT.ADD_OUTPUT, 10000);
+                    browser.leftClick(S.INT.ADD_OUTPUT);
+                });
+
+                it('should update interface on add output', function() {
+                    browser.waitForVisible(S.INT.OUTPUT, 2000);
+                });
+
+                it('should update code on add output', function() {
+                    // Check that the execute method now returns an output
+                    let code = browser.execute(getCurrentCode).value;
+                    let operation = new Operation(code);
+                    assert.equal(operation.getOutputs().length, 1);
+                });
             });
 
-            it('should update code on add output', function() {
-                browser.waitForVisible(S.INT.OPERATION, 10000);
-                browser.leftClick(S.INT.OPERATION);
-                browser.waitForVisible(S.INT.ADD_OUTPUT, 10000);
-                browser.leftClick(S.INT.ADD_OUTPUT);
-                browser.waitForVisible(S.INT.OUTPUT, 2000);
+            describe('add attribute', function() {
+                const attrName = 'newAttrName';
+                before(function() {
+                    browser.url(newOperationUrl);
+                    browser.waitForVisible(S.INT.OPERATION, 10000);
+                    browser.leftClick(S.INT.OPERATION);
+                    browser.waitForVisible(S.INT.ADD_ATTR, 2000);
+                    browser.leftClick(S.INT.ADD_ATTR);
+                    browser.waitForVisible(S.INT.EDIT_ATTR.NAME, 10000);
+                    browser.leftClick(S.INT.EDIT_ATTR.NAME);
+                    browser.waitUntil(function() {
+                        return browser.hasFocus(S.INT.EDIT_ATTR.NAME);
+                    });
+                    browser.keys(attrName);
+                    browser.leftClick(S.INT.EDIT_ATTR.SAVE);
+                });
+
+                it('should add attribute to model', function() {
+                    browser.leftClick(S.INT.OPERATION);
+                    browser.waitForVisible(S.INT.CREATE_ATTR, 20000);
+                    browser.waitUntil(function() {
+                        return browser.isVisible(S.INT.ATTR_NAME);
+                    }, 5000, 'attribute is not visible');
+                });
+
+                it('should add attribute to code', function() {
+                    let code = browser.execute(getCurrentCode).value;
+                    let operation = new Operation(code);
+                    assert.equal(operation.getAttributes().length, 1);
+                });
             });
 
-            it('should update interface on add output', function() {
-                browser.waitForVisible(S.INT.OPERATION, 10000);
-                browser.leftClick(S.INT.OPERATION);
-                browser.waitForVisible(S.INT.ADD_OUTPUT, 10000);
-                browser.leftClick(S.INT.ADD_OUTPUT);
-                browser.waitForVisible(S.INT.OUTPUT, 2000);
+            // remove input data
+            // TODO
 
-                // Check that the execute method now returns an output
-                let code = browser.execute(getCurrentCode).value;
-                let operation = new Operation(code);
-                assert.equal(operation.getOutputs().length, 1);
-            });
+            // remove output data
+            // TODO
+
+            // remove attribute
+            // TODO
+
+            // rename operation
+            // TODO
 
             // add reference (only from int editor)
             // TODO
@@ -236,15 +282,18 @@ describe('Operations', function() {
                 browser.leftClick(S.INT.OPERATION);
                 browser.waitForVisible(S.INT.CREATE_ATTR, 20000);
 
-                let attr = null;
-                try {
-                    attr = browser.selectByVisibleText(S.INT.ATTR_NAME, 'iterations: ');
-                } catch (e) {
-                    if (!e.message.includes('An element could not be located on the page')) {
-                        throw e;
+                browser.waitUntil(function() {
+                    let attr = null;
+                    try {
+                        attr = browser.selectByVisibleText(S.INT.ATTR_NAME, 'iterations: ');
+                    } catch (e) {
+                        if (!e.message.includes('An element could not be located on the page')) {
+                            throw e;
+                        }
                     }
-                }
-                assert(!attr, 'iterations attribute still exists in the model');
+                    return !attr;
+                }, 5000, 'iterations attribute still exists in the model');
+                //assert(!attr, 'iterations attribute still exists in the model');
             });
 
             it.skip('should change attr defaults from model', function() {
