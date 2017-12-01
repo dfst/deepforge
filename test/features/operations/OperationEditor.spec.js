@@ -60,7 +60,7 @@ describe('Operations', function() {
     });
 
     describe.skip('creation', function() {
-        let url = utils.getUrl(PROJECT_NAME, '/f/G');
+        let newOperationUrl = utils.getUrl(PROJECT_NAME, '/f/G');
         //beforeEach(function() {  // open the project
             //let projectBtn = '.project-list .open-link';
             //browser.url(URL);
@@ -77,7 +77,8 @@ describe('Operations', function() {
     });
 
     describe('editing', function() {
-        let url = utils.getUrl(PROJECT_NAME, '/k/8', 'test');
+        let newOperationUrl = utils.getUrl(PROJECT_NAME, '/k/8', 'test');
+        let existingOperationUrl = utils.getUrl(PROJECT_NAME, '/k/F', 'test');
         let getCurrentCode = function() {
             var ace = requirejs('ace/ace');
             var editor = ace.edit($('.ace_editor')[0]);
@@ -95,7 +96,7 @@ describe('Operations', function() {
                 project.getBranchHash('test')
                     .then(commitHash => project.deleteBranch('test', commitHash))
                     .then(() => project.createBranch('test', commitHash))
-                    .then(() => browser.url(url))
+                    .then(() => browser.url(newOperationUrl))
                     .nodeify(done);
             });
 
@@ -141,67 +142,62 @@ describe('Operations', function() {
                 let operation = new Operation(code);
                 assert.equal(operation.getOutputs().length, 1);
             });
+
+            // add reference (only from int editor)
+            // TODO
+
         });
 
         describe('code editor', function() {
+            const updateOpCode = fn => {
+                browser.waitForVisible('.operation-interface-editor', 20000);
+                // wait until the code is showing
+                let code = null;
+                browser.waitUntil(function() {
+                    code = browser.execute(getCurrentCode).value;
+                    return !!code;
+                }, 5000, 'Expected code to appear within 5s');
+
+                // get the code from the editor
+                let operation = new Operation(code);
+
+                fn(operation);
+
+                // set the code in the editor 
+                code = operation.getCode();
+                browser.execute(setCurrentCode, code).value;
+            };
+
             beforeEach(function(done) {
                 project.getBranchHash('test')
                     .then(commitHash => project.deleteBranch('test', commitHash))
                     .then(() => project.createBranch('test', commitHash))
-                    .then(() => {
-                        browser.url(url);
-                        browser.waitForVisible('.operation-interface-editor', 2000);
-                    })
                     .nodeify(done);
             });
 
             // Should I create all the branches at the beginning or import a new project each time?
             it('should add input to model', function() {
-                // get the code from the editor
-                browser.waitForVisible('.operation-interface-editor', 20000);
-                let code = browser.execute(getCurrentCode).value;
-                let operation = new Operation(code);
-
+                browser.url(newOperationUrl);
                 // add input to 'execute' method
-                operation.addInput('newInput');
-
-                // set the code in the editor 
-                code = operation.getCode();
-                browser.execute(setCurrentCode, code).value;
+                updateOpCode(operation => operation.addInput('newInput'));
 
                 // check that it shows in the interface editor
                 browser.waitForVisible(S.INT.INPUT, 20000);
             });
 
             it('should add output to model', function() {
-                // get the code from the editor
-                browser.waitForVisible('.operation-interface-editor', 20000);
-                let code = browser.execute(getCurrentCode).value;
-                let operation = new Operation(code);
-
-                // add input to 'execute' method
-                operation.addOutput('result');
-
-                // set the code in the editor 
-                code = operation.getCode();
-                browser.execute(setCurrentCode, code).value;
+                browser.url(newOperationUrl);
+                // add output to 'execute' method
+                updateOpCode(operation => operation.addOutput('result'));
 
                 // check that it shows in the interface editor
                 browser.waitForVisible(S.INT.OUTPUT, 20000);
             });
 
             it('should add attribute to model', function() {
-                // get the code from the editor
-                browser.waitForVisible('.operation-interface-editor', 20000);
-                let code = browser.execute(getCurrentCode).value;
-                let operation = new Operation(code);
+                browser.url(newOperationUrl);
 
-                // add input to 'execute' method
-                operation.addAttribute('newAttribute');
-
-                // set the code in the editor 
-                code = operation.getCode();
-                browser.execute(setCurrentCode, code).value;
+                updateOpCode(operation => operation.addAttribute('newAttribute'));
 
                 // check that it shows in the interface editor
                 browser.leftClick(S.INT.OPERATION);
@@ -210,19 +206,10 @@ describe('Operations', function() {
 
             // Set attribute default values
             it('should add attribute (w/ default) to model', function() {
-                // get the code from the editor
-                browser.waitForVisible('.operation-interface-editor', 20000);
-                let code = browser.execute(getCurrentCode).value;
-                let operation = new Operation(code);
+                browser.url(newOperationUrl);
 
-                // add input to 'execute' method
-                operation.addAttribute('newAttribute', 10);
+                updateOpCode(operation => operation.addAttribute('newAttribute', 10));
 
-                // set the code in the editor 
-                code = operation.getCode();
-                browser.execute(setCurrentCode, code).value;
-
-                // check that it shows in the interface editor
                 browser.leftClick(S.INT.OPERATION);
                 // check for the default value
                 browser.waitForVisible(S.INT.ATTR_VALUE, 20000);
@@ -232,17 +219,9 @@ describe('Operations', function() {
 
             // add attribute with 'self' set
             it('should ignore "self" when first arg in ctor', function() {
-                // get the code from the editor
-                browser.waitForVisible('.operation-interface-editor', 20000);
-                let code = browser.execute(getCurrentCode).value;
-                let operation = new Operation(code);
+                browser.url(newOperationUrl);
 
-                // add input to 'execute' method
-                operation.addAttribute('self');
-
-                // set the code in the editor 
-                code = operation.getCode();
-                browser.execute(setCurrentCode, code).value;
+                updateOpCode(operation => operation.addAttribute('self'));
 
                 // check that there is no attribute in the interface editor
                 browser.leftClick(S.INT.OPERATION);
@@ -250,17 +229,46 @@ describe('Operations', function() {
                 assert(!browser.isVisible(S.INT.ATTR_NAME));
             });
 
-            // add reference (only from int editor)
-            // TODO
+            it('should remove attrs from model', function() {
+                browser.url(existingOperationUrl);
+                updateOpCode(operation => operation.removeAttribute('iterations'));
 
-            // remove attributes (need a new test op)
-            // TODO
+                browser.leftClick(S.INT.OPERATION);
+                browser.waitForVisible(S.INT.CREATE_ATTR, 20000);
 
-            // remove inputs (need a new test op)
-            // TODO
+                let attr = null;
+                try {
+                    attr = browser.selectByVisibleText(S.INT.ATTR_NAME, 'iterations: ');
+                } catch (e) {
+                    if (!e.message.includes('An element could not be located on the page')) {
+                        throw e;
+                    }
+                }
+                assert(!attr, 'iterations attribute still exists in the model');
+            });
+
+            it.skip('should change attr defaults from model', function() {
+            });
+
+            it('should remove input from model', function() {
+                browser.url(existingOperationUrl);
+                updateOpCode(operation => operation.removeInput('data'));
+
+                browser.waitUntil(function() {
+                    return !browser.isVisible(S.INT.INPUT);
+                }, 1500, 'Expected input node to be removed within 1.5s');
+            });
+
 
             // remove outputs (need a new test op)
-            // TODO
+            it('should remove output from model', function() {
+                browser.url(existingOperationUrl);
+                updateOpCode(operation => operation.removeOutput('result'));
+
+                browser.waitUntil(function() {
+                    return !browser.isVisible(S.INT.OUTPUT);
+                }, 1500, 'Expected output node to be removed within 1.5s');
+            });
 
             // remove reference (need a new test op)
             // TODO
