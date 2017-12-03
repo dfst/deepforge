@@ -71,7 +71,14 @@ var isNodeJs = typeof module === 'object' && module.exports;
     };
 
     OperationCode.prototype.getInputs = function() {
-        return this.getArguments(OperationCode.MAIN_FN);
+        var args = this.getArguments(OperationCode.MAIN_FN) || [];
+
+        // If starts with 'self' arg, ignore it
+        if (args[0] && args[0].name === 'self') {
+            args.shift();
+        }
+
+        return args;
     };
 
     OperationCode.prototype.removeInput = function(name) {

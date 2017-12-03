@@ -12,6 +12,7 @@ module.exports = {
         CREATE_ATTR: '.operation-interface-editor .create-attr-field',
         ATTR_NAME: '.operation-interface-editor .attr-title',
         ATTR_VALUE: '.operation-interface-editor .attr-content',
+        DELETE: '.operation-interface-editor .selection-container .button.basic circle',
         EDIT_ATTR: {
             NAME: '.attribute-details-dialog.modal #inputName',
             SAVE: '.attribute-details-dialog.modal .btn-save'

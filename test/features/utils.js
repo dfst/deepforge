@@ -15,10 +15,17 @@ const sleep = duration => {
     let endTime = Date.now() + duration;
     browser.waitUntil(function() {
         return endTime <= Date.now();
-    }, 2*duration, 'Expected attribute to be removed within 1.5s');
+    }, Math.max(2*duration, 5000));
+};
+
+const waitForFocus = selector => {
+    browser.waitUntil(function() {
+        return browser.hasFocus(selector);
+    });
 };
 
 module.exports = {
+    waitForFocus,
     sleep,
     getUrl
 };

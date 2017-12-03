@@ -78,9 +78,6 @@ define([
                 currentInputs = operation.getInputs().map(input => input.name),
                 name = this._client.getNode(this._currentNodeId).getAttribute('name');
 
-            // Check for input nodes to remove
-            if (currentInputs[0] === 'self') currentInputs.shift();
-
             var msg = `Updating ${name} operation code`;
             var refs = this.getCurrentReferences(this._currentNodeId);
             var allAttrs = operation.getAttributes();

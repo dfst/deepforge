@@ -119,7 +119,7 @@ describe('Operations', function() {
                     let code = browser.execute(getCurrentCode).value;
                     let operation = new Operation(code);
                     let inputs = operation.getInputs();
-                    assert.equal(inputs.length, 2);
+                    assert.equal(inputs.length, 1);
                 });
             });
 
@@ -178,16 +178,104 @@ describe('Operations', function() {
             });
 
             // remove input data
-            // TODO
+            describe('remove input', function() {
+                before(function() {
+                    browser.url(existingOperationUrl);
+                    browser.waitForVisible(S.INT.INPUT, 10000);
+                    browser.leftClick(S.INT.INPUT);
+                    browser.waitForVisible(S.INT.DELETE, 10000);
+                    browser.leftClick(S.INT.DELETE);
+                });
+
+                it('should remove input from interface', function() {
+                    browser.waitUntil(function() {
+                        return !browser.isVisible(S.INT.INPUT);
+                    }, 5000, 'input is visible');
+                });
+
+                it('should remove input from code', function() {
+                    let code = browser.execute(getCurrentCode).value;
+                    let operation = new Operation(code);
+                    assert.equal(operation.getInputs().length, 0);
+                });
+            });
 
             // remove output data
-            // TODO
+            describe('remove output', function() {
+                before(function() {
+                    browser.url(existingOperationUrl);
+                    browser.waitForVisible(S.INT.OUTPUT, 10000);
+                    browser.leftClick(S.INT.OUTPUT);
+                    browser.waitForVisible(S.INT.DELETE, 10000);
+                    browser.leftClick(S.INT.DELETE);
+                });
+
+                it('should remove output from interface', function() {
+                    browser.waitUntil(function() {
+                        return !browser.isVisible(S.INT.OUTPUT);
+                    }, 5000, 'output is visible');
+                });
+
+                it('should remove output from code', function() {
+                    let code = browser.execute(getCurrentCode).value;
+                    let operation = new Operation(code);
+                    assert.equal(operation.getOutputs().length, 0);
+                });
+            });
 
             // remove attribute
-            // TODO
+            describe.skip('remove attribute', function() {
+                before(function() {
+                    browser.url(existingOperationUrl);
+                    browser.waitForVisible(S.INT.OUTPUT, 10000);
+                    browser.leftClick(S.INT.OUTPUT);
+                    browser.waitForVisible(S.INT.DELETE, 10000);
+                    browser.leftClick(S.INT.DELETE);
+                });
+
+                it('should remove output from interface', function() {
+                    browser.waitUntil(function() {
+                        return !browser.isVisible(S.INT.OUTPUT);
+                    }, 5000, 'output is visible');
+                });
+
+                it('should remove output from code', function() {
+                    let code = browser.execute(getCurrentCode).value;
+                    let operation = new Operation(code);
+                    assert.equal(operation.getOutputs().length, 0);
+                });
+            });
 
             // rename operation
-            // TODO
+            describe('rename operation', function() {
+                const oldName = 'ExistingOperation';
+                const newName = 'SomeNewName';
+                before(function() {
+                    browser.url(existingOperationUrl);
+                    browser.waitForVisible(S.PANEL_TITLE, 10000);
+                    browser.leftClick(S.PANEL_TITLE);
+                    utils.sleep(100);
+                    // delete current name
+                    const deleteKeys = oldName.split('').map(() => 'Delete');
+                    browser.keys(deleteKeys);
+                    // enter new name
+                    browser.keys(newName);
+                    browser.keys(['Enter']);
+                });
+
+                it('should update the model', function() {
+                    browser.waitUntil(function() {
+                        const title = browser.getText(S.PANEL_TITLE);
+                        return title === newName;
+                    }, 15000, 'Expected output node to be removed within 1.5s');
+                });
+
+                it('should update the operation code', function() {
+                    let code = browser.execute(getCurrentCode).value;
+                    let operation = new Operation(code);
+                    assert.equal(operation.getName(), newName);
+                });
+            });
 
             // add reference (only from int editor)
             // TODO
@@ -279,6 +367,7 @@ describe('Operations', function() {
                 browser.url(existingOperationUrl);
                 updateOpCode(operation => operation.removeAttribute('iterations'));
 
+                // FIXME: this can have issues...
                 browser.leftClick(S.INT.OPERATION);
                 browser.waitForVisible(S.INT.CREATE_ATTR, 20000);
 
