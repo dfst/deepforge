@@ -15,7 +15,8 @@ module.exports = {
         DELETE: '.operation-interface-editor .selection-container .button.basic circle',
         EDIT_ATTR: {
             NAME: '.attribute-details-dialog.modal #inputName',
-            SAVE: '.attribute-details-dialog.modal .btn-save'
+            SAVE: '.attribute-details-dialog.modal .btn-save',
+            DELETE: '.attribute-details-dialog.modal .btn-delete'
         }
     }
 };

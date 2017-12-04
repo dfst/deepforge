@@ -42,16 +42,9 @@ describe('Operations', function() {
                 return project.createBranch('test', commitHash);
             })
             .nodeify(done);
-
-        // TODO: create the seed projects
-        // TODO: 
-        // Create a new project
-        // TODO
-
     });
 
     after(function(done) {
-        // TODO: remove the project
         storage.closeDatabase()
             .then(function () {
                 return gmeAuth.unload();
@@ -224,25 +217,41 @@ describe('Operations', function() {
             });
 
             // remove attribute
-            describe.skip('remove attribute', function() {
+            describe('remove attribute', function() {
+                let attr = 'iterations';
                 before(function() {
                     browser.url(existingOperationUrl);
-                    browser.waitForVisible(S.INT.OUTPUT, 10000);
-                    browser.leftClick(S.INT.OUTPUT);
-                    browser.waitForVisible(S.INT.DELETE, 10000);
-                    browser.leftClick(S.INT.DELETE);
+                    browser.waitForVisible(S.INT.OPERATION, 10000);
+                    browser.leftClick(S.INT.OPERATION);
+                    browser.waitForVisible(S.INT.ATTR_NAME, 10000);
+                    browser.leftClick(S.INT.ATTR_NAME);
+
+                    browser.waitForVisible(S.INT.EDIT_ATTR.DELETE, 10000);
+                    attr = browser.getValue(S.INT.EDIT_ATTR.NAME);
+                    browser.leftClick(S.INT.EDIT_ATTR.DELETE);
                 });
 
                 it('should remove output from interface', function() {
+                    browser.waitForVisible(S.INT.ATTR_NAME, 10000);
                     browser.waitUntil(function() {
-                        return !browser.isVisible(S.INT.OUTPUT);
-                    }, 5000, 'output is visible');
+                        let attr = null;
+                        try {
+                            attr = browser.selectByVisibleText(S.INT.ATTR_NAME, `${attr}: `);
+                        } catch (e) {
+                            if (!e.message.includes('An element could not be located on the page')) {
+                                throw e;
+                            }
+                        }
+                        return !attr;
+                    }, 5000, `${attr} attribute still exists in the model`);
                 });
 
-                it('should remove output from code', function() {
+                it('should remove attribute from code', function() {
                     let code = browser.execute(getCurrentCode).value;
                     let operation = new Operation(code);
-                    assert.equal(operation.getOutputs().length, 0);
+                    let attrNames = operation.getAttributes().map(attr => attr.name);
+
+                    assert(!attrNames.includes(attr));
                 });
             });
 
