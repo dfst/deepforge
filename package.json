@@ -13,10 +13,10 @@
     "start-dev": "NODE_ENV=dev node app.js",
     "local": "node ./bin/start-local.js",
     "worker": "node ./bin/start-worker.js",
-    "test": "mkdir ./test-tmp; mocha --recursive test/unit",
-    "test-int": "ENV=test ./node_modules/.bin/chimp --mocha --path test/features",
-    "watch-test": "nodemon --exec 'mocha --recursive test'",
-    "build-nn": "node ./utils/nn-parser.js"
+    "test": "npm run test-unit && npm run test-int",
+    "test-unit": "mkdir ./test-tmp; mocha --recursive test/unit",
+    "test-int": "bash ./test/features/start.sh",
+    "watch-test": "nodemon --exec 'mocha --recursive test'"
   },
   "version": "1.4.2",
   "dependencies": {
