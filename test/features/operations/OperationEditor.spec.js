@@ -376,7 +376,7 @@ describe('Operations', function() {
                 browser.url(existingOperationUrl);
                 updateOpCode(operation => operation.removeAttribute('iterations'));
 
-                // FIXME: this can have issues...
+                browser.waitForVisible(S.INT.OPERATION, 20000);
                 browser.leftClick(S.INT.OPERATION);
                 browser.waitForVisible(S.INT.CREATE_ATTR, 20000);
 
