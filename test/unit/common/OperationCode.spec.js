@@ -361,8 +361,8 @@ describe('OperationCode', function() {
                 assert.equal(operation.getOutputs()[0].value, '20');
             });
 
-            it('should detect two inputs', function() {
-                assert.equal(operation.getInputs().length, 2);
+            it('should detect one input', function() {
+                assert.equal(operation.getInputs().length, 1);
             });
         });
 
@@ -385,7 +385,7 @@ describe('OperationCode', function() {
 
             it('should have an additional input arg', function() {
                 var inputs = operation.getInputs();
-                assert.equal(inputs.length, 3);
+                assert.equal(inputs.length, 2);
             });
         });
 
@@ -425,8 +425,8 @@ describe('OperationCode', function() {
                 assert.equal(result.name, 'number');
             });
 
-            it('should have one remaining argument', function() {
-                assert.equal(operation.getInputs().length, 1);
+            it('should have no remaining inputs', function() {
+                assert.equal(operation.getInputs().length, 0);
             });
 
             it('should have removed argument', function() {
