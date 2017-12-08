@@ -189,11 +189,29 @@ var makeInstallFor = function(typeCfg) {
 
 };
 
-var PLUGIN_ROOT = path.join(__dirname, '..', 'src', 'plugins', 'Export');
-makeInstallFor({
-    type: 'Export:Pipeline',
-    template: path.join(PLUGIN_ROOT, 'format.js.ejs'),
-    targetDir: path.join(PLUGIN_ROOT, 'formats', '<%=name%>')
-});
+//var PLUGIN_ROOT = path.join(__dirname, '..', 'src', 'plugins', 'Export');
+//makeInstallFor({
+    //type: 'Export:Pipeline',
+    //template: path.join(PLUGIN_ROOT, 'format.js.ejs'),
+    //targetDir: path.join(PLUGIN_ROOT, 'formats', '<%=name%>')
+//});
+
+// Add the extension type for another domain/library
+// TODO
+const libraryType = 'Library';
+extender.install[libraryType] = (config, project, isReinstall) => {
+    //webgme.import()
+    // import the seed
+    // TODO
+
+    // record the seed so it can be imported from the UI?
+    // TODO
+
+    // record the firstClassType
+    // TODO
+
+    // record the firstClassType
+    // TODO
+};
 
 module.exports = extender;
