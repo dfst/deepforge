@@ -2,12 +2,14 @@
 // These are actions defined for specific meta types. They are evaluated from
 // the context of the ForgeActionButton
 define([
+    './LibraryDialog',
     'panel/FloatingActionButton/styles/Materialize',
     'q',
     'js/RegistryKeys',
     'deepforge/globals',
     'deepforge/Constants'
 ], function(
+    LibraryDialog,
     Materialize,
     Q,
     REGISTRY_KEYS,
@@ -103,7 +105,7 @@ define([
     var MyPipelinesButtons = [
         {
             name: 'Create new pipeline',
-            icon: 'queue',
+            icon: 'add',
             action: DeepForge.create.Pipeline
         }
     ];
@@ -131,19 +133,19 @@ define([
         MyDataTypes_META: [
             {
                 name: 'Create new primitive data type',
-                icon: 'queue',
+                icon: 'add',
                 action: DeepForge.create.Primitive
             },
             {
                 name: 'Create new class',
-                icon: 'queue',
+                icon: 'add',
                 action: DeepForge.create.Complex
             }
         ],
         MyOperations_META: [
             {
                 name: 'Create new operation',
-                icon: 'queue',
+                icon: 'add',
                 action: DeepForge.create.Operation
             }
         ],
@@ -152,6 +154,23 @@ define([
                 name: 'Upload artifact',
                 icon: 'swap_vert',
                 action: DeepForge.create.Artifact
+            }
+        ],
+        MyResources_META: [
+            {
+                name: 'Import library',
+                icon: 'library_add',
+                action: function() {
+                    // Open the modal with the library dialog
+                    // TODO
+                    let dialog = new LibraryDialog(this.logger);
+                    dialog.show();
+                    // Open the modal with the library dialog
+                    // TODO
+
+                    // How do I import a library? Check the library importer
+                    // TODO
+                }
             }
         ],
 
@@ -208,7 +227,7 @@ define([
         Pipeline: [
             {
                 name: 'Create new node',
-                icon: 'queue',
+                icon: 'add',
                 priority: 2,
                 action: function() {
                     this.addOperation();
