@@ -62,7 +62,7 @@ define([
         const pluginId = 'UploadSeedToBlob';
         const context = client.getCurrentPluginContext(pluginId);
         context.pluginConfig = {
-            libraryInfo: libraryInfo
+            seedName: libraryInfo.seed
         };
 
         // Pass in the library info
