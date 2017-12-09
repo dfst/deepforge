@@ -44,6 +44,10 @@
       "UploadSeedToBlob": {
         "src": "src/plugins/UploadSeedToBlob",
         "test": "test/plugins/UploadSeedToBlob"
+      },
+      "ImportLibrary": {
+        "src": "src/plugins/ImportLibrary",
+        "test": "test/plugins/ImportLibrary"
       }
     },
     "layouts": {
