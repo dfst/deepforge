@@ -47,10 +47,10 @@ define([
      */
     ImportLibrary.prototype.main = function (callback) {
         const config = this.getCurrentConfig();
-        const libraryInfo = config.libraryInfo;
+        const seedName = config.seedName;
 
         // Upload the library to the blob
-        return this.uploadSeed(libraryInfo.seed)
+        return this.uploadSeed(seedName)
             .then(hash => {
                 this.createMessage(this.rootNode, hash);
                 this.result.setSuccess(true);
