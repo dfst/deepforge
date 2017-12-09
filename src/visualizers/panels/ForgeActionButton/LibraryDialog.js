@@ -1,8 +1,11 @@
 /* globals define */
 define([
+    'q',
     'text!./Libraries.json',
-    'text!./LibraryDialogModal.html'
+    'text!./LibraryDialogModal.html',
+    'css!./LibraryDialog.css'
 ], function(
+    Q,
     LibrariesText,
     LibraryHtml
 ) {
@@ -24,9 +27,26 @@ define([
 
     LibraryDialog.prototype.addLibraryToTable = function(libraryInfo) {
         let row = $('<tr>');
+        //row.addClass('success');
         let data = $('<td>');
         data.text(libraryInfo.name);
         row.append(data);
+
+        data = $('<td>');
+        data.text(libraryInfo.description);
+        data.addClass('library-description');
+        row.append(data);
+
+        // Check if it is installed
+        // TODO
+        data = $('<td>');
+        let badge = $('<span>');
+        badge.text('Installed');
+        data.append(badge);
+        badge.addClass('new badge');
+        row.append(data);
+
+        // If not installed
         row.on('click', () => this.import(libraryInfo));
 
         this.$tableContent.append(row);
@@ -37,15 +57,22 @@ define([
     };
 
     LibraryDialog.prototype.import = function(libraryInfo) {
-        console.log('importing library:', libraryInfo);
-        // Get the seed and load it
-        // TODO: 
+        // Load by hash for now. This might be easiest with a server side plugin
+        const client = WebGMEGlobal.Client;
+        const pluginId = 'UploadSeedToBlob';
+        const context = client.getCurrentPluginContext(pluginId);
+        context.pluginConfig = {
+            libraryInfo: libraryInfo
+        };
 
-        // How do they do this in the Template File things?
-        // TODO: 
-
-        //client.updateLibrary
-        //client.addLibrary(name, blobHash, cb)
+        // Pass in the library info
+        return Q.ninvoke(client, 'runServerPlugin', pluginId, context)
+            .then(res => {
+                let hash = res.messages.pop().message;
+                libraryInfo.hash = hash;
+                return Q.ninvoke(this._client, 'updateLibrary', libraryInfo.name, hash)
+            })
+            .then(() => this.logger.log('imported library: ', libraryInfo.name));
     };
 
     return LibraryDialog;

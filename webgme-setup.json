@@ -40,6 +40,10 @@
       "GenerateJob": {
         "src": "src/plugins/GenerateJob",
         "test": "test/plugins/GenerateJob"
+      },
+      "UploadSeedToBlob": {
+        "src": "src/plugins/UploadSeedToBlob",
+        "test": "test/plugins/UploadSeedToBlob"
       }
     },
     "layouts": {

@@ -131,14 +131,18 @@ define([
         return path.join(this.getSeedDir(name), 'version.txt');
     };
 
-    CheckLibraries.prototype.uploadSeed = function (name, version, hash) {
+    CheckLibraries.prototype.uploadSeed = function (name) {
+        return Q.nfcall(fs.readFile, this.getSeedDataPath(name))
+            .then(data => {
+                return this.blobClient.putFile(`${name}.webgmex`, data);
+            });
+    };
+
+    CheckLibraries.prototype.upgradeSeedToVersion = function (name, version, hash) {
         if (!hash) {  // Upload the seed
             // Get the data
-            return Q.nfcall(fs.readFile, this.getSeedDataPath(name))
-                .then(data => {
-                    this.logger.info(`Uploading new version of ${name} (${version})`);
-                    return this.blobClient.putFile(`${name}.webgmex`, data);
-                })
+            this.logger.info(`Uploading new version of ${name} (${version})`);
+            return this.uploadSeed(name)
                 .then(newHash => {  // Store the new hash
                     this.logger.info(`Upload of ${name} finished!`);
                     hash = newHash;
