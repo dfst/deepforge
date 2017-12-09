@@ -2,24 +2,34 @@
 /*jshint node:true, browser:true*/
 
 define([
-    'plugin/CheckLibraries/CheckLibraries/CheckLibraries',
+    'plugin/PluginBase',
+    'module',
+    'path',
+    'fs',
+    'q',
     'text!./metadata.json'
 ], function (
     PluginBase,
+    module,
+    path,
+    fs,
+    Q,
     pluginMetadata
 ) {
     'use strict';
 
     pluginMetadata = JSON.parse(pluginMetadata);
+    const __dirname = path.dirname(module.uri);
+    const SEEDS_DIR = path.join(__dirname, '..', '..', 'seeds');
 
     /**
-     * Initializes a new instance of ImportLibrary.
+     * Initializes a new instance of UploadSeedToBlob.
      * @class
      * @augments {PluginBase}
-     * @classdesc This class represents the plugin ImportLibrary.
+     * @classdesc This class represents the plugin UploadSeedToBlob.
      * @constructor
      */
-    var ImportLibrary = function () {
+    var UploadSeedToBlob = function () {
         // Call base class' constructor.
         PluginBase.call(this);
         this.pluginMetadata = pluginMetadata;
@@ -30,11 +40,11 @@ define([
      * This is also available at the instance at this.pluginMetadata.
      * @type {object}
      */
-    ImportLibrary.metadata = pluginMetadata;
+    UploadSeedToBlob.metadata = pluginMetadata;
 
     // Prototypical inheritance from PluginBase.
-    ImportLibrary.prototype = Object.create(PluginBase.prototype);
-    ImportLibrary.prototype.constructor = ImportLibrary;
+    UploadSeedToBlob.prototype = Object.create(PluginBase.prototype);
+    UploadSeedToBlob.prototype.constructor = UploadSeedToBlob;
 
     /**
      * Main function for the plugin to execute. This will perform the execution.
@@ -45,7 +55,7 @@ define([
      *
      * @param {function(string, plugin.PluginResult)} callback - the result callback
      */
-    ImportLibrary.prototype.main = function (callback) {
+    UploadSeedToBlob.prototype.main = function (callback) {
         const config = this.getCurrentConfig();
         const seedName = config.seedName;
 
@@ -62,5 +72,20 @@ define([
             });
     };
 
-    return ImportLibrary;
+    UploadSeedToBlob.prototype.uploadSeed = function (name) {
+        return Q.nfcall(fs.readFile, this.getSeedDataPath(name))
+            .then(data => {
+                return this.blobClient.putFile(`${name}.webgmex`, data);
+            });
+    };
+
+    UploadSeedToBlob.prototype.getSeedDataPath = function (name) {
+        return path.join(this.getSeedDir(name), name + '.webgmex');
+    };
+
+    UploadSeedToBlob.prototype.getSeedDir = function (name) {
+        return path.join(SEEDS_DIR, name);
+    };
+
+    return UploadSeedToBlob;
 });

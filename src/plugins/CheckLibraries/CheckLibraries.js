@@ -2,25 +2,23 @@
 /*jshint node:true, browser:true*/
 
 define([
+    'plugin/UploadSeedToBlob/UploadSeedToBlob/UploadSeedToBlob',
     'text!./metadata.json',
     'module',
     'path',
     'fs',
-    'q',
-    'plugin/PluginBase'
+    'q'
 ], function (
+    PluginBase,
     pluginMetadata,
     module,
     path,
     fs,
-    Q,
-    PluginBase
+    Q
 ) {
     'use strict';
 
     pluginMetadata = JSON.parse(pluginMetadata);
-    var __dirname = path.dirname(module.uri),
-        SEEDS_DIR = path.join(__dirname, '..', '..', 'seeds');
 
     /**
      * Initializes a new instance of CheckLibraries.
@@ -115,27 +113,12 @@ define([
             });
     };
 
-    CheckLibraries.prototype.getSeedDir = function (name) {
-        return path.join(SEEDS_DIR, name);
-    };
-
-    CheckLibraries.prototype.getSeedDataPath = function (name) {
-        return path.join(this.getSeedDir(name), name + '.webgmex');
-    };
-
     CheckLibraries.prototype.getSeedHashPath = function (name) {
         return path.join(this.getSeedDir(name), 'hash.txt');
     };
 
     CheckLibraries.prototype.getSeedVersionPath = function (name) {
         return path.join(this.getSeedDir(name), 'version.txt');
-    };
-
-    CheckLibraries.prototype.uploadSeed = function (name) {
-        return Q.nfcall(fs.readFile, this.getSeedDataPath(name))
-            .then(data => {
-                return this.blobClient.putFile(`${name}.webgmex`, data);
-            });
     };
 
     CheckLibraries.prototype.upgradeSeedToVersion = function (name, version, hash) {
