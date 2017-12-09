@@ -85,10 +85,14 @@ define([
                     return [lib, version, hash];
                 })
                 .filter(tuple => {
-                    var projVersion = this.getLoadedVersion(tuple[0]),
-                        latest = tuple[1].replace(/\s+/g, '');
+                    let [lib, version, hash] = tuple;
 
-                    this.logger.info(`${tuple[0]} version info:\n${projVersion} ` +
+                    if (!version) return false;
+
+                    let projVersion = this.getLoadedVersion(lib);
+                    let latest = version.replace(/\s+/g, '');
+
+                    this.logger.info(`${lib} version info:\n${projVersion} ` +
                         `(project)\n${latest} (latest)`);
                     return projVersion < latest;
                 });
