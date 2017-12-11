@@ -13,6 +13,7 @@ define([
     const Libraries = JSON.parse(LibrariesText);
     var LibraryDialog = function(logger) {
         this.logger = logger.fork('LibraryDialog');
+        this.client = WebGMEGlobal.Client;
         this.initialize();
     };
 
@@ -38,16 +39,18 @@ define([
         row.append(data);
 
         // Check if it is installed
-        // TODO
-        data = $('<td>');
-        let badge = $('<span>');
-        badge.text('Installed');
-        data.append(badge);
-        badge.addClass('new badge');
-        row.append(data);
-
-        // If not installed
-        row.on('click', () => this.import(libraryInfo));
+        let libraries = this.client.getLibraryNames();
+        let installed = libraries.includes(libraryInfo.name);
+        if (installed) {
+            data = $('<td>');
+            let badge = $('<span>');
+            badge.text('Installed');
+            data.append(badge);
+            badge.addClass('new badge');
+            row.append(data);
+        } else {
+            row.on('click', () => this.import(libraryInfo));
+        }
 
         this.$tableContent.append(row);
     };
@@ -56,23 +59,25 @@ define([
         this.$dialog.modal('show');
     };
 
+    LibraryDialog.prototype.hide = function() {
+        this.$dialog.modal('hide');
+    };
+
     LibraryDialog.prototype.import = function(libraryInfo) {
         // Load by hash for now. This might be easiest with a server side plugin
-        const client = WebGMEGlobal.Client;
-        const pluginId = 'UploadSeedToBlob';
-        const context = client.getCurrentPluginContext(pluginId);
+        const pluginId = 'ImportLibrary';
+        const context = this.client.getCurrentPluginContext(pluginId);
         context.pluginConfig = {
-            seedName: libraryInfo.seed
+            libraryInfo: libraryInfo
         };
 
         // Pass in the library info
-        return Q.ninvoke(client, 'runServerPlugin', pluginId, context)
-            .then(res => {
-                let hash = res.messages.pop().message;
-                libraryInfo.hash = hash;
-                return Q.ninvoke(this._client, 'updateLibrary', libraryInfo.name, hash)
+        return Q.ninvoke(this.client, 'runServerPlugin', pluginId, context)
+            .then(result => {
+                this.logger.info('imported library: ', libraryInfo.name);
+                this.hide();
             })
-            .then(() => this.logger.log('imported library: ', libraryInfo.name));
+            .fail(err => this.logger.error(err));
     };
 
     return LibraryDialog;

@@ -74,9 +74,7 @@ define([
 
     UploadSeedToBlob.prototype.uploadSeed = function (name) {
         return Q.nfcall(fs.readFile, this.getSeedDataPath(name))
-            .then(data => {
-                return this.blobClient.putFile(`${name}.webgmex`, data);
-            });
+            .then(data => this.blobClient.putFile(`${name}.webgmex`, data));
     };
 
     UploadSeedToBlob.prototype.getSeedDataPath = function (name) {

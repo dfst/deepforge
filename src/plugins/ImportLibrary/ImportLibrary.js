@@ -52,7 +52,7 @@ define([
 
         return this.addSeedToBranch(libraryInfo.seed)
             .then(branchName => this.createGMELibraryFromBranch(branchName, libraryInfo))
-            .then(branch => this.removeTemporaryBranch(branch))
+            .then(branchInfo => this.removeTemporaryBranch(branchInfo))
             .then(() => this.updateMetaForLibrary(libraryInfo))
             .then(() => this.save(`Imported ${libraryInfo.name} library`))
             .then(() => {
@@ -96,24 +96,24 @@ define([
             commitHash: null
         };
 
-        console.log('main hash', this.commitHash);
-        // TODO: check the branch hash?
-        return this.project.getBranchHash(branchName)
-            .then(hash => {
-                // TODO: get root hash?
-                console.log('library hash', hash);
-                libraryData.commitHash = hash;
-                return this.core.addLibrary(this.rootNode, name, this.commitHash, libraryData);
+        // Get the rootHash and commitHash from the commit on the tmp branch
+        return this.project.getHistory(branchName, 1)
+            .then(commits => {
+                let commit = commits[0];
+                let rootHash = commit.root;
+
+                libraryData.commitHash = commit._id;
+                return this.core.addLibrary(this.rootNode, name, rootHash, libraryData)
+                    .then(() => {return {name: branchName, hash: commit._id}});
             });
     };
 
-    ImportLibrary.prototype.removeTemporaryBranch = function (branchName) {
-        return this.project.getBranchHash(branchName)
-            .then(hash => this.project.deleteBranch(branchName, hash));
+    ImportLibrary.prototype.removeTemporaryBranch = function (branch) {
+        return this.project.deleteBranch(branch.name, branch.hash);
     };
 
     const values = obj => Object.keys(obj).map(k => obj[k]);
-    ImportLibrary.prototype.updateMetaForLibrary = function (branchInfo, libraryInfo) {
+    ImportLibrary.prototype.updateMetaForLibrary = function (libraryInfo) {
         const nodeNames = libraryInfo.nodeTypes;
         const libraryNodes = values(this.core.getLibraryMetaNodes(this.rootNode, libraryInfo.name));
 

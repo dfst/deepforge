@@ -2,6 +2,9 @@
     {
         "name": "Keras",
         "description": "Deep learning library using Keras and TensorFlow",
-        "seed": "keras"
+        "nodeTypes": [
+            "Architecture"
+        ],
+        "seed": "nn"
     }
 ]
