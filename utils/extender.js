@@ -4,20 +4,20 @@
 //     deepforge extensions add <project>
 //     deepforge extensions remove <name>
 //
-var path = require('path'),
-    fs = require('fs'),
-    npm = require('npm'),
-    Q = require('q'),
-    rm_rf = require('rimraf'),
-    exists = require('exists-file'),
-    makeTpl = require('lodash.template'),
-    CONFIG_DIR = path.join(process.env.HOME, '.deepforge'),
-    EXT_CONFIG_NAME = 'extension.json',
-    EXTENSION_REGISTRY_NAME = 'extensions.json',
-    extConfigPath = path.join(CONFIG_DIR, EXTENSION_REGISTRY_NAME),
-    allExtConfigs;
+const path = require('path');
+const fs = require('fs');
+const npm = require('npm');
+const Q = require('q');
+const rm_rf = require('rimraf');
+const exists = require('exists-file');
+const makeTpl = require('lodash.template');
+const CONFIG_DIR = path.join(process.env.HOME, '.deepforge');
+const EXT_CONFIG_NAME = 'deepforge-extension.json';
+const EXTENSION_REGISTRY_NAME = 'extensions.json';
+const extConfigPath = path.join(CONFIG_DIR, EXTENSION_REGISTRY_NAME);
 
-var values = obj => Object.keys(obj).map(key => obj[key]);
+let values = obj => Object.keys(obj).map(key => obj[key]);
+let allExtConfigs;
 
 // Create the extensions.json if doesn't exist. Otherwise, load it
 if (!exists.sync(extConfigPath)) {
@@ -53,17 +53,22 @@ extender.getInstalledConfig = function(name) {
     return group && group[name];
 };
 
-extender.install = function(project, isReinstall) {
+extender.getInstalledConfigType = function(name) {
+    var type = Object.keys(allExtConfigs).find(type => {
+        let typeGroup = allExtConfigs[type];
+        return !!typeGroup[name];
+    });
+    return type;
+};
+
+
+extender.install = function(projectName, isReinstall) {
     // Install the project
     return Q.ninvoke(npm, 'load', {})
-        .then(() => Q.ninvoke(npm, 'install', project))
+        .then(() => Q.ninvoke(npm, 'install', projectName))
         .then(results => {
-            var installed = results[0],
-                extProject,
-                extRoot;
-
-            extProject = installed[0][0];
-            extRoot = installed[0][1];
+            let installed = results[0];
+            let [extProject, extRoot] = installed.pop();
 
             // Check for the extensions.json in the project (look up type, etc)
             var extConfigPath = path.join(extRoot, extender.EXT_CONFIG_NAME),
@@ -73,9 +78,9 @@ extender.install = function(project, isReinstall) {
             // Check that the extensions file exists
             if (!exists.sync(extConfigPath)) {
                 throw [
-                    `Could not find ${extender.EXT_CONFIG_NAME} for ${project}.`,
+                    `Could not find ${extender.EXT_CONFIG_NAME} for ${projectName}.`,
                     '',
-                    `This is likely an issue w/ the deepforge extension (${project})`
+                    `This is likely an issue with the deepforge extension (${projectName})`
                 ].join('\n');
             }
 
@@ -90,11 +95,30 @@ extender.install = function(project, isReinstall) {
             if (!extender.isSupportedType(extType)) {
                 throw `Unrecognized extension type: "${extType}"`;
             }
-            extender.install[extType](extConfig, {
-                arg: project,
+            // add project info to the config
+            let project = {
+                arg: projectName,
                 root: extRoot,
                 name: extProject
-            }, !!isReinstall);
+            };
+            let pkgJsonPath = path.join(project.root, 'package.json');
+            let pkgJson = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf8'));
+            project = project || extConfig.project;
+            extConfig.version = pkgJson.version;
+            extConfig.project = project;
+
+            allExtConfigs[extType] = allExtConfigs[extType] || {};
+            isReinstall = isReinstall || !!allExtConfigs[extType][extConfig.name];
+            if (isReinstall) {
+                // eslint-disable-next-line no-console
+                console.error(`Extension ${extConfig.name} already installed. Reinstalling...`);
+            }
+
+            extConfig = extender.install[extType](extConfig, project, !!isReinstall) || extConfig;
+
+            // Update the deployment config
+            allExtConfigs[extType][extConfig.name] = extConfig;
+            persistExtConfig();
 
             return extConfig;
         });
@@ -102,14 +126,26 @@ extender.install = function(project, isReinstall) {
 
 extender.uninstall = function(name) {
     // Look up the extension in ~/.deepforge/extensions.json
-    var extConfig = extender.getInstalledConfig(name);
-    if (!extConfig) {
+    let extType = extender.getInstalledConfigType(name);
+    if (!extType) {
         throw `Extension "${name}" not found`;
     }
 
     // Run the uninstaller using the extender
-    var extType = extConfig.type;
-    extender.uninstall[extType](name);
+    let extConfig = allExtConfigs[extType][name];
+    delete allExtConfigs[extType][name];
+    extender.uninstall[extType](name, extConfig);
+    persistExtConfig();
+};
+
+let updateTemplateFile = (tplPath, type) => {
+    let installedExts = values(allExtConfigs[type]),
+        formatTemplate = makeTpl(fs.readFileSync(tplPath, 'utf8')),
+        formatsIndex = formatTemplate({path: path, extensions: installedExts}),
+        dstPath = tplPath.replace(/\.ejs$/, '');
+
+    console.log('installedExts', installedExts);
+    fs.writeFileSync(dstPath, formatsIndex);
 };
 
 var makeInstallFor = function(typeCfg) {
@@ -121,7 +157,6 @@ var makeInstallFor = function(typeCfg) {
             dstPath = typeCfg.template.replace(/\.ejs$/, '');
 
         fs.writeFileSync(dstPath, formatsIndex);
-        persistExtConfig();
     };
 
     // Given a...
@@ -139,8 +174,6 @@ var makeInstallFor = function(typeCfg) {
         project = project || config.project;
         config.version = pkgJson.version;
         config.project = project;
-
-        allExtConfigs[typeCfg.type] = allExtConfigs[typeCfg.type] || {};
 
         if (allExtConfigs[typeCfg.type][config.name] && !isReinstall) {
             // eslint-disable-next-line no-console
@@ -167,26 +200,15 @@ var makeInstallFor = function(typeCfg) {
     };
 
     // uninstall
-    extender.uninstall['Export:Pipeline'] = name => {
-        // Remove from config
-        allExtConfigs[typeCfg.type] = allExtConfigs[typeCfg.type] || {};
-
-        if (!allExtConfigs[typeCfg.type][name]) {
-            // eslint-disable-next-line no-console
-            console.log(`Extension ${name} not installed`);
-            return;
-        }
-        var config = allExtConfigs[typeCfg.type][name],
-            dstPath = makeTpl(typeCfg.targetDir)(config);
+    extender.uninstall[typeCfg.type] = (name, config) => {
+        let dstPath = makeTpl(typeCfg.targetDir)(config);
 
         // Remove the dstPath
-        delete allExtConfigs[typeCfg.type][name];
         rm_rf.sync(dstPath);
 
         // Re-generate template file
         saveExtensions();
     };
-
 };
 
 //var PLUGIN_ROOT = path.join(__dirname, '..', 'src', 'plugins', 'Export');
@@ -197,21 +219,24 @@ var makeInstallFor = function(typeCfg) {
 //});
 
 // Add the extension type for another domain/library
-// TODO
 const libraryType = 'Library';
+const LIBRARY_TEMPLATE_PATH = path.join(__dirname, '..', 'src', 'visualizers',
+    'panels', 'ForgeActionButton', 'Libraries.json.ejs');
 extender.install[libraryType] = (config, project, isReinstall) => {
     //webgme.import()
     // import the seed
     // TODO
 
-    // record the seed so it can be imported from the UI?
-    // TODO
+    // update the Libraries.json file
+    updateTemplateFile(LIBRARY_TEMPLATE_PATH, libraryType);
 
-    // record the firstClassType
+    // return the config
     // TODO
+};
 
-    // record the firstClassType
-    // TODO
+extender.uninstall[libraryType] = (name, config) => {
+    // update the Libraries.json file
+    updateTemplateFile(LIBRARY_TEMPLATE_PATH, libraryType);
 };
 
 module.exports = extender;

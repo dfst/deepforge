@@ -1,0 +1,8 @@
+<%= JSON.stringify(extensions.map(function(ext) {
+    return {
+        name: ext.name,
+        description: ext.description,
+        nodeTypes: ext.nodeTypes,
+        seed: ext.seed
+    };
+}), null, 2) %>
