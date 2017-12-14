@@ -37,6 +37,7 @@
     "webgme-autoviz": "^2.2.0",
     "webgme-breadcrumbheader": "^2.1.1",
     "webgme-chflayout": "^2.0.0",
+    "webgme-cli": "^2.6.0",
     "webgme-easydag": "dfst/webgme-easydag",
     "webgme-executor-worker": "^1.0.1",
     "webgme-fab": "dfst/webgme-fab",

@@ -15,6 +15,7 @@ const CONFIG_DIR = path.join(process.env.HOME, '.deepforge');
 const EXT_CONFIG_NAME = 'deepforge-extension.json';
 const EXTENSION_REGISTRY_NAME = 'extensions.json';
 const extConfigPath = path.join(CONFIG_DIR, EXTENSION_REGISTRY_NAME);
+const webgme = require('webgme-cli');
 
 let values = obj => Object.keys(obj).map(key => obj[key]);
 let allExtConfigs;
@@ -120,6 +121,9 @@ extender.install = function(projectName, isReinstall) {
             allExtConfigs[extType][extConfig.name] = extConfig;
             persistExtConfig();
 
+            // Record the config in the deepforge config
+            // TODO
+
             return extConfig;
         });
 };
@@ -153,7 +157,7 @@ var makeInstallFor = function(typeCfg) {
         // regenerate the format.js file from the template
         var installedExts = values(allExtConfigs[typeCfg.type]),
             formatTemplate = makeTpl(fs.readFileSync(typeCfg.template, 'utf8')),
-            formatsIndex = formatTemplate({path: path, formats: installedExts}),
+            formatsIndex = formatTemplate({path: path, extensions: installedExts}),
             dstPath = typeCfg.template.replace(/\.ejs$/, '');
 
         fs.writeFileSync(dstPath, formatsIndex);
@@ -218,23 +222,25 @@ var makeInstallFor = function(typeCfg) {
     //targetDir: path.join(PLUGIN_ROOT, 'formats', '<%=name%>')
 //});
 
+const LIBRARY_ROOT = path.join(__dirname, '..', 'src', 'visualizers',
+    'panels', 'ForgeActionButton');
+makeInstallFor({
+    type: 'Library',
+    template: path.join(LIBRARY_ROOT, 'Libraries.json.ejs'),
+    targetDir: path.join(LIBRARY_ROOT)
+});
+
+
 // Add the extension type for another domain/library
 const libraryType = 'Library';
 const LIBRARY_TEMPLATE_PATH = path.join(__dirname, '..', 'src', 'visualizers',
     'panels', 'ForgeActionButton', 'Libraries.json.ejs');
 extender.install[libraryType] = (config, project, isReinstall) => {
-    //webgme.import()
-    // import the seed
-    // TODO
-
-    // update the Libraries.json file
-    updateTemplateFile(LIBRARY_TEMPLATE_PATH, libraryType);
-
-    // return the config
-    // TODO
+    return webgme.all.import(project.arg)  // import the seed and stuff
+        .then(() => updateTemplateFile(LIBRARY_TEMPLATE_PATH, libraryType));
 };
 
-extender.uninstall[libraryType] = (name, config) => {
+extender.uninstall[libraryType] = (name/*, config*/) => {
     // update the Libraries.json file
     updateTemplateFile(LIBRARY_TEMPLATE_PATH, libraryType);
 };

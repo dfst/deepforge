@@ -5,6 +5,6 @@
         "nodeTypes": [
             "Architecture"
         ],
-        "seed": "nn"
+        "seed": "keras"
     }
 ]
