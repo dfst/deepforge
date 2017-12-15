@@ -130,18 +130,45 @@ define([
     return {
         HOME: MyPipelinesButtons,
         MyPipelines_META: MyPipelinesButtons,
-        MyDataTypes_META: [
-            {
-                name: 'Create new primitive data type',
-                icon: 'add',
-                action: DeepForge.create.Primitive
-            },
-            {
-                name: 'Create new class',
-                icon: 'add',
-                action: DeepForge.create.Complex
-            }
-        ],
+        MyResources_META: function(client, currentNode) {
+            let meta = this._client.getChildrenMeta(currentNode.getId());
+            let buttons = [
+                {
+                    name: 'Import library',
+                    icon: 'library_add',
+                    action: function() {
+                        let dialog = new LibraryDialog(this.logger);
+                        dialog.show();
+                    }
+                }
+            ];
+
+            // Add a button to create a node from a library
+
+            // Get the valid children of the given node
+            let childrenIds = !meta ? [] : meta.items.map(item => item.id);
+            let addButtons = childrenIds.map(id => {
+                let node = client.getNode(id);
+                let name = node.getAttribute('name');
+                return {
+                    name: `Create new ${name}`,
+                    icon: 'add',
+                    action: () => {
+                        client.startTransaction(`Created new ${name}`);
+                        let newId = client.createNode({
+                            parentId: currentNode.getId(),
+                            baseId: id
+                        });
+                        client.completeTransaction();
+                        WebGMEGlobal.State.registerActiveObject(newId);
+                    }
+                };
+            });
+            // TODO: Add support for adding (inherited) children
+
+            buttons = addButtons.concat(buttons);
+            return buttons;
+        },
         MyOperations_META: [
             {
                 name: 'Create new operation',
@@ -156,24 +183,6 @@ define([
                 action: DeepForge.create.Artifact
             }
         ],
-        MyResources_META: [
-            {
-                name: 'Import library',
-                icon: 'library_add',
-                action: function() {
-                    // Open the modal with the library dialog
-                    // TODO
-                    let dialog = new LibraryDialog(this.logger);
-                    dialog.show();
-                    // Open the modal with the library dialog
-                    // TODO
-
-                    // How do I import a library? Check the library importer
-                    // TODO
-                }
-            }
-        ],
-
         // Creating prototypes
         Operation_META: prototypeButtons('Operation', 'Pipeline'),
         Complex_META: prototypeButtons('Class', 'Operation'),
