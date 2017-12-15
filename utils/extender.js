@@ -115,16 +115,16 @@ extender.install = function(projectName, isReinstall) {
                 console.error(`Extension ${extConfig.name} already installed. Reinstalling...`);
             }
 
-            extConfig = extender.install[extType](extConfig, project, !!isReinstall) || extConfig;
+            return Q(extender.install[extType](extConfig, project, !!isReinstall))
+                .then(config => {
+                    extConfig = config || extConfig;
 
-            // Update the deployment config
-            allExtConfigs[extType][extConfig.name] = extConfig;
-            persistExtConfig();
+                    // Update the deployment config
+                    allExtConfigs[extType][extConfig.name] = extConfig;
+                    persistExtConfig();
 
-            // Record the config in the deepforge config
-            // TODO
-
-            return extConfig;
+                    return extConfig;
+                });
         });
 };
 
