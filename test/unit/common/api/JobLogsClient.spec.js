@@ -1,4 +1,4 @@
-var testFixture = require('../../globals'),
+var testFixture = require('../../../globals'),
     expect = testFixture.expect,
     assert = require('assert'),
     path = testFixture.path,

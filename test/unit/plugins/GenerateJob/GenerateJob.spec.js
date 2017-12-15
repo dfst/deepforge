@@ -1,8 +1,7 @@
 /*jshint node:true, mocha:true*/
 
-var testFixture = require('../../globals');
-
 describe('GenerateJob', function () {
+    const testFixture = require('../../../globals');
     var gmeConfig = testFixture.getGmeConfig(),
         expect = testFixture.expect,
         logger = testFixture.logger.fork('GenerateJob'),
