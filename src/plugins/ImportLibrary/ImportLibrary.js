@@ -3,7 +3,7 @@
 
 define([
     'plugin/UploadSeedToBlob/UploadSeedToBlob/UploadSeedToBlob',
-    'webgme/src/bin/import',
+    'webgme-engine/src/bin/import',
     'text!./metadata.json'
 ], function (
     PluginBase,
