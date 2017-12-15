@@ -20,7 +20,9 @@ define([
 
     pluginMetadata = JSON.parse(pluginMetadata);
     const __dirname = path.dirname(module.uri);
-    const SEEDS_DIR = path.join(__dirname, '..', '..', 'seeds');
+    const PROJECT_ROOT = path.join(__dirname, '..', '..', '..');
+    const SEEDS_DIR = path.join(PROJECT_ROOT, 'src', 'seeds');
+    const config = JSON.parse(fs.readFileSync(path.join(PROJECT_ROOT, 'webgme-setup.json')), 'utf8');
 
     /**
      * Initializes a new instance of UploadSeedToBlob.
@@ -82,7 +84,13 @@ define([
     };
 
     UploadSeedToBlob.prototype.getSeedDir = function (name) {
-        return path.join(SEEDS_DIR, name);
+        if (config.components.seeds[name]) {
+            return path.join(SEEDS_DIR, name);
+        } else if (config.dependencies.seeds[name]) {
+            const entry = config.dependencies.seeds[name];
+            return path.join(PROJECT_ROOT, entry.path);
+        }
+        throw new Error(`Seed ${name} not found!`);
     };
 
     return UploadSeedToBlob;
