@@ -180,11 +180,6 @@ var makeInstallFor = function(typeCfg) {
         config.version = pkgJson.version;
         config.project = project;
 
-        if (allExtConfigs[typeCfg.type][config.name] && !isReinstall) {
-            // eslint-disable-next-line no-console
-            console.error(`Extension ${config.name} already installed. Reinstalling...`);
-        }
-
         allExtConfigs[typeCfg.type][config.name] = config;
 
         // copy the main script to src/plugins/Export/formats/<name>/<main>
