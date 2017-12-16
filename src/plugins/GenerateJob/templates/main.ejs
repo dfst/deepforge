@@ -8,10 +8,9 @@ from pointers import <%= pointer %>
 <%}); %>
 
 from operations import <%= name %>
-from attributes import attributes
 
 # main operation code for <%= name %>
-operation = <%= name %>()
+operation = <%= name %>(<%= arguments %>)
 print('\n############### Running "<%= name.replace(/'/g, '\\\'') %>" Operation ############### ')
 <%= outputs.length ? outputs.join(', ') : 'result' %> = operation.execute(<%= inputs.map(function(pair) {
     var name = pair[0],

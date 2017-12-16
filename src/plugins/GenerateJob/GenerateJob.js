@@ -7,6 +7,7 @@ define([
     'underscore',
     'deepforge/Constants',
     'deepforge/plugin/Operation',
+    'deepforge/OperationCode',
     'deepforge/plugin/PtrCodeGen',
     'text!./metadata.json',
     'plugin/PluginBase'
@@ -16,6 +17,7 @@ define([
     _,
     CONSTANTS,
     OperationHelpers,
+    OperationCode,
     PtrCodeGen,
     pluginMetadata,
     PluginBase
@@ -223,7 +225,6 @@ define([
         //   outputs/<name>/  (make dirs for each of the outputs)
         //   outputs/init.py  (serializers for data outputs)
         //
-        //   attributes.py (returns py table of operation attributes)
         //   init.py (main file -> calls main and serializes outputs)
         //   <name>.py (entry point -> calls main operation code)
 
@@ -231,13 +232,9 @@ define([
         this.logger.info('About to generate operation execution files');
         return this.createEntryFile(node, files)
             .then(() => this.createClasses(node, files))
-            .then(() => this.createCustomLayers(node, files))
             .then(() => this.createInputs(node, files))
             .then(() => this.createMainFile(node, files))
-            .then(() => {
-                this.createAttributeFile(node, files);
-                return Q.ninvoke(this, 'createPointers', node, files);
-            })
+            .then(() => Q.ninvoke(this, 'createPointers', node, files))
             .fail(err => {
                 this.logger.error(err);
                 throw err;
@@ -324,29 +321,6 @@ define([
         return isType;
     };
 
-    // TODO: update this to nn modules
-    GenerateJob.prototype.createCustomLayers = function (node, files) {
-        var metaDict = this.core.getAllMetaNodes(this.rootNode),
-            isCustomLayer,
-            metanodes,
-            customLayers,
-            code;
-
-        this.logger.info('Creating custom layer file...');
-        metanodes = Object.keys(metaDict).map(id => metaDict[id]);
-        isCustomLayer = this.getTypeDictFor('CustomLayer', metanodes);
-
-        customLayers = metanodes.filter(node =>
-            this.core.getMixinPaths(node).some(id => isCustomLayer[id]));
-
-        // Get the code definitions for each
-        code = 'require \'nn\'\n\n' + customLayers
-            .map(node => this.getAttribute(node, 'code')).join('\n');
-
-        // Create the custom layers file
-        files['custom-layers.py'] = code;
-    };
-
     GenerateJob.prototype.getConnectionContainer = function () {
         var container = this.core.getParent(this.activeNode);
 
@@ -370,8 +344,7 @@ define([
     };
 
     GenerateJob.prototype.createInputs = function (node, files) {
-        var tplContents,
-            inputs;
+        var inputs;
 
         this.logger.info('Retrieving inputs and deserialize fns...');
         return this.getInputs(node)
@@ -423,8 +396,8 @@ define([
                         });
                 }));
             })
-            .then(_tplContents => {
-                tplContents = _tplContents;
+            .then(tplContents => {
+                console.log(tplContents);
                 inputs.forEach(pair => {
                     var hash = this.getAttribute(pair[2], 'data');
                     files.inputAssets[pair[0]] = hash;
@@ -449,7 +422,7 @@ define([
                 content.inputs = inputs
                     .map(pair => [pair[0], !this.getAttribute(pair[2], 'data')]);  // remove empty inputs
 
-                // Defined variables for each pointers
+                // Defined variables for each pointer
                 content.pointers = pointers
                     .map(id => [id, this.core.getPointerPath(node, id) === null]);
 
@@ -459,6 +432,7 @@ define([
             })
             .then(outputs => {
                 content.outputs = outputs.map(output => output[0]);
+                content.arguments = this.getOperationArguments(node);
 
                 files['main.py'] = _.template(Templates.MAIN)(content);
                 files['operations.py'] = content.code;
@@ -469,6 +443,41 @@ define([
             });
     };
 
+    GenerateJob.getAttributeString = function(value) {
+        const numOrBool = /^(-?\d+\.?\d*((e|e-)\d+)?|(true|false))$/;
+        const isBool = /^(true|false)$/;
+
+        if (!numOrBool.test(value)) {
+            value = `"${value}"`;
+        }
+        if (isBool.test(value)) {  // Convert to python bool
+            value = value.toString();
+            value = value[0].toUpperCase() + value.slice(1);
+        }
+        return value;
+    };
+
+    GenerateJob.prototype.getOperationArguments = function (node) {
+        const code = this.getAttribute(node, 'code');
+        const operation = new OperationCode(code);
+        const pointers = this.core.getPointerNames(node);
+
+        // Enter the attributes in place
+        const argumentValues = operation.getAttributes().map(attr => {
+            const name = attr.name;
+
+            // Check if it is a reference... (if so, just return the pointer name)
+            if (pointers.includes(name)) {
+                return name;
+            } else {  // get the attribute and it's value
+                let value = this.getAttribute(node, name);
+                return GenerateJob.getAttributeString(value);
+            }
+        });
+
+        return argumentValues.join(', ');
+    };
+
     GenerateJob.prototype.getLineOffset = function (main, snippet) {
         var i = main.indexOf(snippet),
             lines = main.substring(0, i).match(/\n/g);
@@ -476,35 +485,15 @@ define([
         return lines ? lines.length : 0;
     };
 
-    GenerateJob.prototype.createAttributeFile = function (node, files) {
-        var numOrBool = /^(-?\d+\.?\d*((e|e-)\d+)?|(true|false))$/,
-            isBool = /^(true|false)$/,
-            table;
-
-        this.logger.info('Creating attributes file...');
-        table = '{\n\t' + this.core.getAttributeNames(node)
-            .filter(attr => SKIP_ATTRIBUTES.indexOf(attr) === -1)
-            .map(name => {
-                var value = this.getAttribute(node, name);
-                if (!numOrBool.test(value)) {
-                    value = `"${value}"`;
-                }
-                if (isBool.test(value)) {  // Convert to python bool
-                    value = value.toString();
-                    value = value[0].toUpperCase() + value.slice(1);
-                }
-                return [`'${name}'`, value];
-            })
-            .map(pair => pair.join(': '))
-            .join(',\n    ') + '\n}';
-
-        files['attributes.py'] = `# attributes of ${this.getAttribute(node, 'name')}\nattributes = ${table}`;
-    };
-
     GenerateJob.prototype.createPointers = function (node, files, cb) {
         var pointers,
             nIds;
 
+        // Put pointers in a directory...
+        // TODO
+
+        // Convert pointer names to use _ instead of ' '
+        // TODO
         this.logger.info('Creating pointers file...');
         pointers = this.core.getPointerNames(node)
             .filter(name => name !== 'base')
