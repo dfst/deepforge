@@ -34,17 +34,17 @@ config.visualization.panelPaths.push(__dirname + '/../node_modules/webgme-easyda
 config.visualization.panelPaths.push(__dirname + '/../src/visualizers/panels');
 
 
-config.rest['JobLogsAPI'] = {
+config.rest.components['JobLogsAPI'] = {
   src: __dirname + '/../src/routers/JobLogsAPI/JobLogsAPI.js',
   mount: 'execution/logs',
   options: {}
 };
-config.rest['JobOriginAPI'] = {
+config.rest.components['JobOriginAPI'] = {
   src: __dirname + '/../src/routers/JobOriginAPI/JobOriginAPI.js',
   mount: 'job/origins',
   options: {}
 };
-config.rest['ExecPulse'] = {
+config.rest.components['ExecPulse'] = {
   src: __dirname + '/../src/routers/ExecPulse/ExecPulse.js',
   mount: 'execution/pulse',
   options: {}
