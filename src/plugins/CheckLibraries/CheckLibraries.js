@@ -3,7 +3,7 @@
 
 define([
     'plugin/UploadSeedToBlob/UploadSeedToBlob/UploadSeedToBlob',
-    'text!./metadata.json',
+    './metadata.json',
     'module',
     'path',
     'fs',
@@ -17,8 +17,6 @@ define([
     Q
 ) {
     'use strict';
-
-    pluginMetadata = JSON.parse(pluginMetadata);
 
     /**
      * Initializes a new instance of CheckLibraries.

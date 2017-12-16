@@ -7,7 +7,7 @@ define([
     'path',
     'fs',
     'q',
-    'text!./metadata.json'
+    './metadata.json'
 ], function (
     PluginBase,
     module,
@@ -18,7 +18,6 @@ define([
 ) {
     'use strict';
 
-    pluginMetadata = JSON.parse(pluginMetadata);
     const __dirname = path.dirname(module.uri);
     const PROJECT_ROOT = path.join(__dirname, '..', '..', '..');
     const SEEDS_DIR = path.join(PROJECT_ROOT, 'src', 'seeds');
