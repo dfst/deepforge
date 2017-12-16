@@ -26,6 +26,14 @@
             "value": "",
             "valueType": "asset",
             "readOnly": false
+        },
+        {
+            "name": "dataTypeId",
+            "displayName": "Data Type",
+            "description": "",
+            "value": "",
+            "valueType": "str",
+            "readOnly": false
         }
   ]
 }

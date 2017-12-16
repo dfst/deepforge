@@ -15,38 +15,6 @@ define([
 ) {
     var FILE_UPLOAD_INPUT = $('<input type="file" />');
 
-    var createLayer = function() {
-        // Prompt the base type
-        this.promptLayerType().then(selected => {
-            var baseId = selected.node.id,
-                typeName = this.client.getNode(baseId).getAttribute('name'),
-                metanodes = this.client.getAllMetaNodes(),
-                msg = `Created new custom ${typeName} layer`,
-                newId,
-                customLayerId,
-                name;
-
-            for (var i = metanodes.length; i--;) {
-                name = metanodes[i].getAttribute('name');
-                if (name === 'CustomLayer') {
-                    customLayerId = metanodes[i].getId();
-                    break;
-                }
-            }
-
-            this.client.startTransaction(msg);
-
-            newId = this.createNamedNode(baseId, true);
-            this.addToMetaSheet(newId, 'CustomLayers');
-            this.client.addMixin(newId, customLayerId);
-            this.client.setRegistry(newId, REGISTRY_KEYS.IS_ABSTRACT, false);
-
-            this.client.completeTransaction();
-
-            WebGMEGlobal.State.registerActiveObject(newId);
-        });
-    };
-
     ////////////// Downloading files //////////////
     var downloadAttrs = [
             'data',
@@ -160,18 +128,6 @@ define([
     return {
         HOME: MyPipelinesButtons,
         MyPipelines_META: MyPipelinesButtons,
-        MyArchitectures_META: [
-            {
-                name: 'Create new architecture',
-                icon: 'queue',
-                action: DeepForge.create.Architecture
-            },
-            {
-                name: 'Import Torch Architecture',
-                icon: 'swap_vert',
-                action: importTorch
-            }
-        ],
         MyDataTypes_META: [
             {
                 name: 'Create new primitive data type',
@@ -182,13 +138,6 @@ define([
                 name: 'Create new class',
                 icon: 'queue',
                 action: DeepForge.create.Complex
-            }
-        ],
-        MyLayers_META: [
-            {
-                name: 'Create new layer',
-                icon: 'queue',
-                action: createLayer
             }
         ],
         MyOperations_META: [
@@ -208,7 +157,6 @@ define([
 
         // Creating prototypes
         Operation_META: prototypeButtons('Operation', 'Pipeline'),
-        Layer_META: prototypeButtons('Layer', 'Architecture'),
         Complex_META: prototypeButtons('Class', 'Operation'),
         Primitive_META: prototypeButtons('Primitive Type', 'Operation'),
 
@@ -285,13 +233,6 @@ define([
                             Materialize.toast(`Export failed: ${err}`, 4000);
                         });
                 }
-            }
-        ],
-        Architecture: [
-            {
-                name: 'Import Torch Architecture',
-                icon: 'swap_vert',
-                action: importTorch
             }
         ]
     };

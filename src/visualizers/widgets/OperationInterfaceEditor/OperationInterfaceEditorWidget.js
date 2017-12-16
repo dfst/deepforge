@@ -22,13 +22,12 @@ define([
     'use strict';
 
     var OperationInterfaceEditorWidget,
-        WIDGET_CLASS = 'operation-interface-editor',
-        NEW_CLASS_ID = '__NEW_CLASS__',
-        NEW_PRIM_ID = '__NEW_PRIM__';
+        WIDGET_CLASS = 'operation-interface-editor';
 
     OperationInterfaceEditorWidget = function (logger, container) {
         container.addClass(WIDGET_CLASS);
         EasyDAG.call(this, logger, container);
+        this.logger = this._logger;
     };
 
     _.extend(OperationInterfaceEditorWidget.prototype, EasyDAG.prototype);
@@ -54,6 +53,16 @@ define([
             return true;
         };
 
+        this.ItemClass.prototype.setAttributeMeta = function(name, desc) {
+            var item = this;
+            this._widget.setAttributeMeta(item.id, name, desc);
+        };
+
+        this.ItemClass.prototype.deleteAttribute = function(name) {
+            var item = this;
+            this._widget.deleteAttribute(item.id, name);
+        };
+
     };
 
     OperationInterfaceEditorWidget.prototype.onAddItemSelected = function(selected, isInput) {
@@ -61,31 +70,8 @@ define([
     };
 
     OperationInterfaceEditorWidget.prototype.onAddButtonClicked = function(item, isInput) {
-        var successorPairs = this.getValidSuccessors(item.id, isInput),
-            newClass = this.getCreationNode('Complex', NEW_CLASS_ID),
-            newPrim = this.getCreationNode('Primitive', NEW_PRIM_ID),
-            opts = {};
-
-        // Add the 'Create Class' node
-        successorPairs.push(newClass);
-        successorPairs.push(newPrim);
-
-        // Add tabs
-        opts.tabs = ['Primitive', 'Classes'];
-        opts.tabFilter = (tab, pair) => {
-            return pair.node.isPrimitive === (tab === 'Primitive');
-        };
-
-        AddNodeDialog.prompt(successorPairs, opts)
-            .then(selected => {
-                if (selected.node.id === NEW_CLASS_ID) {
-                    DeepForge.create.Complex();
-                } else if (selected.node.id === NEW_PRIM_ID) {
-                    DeepForge.create.Primitive();
-                } else {
-                    this.onAddItemSelected(selected, isInput);
-                }
-            });
+        var successorPairs = this.getValidSuccessors(item.id, isInput);
+        return this.onAddItemSelected(successorPairs[0], isInput);
     };
 
     OperationInterfaceEditorWidget.prototype.onDeactivate = function() {
@@ -144,8 +130,7 @@ define([
 
     // Hover buttons
     OperationInterfaceEditorWidget.prototype.showHoverButtons = function(item) {
-        var dataNodes = this.allDataTypeIds(),
-            refNodes = this.allValidReferences(),
+        var refNodes = this.allValidReferences(),
             height = item.height,
             cx = item.width/2;
 
@@ -161,7 +146,6 @@ define([
             new Buttons.AddOutput({  // Add output data
                 context: this,
                 $pEl: this.$hoverBtns,
-                disabled: dataNodes.length === 0,
                 item: item,
                 x: cx,
                 y: height
@@ -170,7 +154,6 @@ define([
             new Buttons.AddInput({  // Add input data
                 context: this,
                 $pEl: this.$hoverBtns,
-                disabled: dataNodes.length === 0,
                 item: item,
                 x: item.width/3,
                 y: 0

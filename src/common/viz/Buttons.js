@@ -114,7 +114,7 @@ define([
                 });
             }
         } else {
-            this._logger.warn('Could not find the base node!');
+            this.logger.warn('Could not find the base node!');
         }
     };
 

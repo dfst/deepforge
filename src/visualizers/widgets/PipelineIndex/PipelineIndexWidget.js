@@ -20,7 +20,7 @@ define([
         WIDGET_CLASS = 'pipeline-index';
 
     PipelineIndexWidget = function (logger, container) {
-        this._logger = logger.fork('Widget');
+        this.logger = logger.fork('Widget');
 
         this.$el = $('<div>', {
             class: 'row'
@@ -35,7 +35,7 @@ define([
         this.updateBackgroundText();
 
         this._initializeEventHandlers();
-        this._logger.debug('ctor finished');
+        this.logger.debug('ctor finished');
     };
 
     PipelineIndexWidget.prototype._initializeEventHandlers = function () {
@@ -161,11 +161,11 @@ define([
     };
 
     PipelineIndexWidget.prototype.onActivate = function () {
-        this._logger.debug('PipelineIndexWidget has been activated');
+        this.logger.debug('PipelineIndexWidget has been activated');
     };
 
     PipelineIndexWidget.prototype.onDeactivate = function () {
-        this._logger.debug('PipelineIndexWidget has been deactivated');
+        this.logger.debug('PipelineIndexWidget has been deactivated');
     };
 
     return PipelineIndexWidget;

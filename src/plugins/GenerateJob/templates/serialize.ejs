@@ -1,16 +1,17 @@
--- Serialization functions for: <%= types.map(function(type) {return type[0];}).join('\n--   ') %>
-require 'paths'
+# Serialization functions for: <%= types.map(function(type) {return type[0];}).join('\n--   ') %>
 
-local serializer = {}
+serializer = {}
 <% types.forEach(function(pair) {
 var type = pair[0],
-    fn = pair[1];
-%>
-function serializer.<%= type %> (name, data)
-    local path = 'outputs/' .. name
-    local abs_path = paths.concat('outputs', name)
-    <%= fn.replace('\n', '\n    ') %>
-end
-<% }); %>
+    fn = pair[1],
+    safeType = type.replace(/[^a-zA-Z\d_]/g, '_');
 
-return serializer
+%>
+
+def <%= safeType %> (name, data):
+    path = 'outputs/' .. name
+    <%= fn.replace('\n', '\n    ') %>
+
+serializer['<%= type %>'] = <%= safeType %>
+
+<% }); %>

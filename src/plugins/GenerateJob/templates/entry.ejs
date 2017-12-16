@@ -1,16 +1,7 @@
--- Instantiate the deepforge object
-require './deepforge'
+import main
+import pickle
 
--- run the <%= name %> and serialize the results
-print('\n############### Running "<%= name.replace(/'/g, '\\\'') %>" Operation ############### ')
-results = require './main'
-print('############### "<%= name.replace(/'/g, '\\\'') %>" Operation Complete! ###############')
+# run the <%= name %> and serialize the results
 
--- serialize by type
-outputs = require './outputs'
-<% outputs.forEach(pair => { 
-    var name = pair[0],
-        type = pair[1];
-%>
-outputs.<%= type %>('<%= name %>', results.<%= name %>)
-<% }); %>
+# serialize by type
+import outputs

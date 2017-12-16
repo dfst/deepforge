@@ -1,11 +1,16 @@
 /*globals define*/
 define([
+    'panels/EasyDAG/EasyDAGControl.WidgetEventHandlers',
+    'deepforge/OperationCode',
     './Colors'
 ], function(
+    EasyDAGControlEventHandlers,
+    OperationCode,
     COLORS
 ) {
     'use strict';
     var OperationInterfaceEditorEvents = function() {
+        this.logger = this._logger;
         this._widget.allDataTypeIds = this.allDataTypeIds.bind(this);
         this._widget.allValidReferences = this.allValidReferences.bind(this);
         this._widget.addRefTo = this.addRefTo.bind(this);
@@ -13,6 +18,9 @@ define([
         this._widget.changePtrName = this.changePtrName.bind(this);
         this._widget.removePtr = this.removePtr.bind(this);
         this._widget.getCreationNode = this.getCreationNode.bind(this);
+
+        this._widget.setAttributeMeta = this.setAttributeMeta.bind(this);
+        this._widget.deleteAttribute = this.deleteAttribute.bind(this);
     };
 
     OperationInterfaceEditorEvents.prototype.getCreationNode = function(type, id) {
@@ -66,36 +74,14 @@ define([
             .filter(node => !node.isAbstract());
     };
 
-    OperationInterfaceEditorEvents.prototype.getValidSuccessors = function(nodeId, isInput) {
-        var dataTypeIds;
-
+    OperationInterfaceEditorEvents.prototype.getValidSuccessors = function(nodeId) {
         if (nodeId !== this._currentNodeId) {
             return [];
         }
 
-        // Return all data types in the meta
-        // If input, include abstract types
-        dataTypeIds = this.allDataTypeIds(isInput);
-
-        return dataTypeIds.map(id => {
-            return {
-                node: this._getObjectDescriptor(id)
-            };
-        });
-    };
-
-    OperationInterfaceEditorEvents.prototype._getDataName = function(cntrId, typeId) {
-        var otherIds = this._client.getNode(cntrId).getChildrenIds(),
-            otherNames = otherIds.map(id => this._client.getNode(id).getAttribute('name')),
-            baseName = this._client.getNode(typeId).getAttribute('name').toLowerCase(),
-            name = baseName,
-            i = 1;
-
-        while (otherNames.indexOf(name) !== -1) {
-            i++;
-            name = baseName + '_' + i;
-        }
-        return name;
+        return [{
+            node: this._getObjectDescriptor(this.getDataTypeId())
+        }];
     };
 
     OperationInterfaceEditorEvents.prototype.getRefName = function(node, basename) {
@@ -124,7 +110,9 @@ define([
             ptrName = this.getRefName(opNode, desiredName),
             msg = `Adding ref "${ptrName}" to operation "${opNode.getAttribute('name')}"`;
 
+        console.log('adding ref', ptrName, '(', targetId, ')');
         this._client.startTransaction(msg);
+        this.updateCode(operation => operation.addReference(ptrName));
         this._client.setPointerMeta(this._currentNodeId, ptrName, {
             min: 1,
             max: 1,
@@ -173,6 +161,9 @@ define([
 
         this._client.startTransaction(msg);
 
+        this.updateCode(operation =>
+            operation.renameIn(OperationCode.CTOR_FN, from, to));
+
         // Currently, this will not update children already using old name...
         this._client.delPointerMeta(this._currentNodeId, from);
         this._client.delPointer(this._currentNodeId, from);
@@ -188,30 +179,161 @@ define([
 
         this._client.startTransaction(msg);
         // Currently, this will not update children already using old name...
-        this._client.delPointerMeta(this._currentNodeId, name);
-        this._client.delPointer(this._currentNodeId, name);
+        this.removeReference(this._currentNodeId, name);
+
+        this.updateCode(operation => operation.removeReference(name));
         this._client.completeTransaction();
     };
 
-    OperationInterfaceEditorEvents.prototype._createConnectedNode = function(typeId, isInput) {
+    OperationInterfaceEditorEvents.prototype._createConnectedNode = function(typeId, isInput, baseName) {
         var node = this._client.getNode(this._currentNodeId),
             name = node.getAttribute('name'),
-            cntrs = node.getChildrenIds(),
-            cntrType = isInput ? 'Inputs' : 'Outputs',
-            cntrId = cntrs.find(id => this.hasMetaName(id, cntrType)),
-            dataName = this._getDataName(cntrId, typeId),
+            msg = `Updating the interface of ${name}`,
+            id,
+            dataName;
+
+        // Update the source code if the inputs/outputs changed
+        // we know that we are adding a node, so we don't need to do 
+        // the comparing and diffing current vs new
+
+        this._client.startTransaction(msg);
+        id = this.createIONode(this._currentNodeId, typeId, isInput, baseName, true);
+        dataName = this._client.getNode(id).getAttribute('name');
+
+        if (isInput) {
+            this.updateCode(operation => operation.addInput(dataName));
+        } else {
+            this.updateCode(operation => operation.addOutput(dataName));
+        }
+        this._client.completeTransaction();
+
+        return id;
+    };
+
+    OperationInterfaceEditorEvents.prototype._deleteNode = function(nodeId) {
+        var dataName = this._client.getNode(nodeId).getAttribute('name'),
+            node = this._client.getNode(this._currentNodeId),
+            name = node.getAttribute('name'),
+            isInput = this.isInputData(nodeId),
+            msg = `Updating the interface of ${name}`,
+            code = node.getAttribute('code'),
+            operation = new OperationCode(code);
+
+        // If the input name is used in the code, maybe just comment it out in the args
+        this._client.startTransaction(msg);
+        try {
+            if (isInput) {
+                operation.removeInput(dataName);
+            } else {
+                operation.removeOutput(dataName);
+            }
+            this._client.setAttribute(this._currentNodeId, 'code', operation.getCode());
+        } catch(e) {
+            this.logger.debug(`could not update the code - invalid python!: ${e}`);
+        }
+        this._client.deleteNode(nodeId);
+        //EasyDAGControlEventHandlers.prototype._deleteNode.apply(this, nodeId, true);
+        this._client.completeTransaction();
+    };
+
+    OperationInterfaceEditorEvents.prototype._saveAttributeForNode = function(nodeId, attr, value) {
+        // If nodeId is an input data node, rename the input
+        // If nodeId is an output data node, rename the output
+        var isDataNode = nodeId !== this._currentNodeId && nodeId.indexOf(this._currentNodeId) === 0,
             msg;
 
-        msg = `Adding ${isInput ? 'input' : 'output'} "${dataName}" to ${name} interface`;
+        if (attr === 'name') {  // rename input/output
+            if (isDataNode) {
+                var dataNode = this._client.getNode(nodeId),
+                    oldName = dataNode.getAttribute(attr);
+
+                msg = `Renaming ${oldName}->${value} in ${name}`;
+                this._client.startTransaction(msg);
+
+                this.updateCode(operation => operation.rename(oldName, value));
+                // if any of the inputs have the same name, they should also be renamed.
+                // We are assuming that they are likely using the same variable
+                // and we don't want to change the behavior of the code...
+                var dataNodes = this.getInputNodes().concat(this.getOutputNodes());
+                var matching = dataNodes.filter(node => node.getAttribute('name') === oldName);
+                matching.forEach(node =>
+                    EasyDAGControlEventHandlers.prototype._saveAttributeForNode.call(this, node.getId(), attr, value)
+                );
+                this._client.completeTransaction();
+            } else {
+                this._client.startTransaction(`Renaming ${oldName}->${value}`);
+                this.updateCode(operation => operation.setName(value));
+                EasyDAGControlEventHandlers.prototype._saveAttributeForNode.apply(this, arguments);
+                this._client.completeTransaction();
+            }
+        } else if (nodeId === this._currentNodeId) {  // edit operation attributes
+            msg = `Setting attribute default ${attr}->${value} in ${name}`;
+            this._client.startTransaction(msg);
+            this.updateCode(operation => operation.setAttributeDefault(attr, value));
+            EasyDAGControlEventHandlers.prototype._saveAttributeForNode.apply(this, arguments);
+            this._client.completeTransaction();
+        }
+    };
+
+    OperationInterfaceEditorEvents.prototype.getOperationName = function() {
+        return this._client.getNode(this._currentNodeId).getAttribute('name');
+    };
+
+    OperationInterfaceEditorEvents.prototype.setAttributeMeta = function(nodeId, name, desc) {
+        var schema,
+            opName = this.getOperationName(),
+            isRename = name && name !== desc.name,
+            isNewAttribute = name === null,
+            msg = `Updating "${name}" attribute in "${opName}" operation`;
+
+        // Create the schema from the desc
+        schema = {
+            type: desc.type,
+            min: desc.min,
+            max: desc.max,
+            regexp: desc.regexp
+        };
+
+        if (desc.isEnum) {
+            schema.enum = desc.enumValues;
+        }
+
+        // Update the operation's attribute
         this._client.startTransaction(msg);
-        var id = this._client.createNode({
-            parentId: cntrId,
-            baseId: typeId
+
+        // update the operation code
+        this.updateCode(operation => {
+            if (isRename) {
+                operation.renameIn(OperationCode.CTOR_FN, name, desc.name);
+            } else if (isNewAttribute) {
+                operation.addAttribute(desc.name);
+            }
+            operation.setAttributeDefault(desc.name, desc.defaultValue);
         });
 
-        // Set the name of the new input
-        this._client.setAttribute(id, 'name', dataName);
+        if (isRename) {  // Renaming attribute
+            if (name) {
+                this._client.delAttributeMeta(nodeId, name);
+                this._client.delAttribute(nodeId, name);
+            }
+            name = desc.name;
+        }
 
+        this._client.setAttributeMeta(nodeId, desc.name, schema);
+        this._client.setAttribute(nodeId, desc.name, desc.defaultValue);
+
+        this._client.completeTransaction();
+    };
+
+    OperationInterfaceEditorEvents.prototype.deleteAttribute = function(nodeId, name) {
+        var opName = this._client.getNode(nodeId).getAttribute('name'),
+            msg = `Deleting "${name}" attribute from "${opName}" operation`;
+
+        this._client.startTransaction(msg);
+        this.removeAttribute(nodeId, name);
+
+        // update the operation code
+        this.updateCode(operation => operation.removeAttribute(name));
         this._client.completeTransaction();
     };
 

@@ -22,6 +22,8 @@ config.seedProjects.basePaths.push(__dirname + '/../src/seeds/project');
 config.seedProjects.basePaths.push(__dirname + '/../src/seeds/cifar10');
 config.seedProjects.basePaths.push(__dirname + '/../src/seeds/xor');
 config.seedProjects.basePaths.push(__dirname + '/../src/seeds/devProject');
+config.seedProjects.basePaths.push(__dirname + '/../src/seeds/minimal');
+config.seedProjects.basePaths.push(__dirname + '/../src/seeds/tests');
 
 
 
