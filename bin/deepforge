@@ -184,69 +184,6 @@ var startMongo = function(args, port, silent) {
     });
 };
 
-var hasTorch = function() {
-    var result = childProcess.spawnSync('th', ['--help']);
-    return !result.error;
-};
-
-var installTorchExtras = function() {
-    // Check if rnn is installed
-    var result = childProcess.spawnSync('luarocks', ['list', '--porcelain']),
-        pkgs = result.stdout.toString().split('\n')
-            .map(line => line.match(/^[a-zA-Z0-9]+/g))
-            .map(m => m && m[0]);
-
-    if (pkgs.indexOf('rnn') === -1) {
-        return spawn('luarocks', ['install', 'rnn']);
-    } else {
-        return Q();
-    }
-};
-
-var installTorch = function() {
-    var tgtDir = p(config.torch.dir),
-        args;
-
-    if (!hasTorch()) {
-        // Try to install torch
-        console.log(`Torch7 not found. Installing to ${tgtDir}...`);
-        args = `clone https://github.com/torch/distro.git ${tgtDir} --recursive`.split(' ');
-
-        return spawn('git', args)
-            .catch(result => {
-                var error = result.error || result.stderr ||
-                    `Torch install failed with exit code ${result.code}`;
-
-                if (result.stderr.includes('unable to access')) {
-                    error = `Could not access the torch repository. Are you ` +
-                        `connected to the internet?\n`;
-                } else if (result.code === 128) {
-                    error = `${tgtDir} is not empty. ` +
-                        'Please empty it or change the torch directory:\n' +
-                        '\n    deepforge config torch.dir NEW/TORCH/PATH\n';
-
-                }
-
-                console.error(error);
-                process.exit(result.code);
-            })
-            .then((code, stderr) => {
-                process.chdir(tgtDir);
-                return spawn('bash', ['install-deps'])
-                    .then(() => spawn('bash', ['install.sh'], true))
-                    .then(() => {
-                        storeConfig('torch.dir', tgtDir);
-                        console.log('Installed torch. Please close and ' +
-                            're-open your terminal to use DeepForge w/ ' +
-                            'torch support!');
-                        process.exit(0);
-                    });
-            });
-    } else {
-        return Q();
-    }
-};
-
 var spawn = function(cmd, args, opts) {
     var deferred = Q.defer(),
         job,
@@ -319,31 +256,22 @@ program.command('start')
         }
 
         if (args.worker) {
-            if (hasTorch()) {
-                current
-                    .then(() => installTorchExtras())
-                    .then(() => {
-                        main = path.join(__dirname, 'start-worker.js');
-                        if (args.worker !== true) {
-                            spawn('node', [main, args.worker]);
-                        } else {
-                            spawn('node', [main]);
-                        }
-                    });
-            } else {
-                installTorch();
-            }
+            current
+                .then(() => {
+                    main = path.join(__dirname, 'start-worker.js');
+                    if (args.worker !== true) {
+                        spawn('node', [main, args.worker]);
+                    } else {
+                        spawn('node', [main]);
+                    }
+                });
         }
 
         if (!args.server && !args.worker && !args.mongo) {
             // Starting everything
-            current = current.then(() => checkMongo(args));
-            if (hasTorch()) {
-                current.then(() => installTorchExtras())
-                    .then(() => spawn('node', [main]));
-            } else {
-                installTorch();
-            }
+            current = current
+                .then(() => checkMongo(args))
+                .then(() => spawn('node', [main]));
         }
 
     });
@@ -353,97 +281,50 @@ program
     .command('update')
     .description('upgrade deepforge to latest version')
     .option('-g, --git', 'update tracking the git repo')
-    .option('-t, --torch', 'update torch installation')
-    .option('-s, --server', 'update deepforge')
     .action(args => {
         var pkg = 'deepforge',
             latestVersion;
 
         // Install the project
-        if (!args.torch || args.server) {
+        if (args.git) {
+            pkg = pkgJson.repository.url;
+        } else {
+            // Check the version
+            try {
+                latestVersion = execSync('npm show deepforge version')
+                    .toString().replace(/\s+$/, '');
 
-            if (args.git) {
-                pkg = pkgJson.repository.url;
-            } else {
-                // Check the version
-                try {
-                    latestVersion = execSync('npm show deepforge version')
-                        .toString().replace(/\s+$/, '');
-
-                    if (latestVersion === version) {
-                        console.log('Already up-to-date');
-                        return;
-                    }
-                } catch (e) {
-                    console.log('Could not retrieve the latest deepforge version');
-                }
-            }
-
-            spawn('npm', ['install', '-g', pkg])
-                .then(() => {
-                    console.log('Upgrade successful!');
-                })
-                .catch(code => console.log('Upgrade failed w/ error code: ' + code));
-        }
-
-        if (args.torch || !args.server) {
-            // Update torch
-            if (hasTorch()) {
-                // Upgrade torch
-                console.log('Upgrading torch...');
-                console.log(`Checking for torch in ${config.torch.dir}`);
-                // Verify that torch is installed in the config's location
-                if (!exists.sync(path.join(config.torch.dir, 'update.sh'))) {
-                    // config is incorrect!
-                    console.log('Could not find torch installation. Please update the deepforge config with:');
-                    console.log('');
-                    console.log('    deepforge config torch.dir ~/path/to/torch/install');
-                    console.log('');
+                if (latestVersion === version) {
+                    console.log('Already up-to-date');
                     return;
                 }
-
-                spawn('bash', ['./update.sh'], {cwd: p(config.torch.dir)})
-                    .catch(err => console.log('Upgrade failed w/ error code: ' + err.code))
-                    .then(() => {
-                        console.log('About to update rnn package...');
-                        // Update rnn
-                        return spawn('luarocks', ['install', 'rnn']);
-                    })
-                    .then(() => {
-                        console.log('Upgrade successful!');
-                    })
-                    .catch(code => console.log('Upgrade failed w/ error code: ' + code));
-            } else {
-                installTorch();
+            } catch (e) {
+                console.log('Could not retrieve the latest deepforge version');
             }
         }
+
+        spawn('npm', ['install', '-g', pkg])
+            .then(() => {
+                console.log('Upgrade successful!');
+            })
+            .catch(code => console.log('Upgrade failed w/ error code: ' + code));
     });
 
 // uninstall command
 program
     .command('uninstall')
     .description('uninstall deepforge from the system')
-    .option('-t, --torch', 'uninstall torch')
-    .option('-c, --clean', 'uninstall deepforge, torch and all associated data/config')
+    .option('-c, --clean', 'uninstall deepforge and all associated data/config')
     .action(opts => {
-        if (opts.torch || opts.clean) {
-            if (opts.torch) {
-                console.log(`uninstalling torch at ${p(config.torch.dir)}`);
-            }
-            rm_rf.sync(p(config.torch.dir));
-        }
-
         if (opts.clean) {  // remove the .deepforge directory
             console.log('removing config and data files...');
             rm_rf.sync(p(config.mongo.dir));
             rm_rf.sync(p(configDir));
         }
 
-        if (!opts.torch || opts.clean) {  // uninstall deepforge
-            spawn('npm', ['uninstall', '-g', 'deepforge'])
-                .then(() => console.log('deepforge has been uninstalled!'))
-                .catch(() => console.log('uninstall failed'));
-        }
+        spawn('npm', ['uninstall', '-g', 'deepforge'])
+            .then(() => console.log('deepforge has been uninstalled!'))
+            .catch(() => console.log('uninstall failed'));
     });
 
 // config

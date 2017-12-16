@@ -169,11 +169,6 @@ describe('cli', function() {
     });
 
     describe('uninstall', function() {
-        it('should only remove \'torch\' if --torch option set', function() {
-            mocks.rimraf.sync = path => assert.notEqual(path.indexOf('torch'), -1);
-            cli('uninstall --torch');
-        });
-
         it('should uninstall deepforge w/ npm', function() {
             mocks.childProcess.spawn = (cmd, args) => {
                 assert.equal(cmd, 'npm');
@@ -214,14 +209,6 @@ describe('cli', function() {
                 }
             };
             cli('update --git');
-        });
-
-        it('should update torch if --torch', function() {
-            mocks.childProcess.spawn = (cmd, args) => {
-                assert.equal(cmd, 'bash');
-                assert.equal(args[0], './update.sh');
-            };
-            cli('update --torch');
         });
     });
 
