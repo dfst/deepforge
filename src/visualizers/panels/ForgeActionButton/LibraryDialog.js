@@ -1,4 +1,4 @@
-/* globals define */
+/* globals define, $, WebGMEGlobal */
 define([
     'q',
     'text!./Libraries.json',
@@ -28,7 +28,6 @@ define([
 
     LibraryDialog.prototype.addLibraryToTable = function(libraryInfo) {
         let row = $('<tr>');
-        //row.addClass('success');
         let data = $('<td>');
         data.text(libraryInfo.name);
         row.append(data);
@@ -41,16 +40,26 @@ define([
         // Check if it is installed
         let libraries = this.client.getLibraryNames();
         let installed = libraries.includes(libraryInfo.name);
+        let icon = $('<i>');
+        icon.addClass('material-icons');
         if (installed) {
+            row.addClass('success');
             data = $('<td>');
             let badge = $('<span>');
             badge.text('Installed');
             data.append(badge);
             badge.addClass('new badge');
             row.append(data);
+
+            icon.text('clear');
+            icon.on('click', () => this.uninstall(libraryInfo));
         } else {
-            row.on('click', () => this.import(libraryInfo));
+            icon.text('get_app');
+            icon.on('click', () => this.import(libraryInfo));
         }
+        data = $('<td>');
+        data.append(icon);
+        row.append(data);
 
         this.$tableContent.append(row);
     };
@@ -72,12 +81,20 @@ define([
         };
 
         // Pass in the library info
+        // TODO: show loading circles?
         return Q.ninvoke(this.client, 'runServerPlugin', pluginId, context)
             .then(result => {
                 this.logger.info('imported library: ', libraryInfo.name);
                 this.hide();
             })
             .fail(err => this.logger.error(err));
+    };
+
+    LibraryDialog.prototype.uninstall = function(libraryInfo) {
+        this.client.startTransaction(`Removed "${libraryInfo.name}" library`);
+        this.client.removeLibrary(libraryInfo.name);
+        this.client.completeTransaction();
+        this.hide();
     };
 
     return LibraryDialog;
