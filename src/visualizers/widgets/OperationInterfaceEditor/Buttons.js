@@ -1,4 +1,4 @@
-/*globals define*/
+/*globals define, $*/
 define([
     'deepforge/viz/Buttons',
     'deepforge/Constants',
@@ -26,6 +26,7 @@ define([
     _.extend(AddOutput.prototype, EasyDAGButtons.Add.prototype);
 
     AddOutput.BORDER = 2;
+    AddOutput.prototype.BTN_CLASS = 'add-operation-output';
     AddOutput.prototype._render = function() {
         var lineRadius = EasyDAGButtons.Add.SIZE - AddOutput.BORDER,
             btnColor = '#90caf9';
@@ -48,6 +49,7 @@ define([
     };
     _.extend(AddInput.prototype, AddOutput.prototype);
 
+    AddInput.prototype.BTN_CLASS = 'add-operation-input';
     AddInput.prototype._onClick = function(item) {
         this.onAddButtonClicked(item, true);
     };

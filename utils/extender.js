@@ -149,7 +149,6 @@ let updateTemplateFile = (tplPath, type) => {
         formatsIndex = formatTemplate({path: path, extensions: installedExts}),
         dstPath = tplPath.replace(/\.ejs$/, '');
 
-    console.log('installedExts', installedExts);
     fs.writeFileSync(dstPath, formatsIndex);
 };
 
@@ -169,7 +168,7 @@ var makeInstallFor = function(typeCfg) {
     //  - extension type
     //  - target path tpl
     // create the installation/uninstallation functions
-    extender.install[typeCfg.type] = (config, project, isReinstall) => {
+    extender.install[typeCfg.type] = (config, project/*, isReinstall*/) => {
         var dstPath,
             pkgJsonPath = path.join(project.root, 'package.json'),
             pkgJson = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf8')),

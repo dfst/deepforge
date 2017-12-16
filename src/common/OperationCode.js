@@ -6,9 +6,9 @@ var isNodeJs = typeof module === 'object' && module.exports;
             return (root.OperationParser = factory(Sk));
         });
     } else if(isNodeJs) {
-        require('./skulpt.min');
+        const Sk = require('skulpt');
 
-        module.exports = (root.OperationParser = factory(Sk));
+        module.exports = factory(Sk);
     }
 }(this, function(Sk) {
     var OperationCode = function(code, filename) {
@@ -71,7 +71,14 @@ var isNodeJs = typeof module === 'object' && module.exports;
     };
 
     OperationCode.prototype.getInputs = function() {
-        return this.getArguments(OperationCode.MAIN_FN);
+        var args = this.getArguments(OperationCode.MAIN_FN) || [];
+
+        // If starts with 'self' arg, ignore it
+        if (args[0] && args[0].name === 'self') {
+            args.shift();
+        }
+
+        return args;
     };
 
     OperationCode.prototype.removeInput = function(name) {
@@ -481,6 +488,9 @@ var isNodeJs = typeof module === 'object' && module.exports;
 
     /////////////////////// Attributes /////////////////////// 
     OperationCode.prototype.addAttribute = function(name, value) {
+        if (!this.hasMethod(OperationCode.CTOR_FN)) {
+            this.addArgument(OperationCode.CTOR_FN, 'self');
+        }
         return this.addArgument(OperationCode.CTOR_FN, name, value);
     };
 
@@ -490,6 +500,12 @@ var isNodeJs = typeof module === 'object' && module.exports;
 
     OperationCode.prototype.getAttributes = function() {
         var args = this.getArguments(OperationCode.CTOR_FN) || [];
+
+        // If starts with 'self' arg, ignore it
+        if (args[0] && args[0].name === 'self') {
+            args.shift();
+        }
+
         return args.map(attr => {
             return {
                 name: attr.name,

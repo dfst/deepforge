@@ -78,14 +78,16 @@ define([
                 currentInputs = operation.getInputs().map(input => input.name),
                 name = this._client.getNode(this._currentNodeId).getAttribute('name');
 
-            // Check for input nodes to remove
-            if (currentInputs[0] === 'self') currentInputs.shift();
-
             var msg = `Updating ${name} operation code`;
             var refs = this.getCurrentReferences(this._currentNodeId);
             var allAttrs = operation.getAttributes();
 
             this._client.startTransaction(msg);
+            // update the name
+            if (operation.getName() !== name) {
+                this._client.setAttribute(this._currentNodeId, 'name', operation.getName());
+            }
+
             // update the attributes
             // If a new ctor arg shows up, assume it is an attribute (default
             // type: string) and infer type based off default value
@@ -131,8 +133,8 @@ define([
             this.synchronize(
                 operation.getOutputs().map(input => input.name),
                 this.getDataNames(this._currentNodeId),
-                output => this.removeOutputData(this._currentNodeId, output),
-                output => this.addOutputData(this._currentNodeId, output)
+                output => this.addOutputData(this._currentNodeId, output),
+                output => this.removeOutputData(this._currentNodeId, output)
             );
 
             TextEditorControl.prototype.saveTextFor.call(this, id, code, true);

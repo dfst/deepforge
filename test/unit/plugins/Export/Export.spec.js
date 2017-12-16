@@ -2,7 +2,7 @@
 
 'use strict';
 describe('Export', function () {
-    var testFixture = require('../../globals'),
+    var testFixture = require('../../../globals'),
         path = testFixture.path,
         assert = require('assert'),
         SEED_DIR = path.join(testFixture.DF_SEED_DIR, 'devProject'),

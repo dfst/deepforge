@@ -1,6 +1,6 @@
 /*jshint node:true, mocha:true*/
 describe('ExecPulse', function() {
-    var testFixture = require('../../globals'),  // TODO: May need to change this if not created from webgme-cli
+    var testFixture = require('../../../globals'),
         PULSE = require('../../../../src/common/Constants').PULSE,
         superagent = testFixture.superagent,
         expect = testFixture.expect,
