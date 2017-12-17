@@ -460,7 +460,7 @@ define([
     GenerateJob.prototype.getOperationArguments = function (node) {
         const code = this.getAttribute(node, 'code');
         const operation = new OperationCode(code);
-        const pointers = this.core.getPointerNames(node);
+        const pointers = this.core.getPointerNames(node).filter(name => name !== 'base');
 
         // Enter the attributes in place
         const argumentValues = operation.getAttributes().map(attr => {
@@ -468,6 +468,9 @@ define([
 
             // Check if it is a reference... (if so, just return the pointer name)
             if (pointers.includes(name)) {
+                if (!this.core.getPointerPath(node, name)) {
+                    name = 'None';  // python value for undefined
+                }
                 return name;
             } else {  // get the attribute and it's value
                 let value = this.getAttribute(node, name);
@@ -489,11 +492,7 @@ define([
         var pointers,
             nIds;
 
-        // Put pointers in a directory...
-        // TODO
-
         // Convert pointer names to use _ instead of ' '
-        // TODO
         this.logger.info('Creating pointers file...');
         pointers = this.core.getPointerNames(node)
             .filter(name => name !== 'base')
@@ -508,8 +507,16 @@ define([
             var name = this.getAttribute(node, 'name');
             this.logger.info(`Pointer generation for ${name} FINISHED!`);
             resultHashes.forEach((hash, index) => {
-                files.ptrAssets[`pointers/${pointers[index]}/init.py`] = hash;
+                files.ptrAssets[`pointers/${pointers[index]}.py`] = hash;
             });
+
+            // Generate the __init__.py for the pointers
+            let initPointers = pointers
+                .map(name => `from pointers.${name} import result as ${name}`)
+                .join('\n');
+
+            files['pointers/__init__.py'] = initPointers;
+
             return cb(null, files);
         })
         .fail(e => {
