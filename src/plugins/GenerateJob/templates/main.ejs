@@ -1,5 +1,8 @@
 import pickle
 
+<% // TODO: Add the initial code %>
+<%= initCode %>
+<% // TODO: Use deepforge to deserialize each of them %>
 # input data<% inputs.forEach(function(pair) { var input = pair[0], isNil = pair[1];%>
 <%= input %> = <% if (isNil) { %>None<% } else { %>pickle.load(open('./inputs/<%= input %>/data', 'rb')) <%}}); %>
 

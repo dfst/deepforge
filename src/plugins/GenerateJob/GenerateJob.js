@@ -433,6 +433,10 @@ define([
             .then(outputs => {
                 content.outputs = outputs.map(output => output[0]);
                 content.arguments = this.getOperationArguments(node);
+                return this.getAllInitialCode();
+            })
+            .then(code => {
+                content.initCode = code;
 
                 files['main.py'] = _.template(Templates.MAIN)(content);
                 files['operations.py'] = content.code;
@@ -440,6 +444,21 @@ define([
                 // Set the line offset
                 var lineOffset = 0;
                 this.setAttribute(node, CONSTANTS.LINE_OFFSET, lineOffset);
+            });
+    };
+
+    GenerateJob.prototype.getAllInitialCode = function () {
+        // TODO: Get the InitCode's 'code' attribute and then all library code
+        return this.core.loadChildren(this.rootNode)
+            .then(children => {
+                const codeNodes = children.filter(child => this.isMetaTypeOf(child, this.META.Code));
+                codeNodes.sort((n1, n2) => {  // move library code to be in the front
+                    const v1 = this.isMetaTypeOf(n1, this.META.LibraryCode) ? 1 : 0;
+                    const v2 = this.isMetaTypeOf(n2, this.META.LibraryCode) ? 1 : 0;
+                    return v2 - v1;
+                });
+
+                return codeNodes.map(node => this.core.getAttribute(node, 'code')).join('\n');
             });
     };
 
