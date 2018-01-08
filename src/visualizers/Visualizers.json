@@ -60,6 +60,12 @@
     "DEBUG_ONLY": false
   },
   {
+    "id": "CodeEditor",
+    "title": "CodeEditor",
+    "panel": "panels/TextEditor/TextEditorPanel",
+    "DEBUG_ONLY": false
+  },
+  {
     "id": "ClassEditor",
     "title": "ClassEditor",
     "panel": "panels/ClassEditor/ClassEditorPanel",
