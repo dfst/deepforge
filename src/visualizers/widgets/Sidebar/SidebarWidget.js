@@ -20,7 +20,8 @@ define([
             'pipelines',
             'executions',
             'resources',
-            'artifacts'
+            'artifacts',
+            'code'
         ];
 
     SidebarWidget = function (logger, container) {

@@ -23,7 +23,8 @@ define([
             pipelines: 'MyPipelines',
             executions: 'MyExecutions',
             resources: 'MyResources',
-            artifacts: 'MyArtifacts'
+            artifacts: 'MyArtifacts',
+            code: 'InitCode'
         };
 
     SidebarPanel = function (layoutManager, params) {

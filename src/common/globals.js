@@ -119,7 +119,8 @@ define([
         Artifact: 'MyArtifacts',
         Operation: 'MyOperations',
         Primitive: 'MyDataTypes',
-        Complex: 'MyDataTypes'
+        Complex: 'MyDataTypes',
+        InitCode: 'InitCode'
     };
 
     PLACE_NAMES = Object.keys(TYPE_TO_CONTAINER).map(key => TYPE_TO_CONTAINER[key]);
