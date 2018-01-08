@@ -468,9 +468,7 @@ define([
 
             // Check if it is a reference... (if so, just return the pointer name)
             if (pointers.includes(name)) {
-                if (!this.core.getPointerPath(node, name)) {
-                    name = 'None';  // python value for undefined
-                }
+                if (!this.core.getPointerPath(node, name)) return 'None';
                 return name;
             } else {  // get the attribute and it's value
                 let value = this.getAttribute(node, name);
