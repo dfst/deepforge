@@ -116,10 +116,10 @@ extender.install = function(projectName, isReinstall) {
                 console.error(`Extension ${extConfig.name} already installed. Reinstalling...`);
             }
 
+            allExtConfigs[extType][extConfig.name] = extConfig;
             return Q(extender.install[extType](extConfig, project, !!isReinstall))
                 .then(config => {
                     extConfig = config || extConfig;
-
                     // Update the deployment config
                     allExtConfigs[extType][extConfig.name] = extConfig;
                     persistExtConfig();
@@ -232,7 +232,15 @@ const LIBRARY_TEMPLATE_PATH = path.join(__dirname, '..', 'src', 'visualizers',
     'panels', 'ForgeActionButton', 'Libraries.json.ejs');
 extender.install[libraryType] = (config, project/*, isReinstall*/) => {
     return webgme.all.import(project.arg)  // import the seed and stuff
-        .then(() => updateTemplateFile(LIBRARY_TEMPLATE_PATH, libraryType));
+        .then(() => {
+            // Add the initCode to the config
+            config.initCode = '';
+            if (config.initCode) {
+                const initCodePath = path.join(project.root, config.initCode);
+                config.initCode = fs.readFileSync(initCodePath, 'utf8');
+            }
+            return updateTemplateFile(LIBRARY_TEMPLATE_PATH, libraryType);
+        });
 };
 
 extender.uninstall[libraryType] = (/*name, config*/) => {
