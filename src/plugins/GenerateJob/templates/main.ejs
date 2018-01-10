@@ -1,11 +1,9 @@
 import json
 import deepforge
 
-<% // TODO: Add the initial code %>
 <%= initCode %>
-<% // TODO: Use deepforge to deserialize each of them %>
-# input data<% inputs.forEach(function(pair) { var input = pair[0], isNil = pair[1];%>
-<%= input %> = <% if (isNil) { %>None<% } else { %>deepforge.serialization.load(open('./inputs/<%= input %>', 'rb')) <%}}); %>
+# input data<% inputs.forEach(function(pair) { var input = pair[0], type = pair[1], isNil = pair[2];%>
+<%= input %> = <% if (isNil) { %>None<% } else { %>deepforge.serialization.load('<%= type %>', open('./inputs/<%= input %>', 'rb')) <%}}); %>
 
 # load references<% pointers.forEach(function(pair) { var pointer = pair[0], isNil = pair[1];%>
 from pointers import <%= pointer %>
@@ -18,7 +16,7 @@ operation = <%= name %>(<%= arguments %>)
 print('\n############### Running "<%= name.replace(/'/g, '\\\'') %>" Operation ############### ')
 <%= outputs.length ? outputs.join(', ') : 'result' %> = operation.execute(<%= inputs.map(function(pair) {
     var name = pair[0],
-        isNone = pair[1];
+        isNone = pair[2];
     return isNone ? 'None' : name;
 })%>)
 print('############### "<%= name.replace(/'/g, '\\\'') %>" Operation Complete! ###############')

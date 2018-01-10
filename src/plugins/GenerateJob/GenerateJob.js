@@ -424,7 +424,11 @@ define([
 
                 // Get input data arguments
                 content.inputs = inputs
-                    .map(pair => [pair[0], !this.getAttribute(pair[2], 'data')]);  // remove empty inputs
+                    .map(pair => [  // [name, type, isNone?]
+                        pair[0],
+                        this.getAttribute(pair[2], 'type'),
+                        !this.getAttribute(pair[2], 'data')
+                    ]);  // remove empty inputs
 
                 // Defined variables for each pointer
                 content.pointers = pointers
