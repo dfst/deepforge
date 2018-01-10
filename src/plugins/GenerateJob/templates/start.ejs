@@ -158,7 +158,7 @@ requirejs([
         target = path.resolve(target);
         fs.stat(src, err => {
             if (err.code === 'ENOENT') {
-            logger.debug(`creating symlink "ln -s ${target} ${src}"`);
+                logger.debug(`creating symlink "ln -s ${target} ${src}"`);
                 job = spawn('ln', ['-s', target, src || '.']);
                 job.on('exit', code => {
                     if (code) {
