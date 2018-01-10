@@ -233,15 +233,15 @@ define([
         );
     };
 
-    TextEditorWidget.prototype.getHeader = function (desc) {
-        return this.comment(`Editing "${desc.name}"`);
+    TextEditorWidget.prototype.getHeader = function (/*desc*/) {
+        return '';
     };
 
     TextEditorWidget.prototype.addNode = function (desc) {
         // Set the current text based on the given
         // Create the header
         var header = this.getHeader(desc),
-            newContent = header + '\n' + desc.text,
+            newContent = header ? header + '\n' + desc.text : desc.text,
             oldContent,
             selection;
 
@@ -276,8 +276,11 @@ define([
             return;
         }
 
-        text = this.editor.getValue()
-            .replace(this.currentHeader + '\n', '');
+        text = this.editor.getValue();
+        if (this.currentHeader) {
+            text = text.replace(this.currentHeader + '\n', '');
+        }
+
         if (typeof this.activeNode === 'string') {
             this.saveTextFor(this.activeNode, text);
         } else {
