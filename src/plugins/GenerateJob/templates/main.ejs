@@ -1,10 +1,11 @@
-import pickle
+import json
+import deepforge
 
 <% // TODO: Add the initial code %>
 <%= initCode %>
 <% // TODO: Use deepforge to deserialize each of them %>
 # input data<% inputs.forEach(function(pair) { var input = pair[0], isNil = pair[1];%>
-<%= input %> = <% if (isNil) { %>None<% } else { %>pickle.load(open('./inputs/<%= input %>/data', 'rb')) <%}}); %>
+<%= input %> = <% if (isNil) { %>None<% } else { %>deepforge.serialization.load(open('./inputs/<%= input %>', 'rb')) <%}}); %>
 
 # load references<% pointers.forEach(function(pair) { var pointer = pair[0], isNil = pair[1];%>
 from pointers import <%= pointer %>
@@ -22,6 +23,13 @@ print('\n############### Running "<%= name.replace(/'/g, '\\\'') %>" Operation #
 })%>)
 print('############### "<%= name.replace(/'/g, '\\\'') %>" Operation Complete! ###############')
 
+result_types = {}
 <% outputs.forEach(name => { %>
-pickle.dump(<%= name %>, open('outputs/<%= name %>', 'wb'))
+with open('outputs/<%= name %>', 'wb') as outfile:
+    deepforge.serialization.dump(<%= name %>, outfile)
+    result_types['<%= name %>'] = deepforge.serialization.get_full_class_name(<%= name %>)
 <% }); %>
+
+# Save the result types
+with open('result-types.json', 'wb') as f:
+    json.dump(result_types, f)

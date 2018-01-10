@@ -125,8 +125,8 @@ define([
                     // add the hashes for each input
                     var input = inputs[i], 
                         hash = files.inputAssets[input],
-                        dataDir = 'inputs/' + input + '/',
-                        dataPath = dataDir + 'data',
+                        dataDir = 'inputs/',
+                        dataPath = dataDir + input,
                         url = this.blobClient.getRelativeDownloadURL(hash);
 
                     inputData[dataPath] = {
@@ -173,6 +173,10 @@ define([
                     {
                         name: 'stdout',
                         resultPatterns: [STDOUT_FILE]
+                    },
+                    {
+                        name: 'result-types',
+                        resultPatterns: ['result-types.json']
                     },
                     {
                         name: name + '-all-files',
@@ -243,7 +247,9 @@ define([
 
     GenerateJob.prototype.createEntryFile = function (node, files) {
         this.logger.info('Creating deepforge.py file...');
-        files['deepforge.py'] = _.template(Templates.DEEPFORGE)(CONSTANTS);
+        const serializeTpl = _.template(Templates.DEEPFORGE_SERIALIZATION);
+        files['deepforge/serialization.py'] = serializeTpl(CONSTANTS);
+        files['deepforge/__init__.py'] = Templates.DEEPFORGE_INIT;
         return this.getOutputs(node)
             .then(outputs => {
                 var name = this.getAttribute(node, 'name'),
@@ -353,9 +359,7 @@ define([
                 //   [ name, type ] => [ name, type, node ]
                 //
                 // For each input,
-                //  - create the deserializer
-                //  - put it in inputs/<name>/init.py
-                //  - copy the data asset to /inputs/<name>/init.py
+                //  - store the data in /inputs/<name>
                 inputs = allInputs
                     .filter(pair => !!this.getAttribute(pair[2], 'data'));  // remove empty inputs
 
