@@ -445,7 +445,7 @@ define([
                 this.setAttribute(this.activeNode, 'endTime', Date.now());
                 this.setAttribute(this.activeNode, 'status',
                     (this.pipelineError ? 'failed' :
-                    (this.canceled ? 'canceled' : 'success')
+                        (this.canceled ? 'canceled' : 'success')
                     )
                 );
 
@@ -568,12 +568,17 @@ define([
             .map((id, i) => [this.nodes[id], this.nodes[nextPortIds[i]]])
             .forEach(pair => {  // [ resultPort, nextPort ]
                 var result = pair[0],
-                    next = pair[1],
-                    hash = this.getAttribute(result, 'data');
-                
-                this.logger.info(`forwarding data (${hash}) from ${this.core.getPath(result)} ` +
-                    `to ${this.core.getPath(next)}`);
+                    next = pair[1];
+
+                let dataType = this.getAttribute(result, 'type');
+                this.setAttribute(next, 'type', dataType);
+
+                let hash = this.getAttribute(result, 'data');
                 this.setAttribute(next, 'data', hash);
+
+                this.logger.info(`forwarding data (${dataType}) from ${this.core.getPath(result)} ` +
+                    `to ${this.core.getPath(next)}`);
+
                 //this.logger.info(`Setting ${jobId} data to ${hash}`);
             });
 
