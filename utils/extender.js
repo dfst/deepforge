@@ -234,7 +234,7 @@ extender.install[libraryType] = (config, project/*, isReinstall*/) => {
     return webgme.all.import(project.arg)  // import the seed and stuff
         .then(() => {
             // Add the initCode to the config
-            config.initCode = '';
+            config.initCode = config.initCode || '';
             if (config.initCode) {
                 const initCodePath = path.join(project.root, config.initCode);
                 config.initCode = fs.readFileSync(initCodePath, 'utf8');
