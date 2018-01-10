@@ -734,23 +734,32 @@ define([
     };
 
     ExecuteJob.prototype.onDistOperationComplete = function (node, result) {
-        var nodeId = this.core.getPath(node),
+        let nodeId = this.core.getPath(node),
             outputMap = {},
+            resultTypes,
             outputs;
 
         // Match the output names to the actual nodes
         // Create an array of [name, node]
         // For now, just match by type. Later we may use ports for input/outputs
         // Store the results in the outgoing ports
-        return this.getOutputs(node)
+        return this.getResultTypes(result)
+            .then(types => {
+                resultTypes = types;
+                return this.getOutputs(node);
+            })
             .then(outputPorts => {
                 outputs = outputPorts.map(tuple => [tuple[0], tuple[2]]);
                 outputs.forEach(output => outputMap[output[0]] = output[1]);
 
                 // this should not be in directories -> flatten the data!
-                return Q.all(outputs.map(tuple =>  // [ name, node ]
-                    this.blobClient.getArtifact(result.resultHashes[tuple[0]])
-                ));
+                let artifacts = outputs.map(tuple => {  // [ name, node ]
+                    let [name] = tuple;
+                    let hash = result.resultHashes[name];
+                    return this.blobClient.getArtifact(hash);
+                });
+
+                return Q.all(artifacts);
             })
             .then(artifacts => {
                 this.logger.info(`preparing outputs -> retrieved ${artifacts.length} objects`);
@@ -758,7 +767,15 @@ define([
                 artifacts.forEach((artifact, i) => {
                     var name = outputs[i][0],
                         outputData = artifact.descriptor.content[`outputs/${name}`],
-                        hash = outputData && outputData.content;
+                        hash = outputData && outputData.content,
+                        dataType = resultTypes[name];
+
+                    if (dataType) {
+                        this.setAttribute(outputMap[name], 'type', dataType);
+                        this.logger.info(`Setting ${nodeId} data type to ${dataType}`);
+                    } else {
+                        this.logger.warn(`No data type found for ${nodeId}`);
+                    }
 
                     if (hash) {
                         this.setAttribute(outputMap[name], 'data', hash);
@@ -769,6 +786,16 @@ define([
                 return this.onOperationComplete(node);
             })
             .fail(e => this.onOperationFail(node, `Operation ${nodeId} failed: ${e}`));
+    };
+
+    ExecuteJob.prototype.getResultTypes = function (result) {
+        const hash = result.resultHashes['result-types'];
+        return this.blobClient.getArtifact(hash)
+            .then(data => {
+                const contents = data.descriptor.content;
+                const contentHash = contents['result-types.json'].content;
+                return this.blobClient.getObjectAsJSON(contentHash);
+            });
     };
 
     //////////////////////////// Special Operations ////////////////////////////
