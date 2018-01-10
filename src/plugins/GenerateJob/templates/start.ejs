@@ -44,10 +44,7 @@ requirejs([
     };
 
     var prepareInputsOutputs = function() {
-        var dirs = ['inputs', <% inputs.forEach(function(input) { %>
-            'inputs/<%= input %>',
-            <% }) %>
-            'outputs'];
+        var dirs = ['inputs', 'outputs'];
         return Q.all(dirs.map(dir => makeIfNeeded(dir)));
     };
 
