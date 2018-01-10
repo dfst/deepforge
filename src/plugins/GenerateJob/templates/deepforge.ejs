@@ -24,7 +24,6 @@ def get_full_class_name(data):
 def get_serializer(data):
     try:
         full_name = get_full_class_name(data)
-        print('getting serializer for ' + full_name)
         return serializers[full_name]
     except:
         return pickle.dump
@@ -35,8 +34,6 @@ def get_deserializer(full_name):
     except:
         return pickle.load
 
-# Probably should emulate "loads", "dumps" rather than "load" and "dump"
-# TODO?
 def register(classObj, serialize, deserialize):
     full_name = get_full_name(classObj)
     serializers[full_name] = serialize
