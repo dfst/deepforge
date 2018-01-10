@@ -54,6 +54,7 @@ define([
             .then(branchName => this.createGMELibraryFromBranch(branchName, libraryInfo))
             .then(branchInfo => this.removeTemporaryBranch(branchInfo))
             .then(() => this.updateMetaForLibrary(libraryInfo))
+            .then(() => this.addLibraryInitCode(libraryInfo))
             .then(() => this.save(`Imported ${libraryInfo.name} library`))
             .then(() => {
                 this.result.setSuccess(true);
@@ -66,24 +67,29 @@ define([
     };
 
     ImportLibrary.prototype.getUniqueBranchName = function (basename) {
-        const branches = this.project.branches;
-        let name = basename;
-        let i = 2;
+        return this.project.getBranches()
+            .then(branches => {
+                let name = basename;
+                let i = 2;
 
-        while (branches[name]) {
-            name = `${basename} ${i}`;
-            i++;
-        }
-        return name;
+                while (branches[name]) {
+                    name = `${basename} ${i}`;
+                    i++;
+                }
+                return name;
+            });
     };
 
     ImportLibrary.prototype.addSeedToBranch = function (name) {
         const filepath = this.getSeedDataPath(name);
         const project = this.projectName;
-        const branch = this.getUniqueBranchName(`importLibTmpBranch${name}`);
-        const argv = `node import ${filepath} -p ${project} -b ${branch}`.split(' ');
-
-        return this.project.createBranch(name, this.commitHash)
+        let branch, argv;
+        return this.getUniqueBranchName(`importLibTmpBranch${name}`)
+            .then(name => {
+                branch = name;
+                argv = `node import ${filepath} -p ${project} -b ${branch}`.split(' ');
+                return this.project.createBranch(name, this.commitHash);
+            })
             .then(() => ImportProject.main(argv))
             .then(() => branch);
     };
@@ -135,6 +141,44 @@ define([
                 if (!parent) throw new Error('Could not find resources location');
                 nodes.forEach(node => this.core.setChildMeta(parent, node));
             });
+    };
+
+    ImportLibrary.prototype.addLibraryInitCode = function (libraryInfo) {
+        // Get the library fco node
+        // Add the initialization code for this library;
+        const libraryNodes = values(this.core.getLibraryMetaNodes(this.rootNode, libraryInfo.name));
+        const LibraryCode = this.getLibraryCodeNode();
+        const FCO = this.getFCONode();
+
+        // Make the LibraryCode node
+        const node = this.core.createNode({
+            parent: this.rootNode,
+            base: LibraryCode
+        });
+
+        this.core.setAttribute(node, 'code', libraryInfo.initCode || '');
+        this.core.setAttribute(node, 'name', `${libraryInfo.name}InitCode`);
+
+        const libraryFCO = libraryNodes
+            .find(node => this.core.getPointerPath(node, 'base') === this.core.getPath(FCO));
+
+        this.core.setPointer(node, 'library', libraryFCO);
+    };
+
+    ImportLibrary.prototype.getNonLibraryMeta = function () {
+        const meta = values(this.core.getAllMetaNodes(this.rootNode));
+        return meta
+            .filter(node => !this.core.isLibraryElement(node));
+    };
+
+    ImportLibrary.prototype.getLibraryCodeNode = function () {
+        return this.getNonLibraryMeta()
+            .find(node => this.core.getAttribute(node, 'name') === 'LibraryCode');
+    };
+
+    ImportLibrary.prototype.getFCONode = function () {
+        return this.getNonLibraryMeta()
+            .find(node => !this.core.getPointerPath(node, 'base'));
     };
 
     return ImportLibrary;
