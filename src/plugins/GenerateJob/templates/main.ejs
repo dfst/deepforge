@@ -31,5 +31,5 @@ with open('outputs/<%= name %>', 'wb') as outfile:
 <% }); %>
 
 # Save the result types
-with open('result-types.json', 'wb') as f:
+with open('result-types.json', 'w') as f:
     json.dump(result_types, f)
