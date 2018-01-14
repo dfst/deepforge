@@ -1,7 +1,7 @@
 /* globals define, $ */
 define([
+    'deepforge/ExecutionEnv',
     'q',
-    'superagent',
     'deepforge/viz/Utils',
     'deepforge/api/JobOriginClient',
     'text!./WorkerModal.html',
@@ -9,8 +9,8 @@ define([
     'text!./WorkerJobItem.html',
     'css!./WorkerModal.css'
 ], function(
+    ExecutionEnv,
     Q,
-    superagent,
     utils,
     JobOriginClient,
     WorkerHtml,
@@ -18,9 +18,6 @@ define([
     WorkerJobItem
 ) {
     'use strict';
-
-    var WORKER_ENDPOINT = '/rest/executor/worker',
-        JOBS_ENDPOINT = '/rest/executor';
 
     var WorkerDialog = function(logger) {
         this.workerDict = {};
@@ -53,25 +50,11 @@ define([
         this.initialize();
     };
 
-    WorkerDialog.prototype.get = function(url) {
-        var deferred = Q.defer();
-
-        superagent.get(url)
-            .end((err, res) => {
-                if (err) {
-                    return deferred.reject(err);
-                }
-                deferred.resolve(JSON.parse(res.text));
-            });
-
-        return deferred.promise;
-    };
-
     WorkerDialog.prototype.update = function() {
         // Poll the workers
         return Q.all([
-            this.get(WORKER_ENDPOINT).then(workers => this.updateWorkers(workers)),
-            this.get(JOBS_ENDPOINT).then(jobs => this.updateJobs(jobs))
+            ExecutionEnv.getWorkers().then(workers => this.updateWorkers(workers)),
+            ExecutionEnv.getJobs().then(jobs => this.updateJobs(jobs))
         ]).then(() => {
             if (this.active) {
                 setTimeout(this.update.bind(this), 1000);

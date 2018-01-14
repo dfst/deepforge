@@ -6,6 +6,7 @@ define([
     'text!./metadata.json',
     'executor/ExecutorClient',
     'plugin/PluginBase',
+    'deepforge/ExecutionEnv',
     'deepforge/plugin/LocalExecutor',
     'deepforge/plugin/PtrCodeGen',
     'deepforge/plugin/Operation',
@@ -24,6 +25,7 @@ define([
     pluginMetadata,
     ExecutorClient,
     PluginBase,
+    ExecutionEnv,
     LocalExecutor,  // DeepForge operation primitives
     PtrCodeGen,
     OperationPlugin,
@@ -142,7 +144,8 @@ define([
         this._callback = callback;
         this.currentForkName = null;
         this.forkNameBase = this.getAttribute(this.activeNode, 'name');
-        this.isResuming(this.activeNode)
+        this.checkExecutionEnv()
+            .then(() => this.isResuming(this.activeNode))
             .then(resuming => {
                 this._resumed = resuming;
                 return this.prepare(resuming);
@@ -167,6 +170,18 @@ define([
                 }
             })
             .catch(err => this._callback(err));
+    };
+
+    ExecuteJob.prototype.checkExecutionEnv = function () {
+        // Throw an exception if no resources
+        this.logger.info(`Checking execution environment`);
+        return ExecutionEnv.getWorkers()
+            .then(workers => {
+                if (workers.length === 0) {
+                    this.logger.info(`Cannot execute jobs: No connected workers`);
+                    throw new Error('Cannot execute jobs: No connected workers');
+                }
+            });
     };
 
     ExecuteJob.prototype.isResuming = function (job) {

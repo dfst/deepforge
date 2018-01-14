@@ -101,20 +101,20 @@ define([
      * @param {function(string, plugin.PluginResult)} callback - the result callback
      */
     ExecutePipeline.prototype.main = function (callback) {
-        var startPromise,
+        var startPromise = this.checkExecutionEnv(),
             runId;
 
         this.initRun();
         if (this.core.isTypeOf(this.activeNode, this.META.Pipeline)) {
             // If starting with a pipeline, we will create an Execution first
-            startPromise = this.createExecution(this.activeNode)
+            startPromise = startPromise
+                .then(() => this.createExecution(this.activeNode))
                 .then(execNode => {
                     this.logger.debug(`Finished creating execution "${this.getAttribute(execNode, 'name')}"`);
                     this.activeNode = execNode;
                 });
         } else if (this.core.isTypeOf(this.activeNode, this.META.Execution)) {
             this.logger.debug('Restarting execution');
-            startPromise = Q();
         } else {
             return callback('Current node is not a Pipeline or Execution!', this.result);
         }
