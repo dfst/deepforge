@@ -169,7 +169,7 @@ define([
                     return this.executeJob(this.activeNode);
                 }
             })
-            .catch(err => this._callback(err));
+            .catch(err => this._callback(err, this.result));
     };
 
     ExecuteJob.prototype.checkExecutionEnv = function () {
@@ -179,7 +179,7 @@ define([
             .then(workers => {
                 if (workers.length === 0) {
                     this.logger.info(`Cannot execute jobs: No connected workers`);
-                    throw new Error('Cannot execute jobs: No connected workers');
+                    throw new Error('No connected workers');
                 }
             });
     };

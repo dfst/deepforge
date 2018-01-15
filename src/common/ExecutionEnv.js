@@ -8,32 +8,27 @@ define([
 ) {
     const WORKER_ENDPOINT = '/rest/executor/worker';
     const JOBS_ENDPOINT = '/rest/executor';
+    const values = dict => Object.keys(dict).map(k => dict[k]);
 
     const ExecutionEnv = {};
 
     ExecutionEnv.url = function(urlPath) {
         if (typeof window === 'undefined') {
-            return
+            let gmeConfig = require('../../config');
+            return `http://127.0.0.1:${gmeConfig.server.port}${urlPath}`;
         }
         return urlPath;
-        // If in the browser, don't worry about the path
-        // TODO
-        // Otherwise
-        // TODO
     };
 
-    ExecutionEnv.get = function(url) {
-        var deferred = Q.defer();
+    ExecutionEnv.get = function(urlPath) {
+        const deferred = Q.defer();
+        const url = this.url(urlPath);
 
-        // Get the actual url
-        // TODO
         superagent.get(url)
             .end((err, res) => {
                 if (err) {
-                    console.log('ERROR', err);
                     return deferred.reject(err);
                 }
-                    console.log('raw response', res.text);
                 deferred.resolve(JSON.parse(res.text));
             });
 
@@ -41,8 +36,8 @@ define([
     };
 
     ExecutionEnv.getWorkers = function() {
-        console.log('getting workers');
-        return this.get(WORKER_ENDPOINT);
+        return this.get(WORKER_ENDPOINT)
+            .then(workerDict => values(workerDict));
     };
 
     ExecutionEnv.getJobs = function() {

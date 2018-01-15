@@ -149,7 +149,10 @@ define([
                 });
 
             })
-            .fail(e => this.logger.error(e));
+            .fail(err => {
+                this.logger.error(err);
+                callback(err, this.result);
+            });
     };
 
     ExecutePipeline.prototype.isResuming = function () {
