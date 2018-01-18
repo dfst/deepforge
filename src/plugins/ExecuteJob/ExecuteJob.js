@@ -178,7 +178,7 @@ define([
         return ExecutionEnv.getWorkers()
             .then(workers => {
                 if (workers.length === 0) {
-                    this.logger.info(`Cannot execute jobs: No connected workers`);
+                    this.logger.info(`Cannot execute job(s): No connected workers`);
                     throw new Error('No connected workers');
                 }
             });
