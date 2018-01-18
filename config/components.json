@@ -29,6 +29,7 @@
     },
     "BreadcrumbHeader": {
         "pathRule": "history",
+        "disableUserProfile": false,
         "cachePrefix": "deepforge-header"
     },
     "FloatingActionButton": {

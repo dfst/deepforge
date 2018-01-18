@@ -11,5 +11,10 @@ var config = require('./config.base'),
 // Seeds for development are prefixed with 'dev'
 config.seedProjects.basePaths = ['src/seeds/project', 'src/seeds/cifar10'];
 
+// user accounts. uncomment the following for enabling user accounts
+// config.authentication.enable = true;
+// config.authentication.allowGuests = true;
+// config.authentication.allowUserRegistration = true;
+
 validateConfig(config);
 module.exports = config;
