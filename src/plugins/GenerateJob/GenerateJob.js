@@ -25,17 +25,9 @@ define([
     'use strict';
 
     pluginMetadata = JSON.parse(pluginMetadata);
+    const DATA_DIR = 'artifacts/';
     var OUTPUT_INTERVAL = 1500,
-        STDOUT_FILE = 'job_stdout.txt',
-        SKIP_ATTRIBUTES = [
-            'code',
-            'stdout',
-            'execFiles',
-            'jobId',
-            'secret',
-            CONSTANTS.LINE_OFFSET,
-            CONSTANTS.DISPLAY_COLOR
-        ];
+        STDOUT_FILE = 'job_stdout.txt';
 
     /**
      * Initializes a new instance of GenerateJob.
@@ -71,158 +63,170 @@ define([
      * @param {function(string, plugin.PluginResult)} callback - the result callback
      */
     GenerateJob.prototype.main = function (callback) {
-        var files,
-            artifactName,
-            artifact,
-            data = {},
-            inputs,
-            name,
-            opId;
+        const name = this.getAttribute(this.activeNode, 'name');
+        const opId = this.core.getPath(this.activeNode);
 
-        name = this.getAttribute(this.activeNode, 'name');
-        opId = this.core.getPath(this.activeNode);
-
-        return this.createOperationFiles(this.activeNode)
-            .then(results => {
-                this.logger.info('Created operation files!');
-                files = results;
-                artifactName = `${name}_${opId.replace(/\//g, '_')}-execution-files`;
-                artifact = this.blobClient.createArtifact(artifactName);
-
-                // Add the input assets
-                //   - get the metadata (name)
-                //   - add the given inputs
-                inputs = Object.keys(files.inputAssets);
-
-                return Q.all(
-                    inputs.map(input => {  // Get the metadata for each input
-                        var hash = files.inputAssets[input];
-
-                        // data asset for "input"
-                        return this.blobClient.getMetadata(hash)
-                            .fail(() => {
-                                throw Error(`BLOB_FETCH_FAILED:${input}`);
-                            });
-                    })
-                );
-            })
-            .then(mds => {
-                // Record the large files
-                var inputData = {},
-                    runsh = [
-                        '# Bash script to download data files and run job',
-                        'if [ -z "$DEEPFORGE_URL" ]; then',
-                        '  echo "Please set DEEPFORGE_URL and re-run:"',
-                        '  echo ""',
-                        '  echo "  DEEPFORGE_URL=http://my.deepforge.server.com:8080 bash run.sh"',
-                        '  echo ""',
-                        '  exit 1',
-                        'fi',
-                        'mkdir outputs\n'
-                    ].join('\n');
-
-                mds.forEach((metadata, i) => {
-                    // add the hashes for each input
-                    var input = inputs[i], 
-                        hash = files.inputAssets[input],
-                        dataDir = 'inputs/',
-                        dataPath = dataDir + input,
-                        url = this.blobClient.getRelativeDownloadURL(hash);
-
-                    inputData[dataPath] = {
-                        req: hash,
-                        cache: metadata.content
-                    };
-
-                    // Add to the run.sh file
-                    runsh += `mkdir -p ${dataDir}\n`;
-                    runsh += `wget $DEEPFORGE_URL${url} -O ${dataPath}\n`;
-                });
-
-                delete files.inputAssets;
-                files['input-data.json'] = JSON.stringify(inputData, null, 2);
-                runsh += 'python main.py';
-                files['run.sh'] = runsh;
-
-                // Add pointer assets
-                Object.keys(files.ptrAssets)
-                    .forEach(path => data[path] = files.ptrAssets[path]);
-
-                // Add the executor config
-                return this.getOutputs(this.activeNode);
-            })
-            .then(outputArgs => {
-                var config,
-                    outputs,
-                    fileList,
-                    ptrFiles = Object.keys(files.ptrAssets),
-                    file;
-
-                delete files.ptrAssets;
-                fileList = Object.keys(files).concat(ptrFiles);
-
-                outputs = outputArgs.map(pair => pair[0])
-                    .map(name => {
-                        return {
-                            name: name,
-                            resultPatterns: [`outputs/${name}`]
-                        };
-                    });
-
-                outputs.push(
-                    {
-                        name: 'stdout',
-                        resultPatterns: [STDOUT_FILE]
-                    },
-                    {
-                        name: 'result-types',
-                        resultPatterns: ['result-types.json']
-                    },
-                    {
-                        name: name + '-all-files',
-                        resultPatterns: fileList
-                    }
-                );
-
-                config = {
-                    cmd: 'node',
-                    args: ['start.js'],
-                    outputInterval: OUTPUT_INTERVAL,
-                    resultArtifacts: outputs
-                };
-                files['executor_config.json'] = JSON.stringify(config, null, 4);
-
-                // Save the artifact
-                // Remove empty hashes
-                for (file in data) {
-                    if (!data[file]) {
-                        this.logger.warn(`Empty data hash has been found for file "${file}". Removing it...`);
-                        delete data[file];
-                    }
-                }
-                return artifact.addObjectHashes(data);
-            })
-            .then(() => {
-                this.logger.info(`Added ptr/input data hashes for "${artifactName}"`);
-                return artifact.addFiles(files);
-            })
-            .then(() => {
-                this.logger.info(`Added execution files for "${artifactName}"`);
-                return artifact.save();
+        return this.createExecutableOperationFiles(this.activeNode)
+            .then(files => {
+                const artifactName = `${name}_${opId.replace(/\//g, '_')}-execution-files`;
+                return this.createArtifact(artifactName, files);
             })
             .then(hash => {
                 this.result.setSuccess(true);
                 this.result.addArtifact(hash);
                 callback(null, this.result);
             })
-            .fail(err => {
+            .catch(err => {
                 this.result.setSuccess(false);
                 callback(err, this.result);
             });
     }; 
 
-    GenerateJob.prototype.createOperationFiles = function (node) {
-        var files = {};
+    GenerateJob.prototype.createArtifact = function (artifactName, files) {
+        this.logger.info('Created operation files!');
+        let artifact = this.blobClient.createArtifact(artifactName);
+        const data = files._data;
+        delete files._data;
+
+        // Remove empty hashes
+        for (let file in data) {
+            if (!data[file]) {
+                this.logger.warn(`Empty data hash has been found for file "${file}". Removing it...`);
+                delete data[file];
+            }
+        }
+
+        return artifact.addObjectHashes(data)
+            .then(() => {
+                this.logger.info(`Added data hashes for "${artifactName}"`);
+                return artifact.addFiles(files);
+            })
+            .then(() => {
+                this.logger.info(`Added files for "${artifactName}"`);
+                return artifact.save();
+            });
+    };
+
+    GenerateJob.prototype.createRunScript = function (inputs, files={}) {
+        let runsh = [
+            '# Bash script to download data files and run job',
+            'if [ -z "$DEEPFORGE_URL" ]; then',
+            '  echo "Please set DEEPFORGE_URL and re-run:"',
+            '  echo ""',
+            '  echo "  DEEPFORGE_URL=http://my.deepforge.server.com:8080 bash run.sh"',
+            '  echo ""',
+            '  exit 1',
+            'fi',
+            'mkdir outputs',
+            `mkdir -p ${DATA_DIR}\n`
+        ].join('\n');
+
+        inputs.forEach(input => {
+            let [dataPath, /* hash */, url] = input;
+            // Add to the run.sh file
+            runsh += `wget $DEEPFORGE_URL${url} -O ${dataPath}\n`;
+        });
+
+        runsh += 'python main.py';
+        files['run.sh'] = runsh;
+        return runsh;
+    };
+
+    GenerateJob.prototype.createDataMetadataFile = function (inputs, metadata, files={}) {
+        let inputData = {};
+
+        metadata.forEach((data, i) => {
+            // add the hashes for each input
+            let [dataPath, hash] = inputs[i];
+
+            inputData[dataPath] = {
+                req: hash,
+                cache: data.content
+            };
+        });
+
+        const content = JSON.stringify(inputData, null, 2);
+        files['input-data.json'] = content;
+        return content;
+    };
+
+    GenerateJob.prototype.createExecConfig = function (outputNodes, files={}) {
+        var outputs,
+            fileList,
+            ptrFiles = Object.keys(files._data).filter(name => !name.startsWith(DATA_DIR));
+
+        fileList = Object.keys(files).concat(ptrFiles)
+            .filter(name => name !== '_data');
+
+        outputs = outputNodes.map(pair => pair[0])
+            .map(name => {
+                return {
+                    name: name,
+                    resultPatterns: [`outputs/${name}`]
+                };
+            });
+
+        outputs.push(
+            {
+                name: 'stdout',
+                resultPatterns: [STDOUT_FILE]
+            },
+            {
+                name: 'result-types',
+                resultPatterns: ['result-types.json']
+            },
+            {
+                name: name + '-all-files',
+                resultPatterns: fileList
+            }
+        );
+
+        const config = JSON.stringify({
+            cmd: 'node',
+            args: ['start.js'],
+            outputInterval: OUTPUT_INTERVAL,
+            resultArtifacts: outputs
+        }, null, 2);
+
+        files['executor_config.json'] = config;
+        return config;
+    };
+
+    GenerateJob.prototype.createExecutableOperationFiles = function (node, files={}) {
+        let inputs = null;
+
+        return this.createOperationFiles(node, files)
+            .then(() => {
+                inputs = Object.keys(files._data)
+                    .filter(filename => filename.startsWith(DATA_DIR))
+                    .map(name => [
+                        name,
+                        files._data[name],
+                        this.blobClient.getRelativeDownloadURL(files._data[name])
+                    ]);  // (path, hash, url) tuples
+
+                return this.createRunScript(inputs, files);
+            })
+            .then(() => {
+                const mdPromises = inputs.map(input => {  // Get the metadata for each input
+                    let [name, hash] = input;
+
+                    // data asset for "input"
+                    return this.blobClient.getMetadata(hash)
+                        .catch(() => {
+                            throw Error(`BLOB_FETCH_FAILED: ${name}`);
+                        });
+                });
+
+                return Q.all(mdPromises);
+            })
+            .then(mds => this.createDataMetadataFile(inputs, mds, files))
+            .then(() => this.getOutputs(this.activeNode))
+            .then(outputs => this.createExecConfig(outputs, files))
+            .then(() => files);
+    };
+
+    GenerateJob.prototype.createOperationFiles = function (node, files={}) {
         // For each operation, generate the output files:
         //   inputs/<arg-name>/init.py  (respective data deserializer)
         //   pointers/<name>/init.py  (result of running the main plugin on pointer target - may need a rename)
@@ -235,7 +239,7 @@ define([
         // add the given files
         this.logger.info('About to generate operation execution files');
         return this.createEntryFile(node, files)
-            .then(() => this.createClasses(node, files))
+            //.then(() => this.createClasses(node, files))
             .then(() => this.createInputs(node, files))
             .then(() => this.createMainFile(node, files))
             .then(() => this.createPointers(node, files))
@@ -264,70 +268,6 @@ define([
             });
     };
 
-    GenerateJob.prototype.createClasses = function (node, files) {
-        var metaDict = this.core.getAllMetaNodes(this.rootNode),
-            isClass,
-            metanodes,
-            classNodes,
-            inheritanceLvl = {},
-            code;
-
-        this.logger.info('Creating custom layer file...');
-        metanodes = Object.keys(metaDict).map(id => metaDict[id]);
-        isClass = this.getTypeDictFor('Complex', metanodes);
-
-        classNodes = metanodes.filter(node => {
-            var base = this.core.getBase(node),
-                baseId,
-                count = 1;
-
-            // Count the sets back to a class node
-            while (base) {
-                baseId = this.core.getPath(base);
-                if (isClass[baseId]) {
-                    inheritanceLvl[this.core.getPath(node)] = count;
-                    return true;
-                }
-                base = this.core.getBase(base);
-                count++;
-            }
-
-            return false;
-        });
-
-        // Get the code definitions for each
-        // Sort by levels of inheritance...
-        code = classNodes.sort((a, b) => {
-            var aId = this.core.getPath(a),
-                bId = this.core.getPath(b);
-
-            return inheritanceLvl[aId] > inheritanceLvl[bId];
-        }).map(node =>
-            // FIXME: update this
-            `require './${this.getAttribute(node, 'name')}.py'`
-        ).join('\n');
-
-        // Create the class files
-        classNodes.forEach(node => {
-            var name = this.getAttribute(node, 'name');
-            files[`classes/${name}.py`] = this.getAttribute(node, 'code');
-        });
-
-        // Create the custom layers file
-        files['classes/init.py'] = code;
-    };
-
-    GenerateJob.prototype.getTypeDictFor = function (name, metanodes) {
-        var isType = {};
-        // Get all the custom layers
-        for (var i = metanodes.length; i--;) {
-            if (this.getAttribute(metanodes[i], 'name') === name) {
-                isType[this.core.getPath(metanodes[i])] = true;
-            }
-        }
-        return isType;
-    };
-
     GenerateJob.prototype.getConnectionContainer = function () {
         var container = this.core.getParent(this.activeNode);
 
@@ -351,7 +291,7 @@ define([
     };
 
     GenerateJob.prototype.createInputs = function (node, files) {
-        var inputs;
+        files._data = files._data || {};  // data assets
 
         this.logger.info('Retrieving inputs and deserialize fns...');
         return this.getInputs(node)
@@ -361,51 +301,16 @@ define([
                 //
                 // For each input,
                 //  - store the data in /inputs/<name>
-                inputs = allInputs
+                let inputs = allInputs
                     .filter(pair => !!this.getAttribute(pair[2], 'data'));  // remove empty inputs
 
                 files['start.js'] = _.template(Templates.START)({
                     CONSTANTS,
                     inputs: inputs.map(pair => pair[0])
                 });
-                files.inputAssets = {};  // data assets
-                return Q.all(inputs.map(pair => {
-                    var name = pair[0],
-                        node = pair[2],
-                        nodeId = this.core.getPath(node);
-
-                    // Get the deserialize function. First, try to get it from
-                    // the source method (this guarantees that the correct
-                    // deserialize method is used despite any auto-upcasting
-                    return this.getInputPortsFor(nodeId)
-                        .then(fromNodeId => this.core.loadByPath(this.rootNode, fromNodeId || nodeId))
-                        // TODO: remove this
-                        .then(fromNode => {
-                            var deserFn,
-                                base,
-                                className;
-
-                            deserFn = this.getAttribute(fromNode, 'deserialize');
-
-                            if (this.isMetaTypeOf(node, this.META.Complex)) {
-                                // Complex objects are expected to define their own
-                                // (static) deserialize factory method
-                                base = this.core.getMetaType(node);
-                                className = this.getAttribute(base, 'name');
-                                deserFn = `return ${className}.deserialize(path)`;
-                            }
-
-                            return {
-                                name: name,
-                                code: deserFn
-                            };
-                        });
-                }));
-            })
-            .then(tplContents => {
                 inputs.forEach(pair => {
                     var hash = this.getAttribute(pair[2], 'data');
-                    files.inputAssets[pair[0]] = hash;
+                    files._data[`${DATA_DIR}/${pair[0]}`] = hash;
                 });
 
                 return files;
@@ -514,13 +419,13 @@ define([
             .filter(id => this.core.getPointerPath(node, id) !== null);
 
         nIds = pointers.map(p => this.core.getPointerPath(node, p));
-        files.ptrAssets = {};
+        files._data = files._data || {};
         return Q.all(nIds.map(nId => this.getPtrCodeHash(nId)))
             .then(resultHashes => {
                 var name = this.getAttribute(node, 'name');
                 this.logger.info(`Pointer generation for ${name} FINISHED!`);
                 resultHashes.forEach((hash, index) => {
-                    files.ptrAssets[`resouces/${pointers[index]}.py`] = hash;
+                    files._data[`resources/${pointers[index]}.py`] = hash;
                 });
 
                 // Generate the __init__.py for the pointers
