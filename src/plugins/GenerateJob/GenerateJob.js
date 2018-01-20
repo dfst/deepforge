@@ -150,7 +150,7 @@ define([
         return content;
     };
 
-    GenerateJob.prototype.createExecConfig = function (outputNodes, files={}) {
+    GenerateJob.prototype.createExecConfig = function (node, outputNodes, files={}) {
         var outputs,
             fileList,
             ptrFiles = Object.keys(files._data).filter(name => !name.startsWith(DATA_DIR));
@@ -166,6 +166,7 @@ define([
                 };
             });
 
+        const name = this.getAttribute(node, 'name');
         outputs.push(
             {
                 name: 'stdout',
@@ -222,7 +223,7 @@ define([
             })
             .then(mds => this.createDataMetadataFile(inputs, mds, files))
             .then(() => this.getOutputs(this.activeNode))
-            .then(outputs => this.createExecConfig(outputs, files))
+            .then(outputs => this.createExecConfig(node, outputs, files))
             .then(() => files);
     };
 
@@ -337,7 +338,7 @@ define([
                     ]);  // remove empty inputs
 
                 // Defined variables for each pointer
-                content.pointers = pointers
+                content.resources = pointers
                     .map(id => [id, this.core.getPointerPath(node, id) === null]);
 
                 // Add remaining code
@@ -413,7 +414,7 @@ define([
             nIds;
 
         // Convert pointer names to use _ instead of ' '
-        this.logger.info('Creating references file...');
+        this.logger.info('Creating resources files...');
         pointers = this.core.getPointerNames(node)
             .filter(name => name !== 'base')
             .filter(id => this.core.getPointerPath(node, id) !== null);

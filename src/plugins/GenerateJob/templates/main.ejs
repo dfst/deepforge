@@ -5,8 +5,8 @@ import deepforge
 # input data<% inputs.forEach(function(pair) { var input = pair[0], type = pair[1], isNil = pair[2];%>
 <%= input %> = <% if (isNil) { %>None<% } else { %>deepforge.serialization.load('<%= type %>', open('./inputs/<%= input %>', 'rb')) <%}}); %>
 
-# load references<% pointers.forEach(function(pair) { var pointer = pair[0], isNil = pair[1];%>
-from pointers import <%= pointer %>
+# load resources<% resources.forEach(function(pair) { var resource = pair[0], isNil = pair[1];%>
+from resources import <%= resource %>
 <%}); %>
 
 from operations import <%= name %>
