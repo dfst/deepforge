@@ -379,6 +379,7 @@ define([
                     // deserialize method is used despite any auto-upcasting
                     return this.getInputPortsFor(nodeId)
                         .then(fromNodeId => this.core.loadByPath(this.rootNode, fromNodeId || nodeId))
+                        // TODO: remove this
                         .then(fromNode => {
                             var deserFn,
                                 base,
@@ -402,7 +403,6 @@ define([
                 }));
             })
             .then(tplContents => {
-                console.log(tplContents);
                 inputs.forEach(pair => {
                     var hash = this.getAttribute(pair[2], 'data');
                     files.inputAssets[pair[0]] = hash;
