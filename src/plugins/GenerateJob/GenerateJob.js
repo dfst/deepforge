@@ -311,7 +311,7 @@ define([
                 });
                 inputs.forEach(pair => {
                     var hash = this.getAttribute(pair[2], 'data');
-                    files._data[`${DATA_DIR}/${pair[0]}`] = hash;
+                    files._data[DATA_DIR + pair[0]] = hash;
                 });
 
                 return files;
