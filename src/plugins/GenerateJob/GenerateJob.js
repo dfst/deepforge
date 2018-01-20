@@ -238,7 +238,8 @@ define([
             .then(() => this.createClasses(node, files))
             .then(() => this.createInputs(node, files))
             .then(() => this.createMainFile(node, files))
-            .then(() => Q.ninvoke(this, 'createPointers', node, files))
+            .then(() => this.createPointers(node, files))
+            .then(() => files)
             .fail(err => {
                 this.logger.error(err);
                 throw err;
@@ -448,10 +449,6 @@ define([
 
                 files['main.py'] = _.template(Templates.MAIN)(content);
                 files['operations.py'] = content.code;
-
-                // Set the line offset
-                var lineOffset = 0;
-                this.setAttribute(node, CONSTANTS.LINE_OFFSET, lineOffset);
             });
     };
 
@@ -506,48 +503,39 @@ define([
         return argumentValues.join(', ');
     };
 
-    GenerateJob.prototype.getLineOffset = function (main, snippet) {
-        var i = main.indexOf(snippet),
-            lines = main.substring(0, i).match(/\n/g);
-
-        return lines ? lines.length : 0;
-    };
-
-    GenerateJob.prototype.createPointers = function (node, files, cb) {
+    GenerateJob.prototype.createPointers = function (node, files) {
         var pointers,
             nIds;
 
         // Convert pointer names to use _ instead of ' '
-        this.logger.info('Creating pointers file...');
+        this.logger.info('Creating references file...');
         pointers = this.core.getPointerNames(node)
             .filter(name => name !== 'base')
             .filter(id => this.core.getPointerPath(node, id) !== null);
 
         nIds = pointers.map(p => this.core.getPointerPath(node, p));
         files.ptrAssets = {};
-        Q.all(
-            nIds.map(nId => this.getPtrCodeHash(nId))
-        )
-        .then(resultHashes => {
-            var name = this.getAttribute(node, 'name');
-            this.logger.info(`Pointer generation for ${name} FINISHED!`);
-            resultHashes.forEach((hash, index) => {
-                files.ptrAssets[`pointers/${pointers[index]}.py`] = hash;
+        return Q.all(nIds.map(nId => this.getPtrCodeHash(nId)))
+            .then(resultHashes => {
+                var name = this.getAttribute(node, 'name');
+                this.logger.info(`Pointer generation for ${name} FINISHED!`);
+                resultHashes.forEach((hash, index) => {
+                    files.ptrAssets[`resouces/${pointers[index]}.py`] = hash;
+                });
+
+                // Generate the __init__.py for the pointers
+                let initPointers = pointers
+                    .map(name => `from resources.${name} import result as ${name}`)
+                    .join('\n');
+
+                files['resources/__init__.py'] = initPointers;
+
+                return files;
+            })
+            .fail(e => {
+                this.logger.error(`Could not generate resource files for ${this.getAttribute(node, 'name')}: ${e.toString()}`);
+                throw e;
             });
-
-            // Generate the __init__.py for the pointers
-            let initPointers = pointers
-                .map(name => `from pointers.${name} import result as ${name}`)
-                .join('\n');
-
-            files['pointers/__init__.py'] = initPointers;
-
-            return cb(null, files);
-        })
-        .fail(e => {
-            this.logger.error(`Could not generate pointer files for ${this.getAttribute(node, 'name')}: ${e.toString()}`);
-            return cb(e);
-        });
     };
 
     GenerateJob.prototype.getAttribute = function (node, attr) {
