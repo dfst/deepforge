@@ -82,8 +82,10 @@ define([
 
         const files = {};
         const name = this.core.getAttribute(this.activeNode, 'name');
+        const staticInputs = this.getCurrentConfig().staticInputs;
         return this.createPipelineFiles(this.activeNode, files)
-            .then(() => this.createDefaultMainFile(this.activeNode, files))
+            .then(() => this.addStaticInputs(staticInputs, files))
+            .then(() => this.createDefaultMainFile(this.activeNode, staticInputs, files))
             .then(() => this.createArtifact(name, files))
             .then(hash => {
                 this.result.addArtifact(hash);
@@ -124,7 +126,20 @@ define([
         return varName;
     };
 
-    Export.prototype.createDefaultMainFile = function (node, files={}) {
+    Export.prototype.addStaticInputs = function (ids, files={}) {
+        // Get the static inputs and add them in artifacts/
+        return Q.all(ids.map(id => this.core.loadByPath(this.rootNode, id)))
+            .then(nodes => {
+                nodes.forEach((node, i) => {
+                    const name = this.getVariableNameFor(ids[i]);
+                    const hash = this.getAttribute(node, 'data');
+                    files._data[`artifacts/${name}`] = hash;
+                });
+                return files;
+            });
+    };
+
+    Export.prototype.createDefaultMainFile = function (node, staticInputs, files={}) {
         // Get the variable name for the pipeline
         const name = this.core.getAttribute(node, 'name');
         const instanceName = this.getVariableName(name.toLowerCase());
@@ -136,15 +151,26 @@ define([
                 // Get code for each input
                 const inputs = this.getPipelineInputs(nodes);
                 const inputNames = inputs.map(input => this.getVariableNameFor(input[1]));
+                let argIndex = 1;
                 const parseInputCode = inputs.map((input, i) => {
+                    const [, , node] = input;
                     const inputName = inputNames[i];
                     const pathNameVar = this.getVariableName(`${inputName}_path`);
-                    const type = this.getAttribute(input[2], 'type');
+                    const type = this.getAttribute(node, 'type');
+                    const id = this.core.getPath(node);
+                    const isStatic = staticInputs.includes(id);
 
-                    return [
-                        `${pathNameVar} = sys.argv[${i + 1}]`,
+                    const lines = [
                         `${inputName} = deepforge.serialization.load('${type}', open(${pathNameVar}, 'rb'))`
-                    ].join('\n');
+                    ];
+
+                    if (isStatic) {
+                        lines.unshift(`${pathNameVar} = 'artifacts/${inputName}'`);
+                    } else {
+                        lines.unshift(`${pathNameVar} = sys.argv[${argIndex}]`);
+                        argIndex++;
+                    }
+                    return lines.join('\n');
                 }).join('\n');
 
                 // Create code for saving outputs to outputs/
