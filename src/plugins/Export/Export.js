@@ -154,7 +154,7 @@ define([
                     const name = outputNames[i];
                     return [
                         `with open('outputs/${name}', 'wb') as outfile:`,
-                        indent(`deepforge.serialization.dump(%{name}, outfile)`)
+                        indent(`deepforge.serialization.dump(${name}, outfile)`)
                     ].join('\n');
                 }).join('\n');
 
