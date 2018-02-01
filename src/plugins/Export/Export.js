@@ -150,6 +150,7 @@ define([
                 // Create code for saving outputs to outputs/
                 const outputs = this.getPipelineOutputs(nodes);
                 const outputNames = outputs.map(output => this.getVariableNameFor(output[1]));
+
                 const saveOutputCode = outputs.map((output, i) => {
                     const [, , node] = output;
                     const outputOp = this.core.getParent(this.core.getParent(node));
@@ -186,6 +187,8 @@ define([
                     `${instanceName} = ${name}()`,
                     runPipeline
                 ].join('\n');
+                // Add file for storing results
+                files['outputs/README.md'] = 'Results from the cli execution are stored here';
             });
     };
 
