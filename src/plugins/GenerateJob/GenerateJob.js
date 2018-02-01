@@ -68,6 +68,7 @@ define([
 
         return this.createExecutableOperationFiles(this.activeNode)
             .then(files => {
+                this.logger.info('Created operation files!');
                 const artifactName = `${name}_${opId.replace(/\//g, '_')}-execution-files`;
                 return this.createArtifact(artifactName, files);
             })
@@ -83,7 +84,6 @@ define([
     }; 
 
     GenerateJob.prototype.createArtifact = function (artifactName, files) {
-        this.logger.info('Created operation files!');
         let artifact = this.blobClient.createArtifact(artifactName);
         const data = files._data;
         delete files._data;
@@ -229,18 +229,15 @@ define([
 
     GenerateJob.prototype.createOperationFiles = function (node, files={}) {
         // For each operation, generate the output files:
-        //   inputs/<arg-name>/init.py  (respective data deserializer)
-        //   pointers/<name>/init.py  (result of running the main plugin on pointer target - may need a rename)
-        //   outputs/<name>/  (make dirs for each of the outputs)
-        //   outputs/init.py  (serializers for data outputs)
+        //   artifacts/<arg-name>  (respective serialized input data)
+        //   resources/<name>  (generated code for the target of the given pointer)
+        //   outputs/ (make dir for the outputs)
         //
-        //   init.py (main file -> calls main and serializes outputs)
-        //   <name>.py (entry point -> calls main operation code)
+        //   main.py (main file -> calls main and serializes outputs)
 
         // add the given files
         this.logger.info('About to generate operation execution files');
         return this.createEntryFile(node, files)
-            //.then(() => this.createClasses(node, files))
             .then(() => this.createInputs(node, files))
             .then(() => this.createMainFile(node, files))
             .then(() => this.createPointers(node, files))
@@ -347,15 +344,24 @@ define([
             })
             .then(outputs => {
                 content.outputs = outputs.map(output => output[0]);
-                content.arguments = this.getOperationArguments(node);
+                content.arguments = this.getOperationArguments(node)
+                    .map(arg => arg.value).join(', ');
                 return this.getAllInitialCode();
             })
             .then(code => {
                 content.initCode = code;
 
+                const filename = GenerateJob.toSnakeCase(content.name);
                 files['main.py'] = _.template(Templates.MAIN)(content);
-                files['operations.py'] = content.code;
+                files[`operations/${filename}.py`] = content.code;
+                files['operations/__init__.py'] = files['operations/__init__.py'] || '';
+                files['operations/__init__.py'] += `from operations.${content.name} import ${content.name}\n`;
             });
+    };
+
+    GenerateJob.toSnakeCase = function (word) {
+        word = word[0].toLowerCase() + word.slice(1);
+        return word.replace(/[A-Z]/g, match => `_${match.toLowerCase()}`);
     };
 
     GenerateJob.prototype.getAllInitialCode = function () {
@@ -395,18 +401,24 @@ define([
         // Enter the attributes in place
         const argumentValues = operation.getAttributes().map(attr => {
             const name = attr.name;
+            const isPointer = pointers.includes(name);
+            const arg = {
+                name: name,
+                isPointer: isPointer,
+            };
 
             // Check if it is a reference... (if so, just return the pointer name)
-            if (pointers.includes(name)) {
-                if (!this.core.getPointerPath(node, name)) return 'None';
-                return name;
+            if (isPointer) {
+                arg.rawValue = this.core.getPointerPath(node, name);
+                arg.value = arg.rawValue ? name : 'None';
             } else {  // get the attribute and it's value
-                let value = this.getAttribute(node, name);
-                return GenerateJob.getAttributeString(value);
+                arg.rawValue = this.getAttribute(node, name);
+                arg.value = GenerateJob.getAttributeString(arg.rawValue);
             }
+            return arg;
         });
 
-        return argumentValues.join(', ');
+        return argumentValues;
     };
 
     GenerateJob.prototype.createPointers = function (node, files) {

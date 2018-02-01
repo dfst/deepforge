@@ -173,7 +173,7 @@ define([
                     '',
 
                     // Import the pipeline
-                    `from pipelines import ${name}`,
+                    `from pipelines.${name} import ${name}`,
                     `${instanceName} = ${name}()`,
                     runPipeline,
 
