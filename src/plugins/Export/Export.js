@@ -277,7 +277,8 @@ define([
                     return aVal < bVal ? -1 : 1;
                 });
 
-                files[`pipelines/${name}.py`] = [
+                const filename = PluginBase.toSnakeCase(name);
+                files[`pipelines/${filename}.py`] = [
                     importCode.join('\n'),
                     '',
                     `class ${name}():`,
@@ -285,7 +286,8 @@ define([
                     indent(indent(code.join('\n'))),
                     indent(indent(`return ${outputs}`))
                 ].join('\n');
-                files['pipelines/__init__.py'] = `from . import ${name}`;
+                files['pipelines/__init__.py'] = files['pipelines/__init__.py'] || '';
+                files['pipelines/__init__.py'] += `from pipelines.${name} import ${name}\n`;
 
                 return Q.all(operations.map(node => this.createOperationFiles(node, files)));
             });
