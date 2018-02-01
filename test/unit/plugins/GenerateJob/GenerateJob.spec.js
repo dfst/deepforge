@@ -2,6 +2,7 @@
 
 describe('GenerateJob', function () {
     const testFixture = require('../../../globals');
+    const GenerateJob = testFixture.requirejs('plugin/GenerateJob/GenerateJob/GenerateJob');
     var gmeConfig = testFixture.getGmeConfig(),
         expect = testFixture.expect,
         logger = testFixture.logger.fork('GenerateJob'),
@@ -193,6 +194,14 @@ describe('GenerateJob', function () {
                 matches = content.match(boolString);
                 expect(matches).to.equal(null);
             });
+        });
+    });
+
+    // GenerateJob
+    describe('utilities', function() {
+        it('should convert from upper camelcase to snake case', function() {
+            const snake = GenerateJob.toSnakeCase('HelloWorld');
+            expect(snake).to.equal('hello_world');
         });
     });
 
