@@ -151,24 +151,28 @@ define([
                 const outputs = this.getPipelineOutputs(nodes);
                 const outputNames = outputs.map(output => this.getVariableNameFor(output[1]));
 
-                const printResults = outputNames
-                    .map(name => `print('${name}: ' + str(${name}))`);
-                printResults.unshift('print(\'Results:\')');
-
-                const saveResults = outputs.map((output, i) => {  // save results
+                const saveNames = outputs.map(output => {
                     const [, , node] = output;
                     const outputOp = this.core.getParent(this.core.getParent(node));
-                    const name = this.getAttribute(outputOp, 'saveName');
+                    return this.getAttribute(outputOp, 'saveName');
+                });
+                const printResults = outputNames
+                    .map((name, i) => `print('  ${saveNames[i]}: ' + str(${name}))`);
+                printResults.unshift('print(\'Results:\')');
+                printResults.unshift('print()');
+
+                const saveResults = outputs.map((output, i) => {  // save results
+                    const name = saveNames[i];
                     const varName = outputNames[i];
                     return [
                         `with open('outputs/${name}.pkl', 'wb') as outfile:`,
                         indent(`deepforge.serialization.dump(${varName}, outfile)`),
-                        `print('Saved ${varName} to outputs/${name}.pkl')`
+                        `print('Saved ${name} to outputs/${name}.pkl')`
                     ].join('\n');
                 });
 
                 const saveOutputCode = printResults  // print results
-                    .concat([''])
+                    .concat(['print()'])
                     .concat(saveResults).join('\n');
 
                 let runPipeline = `${instanceName}.execute(${inputNames})`;
