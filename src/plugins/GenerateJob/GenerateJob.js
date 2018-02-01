@@ -355,7 +355,7 @@ define([
                 files['main.py'] = _.template(Templates.MAIN)(content);
                 files[`operations/${filename}.py`] = content.code;
                 files['operations/__init__.py'] = files['operations/__init__.py'] || '';
-                files['operations/__init__.py'] += `from operations.${content.name} import ${content.name}\n`;
+                files['operations/__init__.py'] += `from operations.${filename} import ${content.name}\n`;
             });
     };
 

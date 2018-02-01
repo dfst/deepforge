@@ -143,17 +143,17 @@ define([
 
                     return [
                         `${pathNameVar} = sys.argv[${i + 1}]`,
-                        `${inputName} = deepforge.serialization.load('${type}', open('${pathNameVar}', 'rb'))`
+                        `${inputName} = deepforge.serialization.load('${type}', open(${pathNameVar}, 'rb'))`
                     ].join('\n');
                 }).join('\n');
 
                 // Create code for saving outputs to outputs/
                 const outputs = this.getPipelineOutputs(nodes);
-                const outputNames = outputs.map(output => this.getVariableNameFor(output[1])).join(',');
+                const outputNames = outputs.map(output => this.getVariableNameFor(output[1]));
                 const saveOutputCode = outputs.map((output, i) => {
                     const name = outputNames[i];
                     return [
-                        `with open('outputs/${name}', 'wb') as outfile:`,
+                        `with open('outputs/${name}.pkl', 'wb') as outfile:`,
                         indent(`deepforge.serialization.dump(${name}, outfile)`)
                     ].join('\n');
                 }).join('\n');
@@ -161,7 +161,7 @@ define([
                 let runPipeline = `${instanceName}.execute(${inputNames})`;
                 if (outputNames) {
                     runPipeline = [
-                        `${outputNames} = ${instanceName}.execute(${inputNames})`,
+                        `${outputNames.join(', ')} = ${instanceName}.execute(${inputNames})`,
                         '',
                         saveOutputCode,
                         `print('Saved results to outputs/')`
@@ -287,7 +287,7 @@ define([
                     indent(indent(`return ${outputs}`))
                 ].join('\n');
                 files['pipelines/__init__.py'] = files['pipelines/__init__.py'] || '';
-                files['pipelines/__init__.py'] += `from pipelines.${name} import ${name}\n`;
+                files['pipelines/__init__.py'] += `from pipelines.${filename} import ${name}\n`;
 
                 return Q.all(operations.map(node => this.createOperationFiles(node, files)));
             });
