@@ -151,10 +151,14 @@ define([
                 const outputs = this.getPipelineOutputs(nodes);
                 const outputNames = outputs.map(output => this.getVariableNameFor(output[1]));
                 const saveOutputCode = outputs.map((output, i) => {
-                    const name = outputNames[i];
+                    const [, , node] = output;
+                    const outputOp = this.core.getParent(this.core.getParent(node));
+                    const name = this.getAttribute(outputOp, 'saveName');
+                    const varName = outputNames[i];
                     return [
                         `with open('outputs/${name}.pkl', 'wb') as outfile:`,
-                        indent(`deepforge.serialization.dump(${name}, outfile)`)
+                        indent(`deepforge.serialization.dump(${varName}, outfile)`),
+                        `print('Saved ${varName} to outputs/${name}.pkl')`
                     ].join('\n');
                 }).join('\n');
 
@@ -163,8 +167,7 @@ define([
                     runPipeline = [
                         `${outputNames.join(', ')} = ${instanceName}.execute(${inputNames})`,
                         '',
-                        saveOutputCode,
-                        `print('Saved results to outputs/')`
+                        saveOutputCode
                     ].join('\n');
                 }
 
