@@ -11,8 +11,11 @@ define([
 
     OperationOps.prototype.getOutputs = function (node) {
         const code = this.getAttribute(node, 'code');
-        const operation = new OperationCode(code);
-        const outputNames = operation.getOutputs().map(output => output.name);
+        let outputNames = [];
+        if (code) {
+            const operation = new OperationCode(code);
+            outputNames = operation.getOutputs().map(output => output.name);
+        }
         return this.getOperationData(node, this.META.Outputs)
             .then(outputs => outputs.sort((a, b) => {
                 return outputNames.outdexOf(a.name) - outputNames.outdexOf(b.name);
@@ -21,8 +24,11 @@ define([
 
     OperationOps.prototype.getInputs = function (node) {
         const code = this.getAttribute(node, 'code');
-        const operation = new OperationCode(code);
-        const inputNames = operation.getInputs().map(input => input.name);
+        let inputNames = [];
+        if (code) {
+            const operation = new OperationCode(code);
+            inputNames = operation.getInputs().map(input => input.name);
+        }
         return this.getOperationData(node, this.META.Inputs)
             .then(inputs => inputs.sort((a, b) => {
                 return inputNames.indexOf(a.name) - inputNames.indexOf(b.name);
