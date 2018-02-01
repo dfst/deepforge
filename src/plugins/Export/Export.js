@@ -104,6 +104,7 @@ define([
 
         while (this.variableNames[name]) {
             name = basename + '_' + counter;
+            counter++;
         }
 
         this.variableNames[name] = true;
@@ -116,7 +117,7 @@ define([
 
     Export.prototype.assignVariableTo = function (name/*ids*/) {
         const varName = this.getVariableName(name);
-        const ids = Array.prototype.slice.call(arguments, 0);
+        const ids = Array.prototype.slice.call(arguments, 1);
 
         ids.forEach(id => this.variableNameFor[id] = varName);
 
@@ -125,7 +126,6 @@ define([
 
     Export.prototype.createDefaultMainFile = function (node, files={}) {
         // Get the variable name for the pipeline
-        console.log('creating main file...');
         const name = this.core.getAttribute(node, 'name');
         const instanceName = this.getVariableName(name.toLowerCase());
         let initCode = null;
@@ -158,9 +158,15 @@ define([
                     ].join('\n');
                 }).join('\n');
 
-                const runPipeline = outputNames ? 
-                    `${outputNames} = ${instanceName}.execute(${inputNames})` :
-                    `${instanceName}.execute(${inputNames})`;
+                let runPipeline = `${instanceName}.execute(${inputNames})`;
+                if (outputNames) {
+                    runPipeline = [
+                        `${outputNames} = ${instanceName}.execute(${inputNames})`,
+                        '',
+                        saveOutputCode,
+                        `print('Saved results to outputs/')`
+                    ].join('\n');
+                }
 
                 files['main.py'] = [
                     'import deepforge',
@@ -175,17 +181,12 @@ define([
                     // Import the pipeline
                     `from pipelines.${name} import ${name}`,
                     `${instanceName} = ${name}()`,
-                    runPipeline,
-
-                    '',
-                    saveOutputCode,
-                    `print('Saved results to outputs/')`
+                    runPipeline
                 ].join('\n');
             });
     };
 
     Export.prototype.createPipelineFiles = function (node, files={}) {
-        console.log('getting pipeline file...');
         const name = this.core.getAttribute(node, 'name');
         // Generate the file for the pipeline in pipelines/
         return this.core.loadChildren(node)
@@ -200,7 +201,10 @@ define([
                 let code = [];
 
                 // Topo sort the nodes
-                const operations = this.getSortedOperations(nodes);
+                const allOperations = this.getSortedOperations(nodes);
+                const operations = allOperations
+                    .filter(node => !this.isMetaTypeOf(node, this.META.Input))
+                    .filter(node => !this.isMetaTypeOf(node, this.META.Output));
 
                 // Import each operation
                 let operationTypes = operations.map(node => {
@@ -221,6 +225,7 @@ define([
                     // TODO
                     this.assignVariableTo('result', srcId, dstId);
                 });
+
                 operations.forEach(operation => {
                     // Create the operation
                     const [lines, opName] = this.createOperation(operation);
@@ -254,10 +259,10 @@ define([
                 });
 
                 // Create the pipeline file
-                const inputs = this.getPipelineInputs(operations)
+                const inputs = this.getPipelineInputs(allOperations)
                     .map(tuple => this.getVariableNameFor(tuple[1]))
                     .join(', ');
-                const outputs = this.getPipelineInputs(operations)
+                const outputs = this.getPipelineOutputs(allOperations)
                     .map(tuple => this.getVariableNameFor(tuple[1]))
                     .join(', ');
 
@@ -341,12 +346,6 @@ define([
                 this.core.getPointerPath(node, 'dst')
             ])
             .filter(endpoints => endpoints.includes(dataId));
-
-        if (!matchingConns.every(id => id === matchingConns[0])) {
-            console.log();
-            console.log();
-            console.log('MISMATCH connections', matchingConns);
-        }
 
         const [srcId] = matchingConns.pop();
         return srcId;
