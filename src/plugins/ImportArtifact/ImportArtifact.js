@@ -63,7 +63,7 @@ define([
         metaDict = this.core.getAllMetaNodes(this.activeNode);
         metanodes = Object.keys(metaDict).map(id => metaDict[id]);
         baseType = metanodes.find(node =>
-            this.core.getAttribute(node, 'name') === baseName
+            this.core.getAttribute(node, 'name') === 'Data'
         );
 
         if (!baseType) {
@@ -80,6 +80,7 @@ define([
                 });
 
                 this.core.setAttribute(dataNode, 'data', hash);
+                this.core.setAttribute(dataNode, 'type', baseName);
                 this.core.setAttribute(dataNode, 'createdAt', Date.now());
                 baseName = this.core.getAttribute(baseType, 'name');
 
