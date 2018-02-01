@@ -29,12 +29,6 @@ var WebGME = testFixture.WebGME,
 
 WebGME.addToRequireJsPaths(gmeConfig);
 
-// Add the requirejs text plugin
-testFixture.requirejs.config({
-    paths: {
-        text: 'client/lib/require/require-text/text'
-    }
-});
 testFixture.getGmeConfig = getGmeConfig;
 
 testFixture.DF_SEED_DIR = testFixture.path.join(__dirname, '..', 'src', 'seeds');
