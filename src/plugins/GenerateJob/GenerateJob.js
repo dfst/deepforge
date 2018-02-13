@@ -310,6 +310,8 @@ define([
                     var hash = this.getAttribute(pair[2], 'data');
                     files._data[DATA_DIR + pair[0]] = hash;
                 });
+                // Add the deepforge matplotlib backend file...
+                files['backend_deepforge.py'] = Templates.MATPLOTLIB_BACKEND;
 
                 return files;
             });

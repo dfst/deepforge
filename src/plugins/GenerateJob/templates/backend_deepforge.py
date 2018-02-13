@@ -72,7 +72,6 @@ from matplotlib.backend_bases import (
      FigureCanvasBase, FigureManagerBase, GraphicsContextBase, RendererBase)
 from matplotlib.figure import Figure
 
-from test import store
 import json
 
 class RendererTemplate(RendererBase):

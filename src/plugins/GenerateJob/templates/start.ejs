@@ -30,6 +30,7 @@ requirejs([
         address,
         port = (url.split(':') || ['80']).pop();
 
+    process.env.MPLBACKEND = "module://backend_deepforge";
     address = url.replace(protocol + '://', '')
         .replace(':' + port, '');
 
