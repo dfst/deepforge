@@ -34,6 +34,8 @@ define([
         // Only support a single axes for now
         const axes = state.axes[0];
         this.setAttribute(graph, 'name', axes.title);
+        this.setAttribute(graph, 'xlabel', axes.xlabel);
+        this.setAttribute(graph, 'ylabel', axes.ylabel);
         this.logger.info(`Updating graph named ${axes.title}`);
 
         // Delete current line nodes?

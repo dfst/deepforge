@@ -264,6 +264,8 @@ class FigureCanvasTemplate(FigureCanvasBase):
         for axes in figure.get_axes():
             axes_data = {}
             axes_data['title'] = axes.get_title()
+            axes_data['xlabel'] = axes.get_xlabel()
+            axes_data['ylabel'] = axes.get_ylabel()
             axes_data['lines'] = []
             for line in axes.lines:
                 points = line.get_xydata().tolist()
