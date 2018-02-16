@@ -14,26 +14,27 @@ define([
 
     // I think I should convert these to just a single 'update graph' command
     // TODO
-    ExecuteJob.prototype[CONSTANTS.PLOT_UPDATE] = function (job) {
-        const state = JSON.parse(Array.prototype.slice.call(arguments, 1).join(' '));
+    ExecuteJob.prototype[CONSTANTS.PLOT_UPDATE] = function (job, state) {
         const jobId = this.core.getPath(job);
 
-        this.logger.info(`Creating graph named ${name}`);
+        this.logger.info(`Creating graph named ${state.axes[0].title}`);
 
         // Check if the graph already exists
         // use the id to look up the graph
         let graph = this.getExistingMetadataById(jobId, 'Graph', state.id);
         if (!graph) {
             graph = this.createNode('Graph', job);
+            this.setAttribute(graph, 'id', state.id);
 
-            id = jobId + '/' + id;
+            let id = jobId + '/' + state.id;
             this.createIdToMetadataId[graph] = id;
         }
 
         // Apply whatever updates are needed
         // Set the plot title
-        // this.setAttribute(graph, 'name', name);
-        // TODO
+        // Only support a single axes for now
+        const axes = state.axes[0];
+        this.setAttribute(graph, 'name', axes.title);
 
         // Update the points for each of the lines 
         // TODO
@@ -191,14 +192,12 @@ define([
         return this._getExistingMetadata(
             jobId,
             type,
-            node => this.getAttribute(node, 'id', id) === id
+            node => this.getAttribute(node, 'id') === id
         );
     };
 
     ExecuteJob.prototype._getExistingMetadata = function (jobId, type, fn) {
-        let oldMetadata = this._oldMetadataByName[jobId] && this._oldMetadataByName[jobId][type],
-            node,
-            id;
+        let oldMetadata = this._oldMetadataByName[jobId] && this._oldMetadataByName[jobId][type];
 
         const metadata = (oldMetadata || []).find(fn);
         if (metadata) {
@@ -209,6 +208,47 @@ define([
         }
 
         return metadata || null;
+    };
+
+    ExecuteJob.prototype.parseForMetadataCmds = function (job, lines, skip) {
+        var jobId = this.core.getPath(job),
+            args,
+            result = [],
+            cmdCnt = 0,
+            ansiRegex = /\[\d+(;\d+)?m/g,
+            hasMetadata = false,
+            trimStartRegex = new RegExp(CONSTANTS.START_CMD + '.*'),
+            matches,
+            content,
+            cmd;
+
+        for (var i = 0; i < lines.length; i++) {
+            // Check for a deepforge command
+            if (lines[i].indexOf(CONSTANTS.START_CMD) !== -1) {
+                matches = lines[i].replace(ansiRegex, '').match(trimStartRegex);
+                for (var m = 0; m < matches.length; m++) {
+                    cmdCnt++;
+                    args = matches[m].split(/\s+/);
+                    args.shift();
+                    cmd = args[0];
+                    content = matches[m].substring(matches[m].indexOf(cmd) + cmd.length);
+                    args = [job, JSON.parse(content)];
+                    if (this[cmd] && (!skip || cmdCnt >= this.lastAppliedCmd[jobId])) {
+                        this[cmd].apply(this, args);
+                        this.lastAppliedCmd[jobId]++;
+                        hasMetadata = true;
+                    } else if (!this[cmd]) {
+                        this.logger.error(`Invoked unimplemented metadata method "${cmd}"`);
+                    }
+                }
+            } else {
+                result.push(lines[i]);
+            }
+        }
+        return {
+            stdout: result.join('\n'),
+            hasMetadata: hasMetadata
+        };
     };
 
     return ExecuteJob;

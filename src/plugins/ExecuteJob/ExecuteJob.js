@@ -764,45 +764,5 @@ define([
         return result;
     };
 
-    //////////////////////////// Metadata ////////////////////////////
-    ExecuteJob.prototype.parseForMetadataCmds = function (job, lines, skip) {
-        var jobId = this.core.getPath(job),
-            args,
-            result = [],
-            cmdCnt = 0,
-            ansiRegex = /\[\d+(;\d+)?m/g,
-            hasMetadata = false,
-            trimStartRegex = new RegExp(CONSTANTS.START_CMD + '.*'),
-            matches,
-            cmd;
-
-        for (var i = 0; i < lines.length; i++) {
-            // Check for a deepforge command
-            if (lines[i].indexOf(CONSTANTS.START_CMD) !== -1) {
-                matches = lines[i].replace(ansiRegex, '').match(trimStartRegex);
-                for (var m = 0; m < matches.length; m++) {
-                    cmdCnt++;
-                    args = matches[m].split(/\s+/);
-                    args.shift();
-                    cmd = args[0];
-                    args[0] = job;
-                    if (this[cmd] && (!skip || cmdCnt >= this.lastAppliedCmd[jobId])) {
-                        this[cmd].apply(this, args);
-                        this.lastAppliedCmd[jobId]++;
-                        hasMetadata = true;
-                    } else if (!this[cmd]) {
-                        this.logger.error(`Invoked unimplemented metadata method "${cmd}"`);
-                    }
-                }
-            } else {
-                result.push(lines[i]);
-            }
-        }
-        return {
-            stdout: result.join('\n'),
-            hasMetadata: hasMetadata
-        };
-    };
-
     return ExecuteJob;
 });
