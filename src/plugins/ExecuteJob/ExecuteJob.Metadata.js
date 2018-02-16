@@ -17,16 +17,15 @@ define([
     ExecuteJob.prototype[CONSTANTS.PLOT_UPDATE] = function (job, state) {
         const jobId = this.core.getPath(job);
 
-        this.logger.info(`Creating graph named ${state.axes[0].title}`);
 
         // Check if the graph already exists
         // use the id to look up the graph
         let graph = this.getExistingMetadataById(jobId, 'Graph', state.id);
+        let id = jobId + '/' + state.id;
         if (!graph) {
             graph = this.createNode('Graph', job);
             this.setAttribute(graph, 'id', state.id);
 
-            let id = jobId + '/' + state.id;
             this.createIdToMetadataId[graph] = id;
         }
 
@@ -35,9 +34,23 @@ define([
         // Only support a single axes for now
         const axes = state.axes[0];
         this.setAttribute(graph, 'name', axes.title);
+        this.logger.info(`Updating graph named ${axes.title}`);
+
+        // Delete current line nodes?
+        // TODO
 
         // Update the points for each of the lines 
         // TODO
+        axes.lines.forEach((line, index) => {
+            let lineId = this.createNode('Line', graph);
+            //name = name.replace(/\s+$/, '');
+            this.setAttribute(lineId, 'name', `line${index}`);
+            this._metadata[id + '/' + index] = lineId;
+            this.createIdToMetadataId[lineId] = jobId + '/' + id;
+
+            let points = line.map(pts => pts.join(',')).join(';');
+            this.setAttribute(lineId, 'points', points);
+        });
     };
 
     ExecuteJob.prototype[CONSTANTS.GRAPH_LABEL_AXIS.X] = function (job, id) {
