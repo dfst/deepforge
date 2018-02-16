@@ -242,7 +242,6 @@ class FigureCanvasTemplate(FigureCanvasBase):
         """
         print("drawing...")
         self.send_deepforge_update()
-        store(self)
         renderer = RendererTemplate(self.figure.dpi)
         self.figure.draw(renderer)
 
