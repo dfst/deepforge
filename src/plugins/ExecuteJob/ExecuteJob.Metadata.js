@@ -51,7 +51,7 @@ define([
             this._metadata[lineId] = node;
             this.createIdToMetadataId[node] = lineId;
 
-            this.setAttribute(node, 'name', line.label);
+            this.setAttribute(node, 'name', line.label || `line ${index+1}`);
             let points = line.points.map(pts => pts.join(',')).join(';');
             this.setAttribute(node, 'points', points);
         });

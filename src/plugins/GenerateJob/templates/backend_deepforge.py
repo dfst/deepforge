@@ -240,7 +240,6 @@ class FigureCanvasTemplate(FigureCanvasBase):
         """
         Draw the figure using the renderer
         """
-        print("drawing...")
         self.send_deepforge_update()
         renderer = RendererTemplate(self.figure.dpi)
         self.figure.draw(renderer)
@@ -267,10 +266,15 @@ class FigureCanvasTemplate(FigureCanvasBase):
             axes_data['xlabel'] = axes.get_xlabel()
             axes_data['ylabel'] = axes.get_ylabel()
             axes_data['lines'] = []
-            for line in axes.lines:
+            for i, line in enumerate(axes.lines):
                 lineDict = {}
                 lineDict['points'] = line.get_xydata().tolist()
-                lineDict['label'] = line.get_label()
+
+                lineDict['label'] = ''
+                default_label = ('_line' + str(i))
+                if line.get_label() != default_label:
+                    lineDict['label'] = line.get_label()
+
                 axes_data['lines'].append(lineDict)
 
             state['axes'].append(axes_data)
