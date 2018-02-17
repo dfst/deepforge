@@ -202,7 +202,7 @@ define([
                     .concat(saveResults).join('\n');
 
                 let runPipeline = `${instanceName}.execute(${inputNames})`;
-                if (outputNames) {
+                if (outputNames.length) {
                     runPipeline = [
                         `${outputNames.join(', ')} = ${instanceName}.execute(${inputNames})`,
                         '',
