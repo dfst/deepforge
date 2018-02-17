@@ -10,13 +10,14 @@ define([
         this._markForDeletion = {};  // id -> node
         this._oldMetadataByName = {};  // name -> id
         this.createdMetadataIds = {};
+
+        this.plotLines = {};
     };
 
     // I think I should convert these to just a single 'update graph' command
     // TODO
     ExecuteJob.prototype[CONSTANTS.PLOT_UPDATE] = function (job, state) {
         const jobId = this.core.getPath(job);
-
 
         // Check if the graph already exists
         // use the id to look up the graph
@@ -38,45 +39,24 @@ define([
         this.setAttribute(graph, 'ylabel', axes.ylabel);
         this.logger.info(`Updating graph named ${axes.title}`);
 
-        // Delete current line nodes?
-        // TODO
+        // Delete current line nodes
+        this.plotLines[id] = this.plotLines[id] || [];
+        this.plotLines[id].forEach(line => this.deleteNode(line));
 
         // Update the points for each of the lines 
-        // TODO
         axes.lines.forEach((line, index) => {
-            let lineId = this.createNode('Line', graph);
+            let lineId = id + '/' + index;
+            let node = this.createNode('Line', graph);
+            this.plotLines[id].push(node);
+
             //name = name.replace(/\s+$/, '');
-            this.setAttribute(lineId, 'name', `line${index}`);
-            this._metadata[id + '/' + index] = lineId;
-            this.createIdToMetadataId[lineId] = jobId + '/' + id;
+            this.setAttribute(node, 'name', `line${index}`);
+            this._metadata[lineId] = node;
+            this.createIdToMetadataId[node] = lineId;
 
             let points = line.map(pts => pts.join(',')).join(';');
-            this.setAttribute(lineId, 'points', points);
+            this.setAttribute(node, 'points', points);
         });
-    };
-
-    ExecuteJob.prototype[CONSTANTS.GRAPH_LABEL_AXIS.X] = function (job, id) {
-        var name = Array.prototype.slice.call(arguments, 2).join(' '),
-            jobId = this.core.getPath(job),
-            graph;
-
-        id = jobId + '/' + id;
-        this.logger.info(`Labeling the x-axis of ${id}: ${name}`);
-
-        graph = this._metadata[id];
-        this.setAttribute(graph, 'xlabel', name);
-    };
-
-    ExecuteJob.prototype[CONSTANTS.GRAPH_LABEL_AXIS.Y] = function (job, id) {
-        var name = Array.prototype.slice.call(arguments, 2).join(' '),
-            jobId = this.core.getPath(job),
-            graph;
-
-        id = jobId + '/' + id;
-        this.logger.info(`Labeling the y-axis of ${id}: ${name}`);
-
-        graph = this._metadata[id];
-        this.setAttribute(graph, 'ylabel', name);
     };
 
     ExecuteJob.prototype[CONSTANTS.GRAPH_CREATE_LINE] = function (job, graphId, id) {
