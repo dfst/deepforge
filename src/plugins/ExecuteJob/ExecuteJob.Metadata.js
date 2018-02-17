@@ -15,7 +15,6 @@ define([
     };
 
     // I think I should convert these to just a single 'update graph' command
-    // TODO
     ExecuteJob.prototype[CONSTANTS.PLOT_UPDATE] = function (job, state) {
         const jobId = this.core.getPath(job);
 
@@ -54,7 +53,8 @@ define([
             this._metadata[lineId] = node;
             this.createIdToMetadataId[node] = lineId;
 
-            let points = line.map(pts => pts.join(',')).join(';');
+            this.setAttribute(node, 'name', line.label);
+            let points = line.points.map(pts => pts.join(',')).join(';');
             this.setAttribute(node, 'points', points);
         });
     };

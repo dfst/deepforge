@@ -268,8 +268,10 @@ class FigureCanvasTemplate(FigureCanvasBase):
             axes_data['ylabel'] = axes.get_ylabel()
             axes_data['lines'] = []
             for line in axes.lines:
-                points = line.get_xydata().tolist()
-                axes_data['lines'].append(points)
+                lineDict = {}
+                lineDict['points'] = line.get_xydata().tolist()
+                lineDict['label'] = line.get_label()
+                axes_data['lines'].append(lineDict)
 
             state['axes'].append(axes_data)
 
