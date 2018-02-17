@@ -48,8 +48,6 @@ define([
             let node = this.createNode('Line', graph);
             this.plotLines[id].push(node);
 
-            //name = name.replace(/\s+$/, '');
-            this.setAttribute(node, 'name', `line${index}`);
             this._metadata[lineId] = node;
             this.createIdToMetadataId[node] = lineId;
 
