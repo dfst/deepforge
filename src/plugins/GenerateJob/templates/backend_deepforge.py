@@ -201,7 +201,6 @@ def new_figure_manager(num, *args, **kwargs):
     # backend_wx, backend_wxagg and backend_tkagg for examples.  Not all GUIs
     # require explicit instantiation of a main-level app (egg backend_gtk,
     # backend_gtkagg) for pylab.
-    print("new_figure_manager_given_figure")
     FigureClass = kwargs.pop('FigureClass', Figure)
     thisFig = FigureClass(*args, **kwargs)
     return new_figure_manager_given_figure(num, thisFig)
@@ -212,7 +211,6 @@ def new_figure_manager_given_figure(num, figure):
     Create a new figure manager instance for the given figure.
     """
     # May be implemented via the `_new_figure_manager_template` helper.
-    print("new_figure_manager_given_figure")
     canvas = FigureCanvasTemplate(figure)
     manager = FigureManagerTemplate(canvas, num)
     return manager
@@ -307,7 +305,6 @@ class FigureManagerTemplate(FigureManagerBase):
 
     For non interactive backends, the base class does all the work
     """
-    print("making FigureManagerTemplate")
     pass
 
 ########################################################################
