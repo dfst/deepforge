@@ -126,7 +126,7 @@ var isNodeJs = typeof module === 'object' && module.exports;
     };
 
     OperationCode.prototype.addArgument = function(method, name, value) {
-        this._addIOCode(method, name, true, value);
+        return this._addIOCode(method, name, true, value);
     };
 
     OperationCode.prototype.removeArgument = function(method, name) {
@@ -233,8 +233,8 @@ var isNodeJs = typeof module === 'object' && module.exports;
     };
 
     OperationCode.prototype.hasMethod = function(method) {
-        if (!this._schema) this.updateSchema();
-        return this._schema.methods[method];
+        this.updateSchema();
+        return !!this._schema.methods[method];
     };
 
     OperationCode.prototype._addIOCode = function(method, name, isInput, value) {
