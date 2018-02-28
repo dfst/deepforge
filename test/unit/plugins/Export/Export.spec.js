@@ -61,19 +61,23 @@ describe('Export', function () {
                 project: project,
                 commitHash: commitHash,
                 branchName: 'test',
-                activeNode: '/f/e'
+                activeNode: '/f/s'
             };
 
         manager.executePlugin(pluginName, pluginConfig, context, function (err, pluginResult) {
-            expect(err).to.equal(null);
-            expect(typeof pluginResult).to.equal('object');
-            expect(pluginResult.success).to.equal(true);
+            try {
+                expect(err).to.equal(null);
+                expect(typeof pluginResult).to.equal('object');
+                expect(pluginResult.success).to.equal(true);
 
-            project.getBranchHash('test')
-                .then(function (branchHash) {
-                    expect(branchHash).to.equal(commitHash);
-                })
-                .nodeify(done);
+                project.getBranchHash('test')
+                    .then(function (branchHash) {
+                        expect(branchHash).to.equal(commitHash);
+                    })
+                    .nodeify(done);
+            } catch (err) {
+                done(err);
+            }
         });
     });
 
