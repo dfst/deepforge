@@ -1,12 +1,33 @@
--- load custom layers and classes
-deepforge.initialize()
+import json
+import deepforge
 
--- input data<% inputs.forEach(function(pair) { var input = pair[0], isNil = pair[1];%>
-local <%= input %> = <% if (isNil) { %>nil<% } else { %>require './inputs/<%= input %>'<%}}); %>
+<%= initCode %>
+# input data<% inputs.forEach(function(pair) { var input = pair[0], type = pair[1], isNil = pair[2];%>
+<%= input %> = <% if (isNil) { %>None<% } else { %>deepforge.serialization.load('<%= type %>', open('./artifacts/<%= input %>', 'rb')) <%}}); %>
 
--- load references<% pointers.forEach(function(pair) { var pointer = pair[0], isNil = pair[1];%>
-local <%= pointer %> = <% if (isNil) { %>nil<% } else { %>require './pointers/<%= pointer %>'<%}}); %>
-local attributes = require './attributes'
+# load resources<% resources.forEach(function(pair) { var resource = pair[0], isNil = pair[1];%>
+from resources import <%= resource %>
+<%}); %>
 
--- main operation code for <%= name %>
-<%= code %>
+from operations import <%= name %>
+
+# main operation code for <%= name %>
+operation = <%= name %>(<%= arguments %>)
+print('\n############### Running "<%= name.replace(/'/g, '\\\'') %>" Operation ############### ')
+<%= outputs.length ? outputs.join(', ') : 'result' %> = operation.execute(<%= inputs.map(function(pair) {
+    var name = pair[0],
+        isNone = pair[2];
+    return isNone ? 'None' : name;
+})%>)
+print('############### "<%= name.replace(/'/g, '\\\'') %>" Operation Complete! ###############')
+
+result_types = {}
+<% outputs.forEach(name => { %>
+with open('outputs/<%= name %>', 'wb') as outfile:
+    deepforge.serialization.dump(<%= name %>, outfile)
+    result_types['<%= name %>'] = deepforge.serialization.get_full_class_name(<%= name %>)
+<% }); %>
+
+# Save the result types
+with open('result-types.json', 'w') as f:
+    json.dump(result_types, f)

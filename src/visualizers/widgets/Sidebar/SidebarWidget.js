@@ -19,8 +19,9 @@ define([
         CATEGORIES = [
             'pipelines',
             'executions',
-            'architectures',
-            'artifacts'
+            'resources',
+            'artifacts',
+            'code'
         ];
 
     SidebarWidget = function (logger, container) {

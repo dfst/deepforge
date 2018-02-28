@@ -106,7 +106,7 @@ define([
 
         if (!base) {  // must be ROOT or FCO
             basename = node.getAttribute('name') || 'ROOT_NODE';
-            actions = (ACTIONS[basename] || [])
+            actions = this.getDefinedActionsFor(basename, node)
                 .filter(action => !action.filter || action.filter.call(this));
             return actions;
         }
@@ -114,13 +114,21 @@ define([
         while (base && !(actions && actions.length)) {
             basename = base.getAttribute('name') + suffix;
             base = this.client.getNode(base.getBaseId());
-            actions = ACTIONS[basename];
+            actions = this.getDefinedActionsFor(basename, node);
             if (actions) {
                 actions = actions.filter(action => !action.filter || action.filter.call(this));
             }
         }
 
-        return actions || [];
+        return actions;
+    };
+
+    ForgeActionButton.prototype.getDefinedActionsFor = function(basename, node) {
+        // Get the actions for the given node from the ACTIONS dictionary
+        if (typeof ACTIONS[basename] === 'function') {
+            return ACTIONS[basename].call(this, this.client, node);
+        }
+        return ACTIONS[basename] || [];
     };
 
     ForgeActionButton.prototype.onNodeLoad = function(nodeId) {

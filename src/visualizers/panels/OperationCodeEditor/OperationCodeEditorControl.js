@@ -4,12 +4,14 @@
 define([
     'panels/TextEditor/TextEditorControl',
     'deepforge/viz/OperationControl',
+    'deepforge/OperationCode',
     'deepforge/viz/Execute',
     'deepforge/Constants',
     'underscore'
 ], function (
     TextEditorControl,
     OperationControl,
+    OperationCode,
     Execute,
     CONSTANTS,
     _
@@ -48,6 +50,7 @@ define([
         desc.inputs = this.getOperationInputs(node).map(id => this.formatIO(id));
         desc.outputs = this.getOperationOutputs(node).map(id => this.formatIO(id));
         desc.references = node.getPointerNames().filter(name => name !== 'base');
+
         return desc;
     };
 
@@ -66,6 +69,87 @@ define([
         if (id === this._currentNodeId || this.hasMetaName(id, 'Data')) {
             TextEditorControl.prototype._onUpdate.call(this, this._currentNodeId);
         }
+    };
+
+    OperationCodeEditorControl.prototype.saveTextFor = function (id, code) {
+        try {
+            // Parse the operation implementation and detect change in inputs/outputs
+            var operation = OperationCode.findOperation(code),
+                currentInputs = operation.getInputs().map(input => input.name),
+                name = this._client.getNode(this._currentNodeId).getAttribute('name');
+
+            var msg = `Updating ${name} operation code`;
+            var refs = this.getCurrentReferences(this._currentNodeId);
+            var allAttrs = operation.getAttributes();
+
+            this._client.startTransaction(msg);
+            // update the name
+            if (operation.getName() !== name) {
+                this._client.setAttribute(this._currentNodeId, 'name', operation.getName());
+            }
+
+            // update the attributes
+            // If a new ctor arg shows up, assume it is an attribute (default
+            // type: string) and infer type based off default value
+            var oldAttrs = this.getAttributes(),
+                oldAttrNames = oldAttrs.map(attr => attr.name),
+                index,
+                attr;
+
+            // check if the attributes have changed
+            for (var i = 0; i < allAttrs.length; i++) {
+                attr = allAttrs[i];
+                index = oldAttrNames.indexOf(attr.name);
+                if (index === -1) {
+                    // make sure it isn't a reference
+                    if (refs.indexOf(attr.name) === -1) {
+                        this.addAttribute(this._currentNodeId, attr.name, attr.value);
+                    }
+                } else if (attr.value === oldAttrs[index].value) {
+                    oldAttrs.splice(index, 1);
+                    oldAttrNames.splice(index, 1);
+                } else {  // attribute default value changed
+                    this.setAttributeDefault(this._currentNodeId, attr.name, attr.value);
+                    oldAttrs.splice(index, 1);
+                    oldAttrNames.splice(index, 1);
+                }
+            }
+            // remove old attributes
+            oldAttrNames.forEach(name =>  this.removeAttribute(this._currentNodeId, name));
+
+            // update the references (removal only)
+            var oldRefs = _.difference(refs, allAttrs.map(attr => attr.name));
+            oldRefs.forEach(name => this.removeReference(this._currentNodeId, name));
+
+            // update the inputs
+            this.synchronize(
+                currentInputs,
+                this.getDataNames(this._currentNodeId, true),
+                input => this.addInputData(this._currentNodeId, input),
+                input => this.removeInputData(this._currentNodeId, input)
+            );
+
+            // update the outputs
+            this.synchronize(
+                operation.getOutputs().map(input => input.name),
+                this.getDataNames(this._currentNodeId),
+                output => this.addOutputData(this._currentNodeId, output),
+                output => this.removeOutputData(this._currentNodeId, output)
+            );
+
+            TextEditorControl.prototype.saveTextFor.call(this, id, code, true);
+            this._client.completeTransaction();
+        } catch (e) {
+            this._logger.debug(`failed parsing operation: ${e}`);
+            return TextEditorControl.prototype.saveTextFor.call(this, id, code);
+        }
+    };
+
+    OperationCodeEditorControl.prototype.synchronize = function(l1, l2, addFn, rmFn) {
+        var newElements = _.difference(l1, l2);
+        var oldElements = _.difference(l2, l1);
+        newElements.forEach(addFn);
+        oldElements.forEach(rmFn);
     };
 
     OperationCodeEditorControl.prototype.getOperationAttributes = function () {

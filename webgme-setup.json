@@ -1,18 +1,6 @@
 {
   "components": {
     "plugins": {
-      "ImportTorch": {
-        "src": "src/plugins/ImportTorch",
-        "test": "test/plugins/ImportTorch"
-      },
-      "CreateTorchMeta": {
-        "src": "src/plugins/CreateTorchMeta",
-        "test": "test/plugins/CreateTorchMeta"
-      },
-      "GenerateArchitecture": {
-        "src": "src/plugins/GenerateArchitecture",
-        "test": "test/plugins/GenerateArchitecture"
-      },
       "GenerateYaml": {
         "src": "src/plugins/GenerateYaml",
         "test": "test/plugins/GenerateYaml"
@@ -37,10 +25,6 @@
         "src": "src/plugins/ImportArtifact",
         "test": "test/plugins/ImportArtifact"
       },
-      "GenerateCriterion": {
-        "src": "src/plugins/GenerateCriterion",
-        "test": "test/plugins/GenerateCriterion"
-      },
       "ExecuteJob": {
         "src": "src/plugins/ExecuteJob",
         "test": "test/plugins/ExecuteJob"
@@ -53,13 +37,17 @@
         "src": "src/plugins/UpdateLibrarySeed",
         "test": "test/plugins/UpdateLibrarySeed"
       },
-      "ValidateArchitecture": {
-        "src": "src/plugins/ValidateArchitecture",
-        "test": "test/plugins/ValidateArchitecture"
-      },
       "GenerateJob": {
         "src": "src/plugins/GenerateJob",
         "test": "test/plugins/GenerateJob"
+      },
+      "UploadSeedToBlob": {
+        "src": "src/plugins/UploadSeedToBlob",
+        "test": "test/plugins/UploadSeedToBlob"
+      },
+      "ImportLibrary": {
+        "src": "src/plugins/ImportLibrary",
+        "test": "test/plugins/ImportLibrary"
       }
     },
     "layouts": {
@@ -258,12 +246,12 @@
         "secondary": false,
         "widget": "src/visualizers/widgets/ArtifactIndex"
       },
-      "ArchIndex": {
-        "src": "panels/ArchIndex/ArchIndexPanel",
-        "title": "ArchIndex",
-        "panel": "src/visualizers/panels/ArchIndex",
+      "ResourceIndex": {
+        "src": "panels/ResourceIndex/ResourceIndexPanel",
+        "title": "ResourceIndex",
+        "panel": "src/visualizers/panels/ResourceIndex",
         "secondary": false,
-        "widget": "src/visualizers/widgets/ArchIndex"
+        "widget": "src/visualizers/widgets/ResourceIndex"
       },
       "ForwardViz": {
         "src": "panels/ForwardViz/ForwardVizPanel",
@@ -292,9 +280,6 @@
       },
       "ArtifactOpDecorator": {
         "src": "src/decorators/ArtifactOpDecorator"
-      },
-      "LayerDecorator": {
-        "src": "src/decorators/LayerDecorator"
       },
       "ContainerLayerDecorator": {
         "src": "src/decorators/ContainerLayerDecorator"
@@ -327,6 +312,12 @@
       },
       "devProject": {
         "src": "src/seeds/devProject"
+      },
+      "minimal": {
+        "src": "src/seeds/minimal"
+      },
+      "tests": {
+        "src": "src/seeds/tests"
       }
     },
     "routers": {

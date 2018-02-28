@@ -59,15 +59,12 @@ define([
         // Call base class' constructor.
         PluginBase.call(this);
         ExecuteJobSafeSave.call(this);
+        ExecuteJobMetadata.call(this);
         this.pluginMetadata = pluginMetadata;
-        this._metadata = {};
         this._beating = null;
 
         // Metadata updating
-        this._markForDeletion = {};  // id -> node
-        this._oldMetadataByName = {};  // name -> id
         this.lastAppliedCmd = {};
-        this.createdMetadataIds = {};
         this.canceled = false;
 
         this.changes = {};
@@ -311,80 +308,6 @@ define([
                 }
             })
             .then(() => this.recordOldMetadata(this.activeNode, isResuming));
-    };
-
-    ExecuteJob.prototype.recordOldMetadata = function (job) {
-        var nodeId = this.core.getPath(job),
-            name,
-            id,
-            idsToDelete = [],
-            type,
-            base,
-            child,
-            i;
-
-        // If we are resuming the pipeline, we will not be deleting any metadata
-        this.lastAppliedCmd[nodeId] = 0;
-        this.createdMetadataIds[nodeId] = [];
-        this._oldMetadataByName[nodeId] = {};
-        this._markForDeletion[nodeId] = {};
-        return this.core.loadChildren(job)
-            .then(jobChildren => {
-                // Remove any metadata nodes
-                for (i = jobChildren.length; i--;) {
-                    child = jobChildren[i];
-                    if (this.isMetaTypeOf(child, this.META.Metadata)) {
-                        id = this.core.getPath(child);
-                        name = this.getAttribute(child, 'name');
-                        base = this.core.getBase(child);
-                        type = this.getAttribute(base, 'name');
-
-                        this._markForDeletion[nodeId][id] = child;
-                        // namespace by metadata type
-                        if (!this._oldMetadataByName[nodeId][type]) {
-                            this._oldMetadataByName[nodeId][type] = {};
-                        }
-
-                        this._oldMetadataByName[nodeId][type][name] = id;
-
-                        // children of metadata nodes get deleted
-                        idsToDelete = idsToDelete
-                            .concat(this.core.getChildrenPaths(child));
-                    }
-                }
-
-                // make the deletion ids relative to the job node
-                this.logger.debug(`About to delete ${idsToDelete.length}: ${idsToDelete.join(', ')}`);
-                for (i = idsToDelete.length; i--;) {
-                    this.deleteNode(idsToDelete[i]);
-                }
-            });
-    };
-
-    ExecuteJob.prototype.clearOldMetadata = function (job) {
-        var nodeId = this.core.getPath(job),
-            nodeIds,
-            node;
-
-        // Remove created nodes left over from resumed job
-        this.createdMetadataIds[nodeId].forEach(id => delete this._markForDeletion[nodeId][id]);
-        nodeIds = Object.keys(this._markForDeletion[nodeId]);
-        this.logger.debug(`About to delete ${nodeIds.length}: ${nodeIds.join(', ')}`);
-        for (var i = nodeIds.length; i--;) {
-            node = this._markForDeletion[nodeId][nodeIds[i]];
-            this.deleteNode(this.core.getPath(node));
-        }
-        delete this.lastAppliedCmd[nodeId];
-        delete this.createdMetadataIds[nodeId];
-        delete this._markForDeletion[nodeId];
-
-        this.delAttribute(job, 'jobId');
-        this.delAttribute(job, 'secret');
-    };
-
-    ExecuteJob.prototype.resultMsg = function(msg) {
-        this.sendNotification(msg);
-        this.createMessage(null, msg);
     };
 
     ExecuteJob.prototype.onOperationCanceled = function(op) {
@@ -749,23 +672,32 @@ define([
     };
 
     ExecuteJob.prototype.onDistOperationComplete = function (node, result) {
-        var nodeId = this.core.getPath(node),
+        let nodeId = this.core.getPath(node),
             outputMap = {},
+            resultTypes,
             outputs;
 
         // Match the output names to the actual nodes
         // Create an array of [name, node]
         // For now, just match by type. Later we may use ports for input/outputs
         // Store the results in the outgoing ports
-        return this.getOutputs(node)
+        return this.getResultTypes(result)
+            .then(types => {
+                resultTypes = types;
+                return this.getOutputs(node);
+            })
             .then(outputPorts => {
                 outputs = outputPorts.map(tuple => [tuple[0], tuple[2]]);
                 outputs.forEach(output => outputMap[output[0]] = output[1]);
 
                 // this should not be in directories -> flatten the data!
-                return Q.all(outputs.map(tuple =>  // [ name, node ]
-                    this.blobClient.getArtifact(result.resultHashes[tuple[0]])
-                ));
+                let artifacts = outputs.map(tuple => {  // [ name, node ]
+                    let [name] = tuple;
+                    let hash = result.resultHashes[name];
+                    return this.blobClient.getArtifact(hash);
+                });
+
+                return Q.all(artifacts);
             })
             .then(artifacts => {
                 this.logger.info(`preparing outputs -> retrieved ${artifacts.length} objects`);
@@ -773,7 +705,15 @@ define([
                 artifacts.forEach((artifact, i) => {
                     var name = outputs[i][0],
                         outputData = artifact.descriptor.content[`outputs/${name}`],
-                        hash = outputData && outputData.content;
+                        hash = outputData && outputData.content,
+                        dataType = resultTypes[name];
+
+                    if (dataType) {
+                        this.setAttribute(outputMap[name], 'type', dataType);
+                        this.logger.info(`Setting ${nodeId} data type to ${dataType}`);
+                    } else {
+                        this.logger.warn(`No data type found for ${nodeId}`);
+                    }
 
                     if (hash) {
                         this.setAttribute(outputMap[name], 'data', hash);
@@ -784,6 +724,16 @@ define([
                 return this.onOperationComplete(node);
             })
             .fail(e => this.onOperationFail(node, `Operation ${nodeId} failed: ${e}`));
+    };
+
+    ExecuteJob.prototype.getResultTypes = function (result) {
+        const hash = result.resultHashes['result-types'];
+        return this.blobClient.getArtifact(hash)
+            .then(data => {
+                const contents = data.descriptor.content;
+                const contentHash = contents['result-types.json'].content;
+                return this.blobClient.getObjectAsJSON(contentHash);
+            });
     };
 
     //////////////////////////// Special Operations ////////////////////////////
@@ -812,46 +762,6 @@ define([
 
         result.stdout = utils.resolveCarriageReturns(result.stdout).join('\n');
         return result;
-    };
-
-    //////////////////////////// Metadata ////////////////////////////
-    ExecuteJob.prototype.parseForMetadataCmds = function (job, lines, skip) {
-        var jobId = this.core.getPath(job),
-            args,
-            result = [],
-            cmdCnt = 0,
-            ansiRegex = /\[\d+(;\d+)?m/g,
-            hasMetadata = false,
-            trimStartRegex = new RegExp(CONSTANTS.START_CMD + '.*'),
-            matches,
-            cmd;
-
-        for (var i = 0; i < lines.length; i++) {
-            // Check for a deepforge command
-            if (lines[i].indexOf(CONSTANTS.START_CMD) !== -1) {
-                matches = lines[i].replace(ansiRegex, '').match(trimStartRegex);
-                for (var m = 0; m < matches.length; m++) {
-                    cmdCnt++;
-                    args = matches[m].split(/\s+/);
-                    args.shift();
-                    cmd = args[0];
-                    args[0] = job;
-                    if (this[cmd] && (!skip || cmdCnt >= this.lastAppliedCmd[jobId])) {
-                        this[cmd].apply(this, args);
-                        this.lastAppliedCmd[jobId]++;
-                        hasMetadata = true;
-                    } else if (!this[cmd]) {
-                        this.logger.error(`Invoked unimplemented metadata method "${cmd}"`);
-                    }
-                }
-            } else {
-                result.push(lines[i]);
-            }
-        }
-        return {
-            stdout: result.join('\n'),
-            hasMetadata: hasMetadata
-        };
     };
 
     return ExecuteJob;

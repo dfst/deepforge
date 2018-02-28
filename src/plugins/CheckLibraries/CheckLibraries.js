@@ -2,25 +2,21 @@
 /*jshint node:true, browser:true*/
 
 define([
-    'text!./metadata.json',
+    'plugin/UploadSeedToBlob/UploadSeedToBlob/UploadSeedToBlob',
+    './metadata.json',
     'module',
     'path',
     'fs',
-    'q',
-    'plugin/PluginBase'
+    'q'
 ], function (
+    PluginBase,
     pluginMetadata,
     module,
     path,
     fs,
-    Q,
-    PluginBase
+    Q
 ) {
     'use strict';
-
-    pluginMetadata = JSON.parse(pluginMetadata);
-    var __dirname = path.dirname(module.uri),
-        SEEDS_DIR = path.join(__dirname, '..', '..', 'seeds');
 
     /**
      * Initializes a new instance of CheckLibraries.
@@ -87,10 +83,14 @@ define([
                     return [lib, version, hash];
                 })
                 .filter(tuple => {
-                    var projVersion = this.getLoadedVersion(tuple[0]),
-                        latest = tuple[1].replace(/\s+/g, '');
+                    let [lib, version, hash] = tuple;
 
-                    this.logger.info(`${tuple[0]} version info:\n${projVersion} ` +
+                    if (!version) return false;
+
+                    let projVersion = this.getLoadedVersion(lib);
+                    let latest = version.replace(/\s+/g, '');
+
+                    this.logger.info(`${lib} version info:\n${projVersion} ` +
                         `(project)\n${latest} (latest)`);
                     return projVersion < latest;
                 });
@@ -115,14 +115,6 @@ define([
             });
     };
 
-    CheckLibraries.prototype.getSeedDir = function (name) {
-        return path.join(SEEDS_DIR, name);
-    };
-
-    CheckLibraries.prototype.getSeedDataPath = function (name) {
-        return path.join(this.getSeedDir(name), name + '.webgmex');
-    };
-
     CheckLibraries.prototype.getSeedHashPath = function (name) {
         return path.join(this.getSeedDir(name), 'hash.txt');
     };
@@ -131,14 +123,11 @@ define([
         return path.join(this.getSeedDir(name), 'version.txt');
     };
 
-    CheckLibraries.prototype.uploadSeed = function (name, version, hash) {
+    CheckLibraries.prototype.upgradeSeedToVersion = function (name, version, hash) {
         if (!hash) {  // Upload the seed
             // Get the data
-            return Q.nfcall(fs.readFile, this.getSeedDataPath(name))
-                .then(data => {
-                    this.logger.info(`Uploading new version of ${name} (${version})`);
-                    return this.blobClient.putFile(`${name}.webgmex`, data);
-                })
+            this.logger.info(`Uploading new version of ${name} (${version})`);
+            return this.uploadSeed(name)
                 .then(newHash => {  // Store the new hash
                     this.logger.info(`Upload of ${name} finished!`);
                     hash = newHash;

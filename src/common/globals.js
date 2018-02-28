@@ -2,20 +2,25 @@
 // This file creates the DeepForge namespace and defines basic actions
 define([
     'panel/FloatingActionButton/styles/Materialize',
+    'text!./NewOperationCode.ejs',
     'js/RegistryKeys',
     'js/Panels/MetaEditor/MetaEditorConstants',
     'js/Constants',
+    'underscore',
     'q'
 ], function(
     Materialize,
+    DefaultCodeTpl,
     REGISTRY_KEYS,
     META_CONSTANTS,
     CONSTANTS,
+    _,
     Q
 ) {
     var DeepForge = {},
         placesTerritoryId,
         client = WebGMEGlobal.Client,
+        GetOperationCode = _.template(DefaultCodeTpl),
         PLACE_NAMES;
 
     // Helper functions
@@ -59,8 +64,17 @@ define([
     var createNamedNode = function(baseId, parentId, isMeta) {
         var newId = client.createNode({parentId, baseId}),
             baseNode = client.getNode(baseId),
-            basename = 'New' + baseNode.getAttribute('name'),
-            newName = getUniqueName(parentId, basename);
+            basename,
+            newName,
+            code;
+
+        basename = 'New' + baseNode.getAttribute('name');
+        newName = getUniqueName(parentId, basename);
+
+        if (baseNode.getAttribute('name') === 'Operation') {
+            code = GetOperationCode({name: newName});
+            client.setAttribute(newId, 'code', code);
+        }
 
         // If instance, make the first char lowercase
         if (!isMeta) {
@@ -99,14 +113,14 @@ define([
     DeepForge.places = {};
     var TYPE_TO_CONTAINER = {
         
-        Architecture: 'MyArchitectures',
+        Architecture: 'MyResources',
         Pipeline: 'MyPipelines',
         Execution: 'MyExecutions',
-        Layer: 'MyLayers',
         Artifact: 'MyArtifacts',
         Operation: 'MyOperations',
         Primitive: 'MyDataTypes',
-        Complex: 'MyDataTypes'
+        Complex: 'MyDataTypes',
+        InitCode: 'InitCode'
     };
 
     PLACE_NAMES = Object.keys(TYPE_TO_CONTAINER).map(key => TYPE_TO_CONTAINER[key]);
@@ -209,40 +223,6 @@ define([
         });
     };
 
-    var createCustomLayer = function(typeName) {
-        var metanodes = client.getAllMetaNodes(),
-            msg = `Created new custom ${typeName} layer`,
-            newId,
-            customLayerId,
-            baseId,
-            name,
-            i = metanodes.length;
-
-        while (i-- && !(baseId && customLayerId)) {
-            name = metanodes[i].getAttribute('name');
-            if (name === 'CustomLayer') {
-                customLayerId = metanodes[i].getId();
-            } else if (name === typeName) {
-                baseId = metanodes[i].getId();
-            }
-        }
-
-        return DeepForge.places.MyLayers()
-            .then(id => {
-
-                client.startTransaction(msg);
-
-                newId = createNamedNode(baseId, id, true);
-                addToMetaSheet(newId, 'CustomLayers');
-                client.addMixin(newId, customLayerId);
-                client.setRegistry(newId, REGISTRY_KEYS.IS_ABSTRACT, false);
-
-                client.completeTransaction();
-
-                WebGMEGlobal.State.registerActiveObject(newId);
-            });
-    };
-
     // Creating Artifacts
     var UPLOAD_PLUGIN = 'ImportArtifact',
         DATA_TYPE_CONFIG = {
@@ -272,19 +252,20 @@ define([
             .map(node => node.getAttribute('name'));
 
         // Add the target type to the pluginMetadata...
-        var metadata = WebGMEGlobal.allPluginsMetadata[UPLOAD_PLUGIN],
-            config = metadata.configStructure
-                .find(opt => opt.name === DATA_TYPE_CONFIG.name);
+        var metadata = WebGMEGlobal.allPluginsMetadata[UPLOAD_PLUGIN];
+            //config = metadata.configStructure
+                //.find(opt => opt.name === DATA_TYPE_CONFIG.name);
 
-        if (!config) {
-            config = DATA_TYPE_CONFIG;
-            WebGMEGlobal.allPluginsMetadata[UPLOAD_PLUGIN].configStructure.push(config);
-        }
+        // TODO: maybe autocomplete on the existing data types?
+        //if (!config) {
+            //config = DATA_TYPE_CONFIG;
+            //WebGMEGlobal.allPluginsMetadata[UPLOAD_PLUGIN].configStructure.push(config);
+        //}
 
-        config.valueItems = dataTypes;
-        config.value = dataTypes[0];
+        //config.valueItems = dataTypes;
+        //config.value = dataTypes[0];
 
-        WebGMEGlobal.InterpreterManager.configureAndRun(metadata, (result) => {
+        WebGMEGlobal.InterpreterManager.configureAndRun(metadata, result => {
             var msg = 'Artifact upload complete!';
             if (!result) {
                 return;
@@ -315,7 +296,6 @@ define([
         };
     });
 
-    DeepForge.create.Layer = createCustomLayer;
     DeepForge.create.Artifact = uploadArtifact;
 
     //////////////////// DeepForge prev locations ////////////////////

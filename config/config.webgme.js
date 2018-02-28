@@ -22,6 +22,8 @@ config.seedProjects.basePaths.push(__dirname + '/../src/seeds/project');
 config.seedProjects.basePaths.push(__dirname + '/../src/seeds/cifar10');
 config.seedProjects.basePaths.push(__dirname + '/../src/seeds/xor');
 config.seedProjects.basePaths.push(__dirname + '/../src/seeds/devProject');
+config.seedProjects.basePaths.push(__dirname + '/../src/seeds/minimal');
+config.seedProjects.basePaths.push(__dirname + '/../src/seeds/tests');
 
 
 
@@ -32,9 +34,21 @@ config.visualization.panelPaths.push(__dirname + '/../node_modules/webgme-easyda
 config.visualization.panelPaths.push(__dirname + '/../src/visualizers/panels');
 
 
-config.rest.components['execution/logs'] = __dirname + '/../src/routers/JobLogsAPI/JobLogsAPI.js';
-config.rest.components['job/origins'] = __dirname + '/../src/routers/JobOriginAPI/JobOriginAPI.js';
-config.rest.components['execution/pulse'] = __dirname + '/../src/routers/ExecPulse/ExecPulse.js';
+config.rest.components['JobLogsAPI'] = {
+  src: __dirname + '/../src/routers/JobLogsAPI/JobLogsAPI.js',
+  mount: 'execution/logs',
+  options: {}
+};
+config.rest.components['JobOriginAPI'] = {
+  src: __dirname + '/../src/routers/JobOriginAPI/JobOriginAPI.js',
+  mount: 'job/origins',
+  options: {}
+};
+config.rest.components['ExecPulse'] = {
+  src: __dirname + '/../src/routers/ExecPulse/ExecPulse.js',
+  mount: 'execution/pulse',
+  options: {}
+};
 
 // Visualizer descriptors
 config.visualization.visualizerDescriptors.push(__dirname + '/../src/visualizers/Visualizers.json');
@@ -56,7 +70,14 @@ config.requirejsPaths = {
   'panels/BreadcrumbHeader': './node_modules/webgme-breadcrumbheader/src/visualizers/panels/BreadcrumbHeader',
   'widgets/BreadcrumbHeader': './node_modules/webgme-breadcrumbheader/',
   'panels/FloatingActionButton': './node_modules/webgme-fab/src/visualizers/panels/FloatingActionButton',
-  'widgets/FloatingActionButton': './node_modules/webgme-fab/src/visualizers/widgets/FloatingActionButton'
+  'widgets/FloatingActionButton': './node_modules/webgme-fab/src/visualizers/widgets/FloatingActionButton',
+  'webgme-simple-nodes': './node_modules/webgme-simple-nodes/src/common',
+  'webgme-chflayout': './node_modules/webgme-chflayout/src/common',
+  'webgme-fab': './node_modules/webgme-fab/src/common',
+  'webgme-breadcrumbheader': './node_modules/webgme-breadcrumbheader/src/common',
+  'webgme-autoviz': './node_modules/webgme-autoviz/src/common',
+  'webgme-easydag': './node_modules/webgme-easydag/src/common',
+  'deepforge': './src/common'
 };
 
 config.visualization.layout.default = 'SidebarLayout';

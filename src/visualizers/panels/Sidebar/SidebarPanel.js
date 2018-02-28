@@ -22,8 +22,9 @@ define([
         CATEGORY_TO_PLACE = {
             pipelines: 'MyPipelines',
             executions: 'MyExecutions',
-            architectures: 'MyArchitectures',
-            artifacts: 'MyArtifacts'
+            resources: 'MyResources',
+            artifacts: 'MyArtifacts',
+            code: 'InitCode'
         };
 
     SidebarPanel = function (layoutManager, params) {

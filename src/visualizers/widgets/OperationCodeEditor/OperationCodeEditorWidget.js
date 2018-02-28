@@ -32,44 +32,17 @@ define([
 
     OperationCodeEditorWidget.prototype.getHeader = function (desc) {
         // Add comment about the inputs, attributes and references
-        var inputs = desc.inputs.map(pair => `-- ${pair[0]} (${pair[1]})`).join('\n'),
-            refs = desc.references.map(name => `-- ${name}`).join('\n'),
-            header = [
-                `-- Editing "${desc.name}" Implementation`
-            ];
+        var header = [
+            `Editing "${desc.name}" Implementation`
+        ];
 
-        if (inputs.length) {
-            header.push('--');
-            header.push('-- Defined variables:');
-            header.push(inputs);
-        }
-        if (refs) {
-            header.push(refs);
-        }
-        header.push('--');
-        header.push('-- The following will be executed when the operation is run:');
+        header.push('');
+        header.push('The \'execute\' method will be called when the operation is run');
 
-        return header.join('\n');
-    };
-
-    OperationCodeEditorWidget.prototype.canAddReturnTmpl = function (desc) {
-        return desc.outputs.length &&
-            (!desc.ownText || desc.ownText.indexOf('return') === -1);
-    };
-
-    OperationCodeEditorWidget.prototype.updateText = function (desc) {
-        if (this.canAddReturnTmpl(desc)) {
-            // Add the return template 
-            desc.text += '\n\nreturn {\n' +
-                desc.outputs.map((pair, i) =>
-                    `   ${pair[0]} = nil${i === desc.outputs.length-1 ? '' : ','}  -- ${pair[1]}`).join('\n') +
-                '\n}';
-                
-        }
+        return this.comment(header.join('\n'));
     };
 
     OperationCodeEditorWidget.prototype.addNode = function (desc) {
-        this.updateText(desc);
         TextEditorWidget.prototype.addNode.call(this, desc);
         this.updateOffset();
     };
@@ -95,6 +68,7 @@ define([
             getBasicCompletions = completer.getCompletionsFor,
             self = this;
 
+        // TODO: update completions for python stuff
         completer.getCompletionsFor = function(obj) {
             if (obj === 'attributes') {
                 return self.getOperationAttributes().map(attr => {

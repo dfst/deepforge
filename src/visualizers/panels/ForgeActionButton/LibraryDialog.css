@@ -1,0 +1,20 @@
+.library-modal .modal-content .modal-header span {
+  font-size: 28px;
+  vertical-align: middle;
+}
+
+.library-modal .library-description {
+    font-style: italic;
+}
+
+.library-modal i {
+    cursor: pointer;
+}
+
+.library-modal .badge {
+    cursor: default;
+}
+
+.library-modal span {
+    cursor: default;
+}

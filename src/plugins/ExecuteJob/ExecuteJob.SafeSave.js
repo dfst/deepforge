@@ -287,6 +287,12 @@ define([
                     this.changes[nodeId] = this.changes[tmpId];
                     delete this.changes[tmpId];
                 }
+
+                // Update any deletions
+                let index = this.deletions.indexOf(tmpId);
+                if (index !== -1) {
+                    this.deletions.splice(index, 1, nodeId);
+                }
                 return node;
             });
     };

@@ -107,6 +107,8 @@ define([
         DAGItem.prototype.setupDecoratorCallbacks.call(this);
         // Add ptr name change
         this.decorator.changePtrName = this.changePtrName.bind(this);
+        this.decorator.setAttributeMeta = this.setAttributeMeta.bind(this);
+        this.decorator.deleteAttribute = this.deleteAttribute.bind(this);
     };
 
     return Item;

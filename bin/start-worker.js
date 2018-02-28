@@ -38,15 +38,6 @@ try {
     childProcess.spawnSync('ln', ['-s', `${__dirname}/../node_modules`, modules]);
 }
 
-// Check torch support
-var result = childProcess.spawnSync('th', ['--help']);
-if (result.error) {
-    console.error('Checking Torch7 dependency failed. Do you have Torch7 installed ' + 
-        'and in your PATH?\n\nFor Torch7 installation instructions, check out ' +
-        'http://torch.ch/docs/getting-started.html');
-    process.exit(1);
-}
-
 var cleanUp = function() {
     console.log('removing worker directory ', workerPath);
     rm_rf.sync(workerPath);

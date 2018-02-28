@@ -15,7 +15,7 @@ define([
 
     'use strict';
 
-    var NO_CODE_MESSAGE = '-- <%= name %> is not an editable layer!',
+    var NO_CODE_MESSAGE = '<%= name %> is not an editable layer!',
         LayerEditorControl;
 
     LayerEditorControl = function (options) {
@@ -45,10 +45,10 @@ define([
                 // Retrieve the template from the mixin
                 template = node.getMixinPaths()
                     .map(id => this._client.getNode(id).getAttribute('code'))
-                    .find(code => !!code) || NO_CODE_MESSAGE;
+                    .find(code => !!code) || this.comment(NO_CODE_MESSAGE);
             }
         } else {
-            template = NO_CODE_MESSAGE;
+            template = this.comment(NO_CODE_MESSAGE);
         }
 
         if (template) {

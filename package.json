@@ -13,12 +13,14 @@
     "start-dev": "NODE_ENV=dev node app.js",
     "local": "node ./bin/start-local.js",
     "worker": "node ./bin/start-worker.js",
-    "test": "mkdir ./test-tmp; mocha --recursive test",
-    "watch-test": "nodemon --exec 'mocha --recursive test'",
-    "build-nn": "node ./utils/nn-parser.js"
+    "test": "npm run test-unit && npm run test-int",
+    "test-unit": "mkdir ./test-tmp; mocha --recursive test/unit",
+    "test-int": "bash ./test/features/start.sh",
+    "watch-test": "nodemon --exec 'mocha --recursive test'"
   },
   "version": "1.4.2",
   "dependencies": {
+    "chimp": "^0.50.2",
     "commander": "^2.9.0",
     "dotenv": "^2.0.0",
     "exists-file": "^2.1.0",
@@ -37,15 +39,18 @@
     "webgme-autoviz": "^2.2.0",
     "webgme-breadcrumbheader": "^2.1.1",
     "webgme-chflayout": "^2.0.0",
+    "webgme-cli": "^2.7.0",
     "webgme-easydag": "dfst/webgme-easydag",
     "webgme-executor-worker": "^1.0.1",
     "webgme-fab": "github:dfst/webgme-fab",
     "webgme-simple-nodes": "^2.1.0"
   },
   "devDependencies": {
+    "brython": "^3.2.7",
     "chai": "^3.0.0",
     "jszip": "^2.5.0",
     "mocha": "^2.2.5",
-    "mockery": "^1.7.0"
+    "mockery": "^1.7.0",
+    "skulpt": "^0.11.1"
   }
 }

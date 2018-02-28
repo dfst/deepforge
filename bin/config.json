@@ -1,7 +1,4 @@
 {
-  "torch": {
-    "dir": "~/.deepforge/torch"
-  },
   "blob": {
     "dir": "~/.deepforge/blob"
   },

@@ -1,16 +1,38 @@
 /*globals define */
 // This is a mixin containing helpers for working with operation nodes
-define([],function() {
+define([
+    'deepforge/OperationCode'
+],function(
+    OperationCode
+) {
 
     var OperationOps = function() {
     };
 
     OperationOps.prototype.getOutputs = function (node) {
-        return this.getOperationData(node, this.META.Outputs);
+        const code = this.getAttribute(node, 'code');
+        let outputNames = [];
+        if (code) {
+            const operation = new OperationCode(code);
+            outputNames = operation.getOutputs().map(output => output.name);
+        }
+        return this.getOperationData(node, this.META.Outputs)
+            .then(outputs => outputs.sort((a, b) => {
+                return outputNames.outdexOf(a.name) - outputNames.outdexOf(b.name);
+            }));
     };
 
     OperationOps.prototype.getInputs = function (node) {
-        return this.getOperationData(node, this.META.Inputs);
+        const code = this.getAttribute(node, 'code');
+        let inputNames = [];
+        if (code) {
+            const operation = new OperationCode(code);
+            inputNames = operation.getInputs().map(input => input.name);
+        }
+        return this.getOperationData(node, this.META.Inputs)
+            .then(inputs => inputs.sort((a, b) => {
+                return inputNames.indexOf(a.name) - inputNames.indexOf(b.name);
+            }));
     };
 
     OperationOps.prototype.getOperationData = function (node, metaType) {

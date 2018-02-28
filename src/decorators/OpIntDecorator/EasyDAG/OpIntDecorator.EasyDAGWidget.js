@@ -28,9 +28,20 @@ define([
 
     OpIntDecorator.prototype.DECORATOR_ID = DECORATOR_ID;
     OpIntDecorator.prototype.initialize = function() {
-        if (!this.isOperation() && this._node.baseName) {
+        if (this.isOperation()) {
+            this.color = '#2196f3';
+            // TODO: set the class
+            this.className += ' operation';
+        } else if (this._node.baseName) {
             // On hover, show the type
             this.enableTooltip(this._node.baseName, 'dark');
+            // check if input/output
+            this.className += ' operation-data';
+            if (this._node.isInput) {
+                this.className += ' operation-input';
+            } else {
+                this.className += ' operation-output';
+            }
         }
         DecoratorBase.prototype.initialize.call(this);
         this.$name.on('click', () => {
@@ -100,49 +111,6 @@ define([
         dialog.show(schema, attrNames,
             desc => this.setAttributeMeta(name, desc),
             () => this.deleteAttribute(name));
-    };
-
-    OpIntDecorator.prototype.deleteAttribute = function(name) {
-        var opName = this._node.attributes.name.value,
-            msg = `Deleting "${name}" attribute from "${opName}" operation`;
-
-        this.client.startTransaction(msg);
-        this.client.delAttributeMeta(this._node.id, name);
-        this.client.delAttribute(this._node.id, name);
-        this.client.completeTransaction();
-    };
-
-    OpIntDecorator.prototype.setAttributeMeta = function(name, desc) {
-        var schema,
-            opName = this._node.attributes.name.value,
-            msg = `Updating "${name}" attribute in "${opName}" operation`;
-
-        // Create the schema from the desc
-        schema = {
-            type: desc.type,
-            min: desc.min,
-            max: desc.max,
-            regexp: desc.regexp
-        };
-
-        if (desc.isEnum) {
-            schema.enum = desc.enumValues;
-        }
-
-        // Update the operation's attribute
-        this.client.startTransaction(msg);
-
-        if (name !== desc.name) {  // Renaming attribute
-            if (name) {
-                this.client.delAttributeMeta(this._node.id, name);
-                this.client.delAttribute(this._node.id, name);
-            }
-            name = desc.name;
-        }
-
-        this.client.setAttributeMeta(this._node.id, name, schema);
-        this.client.setAttribute(this._node.id, name, desc.defaultValue);
-        this.client.completeTransaction();
     };
 
     OpIntDecorator.prototype.editName = function() {

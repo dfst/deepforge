@@ -118,7 +118,7 @@ define([
             desc.dst = this.getSiblingContaining(desc.dst);
 
             if (desc.src === null || desc.dst === null) {
-                this._logger.warn(`Could not get src/dst for ${desc.id}`);
+                this.logger.warn(`Could not get src/dst for ${desc.id}`);
             }
         } else if (this.hasMetaName(desc.id, 'Data')) {  // port
             // Add nodeId for container

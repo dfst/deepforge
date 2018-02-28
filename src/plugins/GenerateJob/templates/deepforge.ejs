@@ -1,105 +1,40 @@
--- Instantiate the deepforge object
-deepforge = {}
+# Instantiate the deepforge object
 
-function deepforge.initialize()
-    require 'nn'
-    require 'rnn'
-    require './classes/init'
-    require './custom-layers'
-end
+import pickle
 
-function deepforge.id()
-    if __deepforge_id == nil then
-        __deepforge_id = 0
-    end
-    __deepforge_id = __deepforge_id + 1
-    return __deepforge_id
-end
+serializers = {}
+deserializers = {}
 
-function deepforge._cmd(...)
-    local cmd = '<%= START_CMD %>'
-    local arg = {...}
-    local n = #arg
-    for i=1,n do
-        cmd = cmd .. ' ' .. tostring(arg[i])
-    end
-    print(cmd .. ' ')  -- guarantee ends w/ space
-end
+def dump(data, outfile):
+    serialize = get_serializer(data)
+    serialize(data, outfile)
 
--- Graph support
-Graph = torch.class('deepforge.Graph')
+def load(full_name, outfile):
+    deserialize = get_deserializer(full_name)
+    return deserialize(outfile)
 
-function Graph:__init(name)
-    self.id = deepforge.id()
-    self.name = name
-    deepforge._cmd('<%= GRAPH_CREATE %>', self.id, name)
-end
+def get_full_name(data):
+    class_name = data.__name__
+    module = data.__module__
+    return module + '.' + class_name
 
-_Line = torch.class('deepforge._Line')
+def get_full_class_name(data):
+    return get_full_name(data.__class__)
 
-function _Line:__init(graphId, name, opts)
-    self.id = deepforge.id()
-    self.name = name
-    deepforge._cmd('<%= GRAPH_CREATE_LINE %>', graphId, self.id, name)
-end
+def get_serializer(data):
+    try:
+        full_name = get_full_class_name(data)
+        return serializers[full_name]
+    except:
+        return pickle.dump
 
-function _Line:add(x, y)
-    assert(type(x) == "number" and type(y) == "number", "adding point (" .. tostring(x) .. ", " .. tostring(y) .. ") to " .. self.name .. " failed: expected (number, number)")
-    deepforge._cmd('<%= GRAPH_PLOT %>', self.id, x, y)
-end
+def get_deserializer(full_name):
+    try:
+        return deserializers[full_name]
+    except:
+        return pickle.load
 
-function Graph:line(name, opts)
-    return deepforge._Line(self.id, name, opts)
-end
-
-function Graph:xlabel(name)
-    deepforge._cmd('<%= GRAPH_LABEL_AXIS.X %>', self.id, name)
-end
-
-function Graph:ylabel(name)
-    deepforge._cmd('<%= GRAPH_LABEL_AXIS.Y %>', self.id, name)
-end
-
--- Image support
-local function saveImage(name, tensor)
-    require 'image'
-    require 'paths'
-
-    -- save it in the tmp directory
-    local filename = name .. '.png'
-    local path = paths.concat('metadata', filename)
-
-    if paths.dir('metadata') == nil then
-       paths.mkdir('metadata')
-    end
-
-    image.save(path, tensor)
-end
-
-function deepforge.image(name, tensor)
-    saveImage(name, tensor)
-    deepforge._cmd("<%= IMAGE.BASIC %>", deepforge.id(), name)
-end
-
-Image = torch.class('deepforge.Image')
-function Image:__init(name, tensor)
-    self.id = deepforge.id()
-    self.name = name
-
-    if tensor ~= nil then
-        saveImage(name, tensor)
-        deepforge._cmd('<%= IMAGE.CREATE %>', self.id, self.name)
-    end
-end
-
-function Image:update(tensor)
-    saveImage(self.name, tensor)
-    deepforge._cmd('<%= IMAGE.UPDATE %>', self.id, self.name)
-end
-
-function Image:title(name)
-    self.name = name
-    deepforge._cmd('<%= IMAGE.NAME %>', self.id, self.name)
-end
-
-return deepforge
+def register(classObj, serialize, deserialize):
+    full_name = get_full_name(classObj)
+    serializers[full_name] = serialize
+    deserializers[full_name] = deserialize
