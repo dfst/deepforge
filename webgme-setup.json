@@ -286,9 +286,6 @@
       }
     },
     "seeds": {
-      "nn": {
-        "src": "src/seeds/nn"
-      },
       "devTests": {
         "src": "src/seeds/devTests"
       },
@@ -306,9 +303,6 @@
       },
       "cifar10": {
         "src": "src/seeds/cifar10"
-      },
-      "xor": {
-        "src": "src/seeds/xor"
       },
       "devProject": {
         "src": "src/seeds/devProject"
