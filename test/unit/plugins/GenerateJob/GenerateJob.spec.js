@@ -1,6 +1,6 @@
 /*jshint node:true, mocha:true*/
 
-describe.only('GenerateJob', function () {
+describe('GenerateJob', function () {
     const testFixture = require('../../../globals');
     const GenerateJob = testFixture.requirejs('plugin/GenerateJob/GenerateJob/GenerateJob');
     var gmeConfig = testFixture.getGmeConfig(),
