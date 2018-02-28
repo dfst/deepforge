@@ -74,7 +74,7 @@ define([
     OperationCodeEditorControl.prototype.saveTextFor = function (id, code) {
         try {
             // Parse the operation implementation and detect change in inputs/outputs
-            var operation = new OperationCode(code),
+            var operation = OperationCode.findOperation(code),
                 currentInputs = operation.getInputs().map(input => input.name),
                 name = this._client.getNode(this._currentNodeId).getAttribute('name');
 
