@@ -16,7 +16,7 @@ webgme.addToRequireJsPaths(gmeConfig);
 gracefulFs.gracefulify(fs);
 
 // Clear seed hash info
-['nn', 'pipeline'].map(lib => path.join(__dirname, 'src', 'seeds', lib, 'hash.txt'))
+['pipeline'].map(lib => path.join(__dirname, 'src', 'seeds', lib, 'hash.txt'))
     .forEach(file => rm_rf.sync(file));
 
 myServer = new webgme.standaloneServer(gmeConfig);
