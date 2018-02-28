@@ -1,6 +1,6 @@
 /*jshint node:true, mocha:true*/
 
-describe('GenerateJob', function () {
+describe.only('GenerateJob', function () {
     const testFixture = require('../../../globals');
     const GenerateJob = testFixture.requirejs('plugin/GenerateJob/GenerateJob/GenerateJob');
     var gmeConfig = testFixture.getGmeConfig(),
@@ -90,110 +90,6 @@ describe('GenerateJob', function () {
                     expect(branchHash).to.equal(commitHash);
                 })
                 .nodeify(done);
-        });
-    });
-
-    ////////// Helper Functions //////////
-    var plugin,
-        node,
-        preparePlugin = function(done) {
-            var context = {
-                project: project,
-                commitHash: commitHash,
-                namespace: 'pipeline',
-                branchName: 'test',
-                activeNode: '/K/R/p/m'  // hello world operation
-            };
-
-            return manager.initializePlugin(pluginName)
-                .then(plugin_ => {
-                    plugin = plugin_;
-                    return manager.configurePlugin(plugin, {}, context);
-                })
-                .then(() => node = plugin.activeNode)
-                .nodeify(done);
-        };
-
-    describe('exec files', function() {
-        describe('attribute file', function() {
-            var boolString = /['"](True|False)['"]/g;
-
-            beforeEach(preparePlugin);
-
-            it('should not quote true (s) boolean values', function() {
-                var files = {},
-                    content,
-                    matches;
-
-                plugin.setAttribute(node, 'debug', 'true');
-                plugin.createAttributeFile(node, files);
-                content = files['attributes.py'];
-                matches = content.match(boolString);
-                expect(matches).to.equal(null);
-            });
-
-            describe('boolean to python boolean', function() {
-
-                it('should convert true to True', function() {
-                    var files = {},
-                        content,
-                        matches;
-
-                    plugin.setAttribute(node, 'debug', 'true');
-                    plugin.createAttributeFile(node, files);
-                    content = files['attributes.py'];
-                    matches = content.includes('True');
-                    expect(matches).to.equal(true);
-                });
-
-                it('should convert false to False', function() {
-                    var files = {},
-                        content,
-                        matches;
-
-                    plugin.setAttribute(node, 'debug', 'False');
-                    plugin.createAttributeFile(node, files);
-                    content = files['attributes.py'];
-                    matches = content.includes('False');
-                    expect(matches).to.equal(true);
-                });
-            });
-
-            it('should not quote true boolean values', function() {
-                var files = {},
-                    content,
-                    matches;
-
-                plugin.setAttribute(node, 'debug', true);
-                plugin.createAttributeFile(node, files);
-                content = files['attributes.py'];
-                matches = content.match(boolString);
-                expect(matches).to.equal(null);
-            });
-
-            it('should not quote false (s) boolean values', function() {
-                var files = {},
-                    content,
-                    matches;
-
-                plugin.setAttribute(node, 'debug', 'false');
-                plugin.createAttributeFile(node, files);
-                content = files['attributes.py'];
-                matches = content.match(boolString);
-                expect(matches).to.equal(null);
-            });
-
-            it('should not quote false boolean values', function() {
-                var files = {},
-                    content,
-                    matches;
-
-                plugin.setAttribute(node, 'debug', false);
-                plugin.createAttributeFile(node, files);
-                content = files['attributes.py'];
-                matches = content.match(boolString);
-                expect(matches).to.equal(null);
-            });
         });
     });
 
