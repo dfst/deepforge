@@ -13,7 +13,7 @@ define([
         const code = this.getAttribute(node, 'code');
         let outputNames = [];
         if (code) {
-            const operation = new OperationCode(code);
+            const operation = OperationCode.findOperation(code);
             outputNames = operation.getOutputs().map(output => output.name);
         }
         return this.getOperationData(node, this.META.Outputs)
@@ -26,7 +26,7 @@ define([
         const code = this.getAttribute(node, 'code');
         let inputNames = [];
         if (code) {
-            const operation = new OperationCode(code);
+            const operation = OperationCode.findOperation(code);
             inputNames = operation.getInputs().map(input => input.name);
         }
         return this.getOperationData(node, this.META.Inputs)
