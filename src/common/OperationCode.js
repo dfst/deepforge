@@ -519,5 +519,21 @@ var isNodeJs = typeof module === 'object' && module.exports;
     OperationCode.prototype.removeReference = OperationCode.prototype.removeAttribute;
     OperationCode.prototype.getReferences = OperationCode.prototype.getAttributes;
 
+    // Factory method for finding an operation
+    OperationCode.findOperation = function (code) {
+        const classes = code.split(/^class\b/mg);
+
+        classes.shift();
+        const operations = classes.map(code => new OperationCode(`class${code}`));
+
+        return operations.find(operation => {
+            try {
+                return operation.hasMethod(OperationCode.MAIN_FN);
+            } catch(e) {
+                return false;
+            }
+        });
+    };
+
     return OperationCode;
 }));
