@@ -215,21 +215,14 @@ define([
             node = this._client.getNode(this._currentNodeId),
             name = node.getAttribute('name'),
             isInput = this.isInputData(nodeId),
-            msg = `Updating the interface of ${name}`,
-            code = node.getAttribute('code'),
-            operation = new OperationCode(code);
+            msg = `Updating the interface of ${name}`;
 
         // If the input name is used in the code, maybe just comment it out in the args
         this._client.startTransaction(msg);
-        try {
-            if (isInput) {
-                operation.removeInput(dataName);
-            } else {
-                operation.removeOutput(dataName);
-            }
-            this._client.setAttribute(this._currentNodeId, 'code', operation.getCode());
-        } catch(e) {
-            this.logger.debug(`could not update the code - invalid python!: ${e}`);
+        if (isInput) {
+            this.updateCode(operation => operation.removeInput(dataName));
+        } else {
+            this.updateCode(operation => operation.removeOutput(dataName));
         }
         this._client.deleteNode(nodeId);
         //EasyDAGControlEventHandlers.prototype._deleteNode.apply(this, nodeId, true);
