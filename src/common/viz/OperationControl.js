@@ -212,19 +212,19 @@ define([
         this.addAttribute(opId, name, value);
     };
 
-    OperationControl.prototype.getOperationCode = function(nodeId) {
-        var node = this._client.getNode(nodeId || this._currentNodeId),
-            code = node.getAttribute('code'),
-            operation = new OperationCode(code);
-
-        return operation;
-    };
-
     OperationControl.prototype.updateCode = function(fn, nodeId) {
+        const node = this._client.getNode(nodeId || this._currentNodeId);
+        const code = node.getAttribute('code');
+        const operation = OperationCode.findOperation(code);
+        const opCode = operation.getCode();
+        const offset = code.indexOf(opCode);
+        const preCode = code.substring(0, offset);
+        const postCode = code.substring(offset+opCode.length);
+
         try {
-            var operation = this.getOperationCode(nodeId);
             fn(operation);
-            this._client.setAttribute(nodeId || this._currentNodeId, 'code', operation.getCode());
+            const entireCode = preCode + operation.getCode() + postCode;
+            this._client.setAttribute(nodeId || this._currentNodeId, 'code', entireCode);
         } catch(e) {
             this.logger.debug(`could not update the code - invalid python!: ${e}`);
         }
