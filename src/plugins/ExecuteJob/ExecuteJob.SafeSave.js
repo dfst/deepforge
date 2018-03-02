@@ -300,7 +300,15 @@ define([
     ExecuteJob.prototype.applyDeletions = function () {
         var deletions = this.deletions;
 
+        // Remove any creation ids
         this.deletions = [];
+        for (let i = deletions.length; i--;) {
+            if (this.isCreateId(deletions[i])) {
+                this.deletions.push(deletions[i]);
+                deletions.splice(i, 1);
+            }
+        }
+
         return Q.all(deletions.map(id => this.core.loadByPath(this.rootNode, id)))
             .then(nodes => {
                 for (var i = nodes.length; i--;) {
