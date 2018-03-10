@@ -85,11 +85,11 @@ define([
             objDescriptor;
 
         if (node) {
-            type = this._client.getNode(node.getMetaTypeId());
+            type = node.getAttribute('type');
             hash = node.getAttribute('data');
             objDescriptor = {
                 id: node.getId(),
-                type: type ? type.getAttribute('name') : 'n/a',
+                type: type,
                 name: node.getAttribute('name'),
                 createdAt: node.getAttribute('createdAt'),
                 dataURL: this.blobClient.getDownloadURL(hash),
