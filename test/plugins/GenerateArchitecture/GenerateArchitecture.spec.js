@@ -15,7 +15,7 @@ describe('GenerateArchitecture', function () {
         expect = testFixture.expect,
         logger = testFixture.logger.fork('GenerateArchitecture'),
         PluginCliManager = testFixture.WebGME.PluginCliManager,
-        BlobClient = require('webgme/src/server/middleware/blob/BlobClientWithFSBackend'),
+        BlobClient = require('webgme/node_modules/webgme-engine/src/server/middleware/blob/BlobClientWithFSBackend'),
         projectName = 'testProject',
         pluginName = 'GenerateArchitecture',
         project,

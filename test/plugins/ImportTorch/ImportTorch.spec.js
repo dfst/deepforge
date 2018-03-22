@@ -23,7 +23,7 @@ describe('ImportTorch', function () {
         expect = testFixture.expect,
         logger = testFixture.logger.fork('ImportTorch'),
         PluginCliManager = testFixture.WebGME.PluginCliManager,
-        BlobClient = require('webgme/src/server/middleware/blob/BlobClientWithFSBackend'),
+        BlobClient = require('webgme/node_modules/webgme-engine/src/server/middleware/blob/BlobClientWithFSBackend'),
         blobClient = new BlobClient(gmeConfig, logger),
         projectName = 'testProject',
         pluginName = 'ImportTorch',
