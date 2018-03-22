@@ -105,6 +105,9 @@ define([
             runId;
 
         this.initRun();
+        if (!this.META.Pipeline) {
+            return callback(new Error('Incorrect namespace. Expected to be executed in the "pipeline" namespace'));
+        }
         if (this.core.isTypeOf(this.activeNode, this.META.Pipeline)) {
             // If starting with a pipeline, we will create an Execution first
             startPromise = startPromise
