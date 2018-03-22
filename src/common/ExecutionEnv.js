@@ -1,9 +1,11 @@
 /* globals define */
 define([
     'superagent',
+    'module',
     'q'
 ], function(
     superagent,
+    module,
     Q
 ) {
     const WORKER_ENDPOINT = '/rest/executor/worker';
@@ -14,7 +16,8 @@ define([
 
     ExecutionEnv.url = function(urlPath) {
         if (typeof window === 'undefined') {
-            let gmeConfig = require('../../config');
+            const configPath = module.uri.replace('src/common/ExecutionEnv.js', 'config/index.js');
+            const gmeConfig = require.nodeRequire(configPath);
             return `http://127.0.0.1:${gmeConfig.server.port}${urlPath}`;
         }
         return urlPath;
