@@ -96,6 +96,8 @@ define([
                     saveDir = containers.find(c =>
                         this.getAttribute(c, 'name').toLowerCase().indexOf('artifacts') > -1
                     ) || containers[0];
+                } else {
+                    [saveDir] = containers;
                 }
 
                 return saveDir || this.rootNode;  // default to rootNode
