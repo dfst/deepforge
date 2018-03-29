@@ -230,7 +230,6 @@ define([
     GenerateJob.prototype.createOperationFiles = function (node, files={}) {
         // For each operation, generate the output files:
         //   artifacts/<arg-name>  (respective serialized input data)
-        //   resources/<name>  (generated code for the target of the given pointer)
         //   outputs/ (make dir for the outputs)
         //
         //   main.py (main file -> calls main and serializes outputs)
@@ -240,7 +239,6 @@ define([
         return this.createEntryFile(node, files)
             .then(() => this.createInputs(node, files))
             .then(() => this.createMainFile(node, files))
-            .then(() => this.createPointers(node, files))
             .then(() => files)
             .fail(err => {
                 this.logger.error(err);
@@ -323,8 +321,7 @@ define([
         return this.getInputs(node)
             .then(inputs => {
                 var name = this.getAttribute(node, 'name'),
-                    code = this.getAttribute(node, 'code'),
-                    pointers = this.core.getPointerNames(node).filter(ptr => ptr !== 'base');
+                    code = this.getAttribute(node, 'code');
 
                 content.name = name;
 
@@ -336,10 +333,6 @@ define([
                         !this.getAttribute(pair[2], 'data')
                     ]);  // remove empty inputs
 
-                // Defined variables for each pointer
-                content.resources = pointers
-                    .map(id => [id, this.core.getPointerPath(node, id) === null]);
-
                 // Add remaining code
                 content.code = code;
                 return this.getOutputs(node);
@@ -350,10 +343,11 @@ define([
                     .map(arg => arg.value).join(', ');
                 return this.getAllInitialCode();
             })
-            .then(code => {
-                content.initCode = code;
-
+            .then(code => content.initCode = code)
+            .then(() => this.getReferencedContent(node))
+            .then(references => {
                 const filename = GenerateJob.toSnakeCase(content.name);
+                content.references = references;
                 files['main.py'] = _.template(Templates.MAIN)(content);
                 files[`operations/${filename}.py`] = content.code;
                 files['operations/__init__.py'] = files['operations/__init__.py'] || '';
@@ -423,34 +417,25 @@ define([
         return argumentValues;
     };
 
-    GenerateJob.prototype.createPointers = function (node, files) {
-        var pointers,
-            nIds;
-
+    GenerateJob.prototype.getReferencedContent = function (node) {
+        this.logger.info('Creating referenced library content...');
         // Convert pointer names to use _ instead of ' '
-        this.logger.info('Creating resources files...');
-        pointers = this.core.getPointerNames(node)
+        const pointers = this.core.getPointerNames(node)
             .filter(name => name !== 'base')
             .filter(id => this.core.getPointerPath(node, id) !== null);
 
-        nIds = pointers.map(p => this.core.getPointerPath(node, p));
-        files._data = files._data || {};
-        return Q.all(nIds.map(nId => this.getPtrCodeHash(nId)))
-            .then(resultHashes => {
-                var name = this.getAttribute(node, 'name');
+        const targetIds = pointers.map(p => this.core.getPointerPath(node, p));
+        const name = this.getAttribute(node, 'name');
+        return Q.all(targetIds.map(nId => this.getPtrCode(nId)))
+            .then(resultContents => {
                 this.logger.info(`Pointer generation for ${name} FINISHED!`);
-                resultHashes.forEach((hash, index) => {
-                    files._data[`resources/${pointers[index]}.py`] = hash;
+
+                const references = resultContents.map((code, index) => {
+                    const pointer = pointers[index];
+                    return [pointer, code];
                 });
 
-                // Generate the __init__.py for the pointers
-                let initPointers = pointers
-                    .map(name => `from resources.${name} import result as ${name}`)
-                    .join('\n');
-
-                files['resources/__init__.py'] = initPointers;
-
-                return files;
+                return references;
             })
             .fail(e => {
                 this.logger.error(`Could not generate resource files for ${this.getAttribute(node, 'name')}: ${e.toString()}`);

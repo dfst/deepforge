@@ -5,9 +5,12 @@ import deepforge
 # input data<% inputs.forEach(function(pair) { var input = pair[0], type = pair[1], isNil = pair[2];%>
 <%= input %> = <% if (isNil) { %>None<% } else { %>deepforge.serialization.load('<%= type %>', open('./artifacts/<%= input %>', 'rb')) <%}}); %>
 
-# load resources<% resources.forEach(function(pair) { var resource = pair[0], isNil = pair[1];%>
-from resources import <%= resource %>
-<%}); %>
+<% references.forEach(function(pair) {
+    var name = pair[0], code = pair[1];
+    %>############ Create the <%= name %> ############
+<%= code %>
+<%= name %> = result
+############ <%= name %> created ############<%}); %>
 
 from operations import <%= name %>
 
