@@ -138,7 +138,9 @@ define([
                     icon: 'library_add',
                     action: function() {
                         let dialog = new LibraryDialog(this.logger);
+                        dialog.onChange = () => this.refresh();
                         dialog.show();
+                        // On close, update the button
                     }
                 }
             ];

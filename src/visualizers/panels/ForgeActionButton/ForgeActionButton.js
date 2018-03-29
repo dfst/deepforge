@@ -136,6 +136,10 @@ define([
         this.addActionsForObject(nodeId);
     };
 
+    ForgeActionButton.prototype.refresh = function() {
+        return this.onNodeLoad(this._currentNodeId);
+    };
+
     ForgeActionButton.prototype.addActionsForObject = function(nodeId) {
         var actions = this.findActionsFor(nodeId),
             i;

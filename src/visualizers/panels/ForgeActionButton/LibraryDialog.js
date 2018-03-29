@@ -83,8 +83,9 @@ define([
         // Pass in the library info
         // TODO: show loading circles?
         return Q.ninvoke(this.client, 'runServerPlugin', pluginId, context)
-            .then(result => {
+            .then(() => {
                 this.logger.info('imported library: ', libraryInfo.name);
+                this.onChange();
                 this.hide();
             })
             .fail(err => this.logger.error(err));
@@ -94,7 +95,11 @@ define([
         this.client.startTransaction(`Removed "${libraryInfo.name}" library`);
         this.client.removeLibrary(libraryInfo.name);
         this.client.completeTransaction();
+        this.onChange();
         this.hide();
+    };
+
+    LibraryDialog.prototype.onChange = function() {
     };
 
     return LibraryDialog;
