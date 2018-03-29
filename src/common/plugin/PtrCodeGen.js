@@ -68,6 +68,11 @@ define([
             .then(hashes => hashes[0]);  // Grab the first asset for now
     };
 
+    PtrCodeGen.prototype.getPtrCode = function(ptrId) {
+        return this.getPtrCodeHash(ptrId)
+            .then(hash => this.blobClient.getObjectAsString(hash));
+    };
+
     PtrCodeGen.prototype.createPlugin = function(pluginId) {
         var deferred = Q.defer(),
             pluginPath = [
