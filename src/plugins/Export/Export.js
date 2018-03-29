@@ -233,6 +233,11 @@ define([
     Export.prototype.createPipelineFiles = function (node, files={}) {
         const name = this.core.getAttribute(node, 'name');
         // Generate the file for the pipeline in pipelines/
+
+        let allOperations,
+            operations,
+            connections;
+
         return this.core.loadChildren(node)
             .then(nodes => {  // Assign variable names to all data
                 const promises = nodes
@@ -242,24 +247,15 @@ define([
                 return Q.all(promises).then(() => nodes);
             })
             .then(nodes => {
-                let code = [];
 
-                // Topo sort the nodes
-                const allOperations = this.getSortedOperations(nodes);
-                const operations = allOperations
+                // Get the important node types and get all the code for the operations
+                allOperations = this.getSortedOperations(nodes);
+                operations = allOperations
                     .filter(node => !this.isMetaTypeOf(node, this.META.Input))
                     .filter(node => !this.isMetaTypeOf(node, this.META.Output));
 
-                // Import each operation
-                let operationTypes = operations.map(node => {
-                    const base = this.core.getBase(node);
-                    return this.core.getAttribute(base, 'name');
-                });
-                operationTypes = _.uniq(operationTypes);
-                operationTypes.forEach(type => code.push(`from operations import ${type}\n`));
-
                 // For each operation, instantiate it with the respective arguments
-                const connections = nodes
+                connections = nodes
                     .filter(node => !this.isMetaTypeOf(node, this.META.Operation));
 
                 connections.forEach(conn => {
@@ -270,9 +266,14 @@ define([
                     this.assignVariableTo('result', srcId, dstId);
                 });
 
-                operations.forEach(operation => {
+                return Q.all(operations.map(operation => this.createOperation(operation)));
+            })
+            .then(operationOutputs => {
+                let code = [];
+
+                operationOutputs.forEach(output => {
                     // Create the operation
-                    const [lines, opName] = this.createOperation(operation);
+                    const [lines, opName, operation] = output;
                     code = lines.concat(code);
 
                     // execute it
@@ -302,6 +303,15 @@ define([
                     }
                 });
 
+                // Import each operation
+                let operationTypes = operations.map(node => {
+                    const base = this.core.getBase(node);
+                    return this.core.getAttribute(base, 'name');
+                });
+                operationTypes = _.uniq(operationTypes);
+                operationTypes.forEach(type => code.unshift(`from operations import ${type}\n`));
+
+
                 // Create the pipeline file
                 const inputs = this.getPipelineInputs(allOperations)
                     .map(tuple => this.getVariableNameFor(tuple[1]))
@@ -310,16 +320,14 @@ define([
                     .map(tuple => this.getVariableNameFor(tuple[1]))
                     .join(', ');
 
+                // Move imports to the top
                 const importCode = code.filter(line => line.includes('import'));
                 code = code.filter(line => !line.includes('import'));
 
-                code.sort((a, b) => {
-                    let [aVal, bVal] = [a, b].map(n => {
-                        if (n.includes('execute')) return 2;
-                        return 1;
-                    });
-                    return aVal < bVal ? -1 : 1;
-                });
+                // Move all operation construction to the front
+                const opInvocations = code.filter(line => line.includes('execute'));
+                code = code.filter(line => !line.includes('execute'));
+                code = code.concat(opInvocations);
 
                 const filename = PluginBase.toSnakeCase(name);
                 files[`pipelines/${filename}.py`] = [
@@ -436,35 +444,49 @@ define([
 
         const idToOperation = {};
         operations.forEach(node => idToOperation[this.core.getPath(node)] = node);
-        return sorted.map(id => idToOperation[id]);
+        return sorted.map(id => idToOperation[id]).reverse();
     };
 
     Export.prototype.createOperation = function (node) {
-        const lines = [];
         const type = this.core.getAttribute(this.core.getBase(node), 'name');
         const name = this.core.getAttribute(node, 'name');
         const opName = this.getVariableName(name.toLowerCase());
+        let lines = [];
 
         // Get the attributes, pointers
-        const args = this.getOperationArguments(node)
-            .filter(arg => !(arg.isPointer && !arg.rawValue))
-            .map(arg => {
-                if (arg.isPointer) {
-                    // Import the resource
-                    arg.value = this.getVariableName(arg.value);
-                    lines.push(`from resources import ${arg.name} as ${arg.value}`);
-                }
-                return arg.value;
+        return this.getReferencedContent(node)
+            .then(refs => {
+                // Create a map from ptr name to code
+                const codeForRef = {};
+                refs.forEach(pair => {
+                    const [ptr, code] = pair;
+                    codeForRef[ptr] = code;
+                });
+
+                const args = this.getOperationArguments(node)
+                    .filter(arg => !(arg.isPointer && !arg.rawValue))
+                    .map(arg => {
+                        if (arg.isPointer) {
+                            // Import the resource
+                            arg.value = this.getVariableName(arg.value);
+                            if (codeForRef[arg.name]) {
+                                lines = lines.concat(codeForRef[arg.name].split('\n'));
+                                lines.push(`${arg.value} = result`);
+                            } else {
+                                lines.push(`${arg.value} = None`);
+                            }
+                        }
+                        return arg.value;
+                    });
+
+                // What about the inputs?
+                // TODO
+
+                // What about Input, Output types?
+                // TODO
+                lines.push(`${opName} = ${type}(${args.join(', ')})`);
+                return [lines, opName, node];
             });
-
-        // What about the inputs?
-        // TODO
-
-        // What about Input, Output types?
-        // TODO
-
-        lines.push(`${opName} = ${type}(${args.join(', ')})`);
-        return [lines, opName];
     };
 
     Export.prototype.getCurrentConfig = function () {
@@ -489,328 +511,10 @@ define([
         return exporter;
     };
 
-    Export.prototype.generateOutputFiles = function (children) {
-        var name = this.core.getAttribute(this.activeNode, 'name');
-
-        return this.createCodeSections(children)
-            .then(sections => {
-                // Get the selected format
-                var config = this.getCurrentConfig(),
-                    format = config.format || 'Basic CLI',
-                    exporter,
-                    staticInputs,
-                    files;
-
-                this.logger.info(`About to retrieve ${config.format} exporter`);
-                exporter = this.getExporterFor(format);
-
-                staticInputs = config.staticInputs.map(id => {
-                    var opId = id.split('/').splice(0, this.activeNodeDepth).join('/'),
-                        port = this._portCache[id];
-
-                    return {
-                        portId: id,
-                        id: opId,
-                        hash: this.core.getAttribute(port, 'data'),
-                        name: this._nameFor[opId]
-                    };
-                });
-
-                this.logger.info('Invoking exporter "main" function...');
-                try {
-                    files = exporter.main(sections, staticInputs, config.extensionConfig);
-                } catch (e) {
-                    this.logger.error(`Exporter failed: ${e.toString()}`);
-                    throw e;
-                }
-                // If it returns a string, just put a single file
-                if (typeof files === 'string') {
-                    return this.blobClient.putFile(`${name}.lua`, files);
-                } else {  // filename -> content
-                    var artifact = this.blobClient.createArtifact(name),
-                        objects = {};
-
-                    Object.keys(files).forEach(key => {
-                        if (BlobConfig.hashRegex.test(files[key])) {
-                            objects[key] = files[key];
-                            delete files[key];
-                        }
-                    });
-
-                    return artifact.addFiles(files)
-                        .then(() => artifact.addObjectHashes(objects))
-                        .then(() => artifact.save());
-                }
-            });
-    };
-
-    //Export.prototype.createCodeSections = function (children) {
-        //// Convert opNodes' jobs to the nested operations
-        //var opNodes,
-            //nodes;
-
-        //return this.unpackJobs(children)
-            //.then(_nodes => {
-                //nodes = _nodes;
-                //opNodes = nodes
-                    //.filter(node => this.isMetaTypeOf(node, this.META.Operation));
-
-                //// Sort the connections to come first
-                //nodes
-                    //.map(node => [
-                        //node,
-                        //this.isMetaTypeOf(node, this.META.Transporter) ? -1 : 1
-                    //])
-                    //.sort((a, b) => a[1] < b[1] ? -1 : 1);
-
-                //return Q.all(nodes.map(node => this.registerNode(node)));
-            //})
-            //.then(() => Q.all(opNodes
-                //.filter(n => {
-                    //var id = this.core.getPath(n);
-                    //return !this.isInputOp[id];
-                //})
-                //.map(node => this.createOperation(node)))
-            //)
-            //.then(operations => {
-                //var opDict = {},
-                    //firstOpIds;
-
-                //firstOpIds = opNodes.map(n => this.core.getPath(n))
-                    //.filter(id => !this._incomingCnts[id]);
-
-                //operations.forEach(op => opDict[op.id] = op);
-
-                //// Toposort!
-                //return this.sortOperations(opDict, firstOpIds);
-            //})
-            //.then(operations => this.generateCodeSections(operations))
-            //.fail(err => this.logger.error(err));
-    //};
-
-    Export.prototype.unpackJobs = function (nodes) {
-        return Q.all(
-            nodes.map(node => {
-                if (!this.isMetaTypeOf(node, this.META.Job)) {
-                    return node;
-                }
-                return this.core.loadChildren(node)
-                    .then(children =>
-                        children.find(c => this.isMetaTypeOf(c, this.META.Operation))
-                    );
-            })
-        );
-    };
-
-    Export.prototype.sortOperations = function (operationDict, opIds) {
-        var nextIds = [],
-            sorted = opIds,
-            dstIds,
-            id;
-
-        if (!opIds.length) {
-            return [];
-        }
-
-        // Decrement all next ops
-        dstIds = opIds.map(id => this._nextOps[id])
-            .reduce((l1, l2) => l1.concat(l2), []);
-
-        for (var i = dstIds.length; i--;) {
-            id = dstIds[i];
-            if (--this._incomingCnts[id] === 0) {
-                nextIds.push(id);
-            }
-        }
-
-        // append
-        return sorted
-            .map(id => operationDict[id])
-            .filter(op => !!op)
-            .concat(this.sortOperations(operationDict, nextIds));
-    };
-
     // expose this utility function to format extensions
     var indent = Export.prototype.indent = function(text, spaces) {
         spaces = spaces || 3;
         return text.replace(/^/mg, new Array(spaces+1).join(' '));
-    };
-
-    Export.prototype.getOutputPair = function(operation) {
-        var input = operation.inputValues[0].slice(),
-            value;
-
-        // Get the src operation name and data value name
-        input[0] += '_results';
-        value = input.join('.');
-        return [this._nameFor[operation.id], value];
-    };
-
-    Export.prototype.getTypeDictFor = function (name, metanodes) {
-        var isType = {};
-        // Get all the custom layers
-        for (var i = metanodes.length; i--;) {
-            if (this.core.getAttribute(metanodes[i], 'name') === name) {
-                isType[this.core.getPath(metanodes[i])] = true;
-            }
-        }
-        return isType;
-    };
-
-    var toAttrString = function(attr) {
-        if (/^\d+\.?\d*$/.test(attr) || /^(true|false|nil)$/.test(attr)) {
-            return attr;
-        }
-        return `"${attr}"`;
-    };
-
-    Export.prototype.getOpInvocation = function(op) {
-        var lines = [],
-            attrs,
-            refInits = [],
-            args;
-
-        attrs = '{' +
-            Object.keys(op.attributes).map(key => `${key}=${toAttrString(op.attributes[key])}`)
-            .join(',') +
-        '}';
-
-        lines.push(`local ${op.name}_attrs = ${attrs}`);
-        args = (op.inputValues || [])
-            .map(val => val instanceof Array ? `${val[0]}_results.${val[1]}` : val);
-
-        args.unshift(op.name + '_attrs');
-            
-        // Create the ref init functions
-        refInits = op.refs.map((code, index) => {
-            return [
-                `local function create_${op.refNames[index]}()`,
-                indent(code),
-                'end'
-            ].join('\n');
-        });
-        lines = lines.concat(refInits);
-        args = args.concat(op.refNames.map(name => `create_${name}()`));
-        args = args.join(', ');
-        lines.push(`local ${op.name}_results = ${op.basename}(${args})`);
-
-        return lines.join('\n');
-    };
-
-    Export.prototype.getOutputName = function(node) {
-        var basename = this.core.getAttribute(node, 'saveName');
-
-        return getUniqueName(basename, this._outputNames, true);
-    };
-
-    Export.prototype.registerNode = function (node) {
-        if (this.isMetaTypeOf(node, this.META.Operation)) {
-            return this.registerOperation(node);
-        } else if (this.isMetaTypeOf(node, this.META.Transporter)) {
-            return this.registerTransporter(node);
-        }
-    };
-
-    var getUniqueName = function(namebase, takenDict, unsafeAllowed) {
-        var name,
-            i = 2,
-            isUnsafe = function(name) {
-                return !unsafeAllowed && RESERVED.test(name);
-            };
-
-        if (!unsafeAllowed) {
-            namebase = namebase.replace(/[^A-Za-z\d]/g, '_');
-        }
-        name = namebase;
-        // Get a unique operation name
-        while (takenDict[name] || isUnsafe(name)) {
-            name = namebase + '_' + i;
-            i++;
-        }
-        takenDict[name] = true;
-
-        return name;
-    };
-
-    Export.prototype.registerOperation = function (node) {
-        var name = this.core.getAttribute(node, 'name'),
-            id = this.core.getPath(node),
-            base = this.core.getBase(node),
-            baseId = this.core.getPath(base),
-            baseName = this.core.getAttribute(base, 'name');
-
-        // If it is an Input/Output operation, assign it a variable name
-        if (baseName === CONSTANTS.OP.INPUT) {
-            this.isInputOp[id] = node;
-            name = this.getVariableName(node);
-        } else if (baseName === CONSTANTS.OP.OUTPUT) {
-            this.isOutputOp[id] = node;
-            name = this.getOutputName(node);
-        } else {
-            // get a unique operation instance name
-            name = getUniqueName(name, this._instanceNames);
-        }
-
-        this._nameFor[id] = name;
-
-        // get a unique operation base name
-        if (!this._fnNameFor[baseId]) {
-            name = this.core.getAttribute(base, 'name');
-            name = getUniqueName(name, this._opBaseNames);
-            this._fnNameFor[baseId] = name;
-        }
-
-        // For operations, register all output data node names by path
-        return this.core.loadChildren(node)
-            .then(cntrs => {
-                var outputs = cntrs.find(n => this.isMetaTypeOf(n, this.META.Outputs)),
-                    inputs = cntrs.find(n => this.isMetaTypeOf(n, this.META.Inputs));
-
-                return Q.all([inputs, outputs].map(cntr => this.core.loadChildren(cntr)));
-            })
-            .then(data => {
-                var inputs = data[0],
-                    outputs = data[1];
-
-                // Get the input type
-                outputs.forEach(output => {
-                    var dataId = this.core.getPath(output);
-
-                    name = this.core.getAttribute(output, 'name');
-                    this._dataNameFor[dataId] = name;
-
-                    this._portCache[dataId] = output;
-                });
-                inputs.forEach(input => 
-                    this._portCache[this.core.getPath(input)] = input
-                );
-
-                // Extra recording for input/output nodes in the pipeline
-                if (this.isInputOp[id]) {
-                    this.inputNode[id] = outputs[0];
-                } else if (this.isOutputOp[id]) {
-                    this.outputDataToOpId[this.core.getPath(inputs[0])] = id;
-                }
-            });
-    };
-
-    Export.prototype.registerTransporter = function (node) {
-        var outputData = this.core.getPointerPath(node, 'src'),
-            inputData = this.core.getPointerPath(node, 'dst'),
-            srcOpId = this.getOpIdFor(outputData),
-            dstOpId = this.getOpIdFor(inputData);
-
-        this._srcIdFor[inputData] = outputData;
-
-        // Store the next operation ids for the op id
-        if (!this._nextOps[srcOpId]) {
-            this._nextOps[srcOpId] = [];
-        }
-        this._nextOps[srcOpId].push(dstOpId);
-
-        // Increment the incoming counts for each dst op
-        this._incomingCnts[dstOpId] = this._incomingCnts[dstOpId] || 0;
-        this._incomingCnts[dstOpId]++;
     };
 
     Export.prototype.getOpIdFor = function (dataId) {
@@ -819,11 +523,6 @@ define([
 
         ids.splice(this.activeNodeDepth - depth);
         return ids.join('/');
-    };
-
-    Export.prototype.genPtrSnippet = function (ptrName, pId) {
-        return this.getPtrCodeHash(pId)
-            .then(hash => this.blobClient.getObjectAsString(hash));
     };
 
     return Export;
