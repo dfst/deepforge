@@ -87,10 +87,13 @@ define([
         }
 
         // Check the most recent changes, then the currentChanges, then the model
-        var value = this._getValueFrom(nodeId, attr, node, this.changes) ||
-            this._getValueFrom(nodeId, attr, node, this.currentChanges);
+        let value = this._getValueFrom(nodeId, attr, node, this.changes);
 
-        if (value) {
+        if (value === undefined) {
+            value = this._getValueFrom(nodeId, attr, node, this.currentChanges);
+        }
+
+        if (value !== undefined) {
             return value;
         }
 
@@ -103,7 +106,8 @@ define([
             // If deleted the attribute, get the default (inherited) value
             if (changes[nodeId][attr] === null) {
                 base = this.isCreateId(nodeId) ? node : this.core.getBase(node);
-                return this.getAttribute(base, attr);
+                let inherited = this.getAttribute(base, attr);
+                return inherited || null;
             }
             return changes[nodeId][attr];
         }
