@@ -7,7 +7,7 @@ describe('UpdateLibrarySeed', function () {
         Q = testFixture.Q,
         logger = testFixture.logger.fork('UpdateLibrarySeed'),
         PluginCliManager = testFixture.WebGME.PluginCliManager,
-        projectName = 'nn',
+        projectName = 'project',  // just use the default project seed for testing
         pluginName = 'UpdateLibrarySeed',
         manager = new PluginCliManager(null, logger, gmeConfig),
         project,
@@ -25,7 +25,7 @@ describe('UpdateLibrarySeed', function () {
             })
             .then(function () {
                 var importParam = {
-                    projectSeed: testFixture.path.join(testFixture.DF_SEED_DIR, 'nn', 'nn.webgmex'),
+                    projectSeed: testFixture.path.join(testFixture.DF_SEED_DIR, 'project', 'project.webgmex'),
                     projectName: projectName,
                     branchName: 'master',
                     logger: logger,
