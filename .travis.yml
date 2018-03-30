@@ -3,5 +3,6 @@ services: mongodb
 addons:
     chrome: beta
 sudo: false
+script: npm run test-unit
 node_js:
   - "6.2.1"
