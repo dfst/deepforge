@@ -57,43 +57,44 @@ define([
 
         return this.getAllLibraries()
             .then(libs => {
-                tuples = libs.map(lib => {  // map to [name, version, dir]
-                    var version,
-                        hash,
-                        data,
-                        versionPath = this.getSeedVersionPath(lib);
+                tuples = libs
+                    .map(lib => {  // map to [name, version, dir]
+                        var version,
+                            hash,
+                            data,
+                            versionPath = this.getSeedVersionPath(lib);
 
-                    try {
-                        this.logger.info(`Checking for version info at ${versionPath}`);
-                        version = fs.readFileSync(versionPath, 'utf8');
-                        this.logger.debug(`${lib} version is ${version}`);
-                        data = fs.readFileSync(this.getSeedHashPath(lib), 'utf8').split(' ');
-                        if (data[1] === version) {
-                            hash = data[0];
-                            this.logger.debug(`${lib} hash is ${hash}`);
+                        try {
+                            this.logger.info(`Checking for version info at ${versionPath}`);
+                            version = fs.readFileSync(versionPath, 'utf8');
+                            this.logger.debug(`${lib} version is ${version}`);
+                            data = fs.readFileSync(this.getSeedHashPath(lib), 'utf8').split(' ');
+                            if (data[1] === version) {
+                                hash = data[0];
+                                this.logger.debug(`${lib} hash is ${hash}`);
+                            }
+                        } catch (e) {
+                            if (!version) {
+                                this.logger.warn(`Could not find library version for ${lib}`);
+                            } else {
+                                this.logger.warn(`Could not find library hash for ${lib}`);
+                            }
                         }
-                    } catch (e) {
-                        if (!version) {
-                            this.logger.warn(`Could not find library version for ${lib}`);
-                        } else {
-                            this.logger.warn(`Could not find library hash for ${lib}`);
-                        }
-                    }
 
-                    return [lib, version, hash];
-                })
-                .filter(tuple => {
-                    let [lib, version, hash] = tuple;
+                        return [lib, version, hash];
+                    })
+                    .filter(tuple => {  // get only the libs w/ updates available
+                        let [lib, version] = tuple;
 
-                    if (!version) return false;
+                        if (!version) return false;
 
-                    let projVersion = this.getLoadedVersion(lib);
-                    let latest = version.replace(/\s+/g, '');
+                        let projVersion = this.getLoadedVersion(lib);
+                        let latest = version.replace(/\s+/g, '');
 
-                    this.logger.info(`${lib} version info:\n${projVersion} ` +
-                        `(project)\n${latest} (latest)`);
-                    return projVersion < latest;
-                });
+                        this.logger.info(`${lib} version info:\n${projVersion} ` +
+                            `(project)\n${latest} (latest)`);
+                        return projVersion < latest;
+                    });
 
                 return Q.all(tuples.map(tuple => this.uploadSeed.apply(this, tuple)));
             })

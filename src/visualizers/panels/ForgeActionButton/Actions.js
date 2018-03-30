@@ -1,4 +1,4 @@
-/*globals define, $, WebGMEGlobal*/
+/*globals define, WebGMEGlobal*/
 // These are actions defined for specific meta types. They are evaluated from
 // the context of the ForgeActionButton
 define([
@@ -15,8 +15,6 @@ define([
     REGISTRY_KEYS,
     DeepForge
 ) {
-    var FILE_UPLOAD_INPUT = $('<input type="file" />');
-
     ////////////// Downloading files //////////////
     var downloadAttrs = [
             'data',

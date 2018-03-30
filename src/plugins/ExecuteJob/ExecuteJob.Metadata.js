@@ -109,7 +109,6 @@ define([
 
     ExecuteJob.prototype.recordOldMetadata = function (job) {
         var nodeId = this.core.getPath(job),
-            name,
             id,
             idsToDelete = [],
             type,
@@ -129,7 +128,6 @@ define([
                     child = jobChildren[i];
                     if (this.isMetaTypeOf(child, this.META.Metadata)) {
                         id = this.core.getPath(child);
-                        name = this.getAttribute(child, 'name');
                         base = this.core.getBase(child);
                         type = this.getAttribute(base, 'name');
 

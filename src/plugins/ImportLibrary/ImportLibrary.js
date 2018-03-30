@@ -110,7 +110,7 @@ define([
 
                 libraryData.commitHash = commit._id;
                 return this.core.addLibrary(this.rootNode, name, rootHash, libraryData)
-                    .then(() => {return {name: branchName, hash: commit._id}});
+                    .then(() => {return {name: branchName, hash: commit._id};});
             });
     };
 

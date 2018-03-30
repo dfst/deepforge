@@ -3,7 +3,7 @@ var isNodeJs = typeof module === 'object' && module.exports;
 (function(root, factory){
     if(typeof define === 'function' && define.amd) {
         define(['./skulpt.min'], function(){
-            return (root.OperationParser = factory(Sk));
+            return (root.OperationCode = factory(Sk));
         });
     } else if(isNodeJs) {
         const Sk = require('skulpt');

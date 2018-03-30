@@ -211,13 +211,6 @@ define([
     };
 
     OperationInterfaceEditorControl.prototype._onUpdate = function(gmeId) {
-        var variableIds,
-            wasUsed,
-            isUsed,
-            name,
-            ast,
-            code;
-
         if (gmeId === this._currentNodeId) {
             EasyDAGControl.prototype._onUpdate.call(this, gmeId);
 
@@ -225,15 +218,10 @@ define([
             this.updatePtrs();
 
             // Update the remaining usage info
-            variableIds = Object.keys(this._usage);
-
-            code = this._client.getNode(this._currentNodeId).getAttribute('code');
+            // TODO
             try {
                 // Parse the operation implementation for visual cues
                 // TODO
-                // Parse the operation implementation and detect change in inputs/outputs
-                //var schema = OperationParser.parse(code);
-                //console.log(schema);
             } catch (e) {
                 this._logger.debug(`failed parsing operation: ${e}`);
             }
@@ -287,8 +275,7 @@ define([
 
     OperationInterfaceEditorControl.prototype.updatePtrs = function() {
         // Update the pointer nodes for the current node
-        var node = this._client.getNode(this._currentNodeId),
-            rmPtrs,
+        var rmPtrs,
             updatePtrs = [],
             newPtrs,
             newPtrDict = {},
@@ -397,9 +384,9 @@ define([
     };
 
     // Check if it is used in the given ast node
+    // TODO: Should I just connect this to something like LSP?
     OperationInterfaceEditorControl.prototype.isUsedVariable = function(name, node) {
-        var isUsed = false,
-            checker;
+        var isUsed = false;
 
         return true;
         //checker = luajs.codegen.traverse((curr, parent) => {
