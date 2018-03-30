@@ -51,9 +51,10 @@ describe('UploadSeedToBlob', function () {
             .nodeify(done);
     });
 
-    it('should run plugin and update the branch', function (done) {
+    it('should run plugin and NOT update the branch', function (done) {
         var manager = new PluginCliManager(null, logger, gmeConfig),
             pluginConfig = {
+                seedName: 'project'
             },
             context = {
                 project: project,
@@ -74,7 +75,7 @@ describe('UploadSeedToBlob', function () {
 
             project.getBranchHash('test')
                 .then(function (branchHash) {
-                    expect(branchHash).to.not.equal(commitHash);
+                    expect(branchHash).to.equal(commitHash);
                 })
                 .nodeify(done);
         });
