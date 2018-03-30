@@ -112,7 +112,7 @@ describe('ExecutePipeline', function () {
             commitHash: commitHash,
             namespace: 'pipeline',
             branchName: 'test',
-            activeNode: '/K/R'  // hello world job's execution
+            activeNode: '/K/2'  // hello world job's execution
         };
 
         return manager.initializePlugin(pluginName)

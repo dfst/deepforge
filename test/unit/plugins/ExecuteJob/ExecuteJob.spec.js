@@ -83,7 +83,7 @@ describe('ExecuteJob', function () {
                 commitHash: commitHash,
                 namespace: 'pipeline',
                 branchName: 'test',
-                activeNode: '/K/R/p'  // hello world job
+                activeNode: '/K/2/U'  // hello world job
             };
 
             return manager.initializePlugin(pluginName)
@@ -202,11 +202,11 @@ describe('ExecuteJob', function () {
             plugin._metadata[id] = node;
             node.old = true;
             plugin.updateNodes()
-                    .then(() => {
-                        var graph = plugin._metadata[id];
-                        expect(graph.old).to.not.equal(true);
-                    })
-                    .nodeify(done);
+                .then(() => {
+                    var graph = plugin._metadata[id];
+                    expect(graph.old).to.not.equal(true);
+                })
+                .nodeify(done);
         });
 
         // Check that it gets the correct value from a newly created node after
