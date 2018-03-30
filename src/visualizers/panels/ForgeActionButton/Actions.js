@@ -42,30 +42,6 @@ define([
         return null;
     };
 
-    var importTorch = function() {
-        var pluginId = 'ImportTorch',
-            context = this.client.getCurrentPluginContext(pluginId),
-            fileInput = FILE_UPLOAD_INPUT.clone();
-
-        // Prompt for the file
-        fileInput.on('change', event => this.uploadFile(event)
-            .then(hash => {
-                // Run the plugin in the browser (set namespace)
-                context.managerConfig.namespace = 'nn';
-                context.pluginConfig = {
-                    srcHash: hash
-                };
-                return Q.ninvoke(this.client, 'runBrowserPlugin', pluginId, context);
-            })
-            .then(res => {
-                Materialize.toast(res.messages[0].message, 2000);
-            })
-            .fail(err => Materialize.toast(`Import failed: ${err}`, 2000))
-                
-        );
-        fileInput.click();
-    };
-
     var returnToLast = (place) => {
         var returnId = DeepForge.last[place];
         WebGMEGlobal.State.registerActiveObject(returnId);

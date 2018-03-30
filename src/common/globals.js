@@ -224,13 +224,7 @@ define([
     };
 
     // Creating Artifacts
-    var UPLOAD_PLUGIN = 'ImportArtifact',
-        DATA_TYPE_CONFIG = {
-            name: 'dataTypeId',
-            displayName: 'Data Type Id',
-            valueType: 'string',
-            valueItems: []
-        };
+    var UPLOAD_PLUGIN = 'ImportArtifact';
 
     var uploadArtifact = function() {
         // Get the data types
@@ -253,17 +247,6 @@ define([
 
         // Add the target type to the pluginMetadata...
         var metadata = WebGMEGlobal.allPluginsMetadata[UPLOAD_PLUGIN];
-            //config = metadata.configStructure
-                //.find(opt => opt.name === DATA_TYPE_CONFIG.name);
-
-        // TODO: maybe autocomplete on the existing data types?
-        //if (!config) {
-            //config = DATA_TYPE_CONFIG;
-            //WebGMEGlobal.allPluginsMetadata[UPLOAD_PLUGIN].configStructure.push(config);
-        //}
-
-        //config.valueItems = dataTypes;
-        //config.value = dataTypes[0];
 
         WebGMEGlobal.InterpreterManager.configureAndRun(metadata, result => {
             var msg = 'Artifact upload complete!';
