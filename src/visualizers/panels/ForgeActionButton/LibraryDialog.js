@@ -1,11 +1,17 @@
 /* globals define, $, WebGMEGlobal */
 define([
+    'common/core/coreQ',
+    'common/storage/constants',
     'q',
+    'underscore',
     'text!./Libraries.json',
     'text!./LibraryDialogModal.html',
     'css!./LibraryDialog.css'
 ], function(
+    Core,
+    STORAGE_CONSTANTS,
     Q,
+    _,
     LibrariesText,
     LibraryHtml
 ) {
@@ -23,7 +29,6 @@ define([
         this.$tableContent = this.$table.find('tbody');
 
         Libraries.forEach(library => this.addLibraryToTable(library));
-        // TODO: clicking on them should import the library
     };
 
     LibraryDialog.prototype.addLibraryToTable = function(libraryInfo) {
@@ -80,8 +85,6 @@ define([
             libraryInfo: libraryInfo
         };
 
-        // Pass in the library info
-        // TODO: show loading circles?
         return Q.ninvoke(this.client, 'runServerPlugin', pluginId, context)
             .then(() => {
                 this.logger.info('imported library: ', libraryInfo.name);
@@ -92,11 +95,62 @@ define([
     };
 
     LibraryDialog.prototype.uninstall = function(libraryInfo) {
-        this.client.startTransaction(`Removed "${libraryInfo.name}" library`);
-        this.client.removeLibrary(libraryInfo.name);
-        this.client.completeTransaction();
-        this.onChange();
-        this.hide();
+        const commitMsg = `Removed "${libraryInfo.name}" library`;
+        const rootGuid = this.client.getActiveRootHash();
+        const branchName = this.client.getActiveBranchName();
+        const project = this.client.getProjectObject();
+        const startCommit = this.client.getActiveCommitHash();
+        const libName = libraryInfo.name;
+        const core = new Core(project, {
+            globConf: WebGMEGlobal.gmeConfig,
+            logger: this.logger.fork('core')
+        });
+
+        // Load the first node/commit...
+        return core.loadRoot(rootGuid)
+            .then(root => {
+                //core.removeLibrary(root, libraryInfo.name);
+                return core.loadChildren(root);
+            })
+            .then(nodes => {
+                const metanodes = _.values(core.getAllMetaNodes());
+                const libraryCode = metanodes
+                    .find(node => core.getAttribute(node, 'name') === 'LibraryCode');
+                const libPath = nodes.find(node => {
+                    return core.isLibraryRoot(node) &&
+                        core.getAttribute(node, 'name') === libName;
+                });
+
+                // Remove any LibraryCode nodes with a ptr to the given library
+                const libraryCodeNodes = nodes
+                    .filter(node => core.isTypeOf(node, libraryCode))
+                    .filter(node => core.getPointerPath(node, 'library') === libPath);
+
+                libraryCodeNodes.forEach(node => core.deleteNode(node));
+                this.logger.info(`Removed ${libraryCodeNodes.length} library code nodes`);
+
+                // Make the given commit
+                const persisted = core.persist(root);
+                return project.makeCommit(
+                    branchName,
+                    [ startCommit ],
+                    persisted.rootHash,
+                    persisted.objects,
+                    commitMsg
+                );
+            })
+            .then(result => {
+                if (result.status === STORAGE_CONSTANTS.SYNCED) {
+                    // Throw out the changes... warn the user?
+                    this.logger.info('SYNCED!');
+                } else {
+                    // Throw out the changes... warn the user?
+                    this.logger.warn(`Could not remove library ${libName}`);
+                }
+                this.onChange();
+                this.hide();
+            })
+            .catch(err => this.logger.error(`Could not remove lib ${libName}: ${err}`));
     };
 
     LibraryDialog.prototype.onChange = function() {
