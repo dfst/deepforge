@@ -107,19 +107,21 @@ define([
         });
 
         // Load the first node/commit...
+        let root;
         return core.loadRoot(rootGuid)
-            .then(root => {
-                //core.removeLibrary(root, libraryInfo.name);
+            .then(node => {
+                root = node;
                 return core.loadChildren(root);
             })
             .then(nodes => {
-                const metanodes = _.values(core.getAllMetaNodes());
+                const metanodes = _.values(core.getAllMetaNodes(root));
                 const libraryCode = metanodes
                     .find(node => core.getAttribute(node, 'name') === 'LibraryCode');
-                const libPath = nodes.find(node => {
+                const libraryNode = nodes.find(node => {
                     return core.isLibraryRoot(node) &&
                         core.getAttribute(node, 'name') === libName;
                 });
+                const libPath = core.getPath(libraryNode);
 
                 // Remove any LibraryCode nodes with a ptr to the given library
                 const libraryCodeNodes = nodes
@@ -129,6 +131,8 @@ define([
                 libraryCodeNodes.forEach(node => core.deleteNode(node));
                 this.logger.info(`Removed ${libraryCodeNodes.length} library code nodes`);
 
+                core.removeLibrary(root, libName);
+                this.logger.info(`Removed ${libName} library`);
                 // Make the given commit
                 const persisted = core.persist(root);
                 return project.makeCommit(
