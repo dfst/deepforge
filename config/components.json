@@ -56,6 +56,10 @@
         "rootMenuClass": "deepforge-logo",
         "rootDisplayName": "DeepForge"
     },
+    "GenericUIWebGMEStart": {
+        "pageTitle": "DeepForge",
+        "layout": "SidebarLayout"
+    },
     "SidebarLayout": {
         "panels": [
             {
