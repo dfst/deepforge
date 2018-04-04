@@ -52,8 +52,7 @@
     },
     "layouts": {
       "SidebarLayout": {
-        "src": "src/layouts/SidebarLayout",
-        "enabled": true
+        "src": "src/layouts/SidebarLayout"
       }
     },
     "visualizers": {
