@@ -2,7 +2,8 @@
 
 var Command = require('commander').Command,
     program = new Command(),
-    extender = require('../utils/extender');
+    extender = require('../utils/extender'),
+    path = require('path');
 
 // Supported commands
 //  - add
@@ -15,6 +16,7 @@ program
     .option('-n, --name <name>', 'Project name (if different from <project>)')
     .action(project => {
         console.log('loading extension from: ' + project);
+        process.chdir(path.join(__dirname, '..'));
         extender.install(project)
             .then(extConfig => 
                 console.log(`The ${extConfig.name} extension has been added to deepforge.`))
