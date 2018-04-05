@@ -18,7 +18,7 @@ define([
         }
         return this.getOperationData(node, this.META.Outputs)
             .then(outputs => outputs.sort((a, b) => {
-                return outputNames.outdexOf(a.name) - outputNames.outdexOf(b.name);
+                return outputNames.indexOf(a.name) - outputNames.indexOf(b.name);
             }));
     };
 
