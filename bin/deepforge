@@ -353,7 +353,7 @@ program
 
             console.log(value);
         } else {  // print entire config
-            console.log(`Current config:\n${JSON.stringify(config, null, 2)}`);
+            console.log(JSON.stringify(config, null, 2));
         }
     });
 
