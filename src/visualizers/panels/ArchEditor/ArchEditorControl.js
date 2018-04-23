@@ -161,13 +161,12 @@ define([
         // Remove all criterion layers and abstract layers
         for (i = metanodes.length; i--;) {
             if (layerId) {
+                if (metanodes[i].getAttribute('name') === 'Criterion') {
+                    criterionId = metanodes[i].getId();
+                    continue;
+                }
                 if (!metanodes[i].isAbstract() && metanodes[i].isTypeOf(layerId)) {
-
-                    if (metanodes[i].getAttribute('name') === 'Criterion') {
-                        criterionId = metanodes[i].getId();
-                    } else {
-                        allLayers.push(metanodes[i]);
-                    }
+                    allLayers.push(metanodes[i]);
                 } else if (!connId && metanodes[i].getAttribute('name') === 'Connection') {  // Detect the layer connection type...
                     tgts = this._client.getPointerMeta(metanodes[i].getId(), 'src').items;
                     for (j = tgts.length; j--;) {
