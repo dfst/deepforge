@@ -2,7 +2,7 @@ var testFixture = require('../../globals'),
     expect = testFixture.expect,
     gmeConfig = testFixture.getGmeConfig(),
     server = testFixture.WebGME.standaloneServer(gmeConfig),
-    Logger = require('webgme/src/server/logger'),
+    Logger = require('webgme-engine/src/server/logger'),
     logger = Logger.createWithGmeConfig('gme', gmeConfig, true),
     JobOriginClient = testFixture.requirejs('deepforge/api/JobOriginClient');
 

@@ -12,7 +12,7 @@ describe('Export', function () {
         logger = testFixture.logger.fork('Export'),
         PluginCliManager = testFixture.WebGME.PluginCliManager,
         manager = new PluginCliManager(null, logger, gmeConfig),
-        BlobClient = require('webgme/src/server/middleware/blob/BlobClientWithFSBackend'),
+        BlobClient = require('webgme-engine/src/server/middleware/blob/BlobClientWithFSBackend'),
         projectName = 'testProject',
         pluginName = 'Export',
         project,
