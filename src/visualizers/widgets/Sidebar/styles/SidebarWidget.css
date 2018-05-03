@@ -16,6 +16,7 @@
 }
 
 .main-view .side-nav-icon {
+  cursor: pointer;
   padding-left: 1.1em;
   padding-top: 0.75em;
   padding-bottom: 0.5em;
