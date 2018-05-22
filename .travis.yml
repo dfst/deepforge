@@ -4,6 +4,6 @@ addons:
     chrome: beta
 sudo: false
 script: npm run test-unit
-before_install: if [[ `npm -v` != 5* ]]; then npm i -g npm@5; fi
+before_install: if [[ `npm -v` != 6* ]]; then npm i -g npm@6; fi
 node_js:
-  - "6.2.1"
+  - "8"
