@@ -161,27 +161,6 @@
         "secondary": false,
         "widget": "src/visualizers/widgets/LogViewer"
       },
-      "LayerEditor": {
-        "src": "panels/LayerEditor/LayerEditorPanel",
-        "title": "LayerEditor",
-        "panel": "src/visualizers/panels/LayerEditor",
-        "secondary": false,
-        "widget": "src/visualizers/widgets/LayerEditor"
-      },
-      "ClassCodeEditor": {
-        "src": "panels/ClassCodeEditor/ClassCodeEditorPanel",
-        "title": "ClassCodeEditor",
-        "panel": "src/visualizers/panels/ClassCodeEditor",
-        "secondary": false,
-        "widget": "src/visualizers/widgets/ClassCodeEditor"
-      },
-      "ClassEditor": {
-        "src": "panels/ClassEditor/ClassEditorPanel",
-        "title": "ClassEditor",
-        "panel": "src/visualizers/panels/ClassEditor",
-        "secondary": false,
-        "widget": "src/visualizers/widgets/ClassEditor"
-      },
       "PipelineIndex": {
         "src": "panels/PipelineIndex/PipelineIndexPanel",
         "title": "PipelineIndex",
@@ -279,9 +258,6 @@
       },
       "ArtifactOpDecorator": {
         "src": "src/decorators/ArtifactOpDecorator"
-      },
-      "ContainerLayerDecorator": {
-        "src": "src/decorators/ContainerLayerDecorator"
       }
     },
     "seeds": {

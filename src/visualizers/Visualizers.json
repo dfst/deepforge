@@ -48,27 +48,9 @@
     "DEBUG_ONLY": false
   },
   {
-    "id": "LayerEditor",
-    "title": "LayerEditor",
-    "panel": "panels/LayerEditor/LayerEditorPanel",
-    "DEBUG_ONLY": false
-  },
-  {
-    "id": "ClassCodeEditor",
-    "title": "ClassCodeEditor",
-    "panel": "panels/ClassCodeEditor/ClassCodeEditorPanel",
-    "DEBUG_ONLY": false
-  },
-  {
     "id": "CodeEditor",
     "title": "CodeEditor",
     "panel": "panels/TextEditor/TextEditorPanel",
-    "DEBUG_ONLY": false
-  },
-  {
-    "id": "ClassEditor",
-    "title": "ClassEditor",
-    "panel": "panels/ClassEditor/ClassEditorPanel",
     "DEBUG_ONLY": false
   },
   {
