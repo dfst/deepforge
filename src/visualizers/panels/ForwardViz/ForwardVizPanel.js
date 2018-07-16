@@ -4,10 +4,12 @@
 define([
     'js/Constants',
     'deepforge/globals',
+    'js/PanelManager/IActivePanel',
     'js/PanelBase/PanelBaseWithHeader'
 ], function (
     CONSTANTS,
     DeepForge,
+    IActivePanel,
     PanelBaseWithHeader
 ) {
     'use strict';
@@ -32,6 +34,7 @@ define([
 
     //inherit from PanelBaseWithHeader
     _.extend(ForwardVizPanel.prototype, PanelBaseWithHeader.prototype);
+    _.extend(ForwardVizPanel.prototype, IActivePanel.prototype);
 
     ForwardVizPanel.prototype._initialize = function () {
         this.control = this;
@@ -46,7 +49,7 @@ define([
 
     /* OVERRIDE FROM WIDGET-WITH-HEADER */
     /* METHOD CALLED WHEN THE WIDGET'S READ-ONLY PROPERTY CHANGES */
-        //apply parent's onReadOnlyChanged
+    //apply parent's onReadOnlyChanged
     ForwardVizPanel.prototype.onReadOnlyChanged = function() {
         PanelBaseWithHeader.prototype.onReadOnlyChanged.apply(this, arguments);
 
