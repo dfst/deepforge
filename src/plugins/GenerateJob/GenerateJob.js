@@ -409,7 +409,6 @@ define([
         const pointers = this.core.getPointerNames(node).filter(name => name !== 'base');
 
         // Enter the attributes in place
-        // FIXME: these args can be incorrect... (non-debug mode?)
         const argumentValues = operation.getAttributes().map(attr => {
             const name = attr.name;
             const isPointer = pointers.includes(name);
