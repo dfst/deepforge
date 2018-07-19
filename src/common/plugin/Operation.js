@@ -17,8 +17,10 @@ define([
             outputNames = operation.getOutputs().map(output => output.name);
         }
         return this.getOperationData(node, this.META.Outputs)
-            .then(outputs => outputs.sort((a, b) => {
-                return outputNames.indexOf(a.name) - outputNames.indexOf(b.name);
+            .then(outputs => outputs.sort((output1, output2) => {
+                const [name1] = output1;
+                const [name2] = output2;
+                return outputNames.indexOf(name1) - outputNames.indexOf(name2);
             }));
     };
 
@@ -30,8 +32,10 @@ define([
             inputNames = operation.getInputs().map(input => input.name);
         }
         return this.getOperationData(node, this.META.Inputs)
-            .then(inputs => inputs.sort((a, b) => {
-                return inputNames.indexOf(a.name) - inputNames.indexOf(b.name);
+            .then(inputs => inputs.sort((input1, input2) => {
+                const [name1] = input1;
+                const [name2] = input2;
+                return inputNames.indexOf(name1) - inputNames.indexOf(name2);
             }));
     };
 
