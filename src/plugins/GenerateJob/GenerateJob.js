@@ -355,9 +355,23 @@ define([
             });
     };
 
+    GenerateJob.validateVariableName = function (word) {
+        return word.replace(/[^a-zA-Z\d]+/g, '_');
+    };
+
     GenerateJob.toSnakeCase = function (word) {
+        word = GenerateJob.validateVariableName(word);
         word = word[0].toLowerCase() + word.slice(1);
-        return word.replace(/[A-Z]/g, match => `_${match.toLowerCase()}`);
+        return word
+            .replace(/[A-Z]/g, match => `_${match.toLowerCase()}`)
+            .replace(/_+/g, '_');
+    };
+
+    GenerateJob.toUpperCamelCase = function (word) {
+        word = GenerateJob.validateVariableName(word);
+        word = word[0].toUpperCase() + word.slice(1);
+        return word
+            .replace(/_+./g, match => match[1].toUpperCase());
     };
 
     GenerateJob.prototype.getAllInitialCode = function () {
@@ -395,6 +409,7 @@ define([
         const pointers = this.core.getPointerNames(node).filter(name => name !== 'base');
 
         // Enter the attributes in place
+        // FIXME: these args can be incorrect... (non-debug mode?)
         const argumentValues = operation.getAttributes().map(attr => {
             const name = attr.name;
             const isPointer = pointers.includes(name);

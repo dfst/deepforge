@@ -141,7 +141,7 @@ define([
 
     Export.prototype.createDefaultMainFile = function (node, staticInputs, files={}) {
         // Get the variable name for the pipeline
-        const name = this.core.getAttribute(node, 'name');
+        const name = PluginBase.toUpperCamelCase(this.core.getAttribute(node, 'name'));
         const instanceName = this.getVariableName(name.toLowerCase());
         let initCode = null;
         return this.getAllInitialCode()
@@ -231,7 +231,7 @@ define([
     };
 
     Export.prototype.createPipelineFiles = function (node, files={}) {
-        const name = this.core.getAttribute(node, 'name');
+        const name = PluginBase.toUpperCamelCase(this.core.getAttribute(node, 'name'));
         // Generate the file for the pipeline in pipelines/
 
         let allOperations,
@@ -294,6 +294,7 @@ define([
                             const variable = this.getVariableNameFor(id);
                             return variable;
                         })
+                        .filter(name => !!name)
                         .join(',');
 
                     if (outputs) {
@@ -318,6 +319,7 @@ define([
                     .join(', ');
                 const outputs = this.getPipelineOutputs(allOperations)
                     .map(tuple => this.getVariableNameFor(tuple[1]))
+                    .filter(name => !!name)
                     .join(', ');
 
                 // Move imports to the top

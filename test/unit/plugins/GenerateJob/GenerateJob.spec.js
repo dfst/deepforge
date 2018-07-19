@@ -95,9 +95,39 @@ describe('GenerateJob', function () {
 
     // GenerateJob
     describe('utilities', function() {
-        it('should convert from upper camelcase to snake case', function() {
-            const snake = GenerateJob.toSnakeCase('HelloWorld');
-            expect(snake).to.equal('hello_world');
+        describe('toSnakeCase', function() {
+            it('should convert from upper camelcase to snake case', function() {
+                const snake = GenerateJob.toSnakeCase('HelloWorld');
+                expect(snake).to.equal('hello_world');
+            });
+
+            it('should remove extra spaces during conversion to snake case', function() {
+                const snake = GenerateJob.toSnakeCase('hello world');
+                expect(snake).to.equal('hello_world');
+            });
+
+            it('should not contain duplicate _\'s', function() {
+                const snake = GenerateJob.toSnakeCase('Hello World');
+                expect(snake).to.equal('hello_world');
+            });
+        });
+
+        describe('toUpperCamelCase', function() {
+            [
+                ['hello_world', 'HelloWorld'],
+                ['hello world', 'HelloWorld'],
+                ['hello _world', 'HelloWorld'],
+                [' hello _world', 'HelloWorld'],
+                ['helloWorld', 'HelloWorld'],
+                ['hello-_*World', 'HelloWorld'],
+            ].forEach(testCase => {
+                const [input, expected] = testCase;
+                it(`should convert ${input} to ${expected}`, function() {
+                    const output = GenerateJob.toUpperCamelCase(input);
+                    expect(output).to.equal(expected);
+                });
+            });
+
         });
     });
 
