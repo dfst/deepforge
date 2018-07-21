@@ -35,19 +35,3 @@ Graphs can then label their axis as follows:
     graph:xlabel('x axis')  -- label the x axis "x axis"
     graph:ylabel('y axis')  -- label the y axis "y axis"
 
-
-Images
-------
-Images can be created using:
-
-.. code-block:: lua
-
-    local image = deepforge.Image('My Example Image', imageTensor)
-
-The first argument is the title of the image and the second argument is the tensor for the image (optional). Both the title and the tensor can be updated during execution as follows.
-
-.. code-block:: lua
-
-    image:title('My New Title')  -- updating the image title
-    image:update(newTensor)  -- updating the displayed image
-

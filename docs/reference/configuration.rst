@@ -7,9 +7,6 @@ Configuration of deepforge is done through the `deepforge config` command from t
 
     Current config:
     {
-      "torch": {
-        "dir": "/home/irishninja/.deepforge/torch"
-      },
       "blob": {
         "dir": "/home/irishninja/.deepforge/blob"
       },
@@ -43,10 +40,6 @@ The complete list of the environment variable overrides for the configuration op
 
 Settings
 --------
-
-torch.dir
-~~~~~~~~~
-The path to the local installation of torch to be used by the deepforge worker. This is used when installing, upgrading and removing the local torch installation
 
 blob.dir
 ~~~~~~~~
