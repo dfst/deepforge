@@ -23,8 +23,6 @@ DeepForge can now be started with:
 
     deepforge start
 
-However, the first time DeepForge is started, it will make sure that the deep learning framework is installed (if it isn't found on the host system). This may require you to start DeepForge a couple times; the first time it starts it will install Torch7 and require a terminal restart to update a couple environment variables (like `PATH`). The second time it starts it will install additional torch packages but will not require a terminal restart. Finally, DeepForge will start with all the required dependencies.
-
 Database
 ~~~~~~~~
 Download and install MongoDB from the `website <https://www.mongodb.org/>`_. If you are planning on running MongoDB locally on the same machine as DeepForge, simply start `mongod` and continue to setting up DeepForge.
@@ -57,8 +55,6 @@ The DeepForge worker can be started with
 
     deepforge start --worker
 
-The worker will install dependencies the first time it is run (including torch, if it is not already installed). 
-
 To connect to a remote deepforge instance, add the url of the DeepForge server:
 
 .. code-block:: bash
@@ -72,8 +68,6 @@ DeepForge can be updated with the command line interface rather simply:
 .. code-block:: bash
 
     deepforge update
-
-By default, this will update both DeepForge and the local torch installation. To only update DeepForge, add the `--server` flag:
 
 .. code-block:: bash
 
