@@ -12,15 +12,12 @@ Welcome to DeepForge's documentation!
 
    getting_started/getting_started.rst
    getting_started/quick_start.rst
-   getting_started/hello_cifar.rst
 
 .. toctree::
    :maxdepth: 1
    :caption: Fundamentals
 
    fundamentals/custom_operations.rst
-   fundamentals/custom_layers.rst
-   fundamentals/custom_data_types.rst
 
 .. toctree::
    :maxdepth: 1
@@ -37,4 +34,3 @@ Welcome to DeepForge's documentation!
    reference/cli.rst
    reference/configuration.rst
    reference/operation_feedback.rst
-   reference/extensions.rst
