@@ -58,7 +58,12 @@
     },
     "GenericUIWebGMEStart": {
         "pageTitle": "DeepForge",
-        "layout": "SidebarLayout"
+        "layout": "SidebarLayout",
+        "byProjectKind": {
+            "layout": {
+                "deepforge": "SidebarLayout"
+            }
+        }
     },
     "SidebarLayout": {
         "panels": [
