@@ -54,6 +54,19 @@ define([
                 event.stopPropagation();
                 event.preventDefault();
             });
+            node.$name.on('dblclick', event => {
+                const name = $(event.target);
+                name.editInPlace({
+                    css: {
+                        'z-index': 1000
+                    },
+                    onChange: (oldVal, newVal) => {
+                        if (newVal && newVal !== oldVal) {
+                            this.onNameChange(desc.id, newVal);
+                        }
+                    }
+                });
+            });
         }
     };
 

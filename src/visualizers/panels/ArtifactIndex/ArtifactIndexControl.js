@@ -47,6 +47,15 @@ define([
             this._client.deleteNode(id);
             this._client.completeTransaction();
         };
+
+        this._widget.onNameChange = (id, newName) => {
+            var name = this._client.getNode(id).getAttribute('name'),
+                msg = `Renamed "${name}" artifact to "${newName}"`;
+
+            this._client.startTransaction(msg);
+            this._client.setAttribute(id, 'name', newName);
+            this._client.completeTransaction();
+        };
     };
 
     /* * * * * * * * Visualizer content update callbacks * * * * * * * */
