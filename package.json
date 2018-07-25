@@ -20,7 +20,6 @@
   },
   "version": "2.0.0-alpha",
   "dependencies": {
-    "chimp": "^0.50.2",
     "commander": "^2.9.0",
     "deepforge-keras": "github:deepforge-dev/deepforge-keras",
     "dotenv": "^2.0.0",
@@ -31,7 +30,6 @@
     "lodash.merge": "^4.5.1",
     "lodash.template": "^4.4.0",
     "mongodb": "^2.2.10",
-    "nodemon": "^1.9.2",
     "npm": "^4.0.5",
     "q": "1.4.1",
     "rimraf": "^2.4.0",
@@ -47,6 +45,8 @@
     "webgme-simple-nodes": "^2.1.3"
   },
   "devDependencies": {
+    "chimp": "^0.50.2",
+    "nodemon": "^1.9.2",
     "chai": "^3.0.0",
     "jszip": "^2.5.0",
     "mocha": "^2.2.5",
