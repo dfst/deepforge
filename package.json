@@ -8,7 +8,7 @@
     "deepforge": "./bin/deepforge"
   },
   "scripts": {
-    "start": "./bin/deepforge start",
+    "start": "node ./bin/deepforge start",
     "postinstall": "node utils/reinstall-extensions.js",
     "start-dev": "NODE_ENV=dev node app.js",
     "local": "node ./bin/start-local.js",
