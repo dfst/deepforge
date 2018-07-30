@@ -197,6 +197,30 @@ define([
         let inputs = null;
 
         return this.createOperationFiles(node, files)
+            .then(() => {  // add all operation definitions (#1140)
+                const metaDict = this.core.getAllMetaNodes(node);
+                const metanodes = Object.keys(metaDict).map(id => metaDict[id]);
+                const operations = metanodes
+                    .filter(node => this.core.isTypeOf(node, this.META.Operation))
+                    .map(node => {
+                        const name = this.core.getAttribute(node, 'name');
+                        const filename = GenerateJob.toSnakeCase(name);
+                        const code = this.core.getAttribute(node, 'code');
+
+                        return [filename, name, code];
+                    });
+
+                operations.forEach(tuple => {
+                    const [filename, name, code] = tuple;
+
+                    // Add file to `operations/`
+                    files[`operations/${filename}.py`] = code;
+
+                    // Create the `operations/__init___.py`
+                    files['operations/__init__.py'] = files['operations/__init__.py'] || '';
+                    files['operations/__init__.py'] += `from operations.${filename} import ${name}\n`;
+                });
+            })
             .then(() => {
                 inputs = Object.keys(files._data)
                     .filter(filename => filename.startsWith(DATA_DIR))
