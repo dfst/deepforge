@@ -1,0 +1,191 @@
+.spotlight.spotlight-overlay {
+  position: absolute;
+  top: 20%;
+  left: 1%;
+  z-index: 2147483647;
+  width: 98%;
+  /*display: none;*/
+  font-size: 12px;
+  letter-spacing: 0.3px;
+  border: 1px solid rgba(51, 52, 53, 0.1);
+  font-family: Verdana, "Lucida Sans Unicode", sans-serif;
+  box-shadow: 0 12px 15px 0 rgba(0, 0, 0, 0.24), 0 17px 50px 0 rgba(0, 0, 0, 0.19);
+  border-radius: 6px;
+  overflow: hidden; }
+
+  @media only screen and (min-width: 680px) {
+    .spotlight.spotlight-overlay {
+      left: 50%;
+      margin-left: -340px;
+      width: 680px; } }
+
+  .spotlight.spotlight-overlay .spotlight-searchbar {
+    z-index: 10;
+    position: relative;
+    height: 55px;
+    background-color: rgba(230, 231, 232, 0.97); }
+    .spotlight.spotlight-overlay .spotlight-searchbar .spotlight-icon {
+      position: absolute;
+      height: 22px;
+      width: 22px;
+      margin: 16.5px;
+      background-size: cover; }
+      @media only screen and (min-width: 680px) {
+        .spotlight.spotlight-overlay .spotlight-searchbar .spotlight-icon {
+          position: static;
+          float: left; } }
+      .spotlight.spotlight-overlay .spotlight-searchbar .spotlight-icon svg {
+        fill: #635d5c; }
+    .spotlight.spotlight-overlay .spotlight-searchbar .spotlight-input {
+      background-color: transparent;
+      font-size: 1.7em;
+      padding: 0 0 0 35px;
+      margin: 0;
+      outline: none !important;
+      height: 55px;
+      max-width: 100% !important;
+      border: none !important;
+      color: #333435;
+      font-weight: 100;
+      box-sizing: border-box; }
+      .spotlight.spotlight-overlay .spotlight-searchbar .spotlight-input.empty {
+        width: 100% !important; }
+      @media only screen and (min-width: 680px) {
+        .spotlight.spotlight-overlay .spotlight-searchbar .spotlight-input {
+          float: left;
+          max-width: 350px !important;
+          box-sizing: content-box;
+          padding: 0 0 0 35px; }
+          .spotlight.spotlight-overlay .spotlight-searchbar .spotlight-input.empty {
+            width: 400px !important; } }
+      .spotlight.spotlight-overlay .spotlight-searchbar .spotlight-input:-ms-input-placeholder {
+        color: #606162; }
+      .spotlight.spotlight-overlay .spotlight-searchbar .spotlight-input:-moz-placeholder {
+        color: #606162; }
+      .spotlight.spotlight-overlay .spotlight-searchbar .spotlight-input::-moz-placeholder {
+        color: #606162; }
+      .spotlight.spotlight-overlay .spotlight-searchbar .spotlight-input::-webkit-input-placeholder {
+        color: #606162; }
+    .spotlight.spotlight-overlay .spotlight-searchbar .spotlight-input-after {
+      display: none;
+      color: #606162;
+      line-height: 55px; }
+      @media only screen and (min-width: 680px) {
+        .spotlight.spotlight-overlay .spotlight-searchbar .spotlight-input-after {
+          display: block; } }
+    .spotlight.spotlight-overlay .spotlight-searchbar .spotlight-results-icon {
+      display: none;
+      position: absolute;
+      top: 11.5px;
+      right: 20px;
+      line-height: 31px;
+      height: 32px;
+      width: 32px;
+      font-size: 31px;
+      color: #333435;
+      background-size: cover; }
+      @media only screen and (min-width: 680px) {
+        .spotlight.spotlight-overlay .spotlight-searchbar .spotlight-results-icon {
+          display: block; } }
+  .spotlight.spotlight-overlay .spotlight-results-panel {
+    min-height: 375px;
+    border-top: 1px solid #cccecf; }
+    .spotlight.spotlight-overlay .spotlight-results-panel .spotlight-results-list {
+      border-right: 1px solid #d6d7d9;
+      position: absolute;
+      width: 100%;
+      height: calc(100% - 55px);
+      overflow: hidden;
+      overflow-y: auto;
+      user-select: none;
+      background-color: rgba(229, 231, 232, 0.97); }
+      @media only screen and (min-width: 680px) {
+        .spotlight.spotlight-overlay .spotlight-results-panel .spotlight-results-list {
+          width: 290px; } }
+      .spotlight.spotlight-overlay .spotlight-results-panel .spotlight-results-list ul {
+        min-height: calc(100% - 55px); }
+      .spotlight.spotlight-overlay .spotlight-results-panel .spotlight-results-list ul, .spotlight.spotlight-overlay .spotlight-results-panel .spotlight-results-list li {
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        list-style-type: none; }
+      .spotlight.spotlight-overlay .spotlight-results-panel .spotlight-results-list .spotlight-results-list-header {
+        font-size: 12px;
+        background-color: #dcdddf;
+        color: #333435;
+        text-transform: uppercase;
+        padding: 4px 0 2px 25px; }
+      .spotlight.spotlight-overlay .spotlight-results-panel .spotlight-results-list .spotlight-results-list-item {
+        font-size: 12px;
+        color: #333435;
+        padding: 6px 0 6px 25px;
+        cursor: pointer; }
+        .spotlight.spotlight-overlay .spotlight-results-panel .spotlight-results-list .spotlight-results-list-item.open-search-page {
+          border-top: 1px solid #cccecf; }
+        .spotlight.spotlight-overlay .spotlight-results-panel .spotlight-results-list .spotlight-results-list-item .spotlight-item-icon {
+          margin: 0 10px 0 0;
+          float: left;
+          height: 16px;
+          width: 16px;
+          font-size: 15px;
+          text-align: center;
+          color: #333435; }
+        .spotlight.spotlight-overlay .spotlight-results-panel .spotlight-results-list .spotlight-results-list-item.active {
+          color: #ffffff;
+          background-color: #337ef1; }
+        .spotlight.spotlight-overlay .spotlight-results-panel .spotlight-results-list .spotlight-results-list-item .info {
+          margin-left: 5px;
+          color: #606162; }
+    .spotlight.spotlight-overlay .spotlight-results-panel .spotlight-results-detail {
+      display: none;
+      margin-left: 290px;
+      width: 390px;
+      height: 375px;
+      color: #333435;
+      background-color: rgba(229, 230, 232, 0.97); }
+      @media only screen and (min-width: 680px) {
+        .spotlight.spotlight-overlay .spotlight-results-panel .spotlight-results-detail {
+          display: block; } }
+      .spotlight.spotlight-overlay .spotlight-results-panel .spotlight-results-detail a {
+        color: #333435; }
+      .spotlight.spotlight-overlay .spotlight-results-panel .spotlight-results-detail .spotlight-results-detail-vcard {
+        padding: 10px; }
+        .spotlight.spotlight-overlay .spotlight-results-panel .spotlight-results-detail .spotlight-results-detail-vcard .profile-image {
+          text-align: center;
+          font-size: 50px;
+          width: 100px;
+          height: 150px;
+          line-height: 150px;
+          background-color: rgba(255, 255, 255, 0.7);
+          border: 1px solid rgba(0, 0, 0, 0.9);
+          margin-right: 15px;
+          float: left; }
+        .spotlight.spotlight-overlay .spotlight-results-panel .spotlight-results-detail .spotlight-results-detail-vcard ul {
+          margin: 10px 0 0 0;
+          padding: 0 40px; }
+          .spotlight.spotlight-overlay .spotlight-results-panel .spotlight-results-detail .spotlight-results-detail-vcard ul li {
+            list-style: none;
+            padding: 2px 0; }
+            .spotlight.spotlight-overlay .spotlight-results-panel .spotlight-results-detail .spotlight-results-detail-vcard ul li.name {
+              font-weight: bold; }
+      .spotlight.spotlight-overlay .spotlight-results-panel .spotlight-results-detail .spotlight-results-detail-wikipedia {
+        padding: 10px; }
+        .spotlight.spotlight-overlay .spotlight-results-panel .spotlight-results-detail .spotlight-results-detail-wikipedia .title {
+          text-align: center;
+          font-size: 20px; }
+        .spotlight.spotlight-overlay .spotlight-results-panel .spotlight-results-detail .spotlight-results-detail-wikipedia .description {
+          color: #010101;
+          text-align: justify;
+          padding: 15px 0;
+          margin-bottom: 15px;
+          border-bottom: 1px solid #cccecf; }
+        .spotlight.spotlight-overlay .spotlight-results-panel .spotlight-results-detail .spotlight-results-detail-wikipedia .footer {
+          font-size: 10px; }
+      .spotlight.spotlight-overlay .spotlight-results-panel .spotlight-results-detail .spotlight-results-detail-default {
+        text-align: center;
+        font-size: 26px;
+        padditop: 135px; }
+        .spotlight.spotlight-overlay .spotlight-results-panel .spotlight-results-detail .spotlight-results-detail-default .spotlight-item-icon {
+          font-size: 60px; }
+        .spotlight.spotlight-overlay .spotlight-results-panel .spotlight-results-detail .spotlight-results-detail-default .name {
+          margin-top: 15px; }
