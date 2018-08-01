@@ -58,18 +58,25 @@ define([
 
         // Use the active viz instead
         // TODO
-        this.editor = new AutoVizPanel(this._layoutManager, this._params);
+        this.editor = new AutoVizPanel(this, this._params);
         this.$editorCntr = this.$el.find('.current-tab-content');
         this.$editorCntr.append(this.editor.$el);
 
         this.control = new TabbedTextEditorControl({
             logger: this.logger,
             client: this._client,
+            editor: this.editor,
             embedded: this._embedded,
             widget: this.widget
         });
 
         this.onActivate();
+    };
+
+    TabbedTextEditorPanel.prototype.addPanel = function (name, panel) {
+        this.$editorCntr.append(panel.$pEl);
+        panel.setSize(this.width-2, this.height-1);
+        panel.afterAppend();
     };
 
     /* OVERRIDE FROM WIDGET-WITH-HEADER */
@@ -81,7 +88,8 @@ define([
     };
 
     TabbedTextEditorPanel.prototype.onResize = function (width, height) {
-        this.logger.debug('onResize --> width: ' + width + ', height: ' + height);
+        this.width = width;
+        this.height = height;
         this.widget.onWidgetContainerResize(width, height);
         // Resize the active viz
         // TODO

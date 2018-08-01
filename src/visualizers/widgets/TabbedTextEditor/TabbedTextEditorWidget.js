@@ -72,7 +72,8 @@ define([
     };
 
     TabbedTextEditorWidget.prototype.setActiveTab = function (tab) {
-        const formerActive = document.getElementsByClassName('tablinks active');
+        const formerActive = Array.prototype.slice
+            .call(document.getElementsByClassName('tablinks active'));
         formerActive.forEach(tab => tab.className = tab.className.replace(' active', ''));
         tab.className += ' active';
 

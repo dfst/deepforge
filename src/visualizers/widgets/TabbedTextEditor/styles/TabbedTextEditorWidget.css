@@ -10,6 +10,11 @@
   outline: none;
   }
 
+.current-tab-content {
+    width: 100%;
+    height: 100%;
+}
+
 .tab {
     overflow: hidden;
     border: 1px solid #ccc;

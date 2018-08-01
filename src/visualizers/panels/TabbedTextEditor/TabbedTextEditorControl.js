@@ -18,6 +18,7 @@ define([
 
         // Initialize core collections and variables
         this._widget = options.widget;
+        this.editor = options.editor;
 
         this._currentNodeId = null;
 
@@ -41,9 +42,7 @@ define([
             this._client.completeTransaction();
         };
 
-        this._widget.onSelectTab = function (id) {
-            // TODO
-        };
+        this._widget.onTabSelected = id => this.editor.selectedObjectChanged(id);
 
         this._widget.onNodeClick = function (id) {
             // Change the current active object
