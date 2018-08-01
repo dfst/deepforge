@@ -44,6 +44,9 @@ define([
 
         this._widget.onTabSelected = id => this.setEditorNode(id);
         this._widget.onDeleteNode = id => this.deleteNode(id);
+        this._widget.setNodeName = (id, name) => {
+            this._client.setAttribute(id, 'name', name);
+        };
 
         this._widget.onNodeClick = function (id) {
             // Change the current active object
@@ -52,12 +55,10 @@ define([
     };
 
     TabbedTextEditorControl.prototype.deleteNode = function (nodeId) {
-        console.log('deleting', nodeId);
         this._client.deleteNode(nodeId);
     };
 
     TabbedTextEditorControl.prototype.setEditorNode = function (nodeId) {
-        console.log('setting editor to', nodeId);
         this.editor.selectedObjectChanged(nodeId);
     };
 
