@@ -29,18 +29,20 @@ define([
         this.$el.addClass(WIDGET_CLASS);
 
         // Create a dummy header
-        this.$tabs = $('<div>', {class: 'tab'});
-        this.addNewFileBtn();
+        const tabContainer = $('<div>', {class: 'tab'});
+        this.$tabs = $('<div>', {class: 'node-tabs'});
+        tabContainer.append(this.$tabs);
+        this.addNewFileBtn(tabContainer);
 
-        this.$tabs.append(this.$newTab);
-        this.$el.append(this.$tabs);
+        this.$el.append(tabContainer);
         this.$el.append(`<div class="current-tab-content"></div>`);
     };
 
-    TabbedTextEditorWidget.prototype.addNewFileBtn = function () {
+    TabbedTextEditorWidget.prototype.addNewFileBtn = function (cntr) {
         this.$newTab = $('<button>', {class: 'tablinks'});
-        this.$newTab.text('NEW');
+        this.$newTab.append(`<span class="oi oi-plus" title="Create new file..." aria-hidden="true"></span>`);
         this.$newTab.click(() => this.onAddNewClicked());
+        cntr.append(this.$newTab);
     };
 
     TabbedTextEditorWidget.prototype.onAddNewClicked = function () {
@@ -63,7 +65,16 @@ define([
             const tab = document.createElement('button');
             tab.className = 'tablinks';
             tab.setAttribute('data-id', desc.id);
-            tab.innerHTML = desc.name;
+
+            const name = document.createElement('span');
+            name.innerHTML = desc.name;
+
+            tab.appendChild(name);
+            const rmBtn = document.createElement('span');
+            rmBtn.className = 'oi oi-circle-x remove-file';
+            rmBtn.setAttribute('title', 'Delete file');
+            rmBtn.onclick = () => this.onDeleteNode(desc.id);
+            tab.appendChild(rmBtn);
 
             this.$tabs.append(tab);
             tab.onclick = () => this.setActiveTab(desc.id);
@@ -83,8 +94,8 @@ define([
     };
 
     TabbedTextEditorWidget.prototype.removeNode = function (gmeId) {
-        var desc = this.nodes[gmeId];
-        this.$el.append('<div>Removing node "' + desc.name + '"</div>');
+        const tab = this.nodes[gmeId];
+        tab.remove();
         delete this.nodes[gmeId];
     };
 
