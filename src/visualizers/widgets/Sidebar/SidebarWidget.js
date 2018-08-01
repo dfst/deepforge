@@ -21,7 +21,8 @@ define([
             'executions',
             'resources',
             'artifacts',
-            'code'
+            'code',
+            'utils'
         ];
 
     SidebarWidget = function (logger, container) {

@@ -130,5 +130,11 @@
     "title": "ForwardViz",
     "panel": "panels/ForwardViz/ForwardVizPanel",
     "DEBUG_ONLY": false
+  },
+  {
+    "id": "TabbedTextEditor",
+    "title": "TabbedTextEditor",
+    "panel": "panels/TabbedTextEditor/TabbedTextEditorPanel",
+    "DEBUG_ONLY": false
   }
 ]
