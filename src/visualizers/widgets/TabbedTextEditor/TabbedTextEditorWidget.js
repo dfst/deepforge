@@ -31,7 +31,12 @@ define([
         this.addNewFileBtn(tabContainer);
 
         this.$el.append(tabContainer);
-        this.$el.append(`<div class="current-tab-content"></div>`);
+        this.$el.append(`
+        <div class="content">
+            <div class="empty-message">No Existing Python Modules...</div>
+            <div class="current-tab-content"></div>
+        </div>`);
+        this.$tabContent = this.$el.find('.current-tab-content');
     };
 
     TabbedTextEditorWidget.prototype.addNewFileBtn = function (cntr) {
@@ -94,6 +99,9 @@ define([
         formerActive.forEach(tab => tab.className = tab.className.replace(' active', ''));
         tab.$el.className += ' active';
 
+        // Make the code editor show up (display: block)
+        // TODO
+        this.$tabContent.css('display', 'block');
         this.onTabSelected(id);
     };
 
@@ -117,7 +125,7 @@ define([
                 const activeId = this.tabs[newIndex].id;
                 this.setActiveTab(activeId);
             } else {
-                console.log('show no files message');
+                this.$tabContent.css('display', 'none');
             }
         }
     };
