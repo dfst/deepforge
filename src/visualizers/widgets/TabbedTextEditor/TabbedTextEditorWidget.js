@@ -50,11 +50,19 @@ define([
     };
 
     TabbedTextEditorWidget.prototype.onAddNewClicked = function () {
-        // Ensure unique?
-        // TODO
         // Prompt the user for the name of the new code file
-        return TextPrompter.prompt('New Module Name')
-            .then(name => this.addNewFile(name));
+        return TextPrompter.prompt('New Module Name (eg. module.py)')
+            .then(name => {  // ensure unique
+                const names = this.tabs.map(tab => tab.$name.innerHTML);
+                const [basename, ext='py'] = name.split('.');
+                let count = 2;
+
+                name = `${basename}.${ext}`;
+                while (names.includes(name)) {
+                    name = `${basename}-${count}.${ext}`;
+                }
+                return this.addNewFile(name);
+            });
     };
 
     TabbedTextEditorWidget.prototype.onWidgetContainerResize = function (width, height) {
