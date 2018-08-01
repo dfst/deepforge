@@ -43,19 +43,15 @@ define([
     _.extend(TabbedTextEditorPanel.prototype, IActivePanel.prototype);
 
     TabbedTextEditorPanel.prototype._initialize = function () {
-        var self = this;
-
         //set Widget title
         this.setTitle('');
 
-        // Make a container for this element
-        // TODO
         this.widget = new TabbedTextEditorWidget(this.logger, this.$el);
-
-        this.widget.setTitle = function (title) {
-            self.setTitle(title);
+        this.widget.setTitle = title => {
+            this.setTitle(title);
         };
 
+        // embedded text editor
         this.editor = new AutoVizPanel(this, this._params);
         this.$editorCntr = this.$el.find('.current-tab-content');
         this.$editorCntr.append(this.editor.$el);
