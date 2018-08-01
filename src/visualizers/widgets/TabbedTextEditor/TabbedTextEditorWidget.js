@@ -1,4 +1,4 @@
-/*globals define, WebGMEGlobal*/
+/*globals define, $*/
 
 define([
     'css!./styles/TabbedTextEditorWidget.css'
@@ -14,17 +14,13 @@ define([
 
         this.$el = container;
 
-        this.nodes = {};
+        this.tabs = [];
         this._initialize();
 
         this._logger.debug('ctor finished');
     };
 
     TabbedTextEditorWidget.prototype._initialize = function () {
-        var width = this.$el.width(),
-            height = this.$el.height(),
-            self = this;
-
         // set widget class
         this.$el.addClass(WIDGET_CLASS);
 
@@ -61,7 +57,7 @@ define([
     // Adding/Removing/Updating items
     TabbedTextEditorWidget.prototype.addNode = function (desc) {
         if (desc) {
-            // Add node to a table of nodes
+            // Add node to a table of tabs
             const tab = document.createElement('button');
             tab.className = 'tablinks';
             tab.setAttribute('data-id', desc.id);
@@ -78,30 +74,58 @@ define([
 
             this.$tabs.append(tab);
             tab.onclick = () => this.setActiveTab(desc.id);
-            this.nodes[desc.id] = tab;
+            this.tabs.push({
+                id: desc.id,
+                $el: tab,
+                $name: name
+            });
         }
     };
 
+    TabbedTextEditorWidget.prototype.getTab = function (id) {
+        return this.tabs.find(tab => tab.id === id);
+    };
+
     TabbedTextEditorWidget.prototype.setActiveTab = function (id) {
-        const tab = this.nodes[id];
+        const tab = this.getTab(id);
         const formerActive = Array.prototype.slice
             .call(document.getElementsByClassName('tablinks active'));
 
         formerActive.forEach(tab => tab.className = tab.className.replace(' active', ''));
-        tab.className += ' active';
+        tab.$el.className += ' active';
 
         this.onTabSelected(id);
     };
 
+    TabbedTextEditorWidget.prototype.isActiveNode = function (gmeId) {
+        const tab = this.getTab(gmeId);
+        return tab && tab.$el.className.includes('active');
+    };
+
     TabbedTextEditorWidget.prototype.removeNode = function (gmeId) {
-        const tab = this.nodes[gmeId];
-        tab.remove();
-        delete this.nodes[gmeId];
+        const tab = this.getTab(gmeId);
+        const needsActiveUpdate = this.isActiveNode(gmeId);
+
+        tab.$el.remove();
+
+        const index = this.tabs.indexOf(tab);
+        this.tabs.splice(index, 1);
+
+        if (needsActiveUpdate) {
+            if (this.tabs.length) {
+                const newIndex = Math.min(this.tabs.length-1, index);
+                const activeId = this.tabs[newIndex].id;
+                this.setActiveTab(activeId);
+            } else {
+                console.log('show no files message');
+            }
+        }
     };
 
     TabbedTextEditorWidget.prototype.updateNode = function (desc) {
-        if (desc) {
-            this.nodes[desc.id].innerHTML = desc.name;
+        const tab = this.getTab(desc.id);
+        if (tab) {
+            tab.$name.innerHTML = desc.name;
             this._logger.debug('Updating node:', desc);
         }
     };
