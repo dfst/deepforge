@@ -53,13 +53,14 @@ define([
         // Prompt the user for the name of the new code file
         return TextPrompter.prompt('New Module Name (eg. module.py)')
             .then(name => {  // ensure unique
+                name = name.replace(/[^\da-zA-Z]/g, '_');
                 const names = this.tabs.map(tab => tab.$name.innerHTML);
                 const [basename, ext='py'] = name.split('.');
                 let count = 2;
 
                 name = `${basename}.${ext}`;
                 while (names.includes(name)) {
-                    name = `${basename}-${count}.${ext}`;
+                    name = `${basename}_${count}.${ext}`;
                 }
                 return this.addNewFile(name);
             });
