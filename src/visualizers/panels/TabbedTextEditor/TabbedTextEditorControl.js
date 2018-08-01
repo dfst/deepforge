@@ -163,7 +163,6 @@ define([
     /* * * * * * * * Visualizer life cycle callbacks * * * * * * * */
     TabbedTextEditorControl.prototype.destroy = function () {
         this._detachClientEventListeners();
-        this._removeToolbarItems();
     };
 
     TabbedTextEditorControl.prototype._attachClientEventListeners = function () {
