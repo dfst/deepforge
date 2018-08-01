@@ -21,7 +21,6 @@ define([
         this.editor = options.editor;
 
         this._currentNodeId = null;
-        this.currentEditorNodeId = null;
 
         this._initWidgetEventHandlers();
 
@@ -58,7 +57,7 @@ define([
     };
 
     TabbedTextEditorControl.prototype.setEditorNode = function (nodeId) {
-        this.currentEditorNodeId = nodeId;
+        console.log('setting editor to', nodeId);
         this.editor.selectedObjectChanged(nodeId);
     };
 
@@ -67,7 +66,6 @@ define([
         var self = this;
 
         self._logger.debug('activeObject nodeId \'' + nodeId + '\'');
-        this.currentEditorNodeId = null;
         // Remove current territory patterns
         if (self._currentNodeId) {
             self._client.removeUI(self._territoryId);
@@ -137,9 +135,6 @@ define([
         var description = this._getObjectDescriptor(gmeId);
         if (gmeId !== this._currentNodeId) {
             this._widget.addNode(description);
-            if (!this.currentEditorNodeId) {
-                this._widget.setActiveTab(gmeId);
-            }
         }
     };
 

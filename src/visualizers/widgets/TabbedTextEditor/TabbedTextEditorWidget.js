@@ -16,6 +16,7 @@ define([
 
         this.tabs = [];
         this._initialize();
+        this.activeTabId = null;
 
         this._logger.debug('ctor finished');
     };
@@ -84,6 +85,10 @@ define([
                 $el: tab,
                 $name: name
             });
+
+            if (!this.activeTabId) {
+                this.setActiveTab(desc.id);
+            }
         }
     };
 
@@ -99,8 +104,8 @@ define([
         formerActive.forEach(tab => tab.className = tab.className.replace(' active', ''));
         tab.$el.className += ' active';
 
+        this.activeTabId = id;
         // Make the code editor show up (display: block)
-        // TODO
         this.$tabContent.css('display', 'block');
         this.onTabSelected(id);
     };
@@ -126,6 +131,7 @@ define([
                 this.setActiveTab(activeId);
             } else {
                 this.$tabContent.css('display', 'none');
+                this.activeTabId = null;
             }
         }
     };
