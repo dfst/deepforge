@@ -8,6 +8,7 @@
 
 .tabbed-text-editor {
   outline: none;
+  padding: 0;
   }
 
 .current-tab-content {
@@ -28,9 +29,10 @@
     border: none;
     outline: none;
     cursor: pointer;
-    padding: 14px 16px;
+    padding: 5px 10px;
     transition: 0.3s;
-    font-size: 17px;
+    font-size: 15px;
+    border-right: 1px solid #bbb;
 }
 
 /* Change background color of buttons on hover */
