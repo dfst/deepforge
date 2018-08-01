@@ -1,8 +1,10 @@
 /*globals define, $*/
 
 define([
+    'deepforge/viz/TextPrompter',
     'css!./styles/TabbedTextEditorWidget.css'
 ], function (
+    TextPrompter
 ) {
     'use strict';
 
@@ -50,10 +52,9 @@ define([
     TabbedTextEditorWidget.prototype.onAddNewClicked = function () {
         // Ensure unique?
         // TODO
-        const name = 'Test.py';
         // Prompt the user for the name of the new code file
-        // TODO
-        return this.addNewFile(name);
+        return TextPrompter.prompt('New Module Name')
+            .then(name => this.addNewFile(name));
     };
 
     TabbedTextEditorWidget.prototype.onWidgetContainerResize = function (width, height) {
