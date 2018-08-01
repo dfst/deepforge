@@ -187,17 +187,16 @@ define([
     OperationControl.prototype.addAttribute = function(opId, name, value) {
         var type = 'string';
 
-        // Set the defaultValue
         if (value === undefined) {
             value = null;
-        }
-        type = typeof value;
+        } else {  // determine the attribute type
+            type = typeof value;
 
-        // Figure out the type
-        if (type === 'number') {
-            type = parseInt(value) === value ? 'integer' : 'float';
+            // Figure out the type
+            if (type === 'number') {
+                type = parseInt(value) === value ? 'integer' : 'float';
+            }
         }
-
         this._client.setAttributeMeta(opId, name, {type: type});
         this._client.setAttribute(opId, name, value);
     };
@@ -208,8 +207,13 @@ define([
     };
 
     OperationControl.prototype.setAttributeDefault = function(opId, name, value) {
-        this.removeAttribute(opId, name);
-        this.addAttribute(opId, name, value);
+        if (value) {
+            this.removeAttribute(opId, name);
+            this.addAttribute(opId, name, value);
+        } else {  // just remove the default
+            value = value !== undefined ? value : null;
+            this._client.setAttribute(opId, name, value);
+        }
     };
 
     OperationControl.prototype.updateCode = function(fn, nodeId) {
