@@ -69,7 +69,7 @@ define([
         y = DecoratorBase.prototype.createAttributeFields.call(this, y, width);
         // Change attribute field so clicking allows user to edit/delete the field
         this.fields.forEach(field =>
-            field.onLabelClick = this.editAttributeMeta.bind(this, field.name));
+            field.onLabelClick = this.editAttributeMeta.bind(this, field.attr.name));
 
         // Add the 'create new attribute' field
         y += this.ROW_HEIGHT + (y === initialY ? 0 : 10);
