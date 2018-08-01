@@ -56,8 +56,6 @@ define([
             self.setTitle(title);
         };
 
-        // Use the active viz instead
-        // TODO
         this.editor = new AutoVizPanel(this, this._params);
         this.$editorCntr = this.$el.find('.current-tab-content');
         this.$editorCntr.append(this.editor.$el);
@@ -91,8 +89,7 @@ define([
         this.width = width;
         this.height = height;
         this.widget.onWidgetContainerResize(width, height);
-        // Resize the active viz
-        // TODO
+        this.editor.onResize(this.width-2, this.height-1);
     };
 
     /* * * * * * * * Visualizer life cycle callbacks * * * * * * * */

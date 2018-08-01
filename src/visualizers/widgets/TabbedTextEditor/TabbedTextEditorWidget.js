@@ -66,18 +66,20 @@ define([
             tab.innerHTML = desc.name;
 
             this.$tabs.append(tab);
-            tab.onclick = () => this.setActiveTab(tab);
+            tab.onclick = () => this.setActiveTab(desc.id);
             this.nodes[desc.id] = tab;
         }
     };
 
-    TabbedTextEditorWidget.prototype.setActiveTab = function (tab) {
+    TabbedTextEditorWidget.prototype.setActiveTab = function (id) {
+        const tab = this.nodes[id];
         const formerActive = Array.prototype.slice
             .call(document.getElementsByClassName('tablinks active'));
+
         formerActive.forEach(tab => tab.className = tab.className.replace(' active', ''));
         tab.className += ' active';
 
-        this.onTabSelected(tab.getAttribute('data-id'));
+        this.onTabSelected(id);
     };
 
     TabbedTextEditorWidget.prototype.removeNode = function (gmeId) {
