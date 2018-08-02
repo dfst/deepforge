@@ -110,7 +110,7 @@ define([
                 this.result.setSuccess(true);
                 callback(null, this.result);
             })
-            .fail(err => {
+            .catch(err => {
                 this.logger.error(`Could not check the libraries: ${err}`);
                 callback(err, this.result);
             });
