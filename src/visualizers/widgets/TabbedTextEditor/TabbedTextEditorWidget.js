@@ -152,17 +152,6 @@ define([
         }
     };
 
-    /* * * * * * * * Visualizer event handlers * * * * * * * */
-
-    TabbedTextEditorWidget.prototype.onNodeClick = function (/*id*/) {
-        // This currently changes the active node to the given id and
-        // this is overridden in the controller.
-    };
-
-    TabbedTextEditorWidget.prototype.onBackgroundDblClick = function () {
-        this.$el.append('<div>Background was double-clicked!!</div>');
-    };
-
     /* * * * * * * * Visualizer life cycle callbacks * * * * * * * */
     TabbedTextEditorWidget.prototype.destroy = function () {
     };

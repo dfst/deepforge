@@ -38,11 +38,6 @@ define([
             name = this.getValidModuleName(name);
             this._client.setAttribute(id, 'name', name);
         };
-
-        this._widget.onNodeClick = function (id) {
-            // Change the current active object
-            WebGMEGlobal.State.registerActiveObject(id);
-        };
     };
 
     TabbedTextEditorControl.prototype.deleteNode = function (nodeId) {
@@ -138,7 +133,9 @@ define([
     };
 
     TabbedTextEditorControl.prototype._onUnload = function (gmeId) {
-        this._widget.removeNode(gmeId);
+        if (gmeId !== this._currentNodeId) {
+            this._widget.removeNode(gmeId);
+        }
     };
 
     TabbedTextEditorControl.prototype._stateActiveObjectChanged = function (model, activeObjectId) {
