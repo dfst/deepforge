@@ -66,8 +66,10 @@ define([
             return;
         }
 
-        this.checkLibUpdates()
+        this.checkUpdates()
             .then(updates => {
+                // Update message
+                // TODO
                 if (updates.length) {  // prompt about updates
                     var names = updates.map(update => update[0]),
                         projName = this.getProjectName(),
@@ -95,7 +97,7 @@ define([
 
                         content.text(msg);
                         Materialize.toast(content, 8000);
-                        this.updateLibraries(updates).then(() => {
+                        this.applyUpdates(updates).then(() => {
                             content.parent().remove();
                             Materialize.toast('Update complete!', 2000);
                         });
@@ -104,7 +106,7 @@ define([
                     Materialize.toast(content, 8000);
                 }
             })
-            .fail(err => Materialize.toast(`Library update check failed: ${err}`, 2000));
+            .catch(err => Materialize.toast(`Library update check failed: ${err}`, 2000));
     };
 
     SidebarWidget.prototype.width = function () {

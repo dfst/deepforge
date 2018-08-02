@@ -48,8 +48,8 @@ define([
     SidebarPanel.prototype._initialize = function () {
         this.widget = new SidebarWidget(this.logger, this.$el);
         this.widget.getProjectName = this.getProjectName.bind(this);
-        this.widget.updateLibraries = this.updateLibraries.bind(this);
-        this.widget.checkLibUpdates = this.checkLibUpdates.bind(this);
+        this.widget.applyUpdates = this.applyUpdates.bind(this);
+        this.widget.checkUpdates = this.checkUpdates.bind(this);
         this.widget.setEmbeddedPanel = this.setEmbeddedPanel.bind(this);
 
         this.onActivate();
@@ -144,16 +144,16 @@ define([
         WebGMEGlobal.Toolbar.refresh();
     };
 
-    /* * * * * * * * Library Updates * * * * * * * */
+    /* * * * * * * * Project Updates * * * * * * * */
 
     SidebarPanel.prototype.getProjectName = function () {
         var projectId = this._client.getActiveProjectId();
         return projectId && projectId.split('+')[1];
     };
 
-    SidebarPanel.prototype.checkLibUpdates = function () {
-        var pluginId = 'CheckLibraries',
-            context = this._client.getCurrentPluginContext(pluginId);
+    SidebarPanel.prototype.checkUpdates = function () {
+        const pluginId = 'CheckUpdates';
+        const context = this._client.getCurrentPluginContext(pluginId);
 
         return Q.ninvoke(this._client, 'runServerPlugin', pluginId, context)
             .then(res => {
@@ -161,7 +161,7 @@ define([
             });
     };
 
-    SidebarPanel.prototype.updateLibraries = function (libraries) {
+    SidebarPanel.prototype.applyUpdates = function (libraries) {
         var promises = libraries
             .map(lib => Q.ninvoke(this._client, 'updateLibrary', lib[0], lib[1]));
 
