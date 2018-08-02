@@ -143,6 +143,7 @@ define([
     };
 
     CheckLibraries.prototype.getAllLibraries = function () {
+        const DEFAULT_LIBRARIES = ['pipeline'];
         var name,
             names = [];
 
@@ -152,7 +153,9 @@ define([
                     if (this.core.isLibraryRoot(children[i])) {
                         name = this.core.getAttribute(children[i], 'name');
                         this.libraries[name] = children[i];
-                        names.push(name);
+                        if (DEFAULT_LIBRARIES.includes(name)) {
+                            names.push(name);
+                        }
                     }
                 }
                 if (names.length) {
