@@ -252,6 +252,30 @@ define([
             .then(() => files);
     };
 
+    GenerateJob.prototype.isUtilsNode = function (node) {
+        return this.core.getAttribute(node, 'name').includes('Utilities');
+    };
+
+    GenerateJob.prototype.createCustomUtils = function (files={}) {
+        // Load all custom utilities defined by the user
+        return this.core.loadChildren(this.rootNode)
+            .then(children => {
+                const utilsNode = children.find(child => this.isUtilsNode(child));
+                if (utilsNode) {  // backwards compatibility
+                    return this.core.loadChildren(utilsNode);
+                }
+                return [];
+            })
+            .then(modules => {
+                modules.forEach(node => {
+                    const name = this.core.getAttribute(node, 'name');
+                    const code = this.core.getAttribute(node, 'code');
+                    files[`utils/${name}`] = code;
+                });
+                return files;
+            });
+    };
+
     GenerateJob.prototype.createOperationFiles = function (node, files={}) {
         // For each operation, generate the output files:
         //   artifacts/<arg-name>  (respective serialized input data)
@@ -262,6 +286,7 @@ define([
         // add the given files
         this.logger.info('About to generate operation execution files');
         return this.createEntryFile(node, files)
+            .then(() => this.createCustomUtils(files))
             .then(() => this.createInputs(node, files))
             .then(() => this.createMainFile(node, files))
             .then(() => files)
