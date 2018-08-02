@@ -1,13 +1,13 @@
 /*jshint node:true, mocha:true*/
 
-describe('CheckLibraries', function () {
+describe('CheckUpdates', function () {
     const testFixture = require('../../../globals');
     var gmeConfig = testFixture.getGmeConfig(),
         expect = testFixture.expect,
-        logger = testFixture.logger.fork('CheckLibraries'),
+        logger = testFixture.logger.fork('CheckUpdates'),
         PluginCliManager = testFixture.WebGME.PluginCliManager,
         projectName = 'testProject',
-        pluginName = 'CheckLibraries',
+        pluginName = 'CheckUpdates',
         project,
         gmeAuth,
         storage,

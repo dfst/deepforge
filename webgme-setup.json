@@ -29,9 +29,9 @@
         "src": "src/plugins/ExecuteJob",
         "test": "test/plugins/ExecuteJob"
       },
-      "CheckLibraries": {
-        "src": "src/plugins/CheckLibraries",
-        "test": "test/plugins/CheckLibraries"
+      "CheckUpdates": {
+        "src": "src/plugins/CheckUpdates",
+        "test": "test/plugins/CheckUpdates"
       },
       "UpdateLibrarySeed": {
         "src": "src/plugins/UpdateLibrarySeed",

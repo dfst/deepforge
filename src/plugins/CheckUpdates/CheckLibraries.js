@@ -19,13 +19,13 @@ define([
     'use strict';
 
     /**
-     * Initializes a new instance of CheckLibraries.
+     * Initializes a new instance of CheckUpdates.
      * @class
      * @augments {PluginBase}
-     * @classdesc This class represents the plugin CheckLibraries.
+     * @classdesc This class represents the plugin CheckUpdates.
      * @constructor
      */
-    var CheckLibraries = function () {
+    var CheckUpdates = function () {
         // Call base class' constructor.
         PluginBase.call(this);
         this.pluginMetadata = pluginMetadata;
@@ -37,11 +37,11 @@ define([
      * This is also available at the instance at this.pluginMetadata.
      * @type {object}
      */
-    CheckLibraries.metadata = pluginMetadata;
+    CheckUpdates.metadata = pluginMetadata;
 
     // Prototypical inheritance from PluginBase.
-    CheckLibraries.prototype = Object.create(PluginBase.prototype);
-    CheckLibraries.prototype.constructor = CheckLibraries;
+    CheckUpdates.prototype = Object.create(PluginBase.prototype);
+    CheckUpdates.prototype.constructor = CheckUpdates;
 
     /**
      * Main function for the plugin to execute. This will perform the execution.
@@ -52,7 +52,7 @@ define([
      *
      * @param {function(string, plugin.PluginResult)} callback - the result callback
      */
-    CheckLibraries.prototype.main = function (callback) {
+    CheckUpdates.prototype.main = function (callback) {
         var tuples;
 
         return this.getAllLibraries()
@@ -116,15 +116,15 @@ define([
             });
     };
 
-    CheckLibraries.prototype.getSeedHashPath = function (name) {
+    CheckUpdates.prototype.getSeedHashPath = function (name) {
         return path.join(this.getSeedDir(name), 'hash.txt');
     };
 
-    CheckLibraries.prototype.getSeedVersionPath = function (name) {
+    CheckUpdates.prototype.getSeedVersionPath = function (name) {
         return path.join(this.getSeedDir(name), 'version.txt');
     };
 
-    CheckLibraries.prototype.upgradeSeedToVersion = function (name, version, hash) {
+    CheckUpdates.prototype.upgradeSeedToVersion = function (name, version, hash) {
         if (!hash) {  // Upload the seed
             // Get the data
             this.logger.info(`Uploading new version of ${name} (${version})`);
@@ -142,7 +142,7 @@ define([
         return hash;
     };
 
-    CheckLibraries.prototype.getAllLibraries = function () {
+    CheckUpdates.prototype.getAllLibraries = function () {
         const DEFAULT_LIBRARIES = ['pipeline'];
         var name,
             names = [];
@@ -167,12 +167,12 @@ define([
             });
     };
 
-    CheckLibraries.prototype.getLoadedVersion = function (libName) {
+    CheckUpdates.prototype.getLoadedVersion = function (libName) {
         var node = this.libraries[libName],
             version = this.core.getAttribute(node, 'version');  // using library root hash
 
         return version;
     };
 
-    return CheckLibraries;
+    return CheckUpdates;
 });
