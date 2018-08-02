@@ -290,6 +290,10 @@ define([
 
     TextEditorWidget.prototype.removeNode = function (gmeId) {
         if (this.activeNode === gmeId) {
+            if (this.saving) {
+                this.saveText();
+            }
+
             this.editor.setValue('');
             this.activeNode = null;
         }
@@ -311,6 +315,7 @@ define([
 
     /* * * * * * * * Visualizer life cycle callbacks * * * * * * * */
     TextEditorWidget.prototype.destroy = function () {
+        this.readOnly = true;
         this.editor.destroy();
         $.contextMenu('destroy', '.' + WIDGET_CLASS);
     };

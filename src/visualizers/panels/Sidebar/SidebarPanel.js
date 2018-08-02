@@ -24,7 +24,8 @@ define([
             executions: 'MyExecutions',
             resources: 'MyResources',
             artifacts: 'MyArtifacts',
-            code: 'InitCode'
+            code: 'InitCode',
+            utils: 'MyUtilities'
         };
 
     SidebarPanel = function (layoutManager, params) {

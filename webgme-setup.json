@@ -237,6 +237,13 @@
         "panel": "src/visualizers/panels/ForwardViz",
         "secondary": false,
         "widget": "src/visualizers/widgets/ForwardViz"
+      },
+      "TabbedTextEditor": {
+        "src": "panels/TabbedTextEditor/TabbedTextEditorPanel",
+        "title": "TabbedTextEditor",
+        "panel": "src/visualizers/panels/TabbedTextEditor",
+        "secondary": false,
+        "widget": "src/visualizers/widgets/TabbedTextEditor"
       }
     },
     "addons": {},

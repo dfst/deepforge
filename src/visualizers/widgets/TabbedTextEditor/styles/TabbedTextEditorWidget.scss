@@ -1,0 +1,74 @@
+/**
+ * This file is for any scss that you may want for this visualizer.
+ */
+
+.tabbed-text-editor {
+  outline: none;
+  padding: 0;
+  background-color: #eee !important;
+
+  .remove-file {
+      font-size: 0.75em;
+      padding-left: 5px;
+      top: 0;
+  }
+
+  .current-tab-content {
+      width: 100%;
+      height: 100%;
+  }
+
+  .content {
+      position: relative;
+      height: 100%;
+      width: 100%;
+  }
+
+  .empty-message {
+      position: absolute;
+      font-size: 3em;
+      font-style: italic;
+      color: #757575;
+      top: 50%;
+      left: 50%;
+      transform: translateY(-50%) translateX(-50%);
+      text-align: center;
+  }
+
+  .tab {
+      overflow: hidden;
+      border: 1px solid #ccc;
+      background-color: #f1f1f1;
+  }
+
+  /* Style the buttons inside the tab */
+  .tab button {
+      background-color: inherit;
+      float: left;
+      border: none;
+      outline: none;
+      cursor: pointer;
+      padding: 5px 10px;
+      transition: 0.3s;
+      font-size: 15px;
+      border-right: 1px solid #bbb;
+  }
+
+  /* Change background color of buttons on hover */
+  .tab button:hover {
+      background-color: #ddd;
+  }
+
+  /* Create an active/current tablink class */
+  .tab button.active {
+      background-color: #ccc;
+  }
+
+  /* Style the tab content */
+  .tabcontent {
+      display: none;
+      padding: 6px 12px;
+      border: 1px solid #ccc;
+      border-top: none;
+  }
+}

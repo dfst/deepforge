@@ -8,6 +8,7 @@ define([
     'js/Constants',
     'panel/FloatingActionButton/FloatingActionButton',
     'deepforge/viz/PipelineControl',
+    'deepforge/viz/CodeControl',
     'deepforge/viz/NodePrompter',
     'deepforge/viz/Execute',
     './Actions',
@@ -25,6 +26,7 @@ define([
     GME_CONSTANTS,
     PluginButton,
     PipelineControl,
+    CodeControl,
     NodePrompter,
     Execute,
     ACTIONS,
@@ -57,7 +59,8 @@ define([
         ForgeActionButton.prototype,
         PluginButton.prototype,
         Execute.prototype,
-        PipelineControl.prototype
+        PipelineControl.prototype,
+        CodeControl.prototype
     );
 
     ForgeActionButton.prototype.initializeKeyListener = function() {

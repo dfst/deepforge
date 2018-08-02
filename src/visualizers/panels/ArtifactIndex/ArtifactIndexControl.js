@@ -21,6 +21,7 @@ define([
         });
 
         this._client = options.client;
+        this._embedded = options.embedded;
 
         // Initialize core collections and variables
         this._widget = options.widget;
@@ -134,11 +135,11 @@ define([
 
     /* * * * * * * * Node Event Handling * * * * * * * */
     ArtifactIndexControl.prototype._eventCallback = function (events) {
-        var i = events ? events.length : 0,
-            event;
-
+        events = events.filter(event => event.eid !== this._currentNodeId);
+        let i = events ? events.length : 0;
         this._logger.debug('_eventCallback \'' + i + '\' items');
 
+        let event;
         while (i--) {
             event = events[i];
             switch (event.etype) {
@@ -187,11 +188,15 @@ define([
 
     ArtifactIndexControl.prototype._attachClientEventListeners = function () {
         this._detachClientEventListeners();
-        WebGMEGlobal.State.on('change:' + CONSTANTS.STATE_ACTIVE_OBJECT, this._stateActiveObjectChanged, this);
+        if (!this._embedded) {
+            WebGMEGlobal.State.on('change:' + CONSTANTS.STATE_ACTIVE_OBJECT, this._stateActiveObjectChanged, this);
+        }
     };
 
     ArtifactIndexControl.prototype._detachClientEventListeners = function () {
-        WebGMEGlobal.State.off('change:' + CONSTANTS.STATE_ACTIVE_OBJECT, this._stateActiveObjectChanged);
+        if (!this._embedded) {
+            WebGMEGlobal.State.off('change:' + CONSTANTS.STATE_ACTIVE_OBJECT, this._stateActiveObjectChanged);
+        }
     };
 
     ArtifactIndexControl.prototype.onActivate = function () {
