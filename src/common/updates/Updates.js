@@ -16,18 +16,29 @@ define([
                         return !names.includes('MyUtilities');
                     });
             },
-            apply: function(core, rootNode) {
+            apply: function(core, rootNode, META) {
                 // Create 'MyUtilities' node
-                // TODO
+                const utils = core.createNode({
+                    parent: rootNode,
+                    base: META.FCO
+                });
+                core.setAttribute(utils, 'name', 'MyUtilities');
 
                 // Add 'MyUtilities' to the META
-                // TODO
+                const META_ASPECT_SET_NAME = 'MetaAspectSet';
+                const META_SHEETS = 'MetaSheets';
+                const tabId = core.getRegistry(rootNode, META_SHEETS)
+                    .find(desc => desc.order === 0)
+                    .SetID;
+
+                core.addMember(rootNode, META_ASPECT_SET_NAME, utils);
+                core.addMember(rootNode, tabId, utils);
 
                 // Add 'Code' from 'pipelines' as a valid child
-                // TODO
+                core.setChildMeta(utils, META['pipeline.Code']);
 
                 // Set the default visualizer to TabbedTextEditor
-                // TODO
+                core.setRegistry(utils, 'validVisualizers', 'TabbedTextEditor');
             }
         }
     ];
@@ -49,5 +60,8 @@ define([
         return allUpdates;
     };
 
+    // Constants
+    Updates.MIGRATION = 'Migration';
+    Updates.SEED = 'SeedUpdate';
     return Updates;
 });

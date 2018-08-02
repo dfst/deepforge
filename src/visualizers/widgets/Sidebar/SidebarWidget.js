@@ -66,23 +66,17 @@ define([
             return;
         }
 
-        this.checkUpdates()
+        return this.checkUpdates()
             .then(updates => {
                 // Update message
                 // TODO
                 if (updates.length) {  // prompt about updates
-                    var names = updates.map(update => update[0]),
+                    const msg = `${updates.length} update(s) available. Click to update.`;
+                    var names = updates.map(update => update.name),
                         projName = this.getProjectName(),
-                        content = $('<span>'),
-                        msg = `${projName} is out of date. Click to update.`;
+                        content = $('<span>');
 
-                    this.logger.info(`Updates available for ${names.join(', ')}`);
-
-                    if (names.indexOf('nn') !== -1) {
-                        msg = 'Newer nn library available. Click to update';
-                    } else if (names.indexOf('pipeline') !== -1) {
-                        msg = 'Execution updates available. Click to update';
-                    }
+                    this.logger.info(`Updates available for ${projName}: ${names.join(', ')}`);
 
                     content.text(msg);
                     content.on('click', () => {
@@ -90,12 +84,7 @@ define([
                         content.parent().fadeOut();
 
                         // Create updating notification
-                        msg = 'Updating execution library...';
-                        if (names.indexOf('nn') !== -1) {
-                            msg = 'Updating nn library...';
-                        }
-
-                        content.text(msg);
+                        content.text('Applying Updates...');
                         Materialize.toast(content, 8000);
                         this.applyUpdates(updates).then(() => {
                             content.parent().remove();
@@ -106,7 +95,7 @@ define([
                     Materialize.toast(content, 8000);
                 }
             })
-            .catch(err => Materialize.toast(`Library update check failed: ${err}`, 2000));
+            .catch(err => Materialize.toast(`Update check failed: ${err}`, 2000));
     };
 
     SidebarWidget.prototype.width = function () {

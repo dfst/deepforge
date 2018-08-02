@@ -2,6 +2,7 @@
 /*jshint browser: true*/
 
 define([
+    'deepforge/updates/Updates',
     'js/Constants',
     'js/PanelBase/PanelBase',
     'panels/AutoViz/AutoVizPanel',
@@ -9,6 +10,7 @@ define([
     'deepforge/globals',
     'q'
 ], function (
+    Updates,
     CONSTANTS,
     PanelBase,
     AutoVizPanel,
@@ -75,7 +77,7 @@ define([
 
         if (typeof nodeId === 'string') {
             categories = Object.keys(CATEGORY_TO_PLACE);
-            
+
             Q.all(categories.map(category => {
                 place = CATEGORY_TO_PLACE[category];
                 return DeepForge.places[place]();
@@ -157,13 +159,32 @@ define([
 
         return Q.ninvoke(this._client, 'runServerPlugin', pluginId, context)
             .then(res => {
-                return res.messages.map(msg => msg.message.split(' '));
+                return res.messages.map(msg => JSON.parse(msg.message));
             });
     };
 
-    SidebarPanel.prototype.applyUpdates = function (libraries) {
-        var promises = libraries
-            .map(lib => Q.ninvoke(this._client, 'updateLibrary', lib[0], lib[1]));
+    SidebarPanel.prototype.applyUpdates = function (updates) {
+        // Seed Updates should apply the
+        const seedUpdates = updates.filter(update => update.type === Updates.SEED);
+        const promises = seedUpdates.map(update => {
+            const {name, hash} = update;
+            return Q.ninvoke(this._client, 'updateLibrary', name, hash);
+        });
+
+        // Apply the migrations
+        const pluginId = 'ApplyUpdates';
+        const migrations = updates
+            .filter(update => update.type === Updates.MIGRATION)
+            .map(update => update.name);
+
+        const context = this._client.getCurrentPluginContext(pluginId);
+        context.pluginConfig = {
+            updates: migrations
+        };
+
+        promises.push(
+            Q.ninvoke(this._client, 'runServerPlugin', pluginId, context)
+        );
 
         return Q.all(promises);
     };

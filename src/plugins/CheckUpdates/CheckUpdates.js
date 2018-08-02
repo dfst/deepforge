@@ -55,8 +55,9 @@ define([
      * @param {function(string, plugin.PluginResult)} callback - the result callback
      */
     CheckUpdates.prototype.main = async function (callback) {
+        let seedUpdates = [];
         try {
-            await this.checkMainLibraries();
+            seedUpdates = await this.checkMainLibraries();
         } catch (err) {
             this.logger.error(`Could not check the libraries: ${err}`);
             return callback(err, this.result);
@@ -67,6 +68,19 @@ define([
         const updateNames = updates.map(u => u.name).join(', ') || '<none>';
         this.logger.info(`Updates available for ${this.projectId}: ${updateNames}`);
 
+        // Combine and report the result
+        const msgs = seedUpdates
+            .concat(
+                updates.map(update => {
+                    return {
+                        type: Updates.MIGRATION,
+                        nodeId: null,
+                        name: update.name
+                    };
+                })
+            );
+
+        msgs.forEach(msg => this.createMessage(msg.nodeId, JSON.stringify(msg)));
         this.result.setSuccess(true);
         return callback(null, this.result);
     };
@@ -113,14 +127,18 @@ define([
             });
 
         const hashes = await Q.all(tuples.map(tuple => this.uploadSeed.apply(this, tuple)));
-        let name;
-
-        for (var i = hashes.length; i--;) {
-            name = tuples[i][0];
-            this.createMessage(this.libraries[name], `${name} ${hashes[i]}`);
-        }
 
         this.logger.info(`Found ${hashes.length} out of date libraries`);
+
+        return hashes.map((hash, i) => {
+            const [name] = tuples[i];
+            return {
+                type: Updates.SEED,
+                name: name,
+                nodeId: this.core.getPath(this.libraries[name]),
+                hash: hash
+            };
+        });
     };
 
     CheckUpdates.prototype.getSeedHashPath = function (name) {
