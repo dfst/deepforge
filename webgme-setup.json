@@ -48,6 +48,10 @@
       "ImportLibrary": {
         "src": "src/plugins/ImportLibrary",
         "test": "test/plugins/ImportLibrary"
+      },
+      "ApplyUpdates": {
+        "src": "src/plugins/ApplyUpdates",
+        "test": "test/plugins/ApplyUpdates"
       }
     },
     "layouts": {
