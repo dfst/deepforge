@@ -113,6 +113,7 @@ define([
     DeepForge.places = {};
     var TYPE_TO_CONTAINER = {
         
+        Code: 'MyUtilities',
         Architecture: 'MyResources',
         Pipeline: 'MyPipelines',
         Execution: 'MyExecutions',
