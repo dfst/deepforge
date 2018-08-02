@@ -1,4 +1,4 @@
-/*globals define, _, $, WebGMEGlobal*/
+/*globals define, _, WebGMEGlobal*/
 
 define([
     'js/PanelBase/PanelBaseWithHeader',

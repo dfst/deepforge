@@ -44,7 +44,7 @@ define([
 
     TabbedTextEditorWidget.prototype.addNewFileBtn = function (cntr) {
         this.$newTab = $('<button>', {class: 'tablinks'});
-        this.$newTab.append(`<span class="oi oi-plus" title="Create new file..." aria-hidden="true"></span>`);
+        this.$newTab.append('<span class="oi oi-plus" title="Create new file..." aria-hidden="true"></span>');
         this.$newTab.click(() => this.onAddNewClicked());
         cntr.append(this.$newTab);
     };
