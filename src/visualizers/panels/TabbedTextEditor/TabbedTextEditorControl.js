@@ -1,8 +1,10 @@
 /*globals define, WebGMEGlobal*/
 
 define([
+    'deepforge/viz/CodeControl',
     'js/Constants'
 ], function (
+    CodeControl,
     CONSTANTS
 ) {
 
@@ -27,24 +29,13 @@ define([
         this._logger.debug('ctor finished');
     };
 
+    TabbedTextEditorControl.prototype = Object.create(CodeControl.prototype);
     TabbedTextEditorControl.prototype._initWidgetEventHandlers = function () {
-        this._widget.addNewFile = name => {
-            const parentId = this._currentNodeId;
-            // Look up the valid children IDs? TODO
-            const baseId = this._client.getAllMetaNodes()
-                .find(node => node.getAttribute('name') === 'Code')
-                .getId();
-            const msg = `Created ${name} python module`;
-
-            this._client.startTransaction(msg);
-            const id = this._client.createNode({parentId, baseId});
-            this._client.setAttribute(id, 'name', name);
-            this._client.completeTransaction();
-        };
-
+        this._widget.addNewFile = this.addNewFile.bind(this);
         this._widget.onTabSelected = id => this.setEditorNode(id);
         this._widget.onDeleteNode = id => this.deleteNode(id);
         this._widget.setNodeName = (id, name) => {
+            name = this.getValidModuleName(name);
             this._client.setAttribute(id, 'name', name);
         };
 

@@ -49,39 +49,20 @@ define([
         cntr.append(this.$newTab);
     };
 
-    TabbedTextEditorWidget.prototype.getValidModuleName = function (name) {
-        name = name.replace(/[^\da-zA-Z]/g, '_');
-        const names = this.tabs.map(tab => tab.$name.innerHTML);
-        const [basename, ext='py'] = name.split('.');
-        let count = 2;
-
-        name = `${basename}.${ext}`;
-        while (names.includes(name)) {
-            name = `${basename}_${count}.${ext}`;
-        }
-        return name;
-    };
-
     TabbedTextEditorWidget.prototype.onAddNewClicked = function () {
         // Prompt the user for the name of the new code file
         return TextPrompter.prompt('New Module Name (eg. module.py)')
-            .then(name => {
-                name = this.getValidModuleName(name);
-                return this.addNewFile(name);
-            });
+            .then(name => this.addNewFile(name));
     };
 
-    TabbedTextEditorWidget.prototype.onWidgetContainerResize = function (width, height) {
+    TabbedTextEditorWidget.prototype.onWidgetContainerResize = function (/*width, height*/) {
         this._logger.debug('Widget is resizing...');
     };
 
     // Adding/Removing/Updating items
     TabbedTextEditorWidget.prototype.renameFile = function (id) {
         return TextPrompter.prompt('Change Module Name (eg. module.py)')
-            .then(name => {
-                name = this.getValidModuleName(name);
-                return this.setNodeName(id, name);
-            });
+            .then(name => this.setNodeName(id, name));
     };
 
     TabbedTextEditorWidget.prototype.addNode = function (desc) {

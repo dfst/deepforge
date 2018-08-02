@@ -7,13 +7,14 @@ define([
     'q',
     'js/RegistryKeys',
     'deepforge/globals',
-    'deepforge/Constants'
+    'deepforge/viz/TextPrompter'
 ], function(
     LibraryDialog,
     Materialize,
     Q,
     REGISTRY_KEYS,
-    DeepForge
+    DeepForge,
+    TextPrompter
 ) {
     ////////////// Downloading files //////////////
     var downloadAttrs = [
@@ -236,6 +237,17 @@ define([
                             this.logger.warn('Pipeline export failed:', err);
                             Materialize.toast(`Export failed: ${err}`, 4000);
                         });
+                }
+            }
+        ],
+        MyUtilities_META: [
+            {
+                name: 'Create new module',
+                icon: 'add',
+                priority: 2,
+                action: function() {
+                    return TextPrompter.prompt('New Module Name (eg. module.py)')
+                        .then(name => this.addNewFile(name));
                 }
             }
         ]
