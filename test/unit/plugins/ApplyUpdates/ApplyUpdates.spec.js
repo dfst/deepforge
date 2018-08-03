@@ -3,9 +3,9 @@
  */
 
 'use strict';
-var testFixture = require('../../globals');
+const testFixture = require('../../../globals');
 
-describe('ApplyUpdates', function () {
+describe.only('ApplyUpdates', function () {
     var gmeConfig = testFixture.getGmeConfig(),
         expect = testFixture.expect,
         logger = testFixture.logger.fork('ApplyUpdates'),
@@ -27,7 +27,7 @@ describe('ApplyUpdates', function () {
             })
             .then(function () {
                 var importParam = {
-                    projectSeed: testFixture.path.join(testFixture.SEED_DIR, 'EmptyProject.webgmex'),
+                    projectSeed: testFixture.path.join(testFixture.DF_SEED_DIR, 'devProject', 'devProject.webgmex'),
                     projectName: projectName,
                     branchName: 'master',
                     logger: logger,
@@ -79,5 +79,11 @@ describe('ApplyUpdates', function () {
                 })
                 .nodeify(done);
         });
+    });
+
+    describe('CustomUtilities', function() {
+        it.skip('should add MyUtilities', function() {
+        });
+        // Should add MyUtilities
     });
 });
