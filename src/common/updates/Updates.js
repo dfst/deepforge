@@ -60,6 +60,10 @@ define([
         return allUpdates;
     };
 
+    Updates.getUpdate = function(name) {
+        return Updates.getUpdates([name])[0];
+    };
+
     // Constants
     Updates.MIGRATION = 'Migration';
     Updates.SEED = 'SeedUpdate';
