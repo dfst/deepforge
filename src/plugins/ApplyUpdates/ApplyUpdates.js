@@ -50,7 +50,12 @@ define([
     ApplyUpdates.prototype.main = async function (callback) {
         // Retrieve the updates to apply
         const config = this.getCurrentConfig();
-        const updateNames = config.updates;
+        const updateNames = config.updates || [];
+
+        if (!updateNames.length) {
+            this.result.setSuccess(true);
+            return callback(null, this.result);
+        }
 
         // Apply each of the updates
         const updates = Updates.getUpdates(updateNames);
