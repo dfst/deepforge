@@ -62,7 +62,7 @@ define([
         }
 
         // Save the project
-        await this.save('ApplyUpdates updated model.');
+        await this.save(`Applied project updates: ${updateNames.join(",")}`);
 
         this.result.setSuccess(true);
         callback(null, this.result);
