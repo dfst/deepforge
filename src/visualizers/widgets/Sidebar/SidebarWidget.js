@@ -68,8 +68,6 @@ define([
 
         return this.checkUpdates()
             .then(updates => {
-                // Update message
-                // TODO
                 if (updates.length) {  // prompt about updates
                     const msg = `${updates.length} update(s) available. Click to update.`;
                     var names = updates.map(update => update.name),
