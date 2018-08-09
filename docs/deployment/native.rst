@@ -17,6 +17,11 @@ Now, you can check that it installed correctly:
 
     deepforge --version
 
+After installing DeepForge, it is recommended to install the `deepforge-keras <https://github.com/deepforge-dev/deepforge-keras>`_ extension which provides capabilities for modeling neural network architectures:
+.. code-block:: bash
+
+    deepforge extensions add deepforge-dev/deepforge-keras
+
 DeepForge can now be started with:
 
 .. code-block:: bash
