@@ -74,13 +74,20 @@ define([
                 updates.map(update => {
                     return {
                         type: Updates.MIGRATION,
-                        nodeId: null,
+                        node: null,
                         name: update.name
                     };
                 })
             );
 
-        msgs.forEach(msg => this.createMessage(msg.nodeId, JSON.stringify(msg)));
+        msgs.forEach(msg => {
+            const {node} = msg;
+            if (node) {
+                msg.nodeId = this.core.getPath(node);
+                delete msg.node;
+            }
+            this.createMessage(node, JSON.stringify(msg));
+        });
         this.result.setSuccess(true);
         return callback(null, this.result);
     };
@@ -135,7 +142,7 @@ define([
             return {
                 type: Updates.SEED,
                 name: name,
-                nodeId: this.core.getPath(this.libraries[name]),
+                node: this.libraries[name],
                 hash: hash
             };
         });
