@@ -217,7 +217,7 @@ define([
             .then(ops => ops.forEach(op => this.updateJobCompletionRecords(op)))
             .then(() => this.save(`Resuming pipeline execution: ${name}`))
             .then(() => {
-                
+
                 if (jobs.running.length) {  // Resume all running jobs
                     return Q.all(jobs.running.map(job => this.resumeJob(job)));
                 } else if (this.completedCount === this.totalCount) {
@@ -547,7 +547,7 @@ define([
 
                 hasReadyOps = counts.indexOf(0) > -1;
 
-                this.logger.debug(`Operation "${name}" completed. ` + 
+                this.logger.debug(`Operation "${name}" completed. ` +
                     `${this.totalCount - this.completedCount} remaining.`);
                 if (hasReadyOps) {
                     this.executeReadyOperations();
@@ -581,6 +581,8 @@ define([
 
                 let hash = this.getAttribute(result, 'data');
                 this.setAttribute(next, 'data', hash);
+
+                this.setPointer(next, 'origin', result);
 
                 this.logger.info(`forwarding data (${dataType}) from ${this.core.getPath(result)} ` +
                     `to ${this.core.getPath(next)}`);
