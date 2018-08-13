@@ -50,6 +50,11 @@ define([
     };
 
     ExecuteJob.prototype.setAttribute = function (node, attr, value) {
+        const changes = this.getChangesForNode(node);
+        changes.attr[attr] = value;
+    };
+
+    ExecuteJob.prototype.getChangesForNode = function (node) {
         var nodeId;
 
         if (this.isCreateId(node)) {
@@ -59,16 +64,19 @@ define([
             assert(typeof nodeId === 'string', `Cannot set attribute of ${nodeId}`);
         }
 
-        if (value !== null) {
-            this.logger.info(`Setting ${attr} of ${nodeId} to ${value}`);
-        } else {
-            this.logger.info(`Deleting ${attr} of ${nodeId}`);
+        if (!this.changes[nodeId]) {
+            this.changes[nodeId] = {
+                attr: {},
+                ptr: {},
+            };
         }
 
-        if (!this.changes[nodeId]) {
-            this.changes[nodeId] = {};
-        }
-        this.changes[nodeId][attr] = value;
+        return this.changes[nodeId];
+    };
+
+    ExecuteJob.prototype.setPointer = function (node, name, target) {
+        const changes = this.getChangesForNode(node);
+        changes.ptr[name] = target;
     };
 
     ExecuteJob.prototype.getAttribute = function (node, attr) {
@@ -102,25 +110,24 @@ define([
 
     ExecuteJob.prototype._getValueFrom = function (nodeId, attr, node, changes) {
         var base;
-        if (changes[nodeId] && changes[nodeId][attr] !== undefined) {
+        if (changes[nodeId] && changes[nodeId].attr[attr] !== undefined) {
             // If deleted the attribute, get the default (inherited) value
-            if (changes[nodeId][attr] === null) {
+            if (changes[nodeId].attr[attr] === null) {
                 base = this.isCreateId(nodeId) ? node : this.core.getBase(node);
                 let inherited = this.getAttribute(base, attr);
                 return inherited || null;
             }
-            return changes[nodeId][attr];
+            return changes[nodeId].attr[attr];
         }
     };
 
     ExecuteJob.prototype._applyNodeChanges = function (node, changes) {
-        var attr,
-            value;
+        // attributes
+        const attrPairs = Object.entries(changes.attr);
 
         this.logger.info(`About to apply changes for ${this.core.getPath(node)}`);
-        for (var i = changes.length; i--;) {
-            attr = changes[i][0];
-            value = changes[i][1];
+        for (let i = attrPairs.length; i--;) {
+            const [attr, value] = attrPairs[i];
             if (value !== null) {
                 this.logger.info(`Setting ${attr} to ${value} (${this.core.getPath(node)})`);
                 this.core.setAttribute(node, attr, value);
@@ -128,6 +135,13 @@ define([
                 this.core.delAttribute(node, attr);
             }
         }
+
+        const ptrPairs = Object.entries(changes.ptr);
+        for (let i = ptrPairs.length; i--;) {
+            const [ptr, target] = ptrPairs[i];
+            this.core.setPointer(node, ptr, target);
+        }
+
         return node;
     };
 
@@ -139,9 +153,6 @@ define([
 
     ExecuteJob.prototype.applyChanges = function () {
         var nodeIds = Object.keys(this.changes),
-            attrs,
-            value,
-            changes,
             promises = [],
             changesFor = {},
             id,
@@ -150,15 +161,8 @@ define([
         this.logger.info('Collecting changes to apply in commit');
 
         for (var i = nodeIds.length; i--;) {
-            changes = [];
-            attrs = Object.keys(this.changes[nodeIds[i]]);
-            for (var a = attrs.length; a--;) {
-                value = this.changes[nodeIds[i]][attrs[a]];
-                changes.push([attrs[a], value]);
-            }
-            changesFor[nodeIds[i]] = changes;
+            changesFor[nodeIds[i]] = this.changes[nodeIds[i]];
 
-            assert(changes, `changes are invalid for ${nodeIds[i]}: ${changes}`);
             assert(!this.isCreateId(nodeIds[i]),
                 `Creation id not resolved to actual id: ${nodeIds[i]}`);
             promise = this.core.loadByPath(this.rootNode, nodeIds[i]);
@@ -167,6 +171,7 @@ define([
 
         this.currentChanges = this.changes;
         this.changes = {};
+
         // Need to differentiate between read/write changes.
         this.logger.info(`About to apply changes for ${promises.length} nodes`);
         return Q.all(promises)
@@ -186,7 +191,7 @@ define([
         var nodeIds = Object.keys(this.creations),
             tiers = this.createCreationTiers(nodeIds),
             creations = this.creations,
-            newIds = {},
+            newNodes = {},
             promise = Q(),
             tier;
 
@@ -194,14 +199,29 @@ define([
         for (var i = 0; i < tiers.length; i++) {
             tier = tiers[i];
             // Chain the promises, loading each tier sequentially
-            promise = promise.then(this.applyCreationTier.bind(this, creations, newIds, tier));
+            promise = promise.then(this.applyCreationTier.bind(this, creations, newNodes, tier));
         }
 
         this.creations = {};
-        return promise;
+        return promise
+            .then(() => this.resolveCreatedPtrTargets(newNodes));
     };
 
-    ExecuteJob.prototype.applyCreationTier = function (creations, newIds, tier) {
+    ExecuteJob.prototype.resolveCreatedPtrTargets = function (newNodes) {
+        const ids = Object.keys(this.changes);
+        ids.forEach(srcId => {
+            const ptrPairs = Object.entries(this.changes[srcId].ptr);
+            ptrPairs.forEach(pair => {
+                const [ptr, target] = pair;
+
+                if (this.isCreateId(target) && newNodes[target]) {
+                    this.changes[srcId].ptr[ptr] = newNodes[target];
+                }
+            });
+        });
+    };
+
+    ExecuteJob.prototype.applyCreationTier = function (creations, newNodes, tier) {
         var promises = [],
             parentId,
             node;
@@ -209,14 +229,18 @@ define([
         for (var j = tier.length; j--;) {
             node = creations[tier[j]];
             assert(node, `Could not find create info for ${tier[j]}`);
-            parentId = newIds[node.parent] || node.parent;
+            if (newNodes[node.parent]) {
+                parentId = this.core.getPath(newNodes[node.parent]);
+            } else {
+                parentId = node.parent;
+            }
             promises.push(this.applyCreation(tier[j], node.base, parentId));
         }
         return Q.all(promises).then(nodes => {
-            // Record the newIds so they can be used to resolve creation ids
+            // Record the new nodes so they can be used to resolve creation ids
             // in subsequent tiers
             for (var i = tier.length; i--;) {
-                newIds[tier[i]] = this.core.getPath(nodes[i]);
+                newNodes[tier[i]] = nodes[i];
             }
         });
     };
@@ -289,6 +313,7 @@ define([
                     assert(!this.changes[nodeId],
                         `Newly created node cannot already have changes! (${nodeId})`);
                     this.changes[nodeId] = this.changes[tmpId];
+
                     delete this.changes[tmpId];
                 }
 
