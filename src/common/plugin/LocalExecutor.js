@@ -10,7 +10,6 @@ define([
     var LocalExecutor = function() {
     };
 
-    // Should these be in lua?
     LocalExecutor.prototype[CONSTANTS.OP.INPUT] = function(node) {
         // Get the hash from the output node
         var hash;
@@ -153,12 +152,14 @@ define([
                         newName = this.core.getOwnAttribute(node, 'saveName'),
                         createdAt = Date.now();
 
-                    if (newName) {
-                        newNodes.forEach(node => {
-                            this.setAttribute(node, 'name', newName);
-                            this.setAttribute(node, 'createdAt', createdAt);
-                        });
-                    }
+                    newNodes.forEach(newNode => {
+                        if (newName) {
+                            this.setAttribute(newNode, 'name', newName);
+                        }
+                        this.setAttribute(newNode, 'createdAt', createdAt);
+                        this.setPointer(newNode, 'origin', inputs[0][2]);
+                    });
+
                     var hashes = dataNodes.map(n => this.getAttribute(n, 'data'));
                     this.logger.info(`saving hashes: ${hashes.map(h => `"${h}"`)}`);
                 } else if (allDataNodes.length === 0) {
