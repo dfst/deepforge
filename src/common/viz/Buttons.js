@@ -106,7 +106,7 @@ define([
                     client.startTransaction(`Creating new ${typeName} from ${item.name}`);
                     newId = client.copyNode(baseId, ctrId);
                     name = node.getAttribute('name');
-                    client.setAttribute(newId, 'name', 'Copy of ' + name);
+                    client.setAttribute(newId, 'name', `${name}Copy`);
                     DeepForge.register[typeName](newId);
 
                     client.completeTransaction();
