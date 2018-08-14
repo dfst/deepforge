@@ -2,11 +2,13 @@
 /*jshint browser: true*/
 
 define([
+    'js/DragDrop/DropTarget',
     'text!./cards/Pipeline.ejs',
     'text!./cards/Architecture.ejs',
     'underscore',
     'css!./styles/PipelineIndexWidget.css'
 ], function (
+    DropTarget,
     PipelineHtml,
     ArchitectureHtml,
     _
@@ -59,6 +61,12 @@ define([
                     this.setName(id, newVal);
                 }
             });
+        });
+
+        DropTarget.makeDroppable(this.$el, {
+            drop: (event, dragInfo) => {
+                this.onBackgroundDrop(event, dragInfo);
+            }
         });
     };
 
