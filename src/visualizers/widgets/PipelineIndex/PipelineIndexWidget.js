@@ -36,11 +36,11 @@ define([
         this.$backgroundText = null;
         this.updateBackgroundText();
 
-        this._initializeEventHandlers();
+        this._initializeEventHandlers(container);
         this.logger.debug('ctor finished');
     };
 
-    PipelineIndexWidget.prototype._initializeEventHandlers = function () {
+    PipelineIndexWidget.prototype._initializeEventHandlers = function (container) {
         this.$el.on('click', '.open-pipeline', this.openPipeline);
         this.$el.on('click', '.preview.card-image', this.openPipeline);
 
@@ -63,7 +63,7 @@ define([
             });
         });
 
-        DropTarget.makeDroppable(this.$el, {
+        DropTarget.makeDroppable(container, {
             drop: (event, dragInfo) => {
                 this.onBackgroundDrop(event, dragInfo);
             }
