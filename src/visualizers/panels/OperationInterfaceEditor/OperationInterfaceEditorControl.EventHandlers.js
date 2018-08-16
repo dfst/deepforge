@@ -2,13 +2,16 @@
 define([
     'panels/EasyDAG/EasyDAGControl.WidgetEventHandlers',
     'deepforge/OperationCode',
-    './Colors'
+    './Colors',
+    'text!panels/ForgeActionButton/Libraries.json',
 ], function(
     EasyDAGControlEventHandlers,
     OperationCode,
-    COLORS
+    COLORS,
+    LibrariesText
 ) {
     'use strict';
+    const Libraries = JSON.parse(LibrariesText);
     var OperationInterfaceEditorEvents = function() {
         this.logger = this._logger;
         this._widget.allDataTypeIds = this.allDataTypeIds.bind(this);
@@ -41,22 +44,23 @@ define([
         };
     };
 
-    OperationInterfaceEditorEvents.prototype.allValidReferences = function() {
-        // Get all meta nodes that...
-        //  - are not data, pipeline or operation (or fco!)
-        //  - have a plugin defined?
-        // Currently you can't reference operations or pipelines.
-        var notTypes = ['Data', 'Operation', 'Pipeline'];
+    OperationInterfaceEditorEvents.prototype.getResourcesNodeTypes = function() {
         return this._client.getAllMetaNodes()
-            .filter(node => {
-                var plugins = node.getOwnRegistry('validPlugins');
-                // Convention is enforced; if the plugin generates lua artifacts,
-                // it should be called `Generate`.. (something)
-                return plugins && plugins.indexOf('Generate') !== -1;
-            })
-            .filter(node => notTypes.reduce((valid, name) =>
-                valid && !this.hasMetaName(node.getId(), name), true))
-            .filter(node => node.getAttribute('name') !== 'FCO')
+            .filter(node => {  // Check that the node is a top level type from a library
+                const name = node.getAttribute('name');
+                const namespace = node.getNamespace();
+                if (!namespace) return false;
+
+                const isResourceFromLibrary = Libraries.find(library => {
+                    return library.name === namespace &&
+                        library.nodeTypes.includes(name);
+                });
+                return isResourceFromLibrary;
+            });
+    };
+
+    OperationInterfaceEditorEvents.prototype.allValidReferences = function() {
+        return this.getResourcesNodeTypes()
             .map(node => {
                 return {
                     node: this._getObjectDescriptor(node.getId())
