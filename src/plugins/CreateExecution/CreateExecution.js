@@ -66,7 +66,10 @@ define([
     };
 
     CreateExecution.prototype.getExecutionDir = function () {
-        return this.core.loadChildren(this.rootNode)
+        // Expect the execution container to be a sibling of the pipeline container
+        const pipelineContainer = this.core.getParent(this.activeNode);
+        const ctnrCtnr = this.core.getParent(pipelineContainer);
+        return this.core.loadChildren(ctnrCtnr)
             .then(children => {
                 var execPath = this.core.getPath(this.META.Execution);
 
