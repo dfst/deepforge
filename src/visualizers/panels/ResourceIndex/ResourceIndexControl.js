@@ -1,7 +1,9 @@
 /* globals define */
 define([
+    'js/DragDrop/DragHelper',
     'panels/PipelineIndex/PipelineIndexControl'
 ], function(
+    DragHelper,
     PipelineIndexControl
 ) {
     var ResourceIndexControl = function() {
@@ -47,6 +49,22 @@ define([
             if (oldName !== name && !/^\s*$/.test(name)) {
                 this._client.startTransaction(msg);
                 this._client.setAttribute(id, 'name', name);
+                this._client.completeTransaction();
+            }
+        };
+		
+		this._widget.onBackgroundDrop = (event, dragInfo) => {
+            if (!this._currentNodeId) {  // no active node. Cannot add pipeline
+                return;
+            }
+            const effects = DragHelper.getDragEffects(dragInfo);
+            const items = DragHelper.getDragItems(dragInfo);
+
+            if (effects.includes(DragHelper.DRAG_EFFECTS.DRAG_CREATE_INSTANCE)) {
+                const parentId = this._currentNodeId;
+                const msg = `Creating ${items.length} new pipeline(s)`;
+                this._client.startTransaction(msg);
+                items.forEach(baseId => this._client.createNode({parentId, baseId}));
                 this._client.completeTransaction();
             }
         };

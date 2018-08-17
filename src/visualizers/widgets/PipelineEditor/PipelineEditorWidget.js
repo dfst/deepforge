@@ -2,6 +2,7 @@
 /*jshint browser: true*/
 
 define([
+	'js/DragDrop/DropTarget',
     'deepforge/Constants',
     'widgets/EasyDAG/AddNodeDialog',
     'deepforge/viz/widgets/Thumbnail',
@@ -15,6 +16,7 @@ define([
     './klay',
     'css!./styles/PipelineEditorWidget.css'
 ], function (
+	DropTarget,
     CONSTANTS,
     AddNodeDialog,
     ThumbnailWidget,
@@ -46,6 +48,8 @@ define([
         this.srcPortToConnectArgs = null;
         this._connForPort = {};
         this._itemsShowingPorts = [];
+		container.addClass(`${WIDGET_CLASS} container`);
+		this._initializeEventHandlers(container);
 
         this.updateExecutions = _.debounce(this._updateExecutions, 50);
         this.initExecs(execCntr);
@@ -59,6 +63,15 @@ define([
 
     PipelineEditorWidget.prototype.onCreateInitialNode =
         PipelineControl.prototype.onCreateInitialNode;
+
+	PipelineEditorWidget.prototype._initializeEventHandlers = function (container) {
+        
+        DropTarget.makeDroppable(container, {
+            drop: (event, dragInfo) => {
+                this.onBackgroundDrop(event, dragInfo);
+            }
+        });
+    };
 
     PipelineEditorWidget.prototype.getComponentId = function() {
         return 'PipelineEditor';
