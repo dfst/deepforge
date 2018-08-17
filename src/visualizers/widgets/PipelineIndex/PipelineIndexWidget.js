@@ -10,14 +10,14 @@ define([
 ], function (
     DropTarget,
     PipelineHtml,
-    ArchitectureHtml,
+    ResourceHtml,
     _
 ) {
     'use strict';
 
     var PipelineIndexWidget,
         PipelineTemplate = _.template(PipelineHtml),
-        ArchitectureTemplate = _.template(ArchitectureHtml),
+        ResourceTemplate = _.template(ResourceHtml),
         EMPTY_MSG = 'No Existing Pipelines... yet!',
         WIDGET_CLASS = 'pipeline-index';
 
@@ -102,10 +102,10 @@ define([
 
     // Adding/Removing/Updating items
     PipelineIndexWidget.prototype.getCardTemplate = function (desc) {
-        if (desc.type === 'Architecture') {
-            return ArchitectureTemplate;
+        if (desc.type === 'Pipeline') {
+            return PipelineTemplate;
         }
-        return PipelineTemplate;
+        return ResourceTemplate;
     };
 
     PipelineIndexWidget.prototype.addNode = function (desc) {
