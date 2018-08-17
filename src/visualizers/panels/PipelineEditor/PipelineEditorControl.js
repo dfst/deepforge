@@ -2,7 +2,7 @@
 /*jshint browser: true*/
 
 define([
-	'js/DragDrop/DragHelper',
+    'js/DragDrop/DragHelper',
     'deepforge/Constants',
     'js/Constants',
     'deepforge/viz/panels/ThumbnailControl',
@@ -14,7 +14,7 @@ define([
     'q',
     'underscore'
 ], function (
-	DragHelper,
+    DragHelper,
     CONSTANTS,
     GME_CONSTANTS,
     ThumbnailControl,
@@ -143,8 +143,8 @@ define([
         this._widget.createConnection = this.createConnection.bind(this);
         this._widget.removeConnection = this.removeConnection.bind(this);
         this._widget.getDecorator = this.getDecorator.bind(this);
-		
-		this._widget.onBackgroundDrop = (event, dragInfo) => {
+        
+        this._widget.onBackgroundDrop = (event, dragInfo) => {
             if (!this._currentNodeId) {  // no active node. Cannot add pipeline
                 return;
             }
@@ -153,7 +153,7 @@ define([
 
             if (effects.includes(DragHelper.DRAG_EFFECTS.DRAG_CREATE_INSTANCE)) {
                 const parentId = this._currentNodeId;
-                const msg = `Creating ${items.length} new pipeline(s)`;
+                const msg = `Creating ${items.length} new operation(s)`;
                 this._client.startTransaction(msg);
                 items.forEach(baseId => this._client.createNode({parentId, baseId}));
                 this._client.completeTransaction();
