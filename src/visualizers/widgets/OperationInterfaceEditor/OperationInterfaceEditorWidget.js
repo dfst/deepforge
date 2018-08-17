@@ -125,7 +125,9 @@ define([
         EasyDAG.prototype.addConnection.call(this, desc);
         // Remove connection selection
         var conn = this.connections[desc.id];
-        conn.$el.on('click', null);
+        if (conn) {
+            conn.$el.on('click', null);
+        }
     };
 
     // Hover buttons

@@ -123,6 +123,9 @@ define([
             base,
             desc;
 
+        const executionCount = node.getSetNames().includes('executions') ?
+            node.getMemberIds('executions').length : 0;
+
         if (node) {
             base = this._client.getNode(node.getBaseId());
             desc = {
@@ -131,7 +134,7 @@ define([
                 parentId: node.getParentId(),
                 thumbnail: node.getAttribute('thumbnail'),
                 type: base.getAttribute('name'),
-                executionCount: node.getMemberIds('executions').length
+                executionCount: executionCount
             };
         }
 
