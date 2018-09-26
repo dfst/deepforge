@@ -4,11 +4,13 @@
 define([
     'deepforge/viz/Utils',
     'widgets/LineGraph/LineGraphWidget',
+    './lib/moment.min',
     'text!./ExecTable.html',
     'css!./styles/ExecutionIndexWidget.css'
 ], function (
     Utils,
     LineGraphWidget,
+    moment,
     TableHtml
 ) {
     'use strict';
@@ -173,17 +175,7 @@ define([
     };
 
     ExecutionIndexWidget.prototype.getDurationText = function (duration) {
-        var hours,
-            min,
-            sec;
-
-        sec = duration/1000;
-        hours = Math.floor(sec/3600);
-        sec = sec%3600;
-        min = Math.floor(sec/60);
-        sec = Math.floor(sec%60);
-
-        return `${hours}:${min}:${sec}`;
+        return moment.duration(duration).humanize();
     };
 
     ExecutionIndexWidget.prototype.updateTime = function (id, force) {
