@@ -4,7 +4,7 @@
 define([
     'common/util/assert',
     'text!./metadata.json',
-    'executor/ExecutorClient',
+    'deepforge/execution/index',
     'plugin/PluginBase',
     'deepforge/ExecutionEnv',
     'deepforge/plugin/LocalExecutor',
@@ -95,19 +95,30 @@ define([
                 port: this.gmeConfig.server.port,
                 branchName: this.branchName,
                 projectId: this.projectId
-            },
-            isHttps = typeof window === 'undefined' ? false :
-                window.location.protocol !== 'http:';
+            };
 
         this.logManager = new JobLogsClient(params);
         this.originManager = new JobOriginClient(params);
         this.pulseClient = new ExecPulseClient(params);
+        this._execHashToJobNode = {};
 
-        this.executor = new ExecutorClient({
-            logger: this.logger,
-            serverPort: this.gmeConfig.server.port,
-            httpsecure: isHttps
-        });
+        // TODO: load a custom executor
+        this.executor = new ExecutorClient(this.logger, this.gmeConfig);
+        // Look up the job from the id...
+        // TODO
+        this.executor.on('data',
+            (id, data) => this.onConsoleOutput(job, data)
+        );
+        this.executor.on('end',
+            (id, info) => {
+                try {
+                    this.onOperationEnd(id, info);
+                } catch (err) {
+                    this.logger.error(`Error when processing operation end: ${err}`);
+                }
+            }
+        );
+
         return result;
     };
 
@@ -213,6 +224,7 @@ define([
     };
 
     ExecuteJob.prototype.resumeJob = function (job) {
+        console.log('resuming job...');
         var hash = this.getAttribute(job, 'jobId'),
             name = this.getAttribute(job, 'name'),
             id = this.core.getPath(job),
@@ -234,7 +246,7 @@ define([
             })
             .then(count => {  // update line count (to inform logClient appendTo)
                 this.outputLineCount[id] = count;
-                return this.executor.getOutput(hash, 0, count);
+                return this.executor.getOutput(hash, 0, count);  // TODO FIXME
             })
             .then(output => {  // parse the stdout to update the job metadata
                 var stdout = output.map(o => o.output).join(''),
@@ -248,8 +260,8 @@ define([
                     promise = this.save(msg);
                 }
                 return promise.then(() => this.getOperation(job));
-            })
-            .then(opNode => this.watchOperation(hash, opNode, job));
+            });
+            //.then(opNode => this.watchOperation(hash, opNode, job));
     };
 
     ExecuteJob.prototype.updateForkName = function (basename) {
@@ -317,7 +329,7 @@ define([
 
         this.setAttribute(job, 'status', 'canceled');
         this.resultMsg(msg);
-        this.onComplete(op, null);
+        return this.onComplete(op, null);
     };
 
     ExecuteJob.prototype.onOperationFail =
@@ -372,7 +384,7 @@ define([
         }
 
         this.createMessage(null, msg);
-        promise
+        return promise
             .then(() => this.save(msg))
             .then(() => {
                 this.result.setSuccess(!err);
@@ -440,7 +452,7 @@ define([
         });
     };
 
-    ExecuteJob.prototype.executeDistOperation = function (job, opNode, hash) {
+    ExecuteJob.prototype.executeDistOperation = async function (job, opNode, hash) {
         var name = this.getAttribute(opNode, 'name'),
             jobId = this.core.getPath(job);
 
@@ -453,24 +465,43 @@ define([
         this.logManager.deleteLog(jobId);
         this.logger.info(`Setting ${jobId} status to "queued" (${this.currentHash})`);
         this.logger.debug(`Making a commit from ${this.currentHash}`);
-        this.save(`Queued "${name}" operation in ${this.pipelineName}`)
-            .then(() => this.executor.createJob({hash}))
-            .then(info => {
-                this.setAttribute(job, 'jobId', info.hash);
-                if (info.secret) {  // o.w. it is a cached job!
-                    this.setAttribute(job, 'secret', info.secret);
-                }
-                if (!this.currentRunId) {
-                    this.currentRunId = info.hash;
-                    if (this._beating === null) {
-                        this.startExecHeartBeat();
-                    }
-                }
-                return this.recordJobOrigin(hash, job);
-            })
-            .then(() => this.watchOperation(hash, opNode, job))
-            .catch(err => this.logger.error(`Could not execute "${name}": ${err}`));
 
+        try {
+            await this.save(`Queued "${name}" operation in ${this.pipelineName}`);
+            await this.createJob(job, opNode, hash);
+        } catch (err) {
+            this.logger.error(`Could not execute "${name}": ${err}`);
+        }
+
+    };
+
+    ExecuteJob.prototype.createJob = async function (job, opNode, hash) {
+        // Record the job info for the given hash
+        this._execHashToJobNode[hash] = [job, opNode];
+        const info = this.executor.createJob(hash);
+        this.setAttribute(job, 'jobId', info.hash);
+        // Store the entire info object? This could be used for canceling!
+        // TODO
+        this.setAttribute(job, 'jobInfo', JSON.stringify(info));
+        if (!this.currentRunId) {
+            this.currentRunId = info.hash;
+            if (this._beating === null) {
+                this.startExecHeartBeat();
+            }
+        }
+
+        // Add event handlers to the executor
+        // TODO
+        // Should the metadata handlers be here or somewhere else?
+        //  Probably somewhere else (in the executor client/base class)
+        // TODO
+
+        // Don't set these callbacks up for each operation...
+        return await this.recordJobOrigin(hash, job);
+    };
+
+    ExecuteJob.prototype.getNodesForJobHash = function (hash) {
+        return this._execHashToJobNode[hash];
     };
 
     ExecuteJob.prototype.recordJobOrigin = function (hash, job) {
@@ -485,6 +516,17 @@ define([
         };
         this.runningJobHashes.push(hash);
         return this.originManager.record(hash, info);
+    };
+
+    ExecuteJob.prototype.cleanJobHashInfo = function (hash) {
+        const i = this.runningJobHashes.indexOf(hash);
+        if (i !== -1) {
+            this.runningJobHashes.splice(i, 1);
+        } else {
+            this.logger.warn(`Could not find running job hash ${hash}`);
+        }
+
+        delete this._execHashToJobNode[hash];
     };
 
 
@@ -528,72 +570,60 @@ define([
             });
     };
 
+    ExecuteJob.prototype.onConsoleOutput = function (job, newOutput) {
+        var stdout = this.getAttribute(job, 'stdout'),
+            last = stdout.lastIndexOf('\n'),
+            result,
+            lastLine,
+            next = Q(),
+            msg;
+
+        // parse deepforge commands
+        if (last !== -1) {
+            stdout = stdout.substring(0, last+1);
+            lastLine = stdout.substring(last+1);
+            output = lastLine + output;
+        }
+        result = this.processStdout(job, output, true);
+        output = result.stdout;
+
+        if (output) {
+            // Send notification to all clients watching the branch
+            next = next
+                .then(() => this.logManager.appendTo(jobId, output))
+                .then(() => this.notifyStdoutUpdate(jobId));
+        }
+
+        if (result.hasMetadata) {
+            msg = `Updated graph/image output for ${name}`;
+            next = next.then(() => this.save(msg));
+        }
+        return next;
+    };
+
     ExecuteJob.prototype.watchOperation = function (hash, op, job) {
         var jobId = this.core.getPath(job),
             opId = this.core.getPath(op),
             info,
-            secret,
+            jobInfo = this.getAttribute(job, 'jobInfo'),
             name = this.getAttribute(job, 'name');
 
         // If canceled, stop the operation
         if (this.canceled || this.isExecutionCanceled()) {
-            secret = this.getAttribute(job, 'secret');
-            if (secret) {
-                this.executor.cancelJob(hash, secret);
-                this.delAttribute(job, 'secret');
+            if (jobInfo) {
+                // Will all cancelJob signatures look like this?
+                // Should they be passing a custom JSON object?
+                // TODO
+                this.executor.cancelJob(jobInfo);  // TODO FIXME
+                this.delAttribute(job, 'jobInfo');
                 this.canceled = true;
                 return this.onOperationCanceled(op);
             }
         }
 
-        return this.executor.getInfo(hash)
-            .then(_info => {  // Update the job's stdout
-                var actualLine,  // on executing job
-                    currentLine = this.outputLineCount[jobId],
-                    prep = Q();
+        return this.executor.getInfo(jobInfo)  // TODO FIXME
+            .then(info => {  // Update the job's stdout
 
-                info = _info;
-                actualLine = info.outputNumber;
-                if (actualLine !== null && actualLine >= currentLine) {
-                    this.outputLineCount[jobId] = actualLine + 1;
-                    return prep
-                        .then(() => this.executor.getOutput(hash, currentLine, actualLine+1))
-                        .then(outputLines => {
-                            var stdout = this.getAttribute(job, 'stdout'),
-                                output = outputLines.map(o => o.output).join(''),
-                                last = stdout.lastIndexOf('\n'),
-                                result,
-                                lastLine,
-                                next = Q(),
-                                msg;
-
-                            // parse deepforge commands
-                            if (last !== -1) {
-                                stdout = stdout.substring(0, last+1);
-                                lastLine = stdout.substring(last+1);
-                                output = lastLine + output;
-                            }
-                            result = this.processStdout(job, output, true);
-                            output = result.stdout;
-
-                            if (output) {
-                                // Send notification to all clients watching the branch
-                                var metadata = {
-                                    lineCount: this.outputLineCount[jobId]
-                                };
-                                next = next
-                                    .then(() => this.logManager.appendTo(jobId, output, metadata))
-                                    .then(() => this.notifyStdoutUpdate(jobId));
-                            }
-                            if (result.hasMetadata) {
-                                msg = `Updated graph/image output for ${name}`;
-                                next = next.then(() => this.save(msg));
-                            }
-                            return next;
-                        });
-                }
-            })
-            .then(() => {
                 if (info.status === 'CREATED' || info.status === 'RUNNING') {
                     var time = Date.now(),
                         next = Q();
@@ -619,56 +649,53 @@ define([
                     });
                 }
 
-                // Record that the job hash is no longer running
-                this.logger.info(`Job "${name}" has finished (${info.status})`);
-                var i = this.runningJobHashes.indexOf(hash);
-                if (i !== -1) {
-                    this.runningJobHashes.splice(i, 1);
-                } else {
-                    this.logger.warn(`Could not find running job hash ${hash}`);
-                }
-
-                if (info.status === 'CANCELED') {
-                    // If it was cancelled, the pipeline has been stopped
-                    this.logger.debug(`"${name}" has been CANCELED!`);
-                    this.canceled = true;
-                    return this.logManager.getLog(jobId)
-                        .then(stdout => {
-                            this.setAttribute(job, 'stdout', stdout);
-                            return this.onOperationCanceled(op);
-                        });
-                }
-
-                if (info.status === 'SUCCESS' || info.status === 'FAILED_TO_EXECUTE') {
-                    this.setAttribute(job, 'execFiles', info.resultHashes[name + '-all-files']);
-                    return this.blobClient.getArtifact(info.resultHashes.stdout)
-                        .then(artifact => {
-                            var stdoutHash = artifact.descriptor.content[STDOUT_FILE].content;
-                            return this.blobClient.getObjectAsString(stdoutHash);
-                        })
-                        .then(stdout => {
-                            // Parse the remaining code
-                            var result = this.processStdout(job, stdout);
-                            this.setAttribute(job, 'stdout', result.stdout);
-                            this.logManager.deleteLog(jobId);
-                            if (info.status !== 'SUCCESS') {
-                                // Download all files
-                                this.result.addArtifact(info.resultHashes[name + '-all-files']);
-                                // Set the job to failed! Store the error
-                                this.onOperationFail(op, `Operation "${opId}" failed! ${JSON.stringify(info)}`); 
-                            } else {
-                                this.onDistOperationComplete(op, info);
-                            }
-                        });
-                } else {  // something bad happened...
-                    var err = `Failed to execute operation "${opId}": ${info.status}`,
-                        consoleErr = `[0;31mFailed to execute operation: ${info.status}[0m`;
-                    this.setAttribute(job, 'stdout', consoleErr);
-                    this.logger.error(err);
-                    this.onOperationFail(op, err);
-                }
             })
             .catch(err => this.logger.error(`Could not get op info for ${opId}: ${err}`));
+    };
+
+    ExecuteJob.prototype.onOperationEnd = async function (hash, info) {
+        // Record that the job hash is no longer running
+        const [job, op] = this.getNodesForJobHash(hash);
+        const name = this.getAttribute(job, 'name');
+        const jobId = this.core.getPath(job);
+
+        this.logger.info(`Job "${name}" has finished (${info.status})`);
+        this.cleanJobHashInfo(hash);
+
+        if (info.status === 'CANCELED') {
+            // If it was cancelled, the pipeline has been stopped
+            this.logger.debug(`"${name}" has been CANCELED!`);
+            this.canceled = true;
+            const stdout = this.logManager.getLog(jobId)
+            this.setAttribute(job, 'stdout', stdout);
+            return this.onOperationCanceled(op);
+        }
+
+        if (info.status === 'SUCCESS' || info.status === 'FAILED_TO_EXECUTE') {
+            // TODO:
+            this.setAttribute(job, 'execFiles', info.resultHashes[name + '-all-files']);
+            const artifact = await this.blobClient.getArtifact(info.resultHashes.stdout)
+            const stdoutHash = artifact.descriptor.content[STDOUT_FILE].content;
+            const stdout = await this.blobClient.getObjectAsString(stdoutHash);
+            // Parse the remaining code
+            const result = this.processStdout(job, stdout);
+            this.setAttribute(job, 'stdout', result.stdout);
+            this.logManager.deleteLog(jobId);
+            if (info.status !== 'SUCCESS') {
+                // Download all files
+                this.result.addArtifact(info.resultHashes[name + '-all-files']);
+                // Set the job to failed! Store the error
+                this.onOperationFail(op, `Operation "${opId}" failed! ${JSON.stringify(info)}`); 
+            } else {
+                this.onDistOperationComplete(op, info);
+            }
+        } else {  // something bad happened...
+            var err = `Failed to execute operation "${opId}": ${info.status}`,
+                consoleErr = `[0;31mFailed to execute operation: ${info.status}[0m`;
+            this.setAttribute(job, 'stdout', consoleErr);
+            this.logger.error(err);
+            return this.onOperationFail(op, err);
+        }
     };
 
     ExecuteJob.prototype.onDistOperationComplete = function (node, result) {
