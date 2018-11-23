@@ -1,9 +1,11 @@
 define([
-    './backends/GME'
+    './backends/GME',
+    './backends/Local'
 ], function(
-    GME
+    GME,
+    Local
 ) {
     // FIXME: Add more intelligent interface here...
     // - fetch a given backend and configure
-    return GME;
+    return Local;
 });

@@ -106,8 +106,12 @@ define([
         this.executor = new ExecutorClient(this.logger, this.gmeConfig);
         // Look up the job from the id...
         // TODO
-        this.executor.on('data',
-            (id, data) => this.onConsoleOutput(job, data)
+        this.executor.on(
+            'data',
+            (id, data) => {
+                const [job] = this.getNodesForJobHash(id);
+                this.onConsoleOutput(job, data.toString());
+            }
         );
         this.executor.on('end',
             (id, info) => {
@@ -570,35 +574,32 @@ define([
             });
     };
 
-    ExecuteJob.prototype.onConsoleOutput = function (job, newOutput) {
+    ExecuteJob.prototype.onConsoleOutput = async function (job, output) {
+        const jobId = this.core.getPath(job);
         var stdout = this.getAttribute(job, 'stdout'),
             last = stdout.lastIndexOf('\n'),
             result,
             lastLine,
-            next = Q(),
             msg;
 
         // parse deepforge commands
-        if (last !== -1) {
-            stdout = stdout.substring(0, last+1);
-            lastLine = stdout.substring(last+1);
-            output = lastLine + output;
-        }
+        // FIXME: This needs to be added back!
+        //if (last !== -1) {
+            //stdout = stdout.substring(0, last+1);
+            //lastLine = stdout.substring(last+1);
+            //output = lastLine + output;
+        //}
         result = this.processStdout(job, output, true);
         output = result.stdout;
 
-        if (output) {
-            // Send notification to all clients watching the branch
-            next = next
-                .then(() => this.logManager.appendTo(jobId, output))
-                .then(() => this.notifyStdoutUpdate(jobId));
-        }
+        await this.logManager.appendTo(jobId, output);
+        // Send notification to all clients watching the branch
+        await this.notifyStdoutUpdate(jobId);
 
         if (result.hasMetadata) {
             msg = `Updated graph/image output for ${name}`;
-            next = next.then(() => this.save(msg));
+            await this.save(msg);
         }
-        return next;
     };
 
     ExecuteJob.prototype.watchOperation = function (hash, op, job) {
