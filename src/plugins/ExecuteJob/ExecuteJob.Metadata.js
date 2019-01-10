@@ -44,7 +44,7 @@ define([
         if (this.plotLines[id]) {
             this.plotLines[id].forEach(lineId => {
                 if (this._metadata[lineId]) {
-                    this.deleteNode(this._metadata[lineId]);
+                    this.deleteNode(this.core.getPath(this._metadata[lineId]));
                 } else {
                     const createId = Object.keys(this.createIdToMetadataId)
                         .find(createId => this.createIdToMetadataId[createId] === lineId);
