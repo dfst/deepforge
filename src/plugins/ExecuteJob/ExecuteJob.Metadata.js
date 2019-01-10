@@ -15,7 +15,7 @@ define([
     };
 
     // I think I should convert these to just a single 'update graph' command
-    ExecuteJob.prototype[CONSTANTS.PLOT_UPDATE] = function (job, state) {
+    ExecuteJob.prototype[CONSTANTS.PLOT_UPDATE] = async function (job, state) {
         console.log('1');
         const jobId = this.core.getPath(job);
 
@@ -23,7 +23,6 @@ define([
         // use the id to look up the graph
         let id = jobId + '/' + state.id;
         let graph = this.getExistingMetadataById(job, 'Graph', id);
-        console.log(`\n\n--> Checking for graph ${id}:`, graph);
         if (!graph) {
             graph = this.createNode('Graph', job);
             this.setAttribute(graph, 'id', id);
@@ -41,15 +40,27 @@ define([
         this.logger.info(`Updating graph named ${axes.title}`);
 
         // Delete current line nodes
+        if (!this.isCreateId(graph)) {
+            //const children = await this.core.loadChildren(graph);
+            const childIds = this.core.getChildrenPaths(graph);
+            //children.map(node => this.core.getPath(node));
+            console.log('\t---- childIds', childIds, '(', this.getPath(graph), ')');
+            childIds.forEach(id => this.deleteNode(id));
+        }
+
         if (this.plotLines[id]) {
             this.plotLines[id].forEach(lineId => {
+                console.log('>>> lineId is', lineId);
                 if (this._metadata[lineId]) {
-                    this.deleteNode(this.core.getPath(this._metadata[lineId]));
+                    console.log('nodeId is', this.core.getPath(this._metadata[lineId]));
+                    const nodeId = this.core.getPath(this._metadata[lineId]);
+                    this.deleteNode(nodeId);
                 } else {
                     const createId = Object.keys(this.createIdToMetadataId)
                         .find(createId => this.createIdToMetadataId[createId] === lineId);
 
                     if (createId) {
+                        console.log('createId is', createId);
                         this.deleteNode(createId);
                     }
                 }
