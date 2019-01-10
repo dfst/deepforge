@@ -72,7 +72,7 @@ from matplotlib.backend_bases import (
      FigureCanvasBase, FigureManagerBase, GraphicsContextBase, RendererBase)
 from matplotlib.figure import Figure
 
-import json
+import simplejson as json
 
 class RendererTemplate(RendererBase):
     """
@@ -187,7 +187,7 @@ def show(block=None):
     interactive versus batch mode
     """
     for manager in Gcf.get_all_fig_managers():
-        # do something to display the GUI
+        manager.canvas.send_deepforge_update()
         pass
 
 
@@ -246,7 +246,7 @@ class FigureCanvasTemplate(FigureCanvasBase):
         state = self.figure_to_state()
         # Probably should do some diff-ing if the state hasn't changed...
         # TODO
-        print('deepforge-cmd PLOT ' + json.dumps(state))
+        print('deepforge-cmd PLOT ' + json.dumps(state, ignore_nan=True))
 
     def figure_to_state(self):
         figure = self.figure
