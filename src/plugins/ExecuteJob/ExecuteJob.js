@@ -668,7 +668,7 @@ define([
                     this.onOperationFail(op, err);
                 }
             })
-            .catch(err => this.logger.error(`Could not get op info for ${opId}: ${err}`));
+            .catch(err => this.logger.error(`Could not get op info for ${JSON.stringify(opId)}: ${err}`));
     };
 
     ExecuteJob.prototype.onDistOperationComplete = function (node, result) {
