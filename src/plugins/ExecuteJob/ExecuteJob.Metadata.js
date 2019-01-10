@@ -16,15 +16,17 @@ define([
 
     // I think I should convert these to just a single 'update graph' command
     ExecuteJob.prototype[CONSTANTS.PLOT_UPDATE] = function (job, state) {
+        console.log('1');
         const jobId = this.core.getPath(job);
 
         // Check if the graph already exists
         // use the id to look up the graph
-        let graph = this.getExistingMetadataById(jobId, 'Graph', state.id);
         let id = jobId + '/' + state.id;
+        let graph = this.getExistingMetadataById(job, 'Graph', id);
+        console.log(`\n\n--> Checking for graph ${id}:`, graph);
         if (!graph) {
             graph = this.createNode('Graph', job);
-            this.setAttribute(graph, 'id', state.id);
+            this.setAttribute(graph, 'id', id);
 
             this.createIdToMetadataId[graph] = id;
         }
@@ -179,9 +181,21 @@ define([
         this.createMessage(null, msg);
     };
 
-    ExecuteJob.prototype.getExistingMetadataById = function (jobId, type, id) {
-        return this._getExistingMetadata(
-            jobId,
+    ExecuteJob.prototype.getExistingMetadataById = function (job, type, id) {
+        const createId = Object.keys(this.createIdToMetadataId)
+            .find(createId => this.createIdToMetadataId[createId] === id);
+
+        if (createId) {  // on the queue to be created
+            return createId;
+        }
+
+        if (this._metadata[id]) {  // already created
+            return this._metadata[id];
+        }
+
+        console.log('7');
+        return this._getExistingMetadata( // exists from prev run
+            this.core.getPath(job),
             type,
             node => this.getAttribute(node, 'id') === id
         );
