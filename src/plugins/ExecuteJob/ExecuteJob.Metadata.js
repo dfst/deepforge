@@ -41,16 +41,27 @@ define([
         this.logger.info(`Updating graph named ${axes.title}`);
 
         // Delete current line nodes
-        this.plotLines[id] = this.plotLines[id] || [];
-        this.plotLines[id].forEach(line => this.deleteNode(line));
+        if (this.plotLines[id]) {
+            this.plotLines[id].forEach(lineId => {
+                if (this._metadata[lineId]) {
+                    this.deleteNode(this._metadata[lineId]);
+                } else {
+                    const createId = Object.keys(this.createIdToMetadataId)
+                        .find(createId => this.createIdToMetadataId[createId] === lineId);
+
+                    if (createId) {
+                        this.deleteNode(createId);
+                    }
+                }
+            });
+        }
+        this.plotLines[id] = [];
 
         // Update the points for each of the lines 
         axes.lines.forEach((line, index) => {
             let lineId = id + '/' + index;
             let node = this.createNode('Line', graph);
-            this.plotLines[id].push(node);
-
-            this._metadata[lineId] = node;
+            this.plotLines[id].push(lineId);
             this.createIdToMetadataId[node] = lineId;
 
             this.setAttribute(node, 'name', line.label || `line ${index+1}`);
