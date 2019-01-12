@@ -382,9 +382,10 @@ define([
 
     // Handle the blob retrieval failed error
     ExecuteJob.prototype.onBlobRetrievalFail = function (node, input) {
-        var job = this.core.getParent(node),
-            e = `Failed to retrieve "${input}" (BLOB_FETCH_FAILED)`,
-            consoleErr = `[0;31mFailed to execute operation: ${e}[0m`;
+        const job = this.core.getParent(node);
+        const name = this.getAttribute(job, 'name');
+        const e = `Failed to retrieve "${input}" (BLOB_FETCH_FAILED)`;
+        let consoleErr = `[0;31mFailed to execute operation: ${e}[0m`;
 
         consoleErr += [
             '\n\nA couple things to check out:\n',
