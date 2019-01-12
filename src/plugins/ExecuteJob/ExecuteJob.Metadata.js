@@ -16,7 +16,6 @@ define([
 
     // I think I should convert these to just a single 'update graph' command
     ExecuteJob.prototype[CONSTANTS.PLOT_UPDATE] = async function (job, state) {
-        console.log('1');
         const jobId = this.core.getPath(job);
 
         // Check if the graph already exists
@@ -43,16 +42,12 @@ define([
         if (!this.isCreateId(graph)) {
             //const children = await this.core.loadChildren(graph);
             const childIds = this.core.getChildrenPaths(graph);
-            //children.map(node => this.core.getPath(node));
-            console.log('\t---- childIds', childIds, '(', this.getPath(graph), ')');
             childIds.forEach(id => this.deleteNode(id));
         }
 
         if (this.plotLines[id]) {
             this.plotLines[id].forEach(lineId => {
-                console.log('>>> lineId is', lineId);
                 if (this._metadata[lineId]) {
-                    console.log('nodeId is', this.core.getPath(this._metadata[lineId]));
                     const nodeId = this.core.getPath(this._metadata[lineId]);
                     this.deleteNode(nodeId);
                 } else {
@@ -60,7 +55,6 @@ define([
                         .find(createId => this.createIdToMetadataId[createId] === lineId);
 
                     if (createId) {
-                        console.log('createId is', createId);
                         this.deleteNode(createId);
                     }
                 }
@@ -215,7 +209,6 @@ define([
             return this._metadata[id];
         }
 
-        console.log('7');
         return this._getExistingMetadata( // exists from prev run
             this.core.getPath(job),
             type,
