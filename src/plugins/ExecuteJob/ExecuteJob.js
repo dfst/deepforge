@@ -236,18 +236,16 @@ define([
                 this.outputLineCount[id] = count;
                 return this.executor.getOutput(hash, 0, count);
             })
-            .then(output => {  // parse the stdout to update the job metadata
+            .then(async output => {  // parse the stdout to update the job metadata
                 var stdout = output.map(o => o.output).join(''),
                     result = this.processStdout(job, stdout),
-                    name = this.getAttribute(job, 'name'),
-                    promise = Q();
-
+                    name = this.getAttribute(job, 'name');
 
                 if (result.hasMetadata) {
                     msg = `Updated graph/image output for ${name}`;
-                    promise = this.save(msg);
+                    await this.save(msg);
                 }
-                return promise.then(() => this.getOperation(job));
+                return this.getOperation(job);
             })
             .then(opNode => this.watchOperation(hash, opNode, job));
     };
@@ -322,15 +320,14 @@ define([
 
     ExecuteJob.prototype.onOperationFail =
     ExecuteJob.prototype.onOperationComplete =
-    ExecuteJob.prototype.onComplete = function (opNode, err) {
+    ExecuteJob.prototype.onComplete = async function (opNode, err) {
         var job = this.core.getParent(opNode),
             exec = this.core.getParent(job),
             name = this.getAttribute(job, 'name'),
             jobId = this.core.getPath(job),
             status = err ? 'fail' : (this.canceled ? 'canceled' : 'success'),
             msg = err ? `${name} execution failed!` :
-                `${name} executed successfully!`,
-            promise = Q();
+                `${name} executed successfully!`;
 
         this.setAttribute(job, 'status', status);
         this.logger.info(`Setting ${name} (${jobId}) status to ${status}`);
@@ -349,40 +346,33 @@ define([
         } else {
             // Check if all the other jobs are successful. If so, set the
             // execution status to 'success'
-            promise = this.core.loadChildren(exec)
-                .then(nodes => {
-                    var execSuccess = true,
-                        type,
-                        typeName;
+            const nodes = await this.core.loadChildren(exec);
+            let execSuccess = true;
 
-                    for (var i = nodes.length; i--;) {
-                        type = this.core.getMetaType(nodes[i]);
-                        typeName = this.getAttribute(type, 'name');
+            for (var i = nodes.length; i--;) {
+                const type = this.core.getMetaType(nodes[i]);
+                const typeName = this.getAttribute(type, 'name');
 
-                        if (typeName === 'Job' &&
-                            this.getAttribute(nodes[i], 'status') !== 'success') {
-                            execSuccess = false;
-                        }
-                    }
+                if (typeName === 'Job' &&
+                    this.getAttribute(nodes[i], 'status') !== 'success') {
+                    execSuccess = false;
+                }
+            }
 
-                    if (execSuccess) {
-                        this.setAttribute(exec, 'status', 'success');
-                    }
-                });
+            if (execSuccess) {
+                this.setAttribute(exec, 'status', 'success');
+            }
         }
 
         this.createMessage(null, msg);
-        promise
-            .then(() => this.save(msg))
-            .then(() => {
-                this.result.setSuccess(!err);
-                this.stopExecHeartBeat();
-                this._callback(err, this.result);
-            })
-            .catch(err => {
-                // Result success is false at invocation.
-                this._callback(err, this.result);
-            });
+        try {
+            await this.save(msg);
+            this.result.setSuccess(!err);
+            this.stopExecHeartBeat();
+            this._callback(err, this.result);
+        } catch (e) {
+            this._callback(e, this.result);
+        }
     };
 
     ExecuteJob.prototype.getOperation = function (job) {
@@ -558,7 +548,7 @@ define([
                     this.outputLineCount[jobId] = actualLine + 1;
                     return prep
                         .then(() => this.executor.getOutput(hash, currentLine, actualLine+1))
-                        .then(outputLines => {
+                        .then(async outputLines => {
                             var stdout = this.getAttribute(job, 'stdout'),
                                 output = outputLines.map(o => o.output).join(''),
                                 last = stdout.lastIndexOf('\n'),
@@ -581,19 +571,17 @@ define([
                                 var metadata = {
                                     lineCount: this.outputLineCount[jobId]
                                 };
-                                next = next
-                                    .then(() => this.logManager.appendTo(jobId, output, metadata))
-                                    .then(() => this.notifyStdoutUpdate(jobId));
+                                await this.logManager.appendTo(jobId, output, metadata);
+                                await this.notifyStdoutUpdate(jobId);
                             }
                             if (result.hasMetadata) {
                                 msg = `Updated graph/image output for ${name}`;
-                                next = next.then(() => this.save(msg));
+                                await this.save(msg);
                             }
-                            return next;
                         });
                 }
             })
-            .then(() => {
+            .then(async () => {
                 if (info.status === 'CREATED' || info.status === 'RUNNING') {
                     var time = Date.now(),
                         next = Q();
@@ -602,21 +590,19 @@ define([
                         this.getAttribute(job, 'status') !== 'running') {
 
                         this.setAttribute(job, 'status', 'running');
-                        next = this.save(`Started "${name}" operation in ${this.pipelineName}`);
+                        await this.save(`Started "${name}" operation in ${this.pipelineName}`);
                     }
 
-                    return next.then(() => {
-                        var delta = Date.now() - time;
-                            
-                        if (delta > ExecuteJob.UPDATE_INTERVAL) {
-                            return this.watchOperation(hash, op, job);
-                        }
+                    const delta = Date.now() - time;
+                        
+                    if (delta > ExecuteJob.UPDATE_INTERVAL) {
+                        return this.watchOperation(hash, op, job);
+                    }
 
-                        setTimeout(
-                            this.watchOperation.bind(this, hash, op, job),
-                            ExecuteJob.UPDATE_INTERVAL - delta
-                        );
-                    });
+                    return setTimeout(
+                        this.watchOperation.bind(this, hash, op, job),
+                        ExecuteJob.UPDATE_INTERVAL - delta
+                    );
                 }
 
                 // Record that the job hash is no longer running
