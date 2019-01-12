@@ -91,7 +91,9 @@ define([
         this._modifiedJobs.push(jobId);
         this.logger.info(`Appending logs to ${jobId}`);
 
-        metadata.lineCount = metadata.lineCount || 0;  // TODO FIXME: TMP HACK
+        if (metadata) {
+            metadata.lineCount = metadata.lineCount || 0;  // TODO FIXME: TMP HACK
+        }
         if (metadata && !hasRequiredFields(metadata)) {
             throw Error(`Required metadata fields: ${METADATA_FIELDS.join(', ')}`);
         }

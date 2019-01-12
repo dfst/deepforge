@@ -92,6 +92,7 @@ define([
 
             if (code === 0) {  // Success
                 // TODO: upload data and record hashes..
+                jobInfo.resultHashes = await this._uploadResults(tmpdir, config);
             } else {
                 jobInfo.status = 'FAILED_TO_EXECUTE';
             }
@@ -102,6 +103,17 @@ define([
         // TODO
 
         //return result;
+    };
+
+    LocalExecutor.prototype._uploadResults = async function(workdir, config) {
+        // Get all the matching result artifacts
+        // TODO
+
+        // Upload all the artifacts
+        // TODO
+
+        // Return the hashes
+        // TODO
     };
 
     LocalExecutor.prototype.prepareWorkspace = async function(hash, dirname) {

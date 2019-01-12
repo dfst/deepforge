@@ -76,6 +76,8 @@ function initialize(middlewareOpts) {
                         project: req.params.project,
                         branch: req.params.branch,
                         job: req.params.job,
+                        // Do I need the lineCount???
+                        // TODO FIXME
                         lineCount: req.body.lineCount || -1,
                         createdIds: req.body.createdIds || [],
                         cmdCount: req.body.cmdCount || 0
