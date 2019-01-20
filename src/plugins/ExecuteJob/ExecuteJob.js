@@ -639,10 +639,16 @@ define([
                             this.setAttribute(job, 'stdout', result.stdout);
                             this.logManager.deleteLog(jobId);
                             if (info.status !== 'SUCCESS') {
+                                const opName = this.getAttribute(op, 'name');
                                 // Download all files
                                 this.result.addArtifact(info.resultHashes[name + '-all-files']);
-                                // Set the job to failed! Store the error
-                                this.onOperationFail(op, `Operation "${opId}" failed! ${JSON.stringify(info)}`); 
+                                // Parse the most precise error and present it in the toast...
+                                const lastline = result.stdout.split('\n').filter(l => !!l).pop();
+                                if (lastline.includes('Error')) {
+                                    this.onOperationFail(op, lastline); 
+                                } else {
+                                    this.onOperationFail(op, `Operation "${opName}" failed!`); 
+                                }
                             } else {
                                 this.onDistOperationComplete(op, info);
                             }
