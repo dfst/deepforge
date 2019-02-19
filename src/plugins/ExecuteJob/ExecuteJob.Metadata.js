@@ -15,16 +15,16 @@ define([
     };
 
     // I think I should convert these to just a single 'update graph' command
-    ExecuteJob.prototype[CONSTANTS.PLOT_UPDATE] = function (job, state) {
+    ExecuteJob.prototype[CONSTANTS.PLOT_UPDATE] = async function (job, state) {
         const jobId = this.core.getPath(job);
 
         // Check if the graph already exists
         // use the id to look up the graph
-        let graph = this.getExistingMetadataById(jobId, 'Graph', state.id);
         let id = jobId + '/' + state.id;
+        let graph = this.getExistingMetadataById(job, 'Graph', id);
         if (!graph) {
             graph = this.createNode('Graph', job);
-            this.setAttribute(graph, 'id', state.id);
+            this.setAttribute(graph, 'id', id);
 
             this.createIdToMetadataId[graph] = id;
         }
@@ -39,16 +39,34 @@ define([
         this.logger.info(`Updating graph named ${axes.title}`);
 
         // Delete current line nodes
-        this.plotLines[id] = this.plotLines[id] || [];
-        this.plotLines[id].forEach(line => this.deleteNode(line));
+        if (!this.isCreateId(graph)) {
+            //const children = await this.core.loadChildren(graph);
+            const childIds = this.core.getChildrenPaths(graph);
+            childIds.forEach(id => this.deleteNode(id));
+        }
+
+        if (this.plotLines[id]) {
+            this.plotLines[id].forEach(lineId => {
+                if (this._metadata[lineId]) {
+                    const nodeId = this.core.getPath(this._metadata[lineId]);
+                    this.deleteNode(nodeId);
+                } else {
+                    const createId = Object.keys(this.createIdToMetadataId)
+                        .find(createId => this.createIdToMetadataId[createId] === lineId);
+
+                    if (createId) {
+                        this.deleteNode(createId);
+                    }
+                }
+            });
+        }
+        this.plotLines[id] = [];
 
         // Update the points for each of the lines 
         axes.lines.forEach((line, index) => {
             let lineId = id + '/' + index;
             let node = this.createNode('Line', graph);
-            this.plotLines[id].push(node);
-
-            this._metadata[lineId] = node;
+            this.plotLines[id].push(lineId);
             this.createIdToMetadataId[node] = lineId;
 
             this.setAttribute(node, 'name', line.label || `line ${index+1}`);
@@ -179,9 +197,20 @@ define([
         this.createMessage(null, msg);
     };
 
-    ExecuteJob.prototype.getExistingMetadataById = function (jobId, type, id) {
-        return this._getExistingMetadata(
-            jobId,
+    ExecuteJob.prototype.getExistingMetadataById = function (job, type, id) {
+        const createId = Object.keys(this.createIdToMetadataId)
+            .find(createId => this.createIdToMetadataId[createId] === id);
+
+        if (createId) {  // on the queue to be created
+            return createId;
+        }
+
+        if (this._metadata[id]) {  // already created
+            return this._metadata[id];
+        }
+
+        return this._getExistingMetadata( // exists from prev run
+            this.core.getPath(job),
             type,
             node => this.getAttribute(node, 'id') === id
         );

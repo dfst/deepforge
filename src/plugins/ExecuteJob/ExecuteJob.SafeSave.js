@@ -326,7 +326,7 @@ define([
             });
     };
 
-    ExecuteJob.prototype.applyDeletions = function () {
+    ExecuteJob.prototype.applyDeletions = async function () {
         var deletions = this.deletions;
 
         // Remove any creation ids
@@ -338,12 +338,11 @@ define([
             }
         }
 
-        return Q.all(deletions.map(id => this.core.loadByPath(this.rootNode, id)))
-            .then(nodes => {
-                for (var i = nodes.length; i--;) {
-                    this.core.deleteNode(nodes[i]);
-                }
-            });
+        const nodes = await Q.all(deletions.map(id => this.core.loadByPath(this.rootNode, id)));
+
+        for (var i = nodes.length; i--;) {
+            this.core.deleteNode(nodes[i]);
+        }
     };
 
     // Override 'save' to notify the user on fork

@@ -186,7 +186,10 @@ define([
 
     PipelineEditorControl.prototype.isValid = function (desc) {
         // If it is a "dangling connection", remove it!
-        if (desc.isConnection) {
+        const isConnection = desc.pointers.hasOwnProperty('src') &&
+            desc.pointers.hasOwnProperty('dst');
+
+        if (isConnection) {
             if (!(desc.src && desc.dst)) {
                 var node = this._client.getNode(this._currentNodeId),
                     name = node.getAttribute('name'),
