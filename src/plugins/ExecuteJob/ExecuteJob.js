@@ -628,11 +628,8 @@ define([
 
                 if (info.status === 'SUCCESS' || info.status === 'FAILED_TO_EXECUTE') {
                     this.setAttribute(job, 'execFiles', info.resultHashes[name + '-all-files']);
-                    return this.blobClient.getArtifact(info.resultHashes.stdout)
-                        .then(artifact => {
-                            var stdoutHash = artifact.descriptor.content[STDOUT_FILE].content;
-                            return this.blobClient.getObjectAsString(stdoutHash);
-                        })
+                    return this.getContentHashSafe(info.resultHashes.stdout, STDOUT_FILE, ERROR.NO_STDOUT_FILE)
+                        .then(stdoutHash => this.blobClient.getObjectAsString(stdoutHash))
                         .then(stdout => {
                             // Parse the remaining code
                             var result = this.processStdout(job, stdout);
@@ -684,21 +681,18 @@ define([
                 outputs.forEach(output => outputMap[output[0]] = output[1]);
 
                 // this should not be in directories -> flatten the data!
-                let artifacts = outputs.map(tuple => {  // [ name, node ]
+                const hashes = outputs.map(tuple => {  // [ name, node ]
                     let [name] = tuple;
-                    let hash = result.resultHashes[name];
-                    return this.blobClient.getArtifact(hash);
+                    let artifactHash = result.resultHashes[name];
+                    return this.getContentHash(artifactHash, `outputs/${name}`);
                 });
 
-                return Q.all(artifacts);
+                return Q.all(hashes);
             })
-            .then(artifacts => {
-                this.logger.info(`preparing outputs -> retrieved ${artifacts.length} objects`);
+            .then(hashes => {
                 // Create new metadata for each
-                artifacts.forEach((artifact, i) => {
+                hashes.forEach((hash, i) => {
                     var name = outputs[i][0],
-                        outputData = artifact.descriptor.content[`outputs/${name}`],
-                        hash = outputData && outputData.content,
                         dataType = resultTypes[name];
 
                     if (dataType) {
@@ -716,17 +710,27 @@ define([
 
                 return this.onOperationComplete(node);
             })
-            .fail(e => this.onOperationFail(node, `Operation ${nodeId} failed: ${e}`));
+            .catch(e => this.onOperationFail(node, `Operation ${nodeId} failed: ${e}`));
     };
 
-    ExecuteJob.prototype.getResultTypes = function (result) {
-        const hash = result.resultHashes['result-types'];
-        return this.blobClient.getArtifact(hash)
-            .then(data => {
-                const contents = data.descriptor.content;
-                const contentHash = contents['result-types.json'].content;
-                return this.blobClient.getObjectAsJSON(contentHash);
-            });
+    ExecuteJob.prototype.getResultTypes = async function (result) {
+        const artifactHash = result.resultHashes['result-types'];
+        return await this.getContentHashSafe(artifactHash, 'result-types.json', ERROR.NO_TYPES_FILE);
+    };
+
+    ExecuteJob.prototype.getContentHashSafe = async function (artifactHash, fileName, msg) {
+        const hash = await this.getContentHash(artifactHash, fileName);
+        if (!hash) {
+            throw new Error(msg);
+        }
+        return hash;
+    };
+
+    ExecuteJob.prototype.getContentHash = async function (artifactHash, fileName) {
+        const artifact = await this.blobClient.getArtifact(artifactHash);
+        const contents = artifact.descriptor.content;
+
+        return contents[fileName] && contents[fileName].content;
     };
 
     //////////////////////////// Special Operations ////////////////////////////
@@ -756,6 +760,10 @@ define([
         result.stdout = utils.resolveCarriageReturns(result.stdout).join('\n');
         return result;
     };
+
+    const ERROR = {};
+    ERROR.NO_STDOUT_FILE = 'Could not find logs in job results.';
+    ERROR.NO_TYPES_FILE = 'Metadata about result types not found.';
 
     return ExecuteJob;
 });
