@@ -628,6 +628,7 @@ define([
 
                 if (info.status === 'SUCCESS' || info.status === 'FAILED_TO_EXECUTE') {
                     this.setAttribute(job, 'execFiles', info.resultHashes[name + '-all-files']);
+                    const opName = this.getAttribute(op, 'name');
                     return this.getContentHashSafe(info.resultHashes.stdout, STDOUT_FILE, ERROR.NO_STDOUT_FILE)
                         .then(stdoutHash => this.blobClient.getObjectAsString(stdoutHash))
                         .then(stdout => {
@@ -636,7 +637,6 @@ define([
                             this.setAttribute(job, 'stdout', result.stdout);
                             this.logManager.deleteLog(jobId);
                             if (info.status !== 'SUCCESS') {
-                                const opName = this.getAttribute(op, 'name');
                                 // Download all files
                                 this.result.addArtifact(info.resultHashes[name + '-all-files']);
                                 // Parse the most precise error and present it in the toast...
@@ -649,7 +649,8 @@ define([
                             } else {
                                 this.onDistOperationComplete(op, info);
                             }
-                        });
+                        })
+                        .catch(err => this.onOperationFail(op, `Operation "${opName}" failed: ${err}`));
                 } else {  // something bad happened...
                     var err = `Failed to execute operation "${opId}": ${info.status}`,
                         consoleErr = `[0;31mFailed to execute operation: ${info.status}[0m`;
@@ -662,6 +663,7 @@ define([
     };
 
     ExecuteJob.prototype.onDistOperationComplete = function (node, result) {
+        const opName = this.getAttribute(node, 'name');
         let nodeId = this.core.getPath(node),
             outputMap = {},
             resultTypes,
@@ -710,7 +712,7 @@ define([
 
                 return this.onOperationComplete(node);
             })
-            .catch(e => this.onOperationFail(node, `Operation ${nodeId} failed: ${e}`));
+            .catch(e => this.onOperationFail(node, `"${opName}" failed: ${e}`));
     };
 
     ExecuteJob.prototype.getResultTypes = async function (result) {
