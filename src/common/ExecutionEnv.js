@@ -39,6 +39,7 @@ define([
     };
 
     ExecutionEnv.getWorkers = function() {
+        return Q(1);  // TODO
         return this.get(WORKER_ENDPOINT)
             .then(workerDict => values(workerDict));
     };

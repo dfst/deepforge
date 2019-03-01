@@ -706,6 +706,7 @@ define([
                     this.setAttribute(job, 'execFiles', info.resultHashes[name + '-all-files']);
                     return this.blobClient.getArtifact(info.resultHashes.stdout)
                         .then(artifact => {
+                // FIXME: Improve the error handling here
                             var stdoutHash = artifact.descriptor.content[STDOUT_FILE].content;
                             return this.blobClient.getObjectAsString(stdoutHash);
                         })
@@ -762,6 +763,7 @@ define([
             // TODO:
             this.setAttribute(job, 'execFiles', info.resultHashes[name + '-all-files']);
             const artifact = await this.blobClient.getArtifact(info.resultHashes.stdout)
+            // FIXME: Improve the error handling here
             const stdoutHash = artifact.descriptor.content[STDOUT_FILE].content;
             const stdout = await this.blobClient.getObjectAsString(stdoutHash);
             // Parse the remaining code
@@ -818,6 +820,7 @@ define([
                 // Create new metadata for each
                 artifacts.forEach((artifact, i) => {
                     var name = outputs[i][0],
+                // FIXME: Uniform the error handling here
                         outputData = artifact.descriptor.content[`outputs/${name}`],
                         hash = outputData && outputData.content,
                         dataType = resultTypes[name];
@@ -844,6 +847,7 @@ define([
         const hash = result.resultHashes['result-types'];
         return this.blobClient.getArtifact(hash)
             .then(data => {
+                // FIXME: Improve the error handling here
                 const contents = data.descriptor.content;
                 const contentHash = contents['result-types.json'].content;
                 return this.blobClient.getObjectAsJSON(contentHash);

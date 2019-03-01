@@ -2,6 +2,8 @@ define([
     './BaseExecutor',
     'blob/BlobClient',
     'child_process',
+    'minimatch',
+    'module',
     'rimraf',
     'fs',
     'os',
@@ -10,6 +12,8 @@ define([
     BaseExecutor,
     BlobClient,
     childProcess,
+    minimatch,
+    module,
     rimraf,
     fs,
     os,
@@ -20,6 +24,7 @@ define([
     const spawn = childProcess.spawn;
     const {promisify} = require.nodeRequire('util');
     const mkdir = promisify(fs.mkdir);
+    const readdir = promisify(fs.readdir);
     const rm_rf = promisify(rimraf);
     const writeFile = promisify(fs.writeFile);
     const readFile = promisify(fs.readFile);
@@ -29,6 +34,11 @@ define([
     ensureHasUnzip();
     const UNZIP_EXE = '/usr/bin/unzip';  // FIXME: more platform support
     const UNZIP_ARGS = ['-o'];  // FIXME: more platform support
+    const PROJECT_ROOT = path.join(path.dirname(module.uri), '..', '..', '..', '..');
+    const NODE_MODULES = path.join(PROJECT_ROOT, 'node_modules');  // TODO
+    console.log('module', module.uri);
+    console.log('NODE_MODULES', NODE_MODULES);
+    const symlink = promisify(fs.symlink);
 
     const LocalExecutor = function(logger, gmeConfig) {
         BaseExecutor.apply(this, arguments);
@@ -78,13 +88,13 @@ define([
 
         // Spin up a subprocess
         const config = JSON.parse(await readFile(tmpdir.replace(path.sep, '/') + '/executor_config.json', 'utf8'));
-        console.log('config:', config);
 
         const env = {cwd: tmpdir};
         execJob = spawn(config.cmd, config.args, env);
         execJob.stdout.on('data', data => this.emit('data', hash, data));  // TODO: should this be stdout?
         execJob.stderr.on('data', data => this.emit('data', hash, data));
-        execJob.on('close', code => {
+        execJob.on('close', async code => {
+            console.log('code', code);
             const jobInfo = {
                 resultHashes: [],  // TODO: upload data and add result hashes 
                 status: 'SUCCESS'
@@ -98,22 +108,37 @@ define([
             }
             this.emit('end', hash, jobInfo);
         });
+    };
 
-        // upload the resultArtifacts
-        // TODO
+    LocalExecutor.prototype._getAllFiles = async function(workdir) {
+        const dirs = (await readdir(workdir))
+            .filter(n => !n.includes('node_modules'));
+        const files = [];
 
-        //return result;
+        // Read each directory
+        while (dirs.length) {
+            const isDirectory = (await fs.stat(dirs[0])).isDirectory();
+            if (isDirectory) {
+                dirs.push.apply(dirs, await readdir(workdir));
+            } else {
+                files.push(dirs.shift());
+            }
+        }
+
+        return files;
     };
 
     LocalExecutor.prototype._uploadResults = async function(workdir, config) {
         // Get all the matching result artifacts
-        // TODO
+        const allFiles = await this._getAllFiles(workdir);
+        const
 
         // Upload all the artifacts
         // TODO
 
         // Return the hashes
         // TODO
+        return {};
     };
 
     LocalExecutor.prototype.prepareWorkspace = async function(hash, dirname) {
@@ -125,6 +150,9 @@ define([
 
         this.logger.info(`unzipping ${zipPath} in ${dirname}`);
         await unzip(zipPath, dirname);
+
+        // Set up a symbolic link to the node_modules
+        await symlink(NODE_MODULES, path.join(dirname, 'node_modules'));
     };
 
     async function unzip(filename, dirname) {
