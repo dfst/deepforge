@@ -1,4 +1,4 @@
-/*globals define*/
+/*globals define, requirejs*/
 /*jshint node:true, browser:true*/
 
 define([
