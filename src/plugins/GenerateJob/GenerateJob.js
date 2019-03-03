@@ -10,8 +10,8 @@ define([
     'deepforge/OperationCode',
     'deepforge/plugin/PtrCodeGen',
     'text!./metadata.json',
-    'js/Utils/ComponentSettings',
-    'plugin/PluginBase'
+    'plugin/PluginBase',
+    'module'
 ], function (
     Templates,
     Q,
@@ -21,8 +21,8 @@ define([
     OperationCode,
     PtrCodeGen,
     pluginMetadata,
-    ComponentSettings,
-    PluginBase
+    PluginBase,
+    module
 ) {
     'use strict';
 
@@ -44,11 +44,19 @@ define([
         PluginBase.call(this);
         this.pluginMetadata = pluginMetadata;
 
-        this.settings = _.extend({}, DEFAULT_SETTINGS),
-        ComponentSettings.resolveWithWebGMEGlobal(
-            this.settings,
-            this.getComponentId()
-        );
+        this.settings = _.extend({}, DEFAULT_SETTINGS);
+        if (typeof WebGMEGlobal === 'undefined') {  // Running in NodeJS
+            const path = require('path');
+            const dirname = path.dirname(module.uri);
+            const deploymentSettings = JSON.parse(requirejs('text!' + dirname + '/../../../config/components.json'));
+            _.extend(this.settings, deploymentSettings);
+        } else {  // Running in the browser
+            const ComponentSettings = requirejs('js/Utils/ComponentSettings');
+            ComponentSettings.resolveWithWebGMEGlobal(
+                this.settings,
+                this.getComponentId()
+            );
+        }
     };
 
     /**
