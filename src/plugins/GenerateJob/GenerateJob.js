@@ -10,6 +10,7 @@ define([
     'deepforge/OperationCode',
     'deepforge/plugin/PtrCodeGen',
     'text!./metadata.json',
+    'js/Utils/ComponentSettings',
     'plugin/PluginBase'
 ], function (
     Templates,
@@ -20,12 +21,14 @@ define([
     OperationCode,
     PtrCodeGen,
     pluginMetadata,
+    ComponentSettings,
     PluginBase
 ) {
     'use strict';
 
     pluginMetadata = JSON.parse(pluginMetadata);
     const DATA_DIR = 'artifacts/';
+    const DEFAULT_SETTINGS = {enableJobCaching: false};
     var OUTPUT_INTERVAL = 1500,
         STDOUT_FILE = 'job_stdout.txt';
 
@@ -40,6 +43,12 @@ define([
         // Call base class' constructor.
         PluginBase.call(this);
         this.pluginMetadata = pluginMetadata;
+
+        this.settings = _.extend({}, DEFAULT_SETTINGS),
+        ComponentSettings.resolveWithWebGMEGlobal(
+            this.settings,
+            this.getComponentId()
+        );
     };
 
     /**
@@ -52,6 +61,10 @@ define([
     // Prototypical inheritance from PluginBase.
     GenerateJob.prototype = Object.create(PluginBase.prototype);
     GenerateJob.prototype.constructor = GenerateJob;
+
+    GenerateJob.prototype.getComponentId = function () {
+        return 'GenerateJob';
+    };
 
     /**
      * Main function for the plugin to execute. This will perform the execution.
@@ -110,6 +123,7 @@ define([
     GenerateJob.prototype.createRunScript = function (inputs, files={}) {
         let runsh = [
             '# Bash script to download data files and run job',
+            !this.settings.enableJobCaching ? `# Created at ${Date.now()}` : '',
             'if [ -z "$DEEPFORGE_URL" ]; then',
             '  echo "Please set DEEPFORGE_URL and re-run:"',
             '  echo ""',

@@ -1,4 +1,7 @@
 {
+    "GenerateJob": {
+        "enableJobCaching": false
+    },
     "AutoViz": {
         "preloadIds": [
             "ArchEditor",
