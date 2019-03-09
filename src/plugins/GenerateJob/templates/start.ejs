@@ -219,7 +219,13 @@ requirejs([
             pid = job.pid;
             job = null;
             log(`killing process group: ${pid}`);
-            process.kill(-pid, 'SIGTERM');
+            try {
+                process.kill(-pid, 'SIGTERM');
+            } catch (err) {
+                if (!err.message.includes('ESRCH')) {
+                    log('Error while killing process group: ' + err.message);
+                }
+            }
         }
         if (exitCode !== undefined) {
             if (exitCode !== null) {
