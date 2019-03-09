@@ -640,7 +640,7 @@ define([
                                 // Download all files
                                 this.result.addArtifact(info.resultHashes[name + '-all-files']);
                                 // Parse the most precise error and present it in the toast...
-                                const lastline = result.stdout.split('\n').filter(l => !!l).pop();
+                                const lastline = result.stdout.split('\n').filter(l => !!l).pop() || '';
                                 if (lastline.includes('Error')) {
                                     this.onOperationFail(op, lastline); 
                                 } else {

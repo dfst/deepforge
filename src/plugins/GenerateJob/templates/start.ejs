@@ -15,7 +15,7 @@ var COMMAND_PREFIX = '<%= CONSTANTS.START_CMD %>',
     IMAGE = '<%= CONSTANTS.IMAGE.PREFIX %>',
     requirejs = require('webgme').requirejs,
     remainingImageCount = 0,
-    exitCode = null;
+    exitCode;
 
 requirejs([
     'q',
@@ -79,7 +79,7 @@ requirejs([
     });
 
     var checkFinished = () => {
-        if (exitCode !== null && remainingImageCount === 0) {
+        if (exitCode !== undefined && remainingImageCount === 0) {
             log('finished!');
             cleanup();
         }
@@ -221,8 +221,13 @@ requirejs([
             log(`killing process group: ${pid}`);
             process.kill(-pid, 'SIGTERM');
         }
-        if (exitCode !== null) {
-            log(`exiting w/ code ${exitCode}`);
+        if (exitCode !== undefined) {
+            if (exitCode !== null) {
+                log(`exiting w/ code ${exitCode}`);
+            } else {  // exited involuntarily
+                log(`script exited involuntarily (exit code is null)`);
+                return process.exit(1);
+            }
             process.exit(exitCode);
         }
     };
