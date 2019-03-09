@@ -1,5 +1,15 @@
 import json
 import deepforge
+import signal
+import sys
+
+def signal_handler(signum, frame):
+    sig = signal.Signals(signum)
+    print('Received ' + sig.name + '. Exiting.')
+    sys.exit(1)
+
+signal.signal(signal.SIGINT, signal_handler)
+signal.signal(signal.SIGTERM, signal_handler)
 
 <%= initCode %>
 # input data<% inputs.forEach(function(pair) { var input = pair[0], type = pair[1], isNil = pair[2];%>
