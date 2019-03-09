@@ -25,6 +25,7 @@ define([
     const {promisify} = require.nodeRequire('util');
     const mkdir = promisify(fs.mkdir);
     const readdir = promisify(fs.readdir);
+    const statFile = promisify(fs.stat);
     const rm_rf = promisify(rimraf);
     const writeFile = promisify(fs.writeFile);
     const readFile = promisify(fs.readFile);
@@ -112,27 +113,32 @@ define([
 
     LocalExecutor.prototype._getAllFiles = async function(workdir) {
         const dirs = (await readdir(workdir))
-            .filter(n => !n.includes('node_modules'));
+            .filter(n => !n.includes('node_modules'))
+            .map(name => path.join(workdir, name));
         const files = [];
 
         // Read each directory
         while (dirs.length) {
-            const isDirectory = (await fs.stat(dirs[0])).isDirectory();
+            const abspath = dirs.shift();
+            const isDirectory = (await statFile(abspath)).isDirectory();
             if (isDirectory) {
-                dirs.push.apply(dirs, await readdir(workdir));
+                const childpaths = (await readdir(abspath))
+                    .map(name => path.join(abspath, name));
+                dirs.push.apply(dirs, childpaths);
             } else {
-                files.push(dirs.shift());
+                files.push(abspath);
             }
         }
 
-        return files;
+        return files.map(file => path.relative(workdir, file));  // TODO: get the relative paths
     };
 
     LocalExecutor.prototype._uploadResults = async function(workdir, config) {
         // Get all the matching result artifacts
         const allFiles = await this._getAllFiles(workdir);
-        const
+        console.log(allFiles)
 
+        // TODO: Get the relative pt
         // Upload all the artifacts
         // TODO
 
