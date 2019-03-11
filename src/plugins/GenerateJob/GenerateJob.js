@@ -1,4 +1,4 @@
-/*globals define*/
+/*globals define, requirejs*/
 /*jshint node:true, browser:true*/
 
 define([
@@ -10,7 +10,8 @@ define([
     'deepforge/OperationCode',
     'deepforge/plugin/PtrCodeGen',
     'text!./metadata.json',
-    'plugin/PluginBase'
+    'plugin/PluginBase',
+    'module'
 ], function (
     Templates,
     Q,
@@ -20,12 +21,14 @@ define([
     OperationCode,
     PtrCodeGen,
     pluginMetadata,
-    PluginBase
+    PluginBase,
+    module
 ) {
     'use strict';
 
     pluginMetadata = JSON.parse(pluginMetadata);
     const DATA_DIR = 'artifacts/';
+    const DEFAULT_SETTINGS = {enableJobCaching: false};
     var OUTPUT_INTERVAL = 1500,
         STDOUT_FILE = 'job_stdout.txt';
 
@@ -40,6 +43,20 @@ define([
         // Call base class' constructor.
         PluginBase.call(this);
         this.pluginMetadata = pluginMetadata;
+
+        this.settings = _.extend({}, DEFAULT_SETTINGS);
+        if (typeof WebGMEGlobal === 'undefined') {  // Running in NodeJS
+            const path = require('path');
+            const dirname = path.dirname(module.uri);
+            const deploymentSettings = JSON.parse(requirejs('text!' + dirname + '/../../../config/components.json'));
+            _.extend(this.settings, deploymentSettings);
+        } else {  // Running in the browser
+            const ComponentSettings = requirejs('js/Utils/ComponentSettings');
+            ComponentSettings.resolveWithWebGMEGlobal(
+                this.settings,
+                this.getComponentId()
+            );
+        }
     };
 
     /**
@@ -52,6 +69,10 @@ define([
     // Prototypical inheritance from PluginBase.
     GenerateJob.prototype = Object.create(PluginBase.prototype);
     GenerateJob.prototype.constructor = GenerateJob;
+
+    GenerateJob.prototype.getComponentId = function () {
+        return 'GenerateJob';
+    };
 
     /**
      * Main function for the plugin to execute. This will perform the execution.
@@ -110,6 +131,7 @@ define([
     GenerateJob.prototype.createRunScript = function (inputs, files={}) {
         let runsh = [
             '# Bash script to download data files and run job',
+            !this.settings.enableJobCaching ? `# Created at ${Date.now()}` : '',
             'if [ -z "$DEEPFORGE_URL" ]; then',
             '  echo "Please set DEEPFORGE_URL and re-run:"',
             '  echo ""',

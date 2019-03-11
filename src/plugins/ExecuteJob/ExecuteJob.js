@@ -704,23 +704,19 @@ define([
 
                 if (info.status === 'SUCCESS' || info.status === 'FAILED_TO_EXECUTE') {
                     this.setAttribute(job, 'execFiles', info.resultHashes[name + '-all-files']);
-                    return this.blobClient.getArtifact(info.resultHashes.stdout)
-                        .then(artifact => {
-                // FIXME: Improve the error handling here
-                            var stdoutHash = artifact.descriptor.content[STDOUT_FILE].content;
-                            return this.blobClient.getObjectAsString(stdoutHash);
-                        })
+                    const opName = this.getAttribute(op, 'name');
+                    return this.getContentHashSafe(info.resultHashes.stdout, STDOUT_FILE, ERROR.NO_STDOUT_FILE)
+                        .then(stdoutHash => this.blobClient.getObjectAsString(stdoutHash))
                         .then(stdout => {
                             // Parse the remaining code
                             var result = this.processStdout(job, stdout);
                             this.setAttribute(job, 'stdout', result.stdout);
                             this.logManager.deleteLog(jobId);
                             if (info.status !== 'SUCCESS') {
-                                const opName = this.getAttribute(op, 'name');
                                 // Download all files
                                 this.result.addArtifact(info.resultHashes[name + '-all-files']);
                                 // Parse the most precise error and present it in the toast...
-                                const lastline = result.stdout.split('\n').filter(l => !!l).pop();
+                                const lastline = result.stdout.split('\n').filter(l => !!l).pop() || '';
                                 if (lastline.includes('Error')) {
                                     this.onOperationFail(op, lastline); 
                                 } else {
@@ -729,7 +725,8 @@ define([
                             } else {
                                 this.onDistOperationComplete(op, info);
                             }
-                        });
+                        })
+                        .catch(err => this.onOperationFail(op, `Operation "${opName}" failed: ${err}`));
                 } else {  // something bad happened...
                     var err = `Failed to execute operation "${opId}": ${info.status}`,
                         consoleErr = `[0;31mFailed to execute operation: ${info.status}[0m`;
@@ -788,6 +785,7 @@ define([
     };
 
     ExecuteJob.prototype.onDistOperationComplete = function (node, result) {
+        const opName = this.getAttribute(node, 'name');
         let nodeId = this.core.getPath(node),
             outputMap = {},
             resultTypes,
@@ -807,22 +805,18 @@ define([
                 outputs.forEach(output => outputMap[output[0]] = output[1]);
 
                 // this should not be in directories -> flatten the data!
-                let artifacts = outputs.map(tuple => {  // [ name, node ]
+                const hashes = outputs.map(tuple => {  // [ name, node ]
                     let [name] = tuple;
-                    let hash = result.resultHashes[name];
-                    return this.blobClient.getArtifact(hash);
+                    let artifactHash = result.resultHashes[name];
+                    return this.getContentHash(artifactHash, `outputs/${name}`);
                 });
 
-                return Q.all(artifacts);
+                return Q.all(hashes);
             })
-            .then(artifacts => {
-                this.logger.info(`preparing outputs -> retrieved ${artifacts.length} objects`);
+            .then(hashes => {
                 // Create new metadata for each
-                artifacts.forEach((artifact, i) => {
+                hashes.forEach((hash, i) => {
                     var name = outputs[i][0],
-                // FIXME: Uniform the error handling here
-                        outputData = artifact.descriptor.content[`outputs/${name}`],
-                        hash = outputData && outputData.content,
                         dataType = resultTypes[name];
 
                     if (dataType) {
@@ -840,18 +834,27 @@ define([
 
                 return this.onOperationComplete(node);
             })
-            .fail(e => this.onOperationFail(node, `Operation ${nodeId} failed: ${e}`));
+            .catch(e => this.onOperationFail(node, `"${opName}" failed: ${e}`));
     };
 
-    ExecuteJob.prototype.getResultTypes = function (result) {
-        const hash = result.resultHashes['result-types'];
-        return this.blobClient.getArtifact(hash)
-            .then(data => {
-                // FIXME: Improve the error handling here
-                const contents = data.descriptor.content;
-                const contentHash = contents['result-types.json'].content;
-                return this.blobClient.getObjectAsJSON(contentHash);
-            });
+    ExecuteJob.prototype.getResultTypes = async function (result) {
+        const artifactHash = result.resultHashes['result-types'];
+        return await this.getContentHashSafe(artifactHash, 'result-types.json', ERROR.NO_TYPES_FILE);
+    };
+
+    ExecuteJob.prototype.getContentHashSafe = async function (artifactHash, fileName, msg) {
+        const hash = await this.getContentHash(artifactHash, fileName);
+        if (!hash) {
+            throw new Error(msg);
+        }
+        return hash;
+    };
+
+    ExecuteJob.prototype.getContentHash = async function (artifactHash, fileName) {
+        const artifact = await this.blobClient.getArtifact(artifactHash);
+        const contents = artifact.descriptor.content;
+
+        return contents[fileName] && contents[fileName].content;
     };
 
     //////////////////////////// Special Operations ////////////////////////////
@@ -881,6 +884,10 @@ define([
         result.stdout = utils.resolveCarriageReturns(result.stdout).join('\n');
         return result;
     };
+
+    const ERROR = {};
+    ERROR.NO_STDOUT_FILE = 'Could not find logs in job results.';
+    ERROR.NO_TYPES_FILE = 'Metadata about result types not found.';
 
     return ExecuteJob;
 });
