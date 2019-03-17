@@ -25,6 +25,7 @@ define([
     const {promisify} = require.nodeRequire('util');
     const mkdir = promisify(fs.mkdir);
     const readdir = promisify(fs.readdir);
+    const appendFile = promisify(fs.appendFile);
     const statFile = promisify(fs.stat);
     const rm_rf = promisify(rimraf);
     const writeFile = promisify(fs.writeFile);
@@ -65,7 +66,6 @@ define([
     // TODO: Add cancel support! TODO
     LocalExecutor.prototype.createJob = async function(hash) {
 
-        // TODO: Set up a directory to work in...
         // Create tmp directory
         const tmpdir = path.join(os.tmpdir(), `deepforge-local-exec-${hash}`);
         try {
@@ -92,23 +92,24 @@ define([
 
         const env = {cwd: tmpdir};
         execJob = spawn(config.cmd, config.args, env);
-        execJob.stdout.on('data', data => this.emit('data', hash, data));  // TODO: should this be stdout?
-        execJob.stderr.on('data', data => this.emit('data', hash, data));
+        execJob.stdout.on('data', data => this.onConsoleOutput(tmpdir, hash, data));
+        execJob.stderr.on('data', data => this.onConsoleOutput(tmpdir, hash, data));
+
         execJob.on('close', async code => {
-            console.log('code', code);
             const jobInfo = {
                 resultHashes: [],  // TODO: upload data and add result hashes 
-                status: 'SUCCESS'
+                status: code !== 0 ? 'FAILED_TO_EXECUTE' : 'SUCCESS'
             }
 
-            if (code === 0) {  // Success
-                // TODO: upload data and record hashes..
-                jobInfo.resultHashes = await this._uploadResults(tmpdir, config);
-            } else {
-                jobInfo.status = 'FAILED_TO_EXECUTE';
-            }
+            await this._uploadResults(jobInfo, tmpdir, config);
             this.emit('end', hash, jobInfo);
         });
+    };
+
+    LocalExecutor.prototype.onConsoleOutput = async function(workdir, hash, data) {
+        const filename = path.join(workdir, 'job_stdout.txt');
+        appendFile(filename, data);
+        this.emit('data', hash, data);
     };
 
     LocalExecutor.prototype._getAllFiles = async function(workdir) {
@@ -130,22 +131,173 @@ define([
             }
         }
 
-        return files.map(file => path.relative(workdir, file));  // TODO: get the relative paths
+        return files;
     };
 
-    LocalExecutor.prototype._uploadResults = async function(workdir, config) {
-        // Get all the matching result artifacts
-        const allFiles = await this._getAllFiles(workdir);
-        console.log(allFiles)
+    LocalExecutor.prototype._uploadResults = async function(jobInfo, directory, executorConfig) {
+        var self = this,
+            i,
+            jointArtifact = self.blobClient.createArtifact('jobInfo_resultSuperSetHash'),
+            resultsArtifacts = [],
+            afterWalk,
+            archiveFile,
+            afterAllFilesArchived,
+            addObjectHashesAndSaveArtifact;
 
-        // TODO: Get the relative pt
-        // Upload all the artifacts
-        // TODO
+        jobInfo.resultHashes = {};
 
-        // Return the hashes
-        // TODO
-        return {};
+        for (i = 0; i < executorConfig.resultArtifacts.length; i += 1) {
+            resultsArtifacts.push(
+                {
+                    name: executorConfig.resultArtifacts[i].name,
+                    artifact: self.blobClient.createArtifact(executorConfig.resultArtifacts[i].name),
+                    patterns: executorConfig.resultArtifacts[i].resultPatterns instanceof Array ?
+                        executorConfig.resultArtifacts[i].resultPatterns : [],
+                    files: {}
+                }
+            );
+        }
+
+        afterWalk = function (filesToArchive) {
+            if (filesToArchive.length === 0) {
+                self.logger.info(jobInfo.hash + ' There were no files to archive..');
+            }
+
+            return Promise.all(filesToArchive.map(f => archiveFile(f.filename, f.filePath)));
+        };
+
+        archiveFile = promisify(function (filename, filePath, callback) {
+            var archiveData = function (err, data) {
+                jointArtifact.addFileAsSoftLink(filename, data, function (err, hash) {
+                    var j;
+                    if (err) {
+                        self.logger.error(jobInfo.hash + ' Failed to archive as "' + filename + '" from "' +
+                            filePath + '", err: ' + err);
+                        self.logger.error(err);
+                        callback(new Error('FAILED_TO_ARCHIVE_FILE'));
+                    } else {
+                        // Add the file-hash to the results artifacts containing the filename.
+                        for (j = 0; j < resultsArtifacts.length; j += 1) {
+                            if (resultsArtifacts[j].files[filename] === true) {
+                                resultsArtifacts[j].files[filename] = hash;
+                            }
+                        }
+                        callback(null);
+                    }
+                });
+            };
+
+            if (typeof File === 'undefined') { // nodejs doesn't have File
+                fs.readFile(filePath, function (err, data) {
+                    if (err) {
+                        self.logger.error(jobInfo.hash + ' Failed to archive as "' + filename + '" from "' + filePath +
+                            '", err: ' + err);
+                        return callback(new Error('FAILED_TO_ARCHIVE_FILE'));
+                    }
+                    archiveData(null, data);
+                });
+            } else {
+                archiveData(null, new File(filePath, filename));
+            }
+        });
+
+        afterAllFilesArchived = async function () {
+            let resultHash = null;
+            try {
+                resultHash = await jointArtifact.save();
+            } catch (err) {
+                this.logger.warn(`Failed to save joint artifact: ${err} (${jobInfo.hash})`);
+                throw new Error('FAILED_TO_SAVE_JOINT_ARTIFACT');
+            }
+
+            try {
+                await rm_rf(directory);
+            } catch (err) {
+                self.logger.error('Could not delete executor-temp file, err: ' + err);
+            }
+            jobInfo.resultSuperSetHash = resultHash;
+            return Promise.all(resultsArtifacts.map(r => addObjectHashesAndSaveArtifact(r)))
+        };
+
+        addObjectHashesAndSaveArtifact = promisify(function (resultArtifact, callback) {
+            resultArtifact.artifact.addMetadataHashes(resultArtifact.files, function (err/*, hashes*/) {
+                if (err) {
+                    self.logger.error(jobInfo.hash + ' ' + err);
+                    return callback('FAILED_TO_ADD_OBJECT_HASHES');
+                }
+                resultArtifact.artifact.save(function (err, resultHash) {
+                    if (err) {
+                        self.logger.error(jobInfo.hash + ' ' + err);
+                        return callback('FAILED_TO_SAVE_ARTIFACT');
+                    }
+                    jobInfo.resultHashes[resultArtifact.name] = resultHash;
+                    callback(null);
+                });
+            });
+        });
+
+        const allFiles = await this._getAllFiles(directory);
+
+        console.log('final', allFiles);
+        const filesToArchive = [];
+        let archive,
+            filename,
+            matched;
+
+        for (let i = 0; i < allFiles.length; i += 1) {
+            filename = path.relative(directory, allFiles[i]).replace(/\\/g, '/');
+            archive = false;
+            for (let a = 0; a < resultsArtifacts.length; a += 1) {
+                if (resultsArtifacts[a].patterns.length === 0) {
+                    resultsArtifacts[a].files[filename] = true;
+                    archive = true;
+                } else {
+                    for (let j = 0; j < resultsArtifacts[a].patterns.length; j += 1) {
+                        matched = minimatch(filename, resultsArtifacts[a].patterns[j]);
+                        console.log(filename, 'matches',resultsArtifacts[a].patterns[j], '?', matched);
+                        if (matched) {
+                            resultsArtifacts[a].files[filename] = true;
+                            archive = true;
+                            break;
+                        }
+                    }
+                }
+            }
+            if (archive) {
+                filesToArchive.push({filename: filename, filePath: allFiles[i]});
+            }
+        }
+
+        try {
+            await afterWalk(filesToArchive);
+            return await afterAllFilesArchived();
+        } catch (err) {
+            jobInfo.status = err.message;
+        }
     };
+
+    //LocalExecutor.prototype._uploadResults = async function(workdir, config) {
+        //// Get all the matching result artifacts
+        //const allFiles = await this._getAllFiles(workdir);
+        //console.log(allFiles)
+
+        //// Upload all the artifacts
+        //const artifacts = config.resultArtifacts
+            //.map(info => {
+                //return {
+                    //name: info.name,
+                    //artifact: self.blobClient.createArtifact(info.name),
+                    //patterns: info.resultPatterns instanceof Array ?
+                        //info.resultPatterns : [],
+                    //files: {}
+                //}
+            //})
+        //// TODO
+
+        //// Return the hashes
+        //// TODO
+        //return {};
+    //};
 
     LocalExecutor.prototype.prepareWorkspace = async function(hash, dirname) {
         this.logger.info(`about to fetch job data`);
