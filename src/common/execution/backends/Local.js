@@ -93,7 +93,6 @@ define([
         const env = {cwd: tmpdir};
         execJob = spawn(config.cmd, config.args, env);
         execJob.stdout.on('data', data => this.onConsoleOutput(tmpdir, hash, data));
-        execJob.stderr.on('data', data => this.onConsoleOutput(tmpdir, hash, data));
 
         execJob.on('close', async code => {
             const jobInfo = {
