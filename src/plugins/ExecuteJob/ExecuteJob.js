@@ -759,10 +759,13 @@ define([
         if (info.status === 'SUCCESS' || info.status === 'FAILED_TO_EXECUTE') {
             // TODO:
             this.setAttribute(job, 'execFiles', info.resultHashes[name + '-all-files']);
+            // TODO: Add getStdout to executor?
             const artifact = await this.blobClient.getArtifact(info.resultHashes.stdout)
             // FIXME: Improve the error handling here
+            console.log(artifact.descriptor);
             const stdoutHash = artifact.descriptor.content[STDOUT_FILE].content;
             const stdout = await this.blobClient.getObjectAsString(stdoutHash);
+
             // Parse the remaining code
             const result = this.processStdout(job, stdout);
             this.setAttribute(job, 'stdout', result.stdout);
@@ -771,12 +774,12 @@ define([
                 // Download all files
                 this.result.addArtifact(info.resultHashes[name + '-all-files']);
                 // Set the job to failed! Store the error
-                this.onOperationFail(op, `Operation "${opId}" failed! ${JSON.stringify(info)}`); 
+                this.onOperationFail(op, `Operation "${jobId}" failed! ${JSON.stringify(info)}`); 
             } else {
                 this.onDistOperationComplete(op, info);
             }
         } else {  // something bad happened...
-            var err = `Failed to execute operation "${opId}": ${info.status}`,
+            var err = `Failed to execute operation "${jobId}": ${info.status}`,
                 consoleErr = `[0;31mFailed to execute operation: ${info.status}[0m`;
             this.setAttribute(job, 'stdout', consoleErr);
             this.logger.error(err);

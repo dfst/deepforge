@@ -55,9 +55,9 @@ define([
 
     LocalExecutor.prototype = Object.create(BaseExecutor.prototype);
 
-    //LocalExecutor.prototype.cancelJob = function(job) {
-        //return this.executor.cancelJob(job.hash, job.secret);
-    //};
+    LocalExecutor.prototype.cancelJob = function(job) {
+        return this.executor.cancelJob(job.hash, job.secret);
+    };
 
     //LocalExecutor.prototype.getInfo = function(job) {
         //return this.executor.getInfo(job.hash);
@@ -65,6 +65,11 @@ define([
 
     // TODO: Add cancel support! TODO
     LocalExecutor.prototype.createJob = async function(hash) {
+        // TODO: Queue the job if a job is already running...
+        return this._createJob(hash);
+    };
+
+    LocalExecutor.prototype._createJob = async function(hash) {
 
         // Create tmp directory
         const tmpdir = path.join(os.tmpdir(), `deepforge-local-exec-${hash}`);
@@ -91,23 +96,27 @@ define([
         const config = JSON.parse(await readFile(tmpdir.replace(path.sep, '/') + '/executor_config.json', 'utf8'));
 
         const env = {cwd: tmpdir};
+        this.logger.info(`Running ${config.cmd} ${config.args.join(' ')}`);
         execJob = spawn(config.cmd, config.args, env);
         execJob.stdout.on('data', data => this.onConsoleOutput(tmpdir, hash, data));
 
         execJob.on('close', async code => {
             const jobInfo = {
-                resultHashes: [],  // TODO: upload data and add result hashes 
+                resultHashes: [],
                 status: code !== 0 ? 'FAILED_TO_EXECUTE' : 'SUCCESS'
             }
 
             await this._uploadResults(jobInfo, tmpdir, config);
             this.emit('end', hash, jobInfo);
         });
+
+        return {};
     };
 
     LocalExecutor.prototype.onConsoleOutput = async function(workdir, hash, data) {
         const filename = path.join(workdir, 'job_stdout.txt');
         appendFile(filename, data);
+        this.logger.info('stdout:', data);
         this.emit('data', hash, data);
     };
 
