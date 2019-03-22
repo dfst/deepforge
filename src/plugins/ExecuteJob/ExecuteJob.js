@@ -716,7 +716,7 @@ define([
     ExecuteJob.prototype.getResultTypes = async function (result) {
         const mdHash = result.resultHashes['result-types'];
         const hash = await this.getContentHashSafe(mdHash, 'result-types.json', ERROR.NO_TYPES_FILE);
-        return await this.blobClient.getObjectAsString(hash);
+        return await this.blobClient.getObjectAsJSON(hash);
     };
 
     ExecuteJob.prototype.getContentHashSafe = async function (artifactHash, fileName, msg) {
