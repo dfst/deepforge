@@ -227,43 +227,37 @@ define([
         return !!this.getAttribute(job, 'jobId');
     };
 
-    ExecuteJob.prototype.resumeJob = function (job) {
-        console.log('resuming job...');
+    ExecuteJob.prototype.resumeJob = async function (job) {
         var hash = this.getAttribute(job, 'jobId'),
             name = this.getAttribute(job, 'name'),
-            id = this.core.getPath(job),
-            msg;
+            id = this.core.getPath(job);
 
         this.logger.info(`Resuming job ${name} (${id})`);
 
-        return this.logManager.getMetadata(id)
-            .then(metadata => {
-                var count = metadata.lineCount;
+        const metadata = await this.logManager.getMetadata(id);
+        let count = metadata.lineCount;
 
-                if (count === -1) {
-                    this.logger.warn(`No line count found for ${id}. Setting count to 0`);
-                    count = 0;
-                    return this.logManager.deleteLog(id)
-                        .then(() => count);
-                }
-                return count;
-            })
-            .then(count => {  // update line count (to inform logClient appendTo)
-                this.outputLineCount[id] = count;
-                return this.executor.getOutput(hash, 0, count);  // TODO FIXME
-            })
-            .then(async output => {  // parse the stdout to update the job metadata
-                var stdout = output.map(o => o.output).join(''),
-                    result = this.processStdout(job, stdout),
-                    name = this.getAttribute(job, 'name');
+        if (count === -1) {
+            this.logger.warn(`No line count found for ${id}. Setting count to 0`);
+            count = 0;
+            await this.logManager.deleteLog(id);
+        }
 
-                if (result.hasMetadata) {
-                    msg = `Updated graph/image output for ${name}`;
-                    await this.save(msg);
-                }
-                return this.getOperation(job);
-            })
-            //.then(opNode => this.watchOperation(hash, opNode, job));
+        this.outputLineCount[id] = count;
+
+        // TODO: Need to be able to poll the stdout...
+        const output = await this.executor.getOutput(hash);
+        const stdout = output.map(o => o.output).join('');
+
+        const result = this.processStdout(job, stdout);
+
+        if (result.hasMetadata) {
+            const name = this.getAttribute(job, 'name');
+            const msg = `Updated graph/image output for ${name}`;
+            await this.save(msg);
+        }
+
+        return this.getOperation(job);
     };
 
     ExecuteJob.prototype.updateForkName = function (basename) {

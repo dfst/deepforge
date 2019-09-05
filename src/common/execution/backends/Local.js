@@ -31,6 +31,8 @@ define([
     const writeFile = promisify(fs.writeFile);
     const readFile = promisify(fs.readFile);
     const execFile = promisify(childProcess.execFile);
+    const openFile = promisify(fs.open);
+    const closeFile = promisify(fs.close);
 
     // UNZIP must be available on the machine, first ensure that it exists...
     ensureHasUnzip();
@@ -38,12 +40,13 @@ define([
     const UNZIP_ARGS = ['-o'];  // FIXME: more platform support
     const PROJECT_ROOT = path.join(path.dirname(module.uri), '..', '..', '..', '..');
     const NODE_MODULES = path.join(PROJECT_ROOT, 'node_modules');  // TODO
-    console.log('module', module.uri);
-    console.log('NODE_MODULES', NODE_MODULES);
     const symlink = promisify(fs.symlink);
+    const touch = async name => await closeFile(await openFile(name, 'w'));
 
     const LocalExecutor = function(logger, gmeConfig) {
         BaseExecutor.apply(this, arguments);
+        this.jobQueue = [];
+        this.currentJob = null;
         // FIXME: set this meaningfully!
         this.blobClient = new BlobClient({
             server: '127.0.0.1',
@@ -59,20 +62,40 @@ define([
         return this.executor.cancelJob(job.hash, job.secret);
     };
 
-    //LocalExecutor.prototype.getInfo = function(job) {
-        //return this.executor.getInfo(job.hash);
-    //};
+    LocalExecutor.prototype.getOutput = async function(hash) {
+        const filename = path.join(this._getWorkingDir(hash), 'job_stdout.txt');
+        return await readFile(filename, 'utf8');
+    };
 
     // TODO: Add cancel support! TODO
     LocalExecutor.prototype.createJob = async function(hash) {
-        // TODO: Queue the job if a job is already running...
-        return this._createJob(hash);
+        this.jobQueue.push(hash);
+        this._processNextJob();
+
+        return {hash};
+    };
+
+    LocalExecutor.prototype._onJobCompleted = function() {
+        this.currentJob = null;
+        this._processNextJob();
+    };
+
+    LocalExecutor.prototype._processNextJob = function() {
+        if (this.currentJob) return;
+
+        this.currentJob = this.jobQueue.shift();
+        if (this.currentJob) {
+            return this._createJob(this.currentJob);
+        }
+    };
+
+    LocalExecutor.prototype._getWorkingDir = function(hash) {
+        return path.join(os.tmpdir(), `deepforge-local-exec-${hash}`);
     };
 
     LocalExecutor.prototype._createJob = async function(hash) {
-
         // Create tmp directory
-        const tmpdir = path.join(os.tmpdir(), `deepforge-local-exec-${hash}`);
+        const tmpdir = this._getWorkingDir(hash);
         try {
             await mkdir(tmpdir);
         } catch (err) {
@@ -83,14 +106,10 @@ define([
                 throw err;
             }
         }
-        console.log('created working directory at', tmpdir);
+        this.logger.info('created working directory at', tmpdir);
 
         // Fetch the required files from deepforge
-        try {
-            await this.prepareWorkspace(hash, tmpdir);
-        } catch (err) {
-            console.log(`Error: ${err}`);
-        }
+        await this.prepareWorkspace(hash, tmpdir);
 
         // Spin up a subprocess
         const config = JSON.parse(await readFile(tmpdir.replace(path.sep, '/') + '/executor_config.json', 'utf8'));
@@ -107,10 +126,9 @@ define([
             }
 
             await this._uploadResults(jobInfo, tmpdir, config);
+            this._onJobCompleted();
             this.emit('end', hash, jobInfo);
         });
-
-        return {};
     };
 
     LocalExecutor.prototype.onConsoleOutput = async function(workdir, hash, data) {
@@ -246,7 +264,6 @@ define([
 
         const allFiles = await this._getAllFiles(directory);
 
-        console.log('final', allFiles);
         const filesToArchive = [];
         let archive,
             filename,
@@ -262,7 +279,6 @@ define([
                 } else {
                     for (let j = 0; j < resultsArtifacts[a].patterns.length; j += 1) {
                         matched = minimatch(filename, resultsArtifacts[a].patterns[j]);
-                        console.log(filename, 'matches',resultsArtifacts[a].patterns[j], '?', matched);
                         if (matched) {
                             resultsArtifacts[a].files[filename] = true;
                             archive = true;
@@ -319,11 +335,13 @@ define([
 
         // Set up a symbolic link to the node_modules
         await symlink(NODE_MODULES, path.join(dirname, 'node_modules'));
+
+        // Prepare for the stdout
+        await touch(path.join(dirname, 'job_stdout.txt'));
     };
 
     async function unzip(filename, dirname) {
         const args = UNZIP_ARGS.concat(path.basename(filename));
-        console.log('running:', UNZIP_EXE, args.join(' '));
         await execFile(UNZIP_EXE, args, {cwd: dirname});
 
         await rm_rf(filename);
