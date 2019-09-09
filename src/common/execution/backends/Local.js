@@ -47,6 +47,7 @@ define([
         BaseExecutor.apply(this, arguments);
         this.jobQueue = [];
         this.currentJob = null;
+        this.subprocess = null;
         // FIXME: set this meaningfully!
         this.blobClient = new BlobClient({
             server: '127.0.0.1',
@@ -58,8 +59,16 @@ define([
 
     LocalExecutor.prototype = Object.create(BaseExecutor.prototype);
 
-    LocalExecutor.prototype.cancelJob = function(job) {
-        return this.executor.cancelJob(job.hash, job.secret);
+    LocalExecutor.prototype.cancelJob = function(jobInfo) {
+        const {hash} = jobInfo;
+
+        console.log('>>> CANCELING job!!');
+        if (this.currentJob === hash) {
+            this.subprocess.kill();
+        } else if (this.jobQueue.includes(hash)) {
+            const i = this.jobQueue.indexOf(hash);
+            this.jobQueue.splice(i, 1);
+        }
     };
 
     LocalExecutor.prototype.getOutput = async function(hash) {
@@ -67,11 +76,11 @@ define([
         return await readFile(filename, 'utf8');
     };
 
-    // TODO: Add cancel support! TODO
     LocalExecutor.prototype.createJob = async function(hash) {
         this.jobQueue.push(hash);
         this._processNextJob();
 
+        console.log('>>> CREATING job!!');
         return {hash};
     };
 
@@ -116,10 +125,10 @@ define([
 
         const env = {cwd: tmpdir};
         this.logger.info(`Running ${config.cmd} ${config.args.join(' ')}`);
-        execJob = spawn(config.cmd, config.args, env);
-        execJob.stdout.on('data', data => this.onConsoleOutput(tmpdir, hash, data));
+        this.subprocess = spawn(config.cmd, config.args, env);
+        this.subprocess.stdout.on('data', data => this.onConsoleOutput(tmpdir, hash, data));
 
-        execJob.on('close', async code => {
+        this.subprocess.on('close', async code => {
             const jobInfo = {
                 resultHashes: [],
                 status: code !== 0 ? 'FAILED_TO_EXECUTE' : 'SUCCESS'
