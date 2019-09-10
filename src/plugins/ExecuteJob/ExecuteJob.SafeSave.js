@@ -50,33 +50,13 @@ define([
     };
 
     ExecuteJob.prototype.setAttribute = function (node, attr, value) {
+        if (value === undefined) {
+            throw new Error(`Cannot set attributes to undefined (${attr})`);
+        }
+
+        this.logger.warn(`setting ${attr} to ${value}`);
         const changes = this.getChangesForNode(node);
         changes.attr[attr] = value;
-    };
-
-    ExecuteJob.prototype.getChangesForNode = function (node) {
-        var nodeId;
-
-        if (this.isCreateId(node)) {
-            nodeId = node;
-        } else {
-            nodeId = this.core.getPath(node);
-            assert(typeof nodeId === 'string', `Cannot set attribute of ${nodeId}`);
-        }
-
-        if (!this.changes[nodeId]) {
-            this.changes[nodeId] = {
-                attr: {},
-                ptr: {},
-            };
-        }
-
-        return this.changes[nodeId];
-    };
-
-    ExecuteJob.prototype.setPointer = function (node, name, target) {
-        const changes = this.getChangesForNode(node);
-        changes.ptr[name] = target;
     };
 
     ExecuteJob.prototype.getAttribute = function (node, attr) {
@@ -106,6 +86,31 @@ define([
         }
 
         return this.core.getAttribute(node, attr);
+    };
+
+    ExecuteJob.prototype.getChangesForNode = function (node) {
+        var nodeId;
+
+        if (this.isCreateId(node)) {
+            nodeId = node;
+        } else {
+            nodeId = this.core.getPath(node);
+            assert(typeof nodeId === 'string', `Cannot set attribute of ${nodeId}`);
+        }
+
+        if (!this.changes[nodeId]) {
+            this.changes[nodeId] = {
+                attr: {},
+                ptr: {},
+            };
+        }
+
+        return this.changes[nodeId];
+    };
+
+    ExecuteJob.prototype.setPointer = function (node, name, target) {
+        const changes = this.getChangesForNode(node);
+        changes.ptr[name] = target;
     };
 
     ExecuteJob.prototype._getValueFrom = function (nodeId, attr, node, changes) {
@@ -374,45 +379,38 @@ define([
         this.sendNotification(msg);
     };
 
-    ExecuteJob.prototype.updateNodes = function (hash) {
-        var activeId = this.core.getPath(this.activeNode);
+    //ExecuteJob.prototype.registerExistingNodeDict = function (hash) {
+    ExecuteJob.prototype.updateNodes = async function (hash) {
+        const activeId = this.core.getPath(this.activeNode);
 
         hash = hash || this.currentHash;
-        return Q.ninvoke(this.project, 'loadObject', hash)
-            .then(commitObject => {
-                return this.core.loadRoot(commitObject.root);
-            })
-            .then(rootObject => {
-                this.rootNode = rootObject;
-                return this.core.loadByPath(rootObject,activeId);
-            })
-            .then(activeObject => this.activeNode = activeObject)
-            .then(() => {
-                var metaNames = Object.keys(this.META);
+        const commitObject = await Q.ninvoke(this.project, 'loadObject', hash);
+        this.rootNode = await this.core.loadRoot(commitObject.root);
+        this.activeNode = await this.core.loadByPath(this.rootNode, activeId);
 
-                return Q.all(metaNames.map(name => this.updateMetaNode(name)));
-            })
-            .then(() => {
-                var mdNodes,
-                    mdIds;
+        // TODO: Can I refactor this?
+        await this.updateExistingNodeDict(this.META);
+        await this.updateExistingNodeDict(this._execHashToJobNode);
 
-                mdIds = Object.keys(this._metadata)
-                    .filter(id => !this.isCreateId(this._metadata[id]));
+        const existingIds = Object.keys(this._metadata)
+            .filter(id => !this.isCreateId(this._metadata[id]));
 
-                mdNodes = mdIds.map(id => this.core.getPath(this._metadata[id]))
-                    .map(nodeId => this.core.loadByPath(this.rootNode, nodeId));
-
-                return Q.all(mdNodes).then(nodes => {
-                    for (var i = nodes.length; i--;) {
-                        this._metadata[mdIds[i]] = nodes[i];
-                    }
-                });
-            });
+        await this.updateExistingNodeDict(this._metadata, existingIds);
     };
 
-    ExecuteJob.prototype.updateMetaNode = function (name) {
-        var id = this.core.getPath(this.META[name]);
-        return this.core.loadByPath(this.rootNode, id).then(node => this.META[name] = node);
+    /**
+     * Update a dictionary of *existing* nodes to the node instances in the
+     * current commit.
+     */
+    ExecuteJob.prototype.updateExistingNodeDict = function (dict, keys) {
+        keys = keys || Object.keys(dict);
+
+        return Q.all(keys.map(key => {
+            const oldNode = dict[key];
+            const nodePath = this.core.getPath(oldNode);
+            return this.core.loadByPath(this.rootNode, nodePath)
+                .then(newNode => dict[key] = newNode);
+        }));
     };
 
     return ExecuteJob;

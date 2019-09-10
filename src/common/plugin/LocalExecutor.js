@@ -174,9 +174,8 @@ define([
 
     // Helper methods
     LocalExecutor.prototype.getLocalOperationType = function(node) {
-        var type;
-        for (var i = LocalExecutor.OPERATIONS.length; i--;) {
-            type = LocalExecutor.OPERATIONS[i];
+        for (let i = LocalExecutor.OPERATIONS.length; i--;) {
+            const type = LocalExecutor.OPERATIONS[i];
             if (!this.META[type]) {
                 this.logger.warn(`Missing local operation: ${type}`);
                 continue;

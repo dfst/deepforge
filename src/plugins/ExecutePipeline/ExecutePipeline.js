@@ -100,22 +100,18 @@ define([
      *
      * @param {function(string, plugin.PluginResult)} callback - the result callback
      */
-    ExecutePipeline.prototype.main = function (callback) {
-        var startPromise = this.checkExecutionEnv(),
-            runId;
+    ExecutePipeline.prototype.main = async function (callback) {
 
         this.initRun();
         if (!this.META.Pipeline) {
             return callback(new Error('Incorrect namespace. Expected to be executed in the "pipeline" namespace'));
         }
+
         if (this.core.isTypeOf(this.activeNode, this.META.Pipeline)) {
             // If starting with a pipeline, we will create an Execution first
-            startPromise = startPromise
-                .then(() => this.createExecution(this.activeNode))
-                .then(execNode => {
-                    this.logger.debug(`Finished creating execution "${this.getAttribute(execNode, 'name')}"`);
-                    this.activeNode = execNode;
-                });
+            const execNode = await this.createExecution(this.activeNode);
+            this.logger.debug(`Finished creating execution "${this.getAttribute(execNode, 'name')}"`);
+            this.activeNode = execNode;
         } else if (this.core.isTypeOf(this.activeNode, this.META.Execution)) {
             this.logger.debug('Restarting execution');
         } else {
@@ -125,39 +121,31 @@ define([
         this._callback = callback;
         this.currentForkName = null;
 
-        startPromise
-            .then(() => this.core.loadSubTree(this.activeNode))
-            .then(subtree => {
-                var children;
+        const subtree = await this.core.loadSubTree(this.activeNode);
+        const children = subtree
+            .filter(n => this.core.getParent(n) === this.activeNode);
 
-                children = subtree
-                    .filter(n => this.core.getParent(n) === this.activeNode);
+        this.pipelineName = this.getAttribute(this.activeNode, 'name');
+        this.forkNameBase = this.pipelineName;
+        this.logger.debug(`Loaded subtree of ${this.pipelineName}. About to build cache`);
+        this.buildCache(subtree);
+        this.logger.debug('Parsing execution for job inter-dependencies');
+        this.parsePipeline(children);  // record deps, etc
 
-                this.pipelineName = this.getAttribute(this.activeNode, 'name');
-                this.forkNameBase = this.pipelineName;
-                this.logger.debug(`Loaded subtree of ${this.pipelineName}. About to build cache`);
-                this.buildCache(subtree);
-                this.logger.debug('Parsing execution for job inter-dependencies');
-                this.parsePipeline(children);  // record deps, etc
+        // Detect if resuming execution
+        const runId = this.getAttribute(this.activeNode, 'runId');
+        const isResuming = await this.isResuming();
+        if (isResuming) {
+            this.currentRunId = runId;
+            this.startExecHeartBeat();
+            return this.resumePipeline();
+        }
 
-                // Detect if resuming execution
-                runId = this.getAttribute(this.activeNode, 'runId');
-                return this.isResuming().then(resuming => {
-                    if (resuming) {
-                        this.currentRunId = runId;
-                        this.startExecHeartBeat();
-                        return this.resumePipeline();
-                    }
-                    return this.startPipeline();
-                });
-
-            })
-            .fail(err => {
-                this.logger.error(err);
-                callback(err, this.result);
-            });
+        return this.startPipeline();
     };
 
+    //this.();
+    //ExecutePipeline.prototype.isResuming = function () {
     ExecutePipeline.prototype.isResuming = function () {
         var currentlyRunning = this.getAttribute(this.activeNode, 'status') === 'running',
             runId = this.getAttribute(this.activeNode, 'runId');
@@ -230,7 +218,7 @@ define([
             .fail(err => this._callback(err));
     };
 
-    ExecutePipeline.prototype.startPipeline = function () {
+    ExecutePipeline.prototype.startPipeline = async function () {
         var rand = Math.floor(Math.random()*10000),
             commit = this.commitHash.replace('#', '');
 

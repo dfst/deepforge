@@ -1,6 +1,8 @@
 define([
+    'deepforge/ExecutionEnv',
     'executor/ExecutorClient'
 ], function(
+    ExecutionEnv,
     ExecutorClient
 ) {
     // TODO
@@ -19,16 +21,40 @@ define([
         this._events = {};  // FIXME: there must be a better way...
     };
 
+    GMEExecutor.prototype.getConsoleOutput = async function(hash) {
+        return (await this.executor.getOutput(hash))
+            .map(o => o.output).join('');
+    };
+
     GMEExecutor.prototype.cancelJob = function(job) {
         return this.executor.cancelJob(job.hash, job.secret);
     };
 
+    GMEExecutor.prototype.getOutputHashes = async function(job) {
+        return (await this.executor.getInfo(job)).resultHashes;
+    };
+
     // TODO: Standardize this
+    GMEExecutor.prototype.getStatus = async function(job) {
+        // TODO: Convert the status to the appropriate code
+    };
+
     GMEExecutor.prototype.getInfo = function(job) {
         return this.executor.getInfo(job.hash);
     };
 
+    GMEExecutor.prototype.checkExecutionEnv = async function () {
+        this.logger.info(`Checking execution environment`);
+        const workers = await ExecutionEnv.getWorkers();
+        if (workers.length === 0) {
+            this.logger.info(`Cannot execute job(s): No connected workers`);
+            throw new Error('No connected workers');
+        }
+    };
+
     GMEExecutor.prototype.createJob = async function(hash) {
+        await this.checkExecutionEnv();
+
         const result = await this.executor.createJob({hash});
 
         this.startPolling(hash);

@@ -45,9 +45,11 @@ define([
 
     const LocalExecutor = function(logger, gmeConfig) {
         BaseExecutor.apply(this, arguments);
+        this.completedJobs = {};
         this.jobQueue = [];
         this.currentJob = null;
         this.subprocess = null;
+        this.canceled = false;
         // FIXME: set this meaningfully!
         this.blobClient = new BlobClient({
             server: '127.0.0.1',
@@ -64,28 +66,59 @@ define([
 
         console.log('>>> CANCELING job!!');
         if (this.currentJob === hash) {
+            this.canceled = true;
             this.subprocess.kill();
         } else if (this.jobQueue.includes(hash)) {
             const i = this.jobQueue.indexOf(hash);
             this.jobQueue.splice(i, 1);
+            this._onJobCompleted(hash, new JobResults(this.CANCELED));
         }
     };
 
-    LocalExecutor.prototype.getOutput = async function(hash) {
+    LocalExecutor.prototype.getStatus = async function(jobInfo) {
+        const {hash} = jobInfo;
+        if (hash === this.currentJob) {
+            return this.RUNNING;
+        } else if (this.jobQueue.includes(hash)) {
+            return this.QUEUED;
+        } else if (this.completedJobs[hash]) {
+            return this.completedJobs[hash].status;
+        } else {
+            console.log(`Could not find ${hash} in`, this.completedJobs);
+            throw new Error('Job Not Found');
+        }
+    };
+
+    LocalExecutor.prototype.getConsoleOutput = async function(hash) {
         const filename = path.join(this._getWorkingDir(hash), 'job_stdout.txt');
         return await readFile(filename, 'utf8');
+    };
+
+    LocalExecutor.prototype.getOutputHashes = async function(jobInfo) {
+        const {hash} = jobInfo;
+
+        if (this.completedJobs[hash]) {
+            return this.completedJobs[hash].resultHashes;
+        } else {
+            throw new Error(`Job Not Found: ${hash}`);
+        }
     };
 
     LocalExecutor.prototype.createJob = async function(hash) {
         this.jobQueue.push(hash);
         this._processNextJob();
 
-        console.log('>>> CREATING job!!');
         return {hash};
     };
 
-    LocalExecutor.prototype._onJobCompleted = function() {
-        this.currentJob = null;
+    LocalExecutor.prototype._onJobCompleted = function(hash, jobResults) {
+        if (hash === this.currentJob) {
+            this.currentJob = null;
+        }
+
+        this.completedJobs[hash] = jobResults;
+        this.emit('update', {hash}, jobResults.status);
+        this.emit('end', hash, jobResults);
         this._processNextJob();
     };
 
@@ -104,6 +137,8 @@ define([
 
     LocalExecutor.prototype._createJob = async function(hash) {
         // Create tmp directory
+        const jobInfo = {hash};
+        this.emit('update', jobInfo, this.PENDING);
         const tmpdir = this._getWorkingDir(hash);
         try {
             await mkdir(tmpdir);
@@ -126,17 +161,17 @@ define([
         const env = {cwd: tmpdir};
         this.logger.info(`Running ${config.cmd} ${config.args.join(' ')}`);
         this.subprocess = spawn(config.cmd, config.args, env);
+        this.emit('update', jobInfo, this.RUNNING);
         this.subprocess.stdout.on('data', data => this.onConsoleOutput(tmpdir, hash, data));
 
         this.subprocess.on('close', async code => {
-            const jobInfo = {
-                resultHashes: [],
-                status: code !== 0 ? 'FAILED_TO_EXECUTE' : 'SUCCESS'
-            }
+            const status = this.canceled ? this.CANCELED :
+                (code !== 0 ? this.FAILED : this.SUCCESS);
+            const jobResults = new JobResults(status);
+            this.canceled = false;
 
-            await this._uploadResults(jobInfo, tmpdir, config);
-            this._onJobCompleted();
-            this.emit('end', hash, jobInfo);
+            await this._uploadResults(jobResults, tmpdir, config);
+            this._onJobCompleted(hash, jobResults);
         });
     };
 
@@ -251,7 +286,7 @@ define([
                 self.logger.error('Could not delete executor-temp file, err: ' + err);
             }
             jobInfo.resultSuperSetHash = resultHash;
-            return Promise.all(resultsArtifacts.map(r => addObjectHashesAndSaveArtifact(r)))
+            return Promise.all(resultsArtifacts.map(r => addObjectHashesAndSaveArtifact(r)));
         };
 
         addObjectHashesAndSaveArtifact = promisify(function (resultArtifact, callback) {
@@ -309,31 +344,8 @@ define([
         }
     };
 
-    //LocalExecutor.prototype._uploadResults = async function(workdir, config) {
-        //// Get all the matching result artifacts
-        //const allFiles = await this._getAllFiles(workdir);
-        //console.log(allFiles)
-
-        //// Upload all the artifacts
-        //const artifacts = config.resultArtifacts
-            //.map(info => {
-                //return {
-                    //name: info.name,
-                    //artifact: self.blobClient.createArtifact(info.name),
-                    //patterns: info.resultPatterns instanceof Array ?
-                        //info.resultPatterns : [],
-                    //files: {}
-                //}
-            //})
-        //// TODO
-
-        //// Return the hashes
-        //// TODO
-        //return {};
-    //};
-
     LocalExecutor.prototype.prepareWorkspace = async function(hash, dirname) {
-        this.logger.info(`about to fetch job data`);
+        this.logger.info('about to fetch job data');
         const content = new Buffer(new Uint8Array(await this.blobClient.getObject(hash)));  // TODO: Handle errors...
         const zipPath = path.join(dirname, `${hash}.zip`);
         await writeFile(zipPath, content);
@@ -361,6 +373,12 @@ define([
     }
     // - [ ] emit updates on stdout...
 
-    return LocalExecutor;
+    class JobResults {
+        constructor(status) {
+            this.status = status || LocalExecutor.prototype.CREATED;
+            this.resultHashes = [];
+        }
+    }
 
+    return LocalExecutor;
 });
