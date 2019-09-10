@@ -169,6 +169,10 @@ define([
             .catch(err => this._callback(err, this.result));
     };
 
+    ExecuteJob.prototype.onAbort = function () {
+        this.canceled = true;
+    };
+
     ExecuteJob.prototype.checkExecutionEnv = function () {
         // Throw an exception if no resources
         this.logger.info(`Checking execution environment`);
