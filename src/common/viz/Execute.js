@@ -39,9 +39,11 @@ define([
     };
 
     Execute.prototype.runExecutionPlugin = function(pluginId, opts) {
-        var context = this.client.getCurrentPluginContext(pluginId),
+        var deferred = Q.defer(),
+            context = this.client.getCurrentPluginContext(pluginId),
             node = opts.node || this.client.getNode(this._currentNodeId),
             name = node.getAttribute('name'),
+            onPluginInitiated,
             method;
 
         // Set the activeNode
@@ -56,6 +58,17 @@ define([
             return;
         }
 
+        onPluginInitiated = (sender, event) => {
+            this.client.removeEventListener(this._client.CONSTANTS.PLUGIN_INITIATED, onPluginInitiated);
+            this.client.setAttribute(node.getId(), 'executionId', event.executionId);
+            deferred.resolve(event.executionId);
+        };
+
+        this.client.addEventListener(
+            this.client.CONSTANTS.PLUGIN_INITIATED,
+            onPluginInitiated
+        );
+
         this.client[method](pluginId, context, (err, result) => {
             var msg = err ? `${name} failed!` : `${name} executed successfully!`,
                 duration = err ? 4000 : 2000;
@@ -68,31 +81,13 @@ define([
 
             Materialize.toast(msg, duration);
         });
+
+        return deferred.promise;
     };
 
     Execute.prototype.isRunning = function(node) {
-        var baseId,
-            base,
-            type;
-
         node = node || this.client.getNode(this._currentNodeId);
-        baseId = node.getBaseId();
-        base = this.client.getNode(baseId);
-        type = base.getAttribute('name');
-
-        if (type === 'Execution') {
-            return node.getAttribute('status') === 'running';
-        } else if (type === 'Job') {
-            return this.isRunningJob(node);
-        }
-        return false;
-    };
-
-    Execute.prototype.isRunningJob = function(job) {
-        var status = job.getAttribute('status');
-
-        return (status === 'running' || status === 'pending') &&
-            job.getAttribute('secret') && job.getAttribute('jobId');
+        return node.getAttribute('executionId');
     };
 
     Execute.prototype.silentStopJob = function(job) {
@@ -127,17 +122,6 @@ define([
         }
     };
 
-    Execute.prototype.stopJob = function(job, silent) {
-        var jobId;
-
-        job = job || this.client.getNode(this._currentNodeId);
-        jobId = job.getId();
-
-        this.silentStopJob(job);
-        this._setJobStopped(jobId, silent);
-    };
-
-
     Execute.prototype.loadChildren = function(id) {
         var deferred = Q.defer(),
             execNode = this.client.getNode(id || this._currentNodeId),
@@ -163,47 +147,24 @@ define([
         return deferred.promise;
     };
 
-    Execute.prototype.stopExecution = function(id, inTransaction) {
-        var execNode = this.client.getNode(id || this._currentNodeId);
+    Execute.prototype.stopExecution = function(nodeId=this._currentNodeId) {
+        const node = this.client.getNode(nodeId);
+        const base = this.client.getNode(node.getBaseId());
+        const type = base.getAttribute('name');
 
-        return this.loadChildren(id)
-            .then(() => this._stopExecution(execNode, inTransaction));
-    };
-
-    Execute.prototype.silentStopExecution = function(id) {
-        var execNode = this.client.getNode(id || this._currentNodeId);
-
-        // Stop the execution w/o setting any attributes
-        return this.loadChildren(id)
-            .then(() => this._silentStopExecution(execNode));
-    };
-
-    Execute.prototype._stopExecution = function(execNode, inTransaction) {
-        var msg = `Canceling ${execNode.getAttribute('name')} execution`,
-            jobIds;
-
-        if (!inTransaction) {
-            this.client.startTransaction(msg);
+        let executionId = node.getAttribute('executionId');
+        this.client.delAttribute(nodeId, 'executionId');
+        if (type === 'Job' && !executionId) {
+            const execNode = this.client.getNode(node.getParentId());
+            executionId = execNode.getAttribute('executionId');
+            this.client.delAttribute(nodeId, 'executionId');
         }
 
-        jobIds = this._silentStopExecution(execNode);
-
-        this.client.setAttribute(execNode.getId(), 'status', 'canceled');
-        jobIds.forEach(jobId => this._setJobStopped(jobId, true));
-
-        if (!inTransaction) {
-            this.client.completeTransaction();
+        if (executionId) {
+            this.client.abortPlugin(executionId);
+        } else {
+            this.logger.warn(`Could not find execution ID for ${nodeId}`);
         }
-    };
-
-    Execute.prototype._silentStopExecution = function(execNode) {
-        var runningJobIds = execNode.getChildrenIds()
-            .map(id => this.client.getNode(id))
-            .filter(job => this.isRunning(job));  // get running jobs
-
-        runningJobIds.forEach(job => this.silentStopJob(job));  // stop them
-
-        return runningJobIds;
     };
 
     // Resuming Executions

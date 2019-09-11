@@ -190,7 +190,7 @@ define([
                     return this.isRunning();
                 },
                 action: function() {
-                    this.stopJob();
+                    this.stopExecution();
                 }
             }
         ],
