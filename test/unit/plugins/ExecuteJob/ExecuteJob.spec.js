@@ -264,7 +264,7 @@ describe('ExecuteJob', function () {
             var job = node,
                 hash = 'abc123';
 
-            plugin.setAttribute(node, 'secret', 'abc');
+            plugin.setAttribute(node, 'jobInfo', JSON.stringify({secret:'abc'}));
             plugin.isExecutionCanceled = () => true;
             plugin.onOperationCanceled = () => done();
             plugin.executor = {
@@ -277,7 +277,7 @@ describe('ExecuteJob', function () {
             var job = node,
                 hash = 'abc123';
 
-            plugin.setAttribute(job, 'secret', 'abc');
+            plugin.setAttribute(node, 'jobInfo', JSON.stringify({secret:'abc'}));
             plugin.canceled = true;
             plugin.onOperationCanceled = () => done();
             plugin.executor = {
@@ -304,16 +304,14 @@ describe('ExecuteJob', function () {
     describe('resume detection', function() {
         var mockPluginForJobStatus = function(gmeStatus, pulse, originBranch, shouldResume, done) {
             plugin.setAttribute(node, 'status', gmeStatus);
-            plugin.setAttribute(node, 'jobId', 'asdfaa');
+            plugin.setAttribute(node, 'jobInfo', JSON.stringify({hash:'abc'}));
             // Mocks:
             //  - prepare should basically nop
             //  - Should call 'resumeJob' or 'executeJob'
             //  - should return origin branch
             plugin.prepare = nopPromise;
-            plugin.pulseClient.check = () => Q().then(() => pulse);
-            plugin.originManager.getOrigin = () => Q().then(() => {
-                return {branch: originBranch};
-            });
+            plugin.pulseClient.check = () => Q(pulse);
+            plugin.originManager.getOrigin = () => Q({branch: originBranch});
 
             plugin.pulseClient.update = nopPromise;
             plugin.resumeJob = () => done(shouldResume ? null : 'Should not resume job!');
