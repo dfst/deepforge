@@ -143,10 +143,11 @@ define([
     };
 
     Execute.prototype._checkJobExecution = function (job) {
-        var jobId = job.getAttribute('jobId'),
-            status = job.getAttribute('status');
+        const jobInfo = job.getAttribute('jobInfo');
+        const status = job.getAttribute('status');
 
-        if (status === 'running' && jobId) {
+        if (status === 'running' && jobInfo) {
+            const jobId = JSON.parse(jobInfo).hash;
             return this.pulseClient.check(jobId)
                 .then(status => {
                     if (status !== CONSTANTS.PULSE.DOESNT_EXIST) {

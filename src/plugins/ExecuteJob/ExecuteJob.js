@@ -149,7 +149,7 @@ define([
             })
             .then(() => {
                 if (this._resumed) {
-                    this.currentRunId = this.getAttribute(this.activeNode, 'jobId');
+                    this.currentRunId = this.getJobId(this.activeNode);
                     this.startExecHeartBeat();
                     if (this.canResumeJob(this.activeNode)) {
                         return this.resumeJob(this.activeNode);
@@ -167,6 +167,10 @@ define([
                 }
             })
             .catch(err => this._callback(err, this.result));
+    };
+
+    ExecuteJob.prototype.getJobId = function (node) {
+        return JSON.parse(this.getAttribute(node)).hash;
     };
 
     ExecuteJob.prototype.onAbort = function () {
@@ -192,7 +196,7 @@ define([
             jobId;
 
         if (status === 'running') {
-            jobId = this.getAttribute(job, 'jobId');
+            jobId = this.getJobId(job);
             // Check if on the origin branch
             this.originManager.getOrigin(jobId)
                 .then(origin => {
@@ -213,11 +217,11 @@ define([
     };
 
     ExecuteJob.prototype.canResumeJob = function (job) {
-        return !!this.getAttribute(job, 'jobId');
+        return !!this.getAttribute(job, 'jobInfo');
     };
 
     ExecuteJob.prototype.resumeJob = function (job) {
-        var hash = this.getAttribute(job, 'jobId'),
+        var hash = this.getJobId(job),
             name = this.getAttribute(job, 'name'),
             id = this.core.getPath(job),
             msg;
@@ -451,10 +455,7 @@ define([
         this.save(`Queued "${name}" operation in ${this.pipelineName}`)
             .then(() => this.executor.createJob({hash}))
             .then(info => {
-                this.setAttribute(job, 'jobId', info.hash);
-                if (info.secret) {  // o.w. it is a cached job!
-                    this.setAttribute(job, 'secret', info.secret);
-                }
+                this.setAttribute(job, 'jobInfo', JSON.stringify(info));
                 if (!this.currentRunId) {
                     this.currentRunId = info.hash;
                     if (this._beating === null) {
@@ -532,10 +533,10 @@ define([
 
         // If canceled, stop the operation
         if (this.canceled || this.isExecutionCanceled()) {
-            secret = this.getAttribute(job, 'secret');
+            secret = JSON.parse(this.getAttribute(job, 'jobInfo')).secret;
             if (secret) {
                 this.executor.cancelJob(hash, secret);
-                this.delAttribute(job, 'secret');
+                this.delAttribute(job, 'jobInfo');
                 this.canceled = true;
                 return this.onOperationCanceled(op);
             }
