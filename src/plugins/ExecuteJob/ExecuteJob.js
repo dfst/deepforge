@@ -170,7 +170,7 @@ define([
     };
 
     ExecuteJob.prototype.getJobId = function (node) {
-        return JSON.parse(this.getAttribute(node)).hash;
+        return JSON.parse(this.getAttribute(node, 'jobInfo')).hash;
     };
 
     ExecuteJob.prototype.onAbort = function () {
