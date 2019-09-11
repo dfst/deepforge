@@ -1,15 +1,13 @@
-/* globals define, WebGMEGlobal */
+/* globals define */
 // Mixin for executing jobs and pipelines
 define([
     'q',
-    'executor/ExecutorClient',
     'deepforge/api/ExecPulseClient',
     'deepforge/api/JobOriginClient',
     'deepforge/Constants',
     'panel/FloatingActionButton/styles/Materialize'
 ], function(
     Q,
-    ExecutorClient,
     ExecPulseClient,
     JobOriginClient,
     CONSTANTS,
@@ -21,11 +19,6 @@ define([
         this.logger = this.logger || logger;
         this.pulseClient = new ExecPulseClient({
             logger: this.logger
-        });
-        this._executor = new ExecutorClient({
-            logger: this.logger.fork('ExecutorClient'),
-            serverPort: WebGMEGlobal.gmeConfig.server.port,
-            httpsecure: window.location.protocol === 'https:'
         });
         this.originManager = new JobOriginClient({logger: this.logger});
     };
@@ -88,38 +81,6 @@ define([
     Execute.prototype.isRunning = function(node) {
         node = node || this.client.getNode(this._currentNodeId);
         return node.getAttribute('executionId');
-    };
-
-    Execute.prototype.silentStopJob = function(job) {
-        var jobHash,
-            secret;
-
-        job = job || this.client.getNode(this._currentNodeId);
-        jobHash = job.getAttribute('jobId');
-        secret = job.getAttribute('secret');
-        if (!jobHash || !secret) {
-            this.logger.error('Cannot stop job. Missing jobHash or secret');
-            return;
-        }
-
-        return this._executor.cancelJob(jobHash, secret)
-            .then(() => this.logger.info(`${jobHash} has been cancelled!`))
-            .fail(err => this.logger.error(`Job cancel failed: ${err}`));
-    };
-
-    Execute.prototype._setJobStopped = function(jobId, silent) {
-        if (!silent) {
-            var name = this.client.getNode(jobId).getAttribute('name');
-            this.client.startTransaction(`Stopping "${name}" job`);
-        }
-
-        this.client.delAttribute(jobId, 'jobId');
-        this.client.delAttribute(jobId, 'secret');
-        this.client.setAttribute(jobId, 'status', 'canceled');
-
-        if (!silent) {
-            this.client.completeTransaction();
-        }
     };
 
     Execute.prototype.loadChildren = function(id) {
