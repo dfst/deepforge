@@ -9,6 +9,7 @@
   },
   "disableServerSideExecution": false,
   "disableBrowserSideExecution": false,
+  "canBeAborted": true,
   "configStructure": [
       {
           "name": "name",

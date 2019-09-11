@@ -174,7 +174,7 @@ define([
         if (this.currentJobId) {  // Only if nested in a job
             job = this._client.getNode(this.currentJobId);
             if (this.isRunning(job)) {
-                this.stopJob(job);
+                this.stopExecution(this.currentJobId);
             } else {
                 this.executeJob(job);
             }

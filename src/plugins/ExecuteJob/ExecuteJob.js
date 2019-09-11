@@ -154,7 +154,6 @@ define([
         this.forkNameBase = this.getAttribute(this.activeNode, 'name');
 
         const isResuming = await this.isResuming(this.activeNode);
-        this.watchForCancel();
         await this.prepare(isResuming);
 
         if (isResuming) {
@@ -175,6 +174,15 @@ define([
             return this.executeJob(this.activeNode);
         }
         //.catch(err => this._callback(err, this.result));  // TODO: Is this needed?
+    };
+
+    ExecuteJob.prototype.onAbort =
+    ExecuteJob.prototype.onUserCancelDetected = function () {
+        this.logger.info('>>>>> Received Abort. Canceling jobs.');
+        this.runningJobHashes
+            .map(hash => this.getNodesForJobHash(hash)[0])
+            .map(node => JSON.parse(this.getAttribute(node, 'jobInfo')))
+            .forEach(jobInfo => this.executor.cancelJob(jobInfo));
     };
 
     ExecuteJob.prototype.isResuming = async function (job) {
@@ -446,7 +454,6 @@ define([
 
         if (this._running === null) {
             this.startExecHeartBeat();
-            this.watchForCancel();
         }
 
         return await this.recordJobOrigin(hash, job);
@@ -608,25 +615,6 @@ define([
         }
     */
 
-    ExecuteJob.prototype.onUserCancelDetected = function () {
-        console.log('>>> onUserCancelDetected');
-        this.runningJobHashes
-            .map(hash => this.getNodesForJobHash(hash)[0])
-            .map(node => this.getAttribute(node, 'jobInfo'))
-            .forEach(jobInfo => this.executor.cancelJob(jobInfo));
-    };
-
-    ExecuteJob.prototype.watchForCancel = function () {
-        if (this.isExecutionCanceled()) {
-            this.onUserCancelDetected();
-        } else if (this._running) {
-            return setTimeout(
-                this.watchForCancel.bind(this),
-                100
-            );
-        }
-    };
-
     ExecuteJob.prototype.onOperationEnd = async function (hash) {
         // Record that the job hash is no longer running
         const [job, op] = this.getNodesForJobHash(hash);
@@ -683,22 +671,19 @@ define([
         }
     };
 
-    ExecuteJob.prototype.onDistOperationComplete = function (node, fileHashes) {
+    ExecuteJob.prototype.onDistOperationComplete = async function (node, fileHashes) {
         const opName = this.getAttribute(node, 'name');
+        const resultTypes = await this.getResultTypes(fileHashes);
         let nodeId = this.core.getPath(node),
             outputMap = {},
-            resultTypes,
             outputs;
+
 
         // Match the output names to the actual nodes
         // Create an array of [name, node]
         // For now, just match by type. Later we may use ports for input/outputs
         // Store the results in the outgoing ports
-        return this.getResultTypes(fileHashes)
-            .then(types => {
-                resultTypes = types;
-                return this.getOutputs(node);
-            })
+        return this.getOutputs(node)
             .then(outputPorts => {
                 outputs = outputPorts.map(tuple => [tuple[0], tuple[2]]);
                 outputs.forEach(output => outputMap[output[0]] = output[1]);
@@ -737,8 +722,9 @@ define([
     };
 
     ExecuteJob.prototype.getResultTypes = async function (fileHashes) {
-        const artifactHash = fileHashes['result-types'];
-        return await this.getContentHashSafe(artifactHash, 'result-types.json', ERROR.NO_TYPES_FILE);
+        const mdHash = fileHashes['result-types'];
+        const hash = await this.getContentHashSafe(mdHash, 'result-types.json', ERROR.NO_TYPES_FILE);
+        return await this.blobClient.getObjectAsJSON(hash);
     };
 
     ExecuteJob.prototype.getContentHashSafe = async function (artifactHash, fileName, msg) {

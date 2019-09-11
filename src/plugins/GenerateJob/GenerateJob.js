@@ -45,17 +45,17 @@ define([
         this.pluginMetadata = pluginMetadata;
 
         this.settings = _.extend({}, DEFAULT_SETTINGS);
-        if (typeof WebGMEGlobal === 'undefined') {  // Running in NodeJS
-            const path = require('path');
-            const dirname = path.dirname(module.uri);
-            const deploymentSettings = JSON.parse(requirejs('text!' + dirname + '/../../../config/components.json'));
-            _.extend(this.settings, deploymentSettings);
-        } else {  // Running in the browser
+        if (require.isBrowser) {
             const ComponentSettings = requirejs('js/Utils/ComponentSettings');
             ComponentSettings.resolveWithWebGMEGlobal(
                 this.settings,
                 this.getComponentId()
             );
+        } else {  // Running in NodeJS
+            const path = require('path');
+            const dirname = path.dirname(module.uri);
+            const deploymentSettings = JSON.parse(requirejs('text!' + dirname + '/../../../config/components.json'));
+            _.extend(this.settings, deploymentSettings);
         }
     };
 

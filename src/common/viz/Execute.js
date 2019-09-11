@@ -1,15 +1,13 @@
-/* globals define, WebGMEGlobal */
+/* globals define */
 // Mixin for executing jobs and pipelines
 define([
     'q',
-    'deepforge/execution/index',
     'deepforge/api/ExecPulseClient',
     'deepforge/api/JobOriginClient',
     'deepforge/Constants',
     'panel/FloatingActionButton/styles/Materialize'
 ], function(
     Q,
-    ExecutorClient,
     ExecPulseClient,
     JobOriginClient,
     CONSTANTS,
@@ -22,7 +20,6 @@ define([
         this.pulseClient = new ExecPulseClient({
             logger: this.logger
         });
-        this._executor = new ExecutorClient(this.logger, WebGMEGlobal.gmeConfig);
         this.originManager = new JobOriginClient({logger: this.logger});
     };
 
@@ -35,9 +32,11 @@ define([
     };
 
     Execute.prototype.runExecutionPlugin = function(pluginId, opts) {
-        var context = this.client.getCurrentPluginContext(pluginId),
+        var deferred = Q.defer(),
+            context = this.client.getCurrentPluginContext(pluginId),
             node = opts.node || this.client.getNode(this._currentNodeId),
             name = node.getAttribute('name'),
+            onPluginInitiated,
             method;
 
         // Set the activeNode
@@ -52,6 +51,17 @@ define([
             return;
         }
 
+        onPluginInitiated = (sender, event) => {
+            this.client.removeEventListener(this._client.CONSTANTS.PLUGIN_INITIATED, onPluginInitiated);
+            this.client.setAttribute(node.getId(), 'executionId', event.executionId);
+            deferred.resolve(event.executionId);
+        };
+
+        this.client.addEventListener(
+            this.client.CONSTANTS.PLUGIN_INITIATED,
+            onPluginInitiated
+        );
+
         this.client[method](pluginId, context, (err, result) => {
             var msg = err ? `${name} failed!` : `${name} executed successfully!`,
                 duration = err ? 4000 : 2000;
@@ -64,74 +74,15 @@ define([
 
             Materialize.toast(msg, duration);
         });
+
+        return deferred.promise;
     };
 
     Execute.prototype.isRunning = function(node) {
-        var baseId,
-            base,
-            type;
-
         node = node || this.client.getNode(this._currentNodeId);
-        baseId = node.getBaseId();
-        base = this.client.getNode(baseId);
-        type = base.getAttribute('name');
-
-        if (type === 'Execution') {
-            return node.getAttribute('status') === 'running';
-        } else if (type === 'Job') {
-            return this.isRunningJob(node);
-        }
-        return false;
+        // TODO: Check the parent, too
+        return node.getAttribute('executionId');
     };
-
-    Execute.prototype.isRunningJob = function(job) {
-        var status = job.getAttribute('status');
-
-        return (status === 'running' || status === 'pending') &&
-            job.getAttribute('secret') && job.getAttribute('jobId');
-    };
-
-    Execute.prototype.silentStopJob = function(job) {
-        var jobInfo;
-
-        job = job || this.client.getNode(this._currentNodeId);
-        try {
-            jobInfo = JSON.parse(job.getAttribute('jobInfo'));
-        } catch (err) {
-            this.logger.error('Cannot stop job. Missing jobInfo.');
-            return;
-        }
-
-        return this._executor.cancelJob(jobInfo)
-            .then(() => this.logger.info(`${jobInfo.hash} has been cancelled!`))
-            .fail(err => this.logger.error(`Job cancel failed: ${err}`));
-    };
-
-    Execute.prototype._setJobStopped = function(jobId, silent) {
-        if (!silent) {
-            var name = this.client.getNode(jobId).getAttribute('name');
-            this.client.startTransaction(`Stopping "${name}" job`);
-        }
-
-        this.client.delAttribute(jobId, 'jobId');
-        this.client.delAttribute(jobId, 'secret');
-        this.client.setAttribute(jobId, 'status', 'canceled');
-
-        if (!silent) {
-            this.client.completeTransaction();
-        }
-    };
-
-    Execute.prototype.stopJob = function(job, silent) {
-        var jobId;
-
-        job = job || this.client.getNode(this._currentNodeId);
-        jobId = job.getId();
-
-        this.silentStopJob(job);
-        this._setJobStopped(jobId, silent);
-    };
-
 
     Execute.prototype.loadChildren = function(id) {
         var deferred = Q.defer(),
@@ -158,29 +109,24 @@ define([
         return deferred.promise;
     };
 
-    Execute.prototype.stopExecution = function(id, inTransaction) {
-        var execNode = this.client.getNode(id || this._currentNodeId);
+    Execute.prototype.stopExecution = function(nodeId=this._currentNodeId) {
+        const node = this.client.getNode(nodeId);
+        const base = this.client.getNode(node.getBaseId());
+        const type = base.getAttribute('name');
 
-        return this.loadChildren(id)
-            .then(() => this._stopExecution(execNode, inTransaction));
-    };
+        let executionId = node.getAttribute('executionId');
+        this.client.delAttribute(nodeId, 'executionId');
+        if (type === 'Job' && !executionId) {
+            const execNode = this.client.getNode(node.getParentId());
+            executionId = execNode.getAttribute('executionId');
+            this.client.delAttribute(nodeId, 'executionId');
+        }
 
-    Execute.prototype.silentStopExecution = function(id) {
-        var execNode = this.client.getNode(id || this._currentNodeId);
-
-        // Stop the execution w/o setting any attributes
-        return this.loadChildren(id)
-            .then(() => this._stopExecution(execNode));
-    };
-
-    Execute.prototype._stopExecution = function(execNode) {
-        var runningJobIds = execNode.getChildrenIds()
-            .map(id => this.client.getNode(id))
-            .filter(job => this.isRunning(job));  // get running jobs
-
-        runningJobIds.forEach(job => this.silentStopJob(job));  // stop them
-
-        return runningJobIds;
+        if (executionId) {
+            this.client.abortPlugin(executionId);
+        } else {
+            this.logger.warn(`Could not find execution ID for ${nodeId}`);
+        }
     };
 
     // Resuming Executions

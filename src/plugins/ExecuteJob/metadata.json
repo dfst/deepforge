@@ -10,5 +10,6 @@
   "disableServerSideExecution": false,
   "disableBrowserSideExecution": false,
   "writeAccessRequired": false,
+  "canBeAborted": true,
   "configStructure": []
 }

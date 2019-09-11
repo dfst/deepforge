@@ -86,7 +86,7 @@ describe('ImportYaml', function () {
             };
 
         manager.executePlugin(pluginName, pluginConfig, context, function (err, pluginResult) {
-            expect(err).to.equal('yaml not provided.');
+            expect(err.message).to.equal('yaml not provided.');
             expect(pluginResult.success).to.equal(false);
 
             done();
