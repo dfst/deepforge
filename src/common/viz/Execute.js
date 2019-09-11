@@ -162,7 +162,7 @@ define([
         var execNode = this.client.getNode(id || this._currentNodeId);
 
         return this.loadChildren(id)
-            .then(() => this._silentStopExecution(execNode, inTransaction));
+            .then(() => this._stopExecution(execNode, inTransaction));
     };
 
     Execute.prototype.silentStopExecution = function(id) {
@@ -170,10 +170,10 @@ define([
 
         // Stop the execution w/o setting any attributes
         return this.loadChildren(id)
-            .then(() => this._silentStopExecution(execNode));
+            .then(() => this._stopExecution(execNode));
     };
 
-    Execute.prototype._silentStopExecution = function(execNode) {
+    Execute.prototype._stopExecution = function(execNode) {
         var runningJobIds = execNode.getChildrenIds()
             .map(id => this.client.getNode(id))
             .filter(job => this.isRunning(job));  // get running jobs
