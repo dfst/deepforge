@@ -2,7 +2,7 @@
 // Mixin for executing jobs and pipelines
 define([
     'q',
-    'executor/ExecutorClient',
+    'deepforge/execution/index',
     'deepforge/api/ExecPulseClient',
     'deepforge/api/JobOriginClient',
     'deepforge/Constants',
@@ -22,11 +22,7 @@ define([
         this.pulseClient = new ExecPulseClient({
             logger: this.logger
         });
-        this._executor = new ExecutorClient({
-            logger: this.logger.fork('ExecutorClient'),
-            serverPort: WebGMEGlobal.gmeConfig.server.port,
-            httpsecure: window.location.protocol === 'https:'
-        });
+        this._executor = new ExecutorClient(this.logger, WebGMEGlobal.gmeConfig);
         this.originManager = new JobOriginClient({logger: this.logger});
     };
 
@@ -96,19 +92,18 @@ define([
     };
 
     Execute.prototype.silentStopJob = function(job) {
-        var jobHash,
-            secret;
+        var jobInfo;
 
         job = job || this.client.getNode(this._currentNodeId);
-        jobHash = job.getAttribute('jobId');
-        secret = job.getAttribute('secret');
-        if (!jobHash || !secret) {
-            this.logger.error('Cannot stop job. Missing jobHash or secret');
+        try {
+            jobInfo = JSON.parse(job.getAttribute('jobInfo'));
+        } catch (err) {
+            this.logger.error('Cannot stop job. Missing jobInfo.');
             return;
         }
 
-        return this._executor.cancelJob(jobHash, secret)
-            .then(() => this.logger.info(`${jobHash} has been cancelled!`))
+        return this._executor.cancelJob(jobInfo)
+            .then(() => this.logger.info(`${jobInfo.hash} has been cancelled!`))
             .fail(err => this.logger.error(`Job cancel failed: ${err}`));
     };
 
@@ -167,7 +162,7 @@ define([
         var execNode = this.client.getNode(id || this._currentNodeId);
 
         return this.loadChildren(id)
-            .then(() => this._stopExecution(execNode, inTransaction));
+            .then(() => this._silentStopExecution(execNode, inTransaction));
     };
 
     Execute.prototype.silentStopExecution = function(id) {
@@ -176,24 +171,6 @@ define([
         // Stop the execution w/o setting any attributes
         return this.loadChildren(id)
             .then(() => this._silentStopExecution(execNode));
-    };
-
-    Execute.prototype._stopExecution = function(execNode, inTransaction) {
-        var msg = `Canceling ${execNode.getAttribute('name')} execution`,
-            jobIds;
-
-        if (!inTransaction) {
-            this.client.startTransaction(msg);
-        }
-
-        jobIds = this._silentStopExecution(execNode);
-
-        this.client.setAttribute(execNode.getId(), 'status', 'canceled');
-        jobIds.forEach(jobId => this._setJobStopped(jobId, true));
-
-        if (!inTransaction) {
-            this.client.completeTransaction();
-        }
     };
 
     Execute.prototype._silentStopExecution = function(execNode) {
