@@ -67,7 +67,7 @@ describe('ExecuteJob', function () {
             };
 
         manager.executePlugin(pluginName, pluginConfig, context, function (err, pluginResult) {
-            expect(err).to.equal('Cannot execute FCO (expected Job)');
+            expect(err.message).to.equal('Cannot execute FCO (expected Job)');
             expect(typeof pluginResult).to.equal('object');
             expect(pluginResult.success).to.equal(false);
             done();
