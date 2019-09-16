@@ -188,8 +188,7 @@ define([
         delete this.createdMetadataIds[nodeId];
         delete this._markForDeletion[nodeId];
 
-        this.delAttribute(job, 'jobId');
-        this.delAttribute(job, 'secret');
+        this.delAttribute(job, 'jobInfo');
     };
 
     ExecuteJob.prototype.resultMsg = function(msg) {

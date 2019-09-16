@@ -152,19 +152,18 @@ define([
         this._callback = callback;
         this.currentForkName = null;
         this.forkNameBase = this.getAttribute(this.activeNode, 'name');
-
         const isResuming = await this.isResuming(this.activeNode);
         await this.prepare(isResuming);
 
         if (isResuming) {
-            this.currentRunId = this.getAttribute(this.activeNode, 'jobId');
+            this.currentRunId = this.getJobId(this.activeNode);
             this.startExecHeartBeat();
             if (this.canResumeJob(this.activeNode)) {
                 return this.resumeJob(this.activeNode);
             } else {
                 var name = this.getAttribute(this.activeNode, 'name'),
                     id = this.core.getPath(this.activeNode),
-                    msg = `Cannot resume ${name} (${id}). Missing jobId.`;
+                    msg = `Cannot resume ${name} (${id}). Missing jobInfo.`;
 
                 this.logger.error(msg);
                 return callback(msg);
@@ -174,6 +173,14 @@ define([
             return this.executeJob(this.activeNode);
         }
         //.catch(err => this._callback(err, this.result));  // TODO: Is this needed?
+    };
+
+    ExecuteJob.prototype.getJobId = function (node) {
+        return JSON.parse(this.getAttribute(node, 'jobInfo')).hash;
+    };
+
+    ExecuteJob.prototype.onAbort = function () {
+        this.canceled = true;
     };
 
     ExecuteJob.prototype.onAbort =
@@ -191,7 +198,7 @@ define([
             jobId;
 
         if (status === 'running') {
-            jobId = this.getAttribute(job, 'jobId');
+            jobId = this.getJobId(job);
             // Check if on the origin branch
             const origin = await this.originManager.getOrigin(jobId);
             if (this.branchName === origin.branch) {
@@ -207,11 +214,11 @@ define([
     };
 
     ExecuteJob.prototype.canResumeJob = function (job) {
-        return !!this.getAttribute(job, 'jobId');
+        return !!this.getAttribute(job, 'jobInfo');
     };
 
     ExecuteJob.prototype.resumeJob = async function (job) {
-        var hash = this.getAttribute(job, 'jobId'),
+        var hash = this.getJobId(job),
             name = this.getAttribute(job, 'name'),
             id = this.core.getPath(job);
 
@@ -446,7 +453,6 @@ define([
         // Record the job info for the given hash
         this._execHashToJobNode[hash] = [job, opNode];
         const jobInfo = await this.executor.createJob(hash);
-        this.setAttribute(job, 'jobId', jobInfo.hash);
         this.setAttribute(job, 'jobInfo', JSON.stringify(jobInfo));
         if (!this.currentRunId) {
             this.currentRunId = jobInfo.hash;
