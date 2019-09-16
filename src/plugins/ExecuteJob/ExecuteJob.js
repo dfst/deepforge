@@ -100,7 +100,7 @@ define([
         this.executor.on(
             'data',
             (id, data) => {
-                const [job] = this.getNodesForJobHash(id);
+                const job = this.getNodeForJobId(id);
                 this.onConsoleOutput(job, data.toString());
             }
         );
@@ -187,7 +187,7 @@ define([
     ExecuteJob.prototype.onUserCancelDetected = function () {
         this.logger.info('>>>>> Received Abort. Canceling jobs.');
         this.runningJobHashes
-            .map(hash => this.getNodesForJobHash(hash)[0])
+            .map(hash => this.getNodeForJobId(hash))
             .map(node => JSON.parse(this.getAttribute(node, 'jobInfo')))
             .forEach(jobInfo => this.executor.cancelJob(jobInfo));
     };
@@ -451,7 +451,7 @@ define([
 
     ExecuteJob.prototype.createJob = async function (job, opNode, hash) {
         // Record the job info for the given hash
-        this._execHashToJobNode[hash] = [job, opNode];
+        this._execHashToJobNode[hash] = job;
         const jobInfo = await this.executor.createJob(hash);
         this.setAttribute(job, 'jobInfo', JSON.stringify(jobInfo));
         if (!this.currentRunId) {
@@ -462,10 +462,10 @@ define([
             this.startExecHeartBeat();
         }
 
-        return await this.recordJobOrigin(hash, job);
+        return await this.recordJobOrigin(jobInfo.hash, job);
     };
 
-    ExecuteJob.prototype.getNodesForJobHash = function (hash) {
+    ExecuteJob.prototype.getNodeForJobId = function (hash) {
         return this._execHashToJobNode[hash];
     };
 
@@ -535,10 +535,9 @@ define([
     };
 
     ExecuteJob.prototype.onUpdate = async function (jobInfo, status) {
-        const [job] = this.getNodesForJobHash(jobInfo.hash);
+        const job = this.getNodeForJobId(jobInfo.hash);
         const name = this.getAttribute(job, 'name');
 
-        console.log(`setting status to`, status);
         this.setAttribute(job, 'status', status);
         await this.save(`"${name}" operation in ${this.pipelineName} is now "${status}"`);
     };
@@ -623,7 +622,8 @@ define([
 
     ExecuteJob.prototype.onOperationEnd = async function (hash) {
         // Record that the job hash is no longer running
-        const [job, op] = this.getNodesForJobHash(hash);
+        const job = this.getNodeForJobId(hash);
+        const op = await this.getOperation(job);
         const name = this.getAttribute(job, 'name');
         const jobId = this.core.getPath(job);
         const jobInfo = JSON.parse(this.getAttribute(job, 'jobInfo'));
