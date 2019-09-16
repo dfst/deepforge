@@ -360,8 +360,9 @@ define([
                 this.logger.info(`Save finished w/ status: ${result.status}`);
                 if (result.status === STORAGE_CONSTANTS.FORKED) {
                     return this.onSaveForked(result.forkName);
-                } else if (result.status === STORAGE_CONSTANTS.MERGED) {
-                    this.logger.debug('Merged changes. About to update plugin nodes');
+                } else if (result.status === STORAGE_CONSTANTS.MERGED ||
+                    result.status === STORAGE_CONSTANTS.SYNCED) {
+                    this.logger.debug('Applied changes successfully. About to update plugin nodes');
                     return this.updateNodes();
                 }
             });
