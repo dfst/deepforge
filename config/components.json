@@ -129,5 +129,8 @@
                 "description": "Artifacts from pipeline executions are stored here."
             }
         ]
+    },
+    "ExecuteJob": {
+        "executionBackend": "GME"
     }
 }

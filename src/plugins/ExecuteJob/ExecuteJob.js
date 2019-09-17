@@ -1,4 +1,4 @@
-/*globals define*/
+/*globals define, requirejs*/
 /*jshint node:true, browser:true*/
 
 define([
@@ -18,11 +18,12 @@ define([
     'deepforge/utils',
     'q',
     'superagent',
-    'underscore'
+    'underscore',
+    'module'
 ], function (
     assert,
     pluginMetadata,
-    ExecutorClient,
+    Execution,
     PluginBase,
     LocalExecutor,  // DeepForge operation primitives
     PtrCodeGen,
@@ -38,10 +39,12 @@ define([
     utils,
     Q,
     superagent,
-    _
+    _,
+    module
 ) {
     'use strict';
 
+    const DEFAULT_SETTINGS = {executionBackend: 'GME'};
     pluginMetadata = JSON.parse(pluginMetadata);
 
     var STDOUT_FILE = 'job_stdout.txt';
@@ -95,8 +98,22 @@ define([
         this.pulseClient = new ExecPulseClient(params);
         this._execHashToJobNode = {};
 
-        // TODO: load a custom executor
-        this.executor = new ExecutorClient(this.logger, this.gmeConfig);
+        this.settings = _.extend({}, DEFAULT_SETTINGS);
+        if (require.isBrowser) {
+            const ComponentSettings = requirejs('js/Utils/ComponentSettings');
+            ComponentSettings.resolveWithWebGMEGlobal(
+                this.settings,
+                this.getComponentId()
+            );
+        } else {  // Running in NodeJS
+            const path = require('path');
+            const dirname = path.dirname(module.uri);
+            const deploymentSettings = JSON.parse(requirejs('text!' + dirname + '/../../../config/components.json'));
+            _.extend(this.settings, deploymentSettings[this.getComponentId()]);
+        }
+
+        const backend = Execution.getBackend(this.settings.executionBackend);
+        this.executor = backend.getClient(this.logger);
         this.executor.on(
             'data',
             (id, data) => {
@@ -124,6 +141,10 @@ define([
         );
 
         return result;
+    };
+
+    ExecuteJob.prototype.getComponentId = function () {
+        return 'ExecuteJob';
     };
 
     /**
