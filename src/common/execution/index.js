@@ -42,7 +42,5 @@ define([
         return 'Compute';
     };
 
-    //Execution.getProjectRoot = function() {
-
     return Execution;
 });

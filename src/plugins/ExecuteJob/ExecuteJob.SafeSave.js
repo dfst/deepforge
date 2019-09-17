@@ -389,7 +389,6 @@ define([
         this.rootNode = await this.core.loadRoot(commitObject.root);
         this.activeNode = await this.core.loadByPath(this.rootNode, activeId);
 
-        // TODO: Can I refactor this?
         await this.updateExistingNodeDict(this.META);
         await this.updateExistingNodeDict(this._execHashToJobNode);
 

@@ -19,7 +19,6 @@ define([
     'q',
     'superagent',
     'underscore',
-    'module'
 ], function (
     assert,
     pluginMetadata,
@@ -40,11 +39,9 @@ define([
     Q,
     superagent,
     _,
-    module
 ) {
     'use strict';
 
-    const DEFAULT_SETTINGS = {executionBackend: 'GME'};
     pluginMetadata = JSON.parse(pluginMetadata);
 
     var STDOUT_FILE = 'job_stdout.txt';
