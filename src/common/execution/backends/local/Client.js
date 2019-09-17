@@ -1,5 +1,7 @@
+/*globals define*/
+// TODO: Show an error if not running on the server...
 define([
-    './BaseExecutor',
+    '../BaseExecutor',
     'blob/BlobClient',
     'child_process',
     'minimatch',
@@ -19,8 +21,6 @@ define([
     os,
     path,
 ) {
-    // TODO: Show an error if not running on the server...
-
     const spawn = childProcess.spawn;
     const {promisify} = require.nodeRequire('util');
     const mkdir = promisify(fs.mkdir);
@@ -38,19 +38,21 @@ define([
     ensureHasUnzip();
     const UNZIP_EXE = '/usr/bin/unzip';  // FIXME: more platform support
     const UNZIP_ARGS = ['-o'];  // FIXME: more platform support
-    const PROJECT_ROOT = path.join(path.dirname(module.uri), '..', '..', '..', '..');
+    const PROJECT_ROOT = path.join(path.dirname(module.uri), '..', '..', '..', '..', '..');
     const NODE_MODULES = path.join(PROJECT_ROOT, 'node_modules');  // TODO
     const symlink = promisify(fs.symlink);
     const touch = async name => await closeFile(await openFile(name, 'w'));
 
-    const LocalExecutor = function(logger, gmeConfig) {
+    const LocalExecutor = function(/*logger*/) {
         BaseExecutor.apply(this, arguments);
+
+        const configPath = path.join(PROJECT_ROOT, 'config');
+        const gmeConfig = require.nodeRequire(configPath);
         this.completedJobs = {};
         this.jobQueue = [];
         this.currentJob = null;
         this.subprocess = null;
         this.canceled = false;
-        // FIXME: set this meaningfully!
         this.blobClient = new BlobClient({
             server: '127.0.0.1',
             serverPort: gmeConfig.server.port,
@@ -64,7 +66,7 @@ define([
     LocalExecutor.prototype.cancelJob = function(jobInfo) {
         const {hash} = jobInfo;
 
-        console.log('>>> CANCELING job!!');
+        console.log('>>> CANCELING job!!', hash, this.currentJob, this.jobQueue);
         if (this.currentJob === hash) {
             this.canceled = true;
             this.subprocess.kill();
