@@ -68,7 +68,6 @@ define([
     LocalExecutor.prototype.cancelJob = function(jobInfo) {
         const {hash} = jobInfo;
 
-        console.log('>>> CANCELING job!!', hash, this.currentJob, this.jobQueue);
         if (this.currentJob === hash) {
             this.canceled = true;
             this.subprocess.kill();
@@ -88,7 +87,6 @@ define([
         } else if (this.completedJobs[hash]) {
             return this.completedJobs[hash].status;
         } else {
-            console.log(`Could not find ${hash} in`, this.completedJobs);
             throw new Error('Job Not Found');
         }
     };

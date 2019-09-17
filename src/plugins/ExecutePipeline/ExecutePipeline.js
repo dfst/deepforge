@@ -144,8 +144,6 @@ define([
         return this.startPipeline();
     };
 
-    //this.();
-    //ExecutePipeline.prototype.isResuming = function () {
     ExecutePipeline.prototype.isResuming = function () {
         var currentlyRunning = this.getAttribute(this.activeNode, 'status') === 'running',
             runId = this.getAttribute(this.activeNode, 'runId');

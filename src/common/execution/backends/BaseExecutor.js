@@ -51,14 +51,6 @@ BaseExecutor.prototype.on = function(ev, cb) {
 
 BaseExecutor.prototype.emit = function(ev) {
     const args = Array.prototype.slice.call(arguments, 1);
-    console.log('emitting');
-    args.forEach(a => {
-        if (a instanceof Buffer) {
-            console.log(a.toString());
-        } else {
-            console.log(a);
-        }
-    });
     const handlers = this._events[ev] || [];
     handlers.forEach(fn => fn.apply(this, args));
 };
