@@ -98,21 +98,8 @@ define([
         this.pulseClient = new ExecPulseClient(params);
         this._execHashToJobNode = {};
 
-        this.settings = _.extend({}, DEFAULT_SETTINGS);
-        if (require.isBrowser) {
-            const ComponentSettings = requirejs('js/Utils/ComponentSettings');
-            ComponentSettings.resolveWithWebGMEGlobal(
-                this.settings,
-                this.getComponentId()
-            );
-        } else {  // Running in NodeJS
-            const path = require('path');
-            const dirname = path.dirname(module.uri);
-            const deploymentSettings = JSON.parse(requirejs('text!' + dirname + '/../../../config/components.json'));
-            _.extend(this.settings, deploymentSettings[this.getComponentId()]);
-        }
-
-        const backend = Execution.getBackend(this.settings.executionBackend);
+        const name = Execution.getAvailableBackends()[0];  // FIXME: enable the user to select one
+        const backend = Execution.getBackend(name);
         this.executor = backend.getClient(this.logger);
         this.executor.on(
             'data',

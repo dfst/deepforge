@@ -130,7 +130,7 @@
             }
         ]
     },
-    "ExecuteJob": {
-        "executionBackend": "GME"
+    "Compute": {
+        "backends": ["local", "gme"]
     }
 }
