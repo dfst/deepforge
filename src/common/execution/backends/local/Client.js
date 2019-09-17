@@ -121,7 +121,7 @@ define([
         }
 
         this.completedJobs[hash] = jobResults;
-        this.emit('update', {hash}, jobResults.status);
+        this.emit('update', hash, jobResults.status);
         this.emit('end', hash, jobResults);
         this._processNextJob();
     };
@@ -142,7 +142,7 @@ define([
     LocalExecutor.prototype._createJob = async function(hash) {
         // Create tmp directory
         const jobInfo = {hash};
-        this.emit('update', jobInfo, this.PENDING);
+        this.emit('update', jobInfo.hash, this.PENDING);
         const tmpdir = this._getWorkingDir(hash);
         try {
             await mkdir(tmpdir);
@@ -165,7 +165,7 @@ define([
         const env = {cwd: tmpdir};
         this.logger.info(`Running ${config.cmd} ${config.args.join(' ')}`);
         this.subprocess = spawn(config.cmd, config.args, env);
-        this.emit('update', jobInfo, this.RUNNING);
+        this.emit('update', jobInfo.hash, this.RUNNING);
         this.subprocess.stdout.on('data', data => this.onConsoleOutput(tmpdir, hash, data));
 
         this.subprocess.on('close', async code => {

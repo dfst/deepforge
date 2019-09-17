@@ -106,9 +106,9 @@ define([
             }
         );
 
-        this.executor.on('update', (jobInfo, status) => {
+        this.executor.on('update', (jobId, status) => {
             try {
-                this.onUpdate(jobInfo, status);
+                this.onUpdate(jobId, status);
             } catch (err) {
                 this.logger.error(`Error when processing operation update: ${err}`);
             }
@@ -539,8 +539,8 @@ define([
             });
     };
 
-    ExecuteJob.prototype.onUpdate = async function (jobInfo, status) {
-        const job = this.getNodeForJobId(jobInfo.hash);
+    ExecuteJob.prototype.onUpdate = async function (jobId, status) {
+        const job = this.getNodeForJobId(jobId);
         const name = this.getAttribute(job, 'name');
 
         this.setAttribute(job, 'status', status);
