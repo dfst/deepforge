@@ -1,25 +1,33 @@
+/* globals define */
 define([
+    '../BaseExecutor',
+    '../JobResults',
     'deepforge/ExecutionEnv',
-    'executor/ExecutorClient'
+    'executor/ExecutorClient',
+    'path',
+    'module',
 ], function(
+    BaseExecutor,
+    JobResults,
     ExecutionEnv,
-    ExecutorClient
+    ExecutorClient,
+    path,
+    module,
 ) {
-    // TODO
-    const GMEExecutor = function(logger, gmeConfig) {
-        const isHttps = typeof window === 'undefined' ? false :
-            window.location.protocol !== 'http:';
-
-        this.logger = logger.fork('GME');
+    const PROJECT_ROOT = path.join(path.dirname(module.uri), '..', '..', '..', '..', '..');
+    const GMEExecutor = function(/*logger*/) {
+        BaseExecutor.apply(this, arguments);
+        const configPath = path.join(PROJECT_ROOT, 'config');
+        const gmeConfig = require.nodeRequire(configPath);
         this.pollInterval = 1500;
+        this.previousGMEInfo = {};
         this.executor = new ExecutorClient({
             logger: this.logger,
             serverPort: gmeConfig.server.port,
-            httpsecure: isHttps
+            httpsecure: false
         });
-
-        this._events = {};  // FIXME: there must be a better way...
     };
+    GMEExecutor.prototype = Object.create(BaseExecutor.prototype);
 
     GMEExecutor.prototype.getConsoleOutput = async function(hash) {
         return (await this.executor.getOutput(hash))
@@ -31,16 +39,38 @@ define([
     };
 
     GMEExecutor.prototype.getOutputHashes = async function(job) {
-        return (await this.executor.getInfo(job)).resultHashes;
+        return (await this.executor.getInfo(job.hash)).resultHashes;
     };
 
-    // TODO: Standardize this
     GMEExecutor.prototype.getStatus = async function(job) {
-        // TODO: Convert the status to the appropriate code
+        const info = await this.executor.getInfo(job.hash);
+        return this.getJobResultsFrom(info).status;
+    };
+
+    GMEExecutor.prototype.getJobResultsFrom = function(gmeInfo) {
+        const gmeStatus = gmeInfo.status;
+        const gmeStatusToStatus = {
+            'CREATED': this.QUEUED,
+            'SUCCESS': this.SUCCESS,
+            'CANCELED': this.CANCELED,
+            'FAILED_TO_EXECUTE': this.FAILED,
+            'RUNNING': this.RUNNING,
+        };
+        return new JobResults(gmeStatusToStatus[gmeStatus] || gmeStatus);
     };
 
     GMEExecutor.prototype.getInfo = function(job) {
         return this.executor.getInfo(job.hash);
+    };
+
+    GMEExecutor.prototype.createJob = async function(hash) {
+        await this.checkExecutionEnv();
+
+        const result = await this.executor.createJob({hash});
+
+        this.poll(hash);
+
+        return result;
     };
 
     GMEExecutor.prototype.checkExecutionEnv = async function () {
@@ -52,49 +82,33 @@ define([
         }
     };
 
-    GMEExecutor.prototype.createJob = async function(hash) {
-        await this.checkExecutionEnv();
-
-        const result = await this.executor.createJob({hash});
-
-        this.startPolling(hash);
-        // When to stop polling?
-        // TODO
-
-        return result;
-    };
-
-    GMEExecutor.prototype.on = function(ev, cb) {
-        this._events[ev] = this._events[ev] || [];
-        this._events[ev].push(cb);
-    };
-
-    GMEExecutor.prototype.emit = function(ev) {
-        const args = Array.prototype.slice.call(arguments, 1);
-        const handlers = this._events[ev] || [];
-        handlers.forEach(fn => fn.apply(this, args));
-    };
-
-    GMEExecutor.prototype.startPolling = async function(id) {
-        const info = await this.executor.getInfo(id);
+    GMEExecutor.prototype.poll = async function(id) {
+        const gmeInfo = await this.executor.getInfo(id);
 
         // Check for new stdout. Emit 'data' with the content
-        // TODO
+        const prevInfo = this.previousGMEInfo[id] || {};
+        const currentLine = prevInfo.outputNumber + 1;
+        const actualLine = gmeInfo.outputNumber;
+        if (actualLine !== null && actualLine >= currentLine) {
+            const stdout = (await this.executor.getOutput(id, currentLine, actualLine + 1))
+                .map(o => o.output).join('');
+            this.emit('data', id, stdout);
+        }
 
-        if (info.status === 'CREATED' || info.status === 'RUNNING') {
-            setTimeout(() => this.startPolling(id), this.pollInterval);
+        if (gmeInfo.status !== prevInfo.status) {
+            const results = this.getJobResultsFrom(gmeInfo);
+            this.emit('update', id, results.status);
+        }
+
+        this.previousGMEInfo[id] = gmeInfo;
+        if (gmeInfo.status === 'CREATED' || gmeInfo.status === 'RUNNING') {
+            setTimeout(() => this.poll(id), this.pollInterval);
         } else {
-            this.emit('end', id, info);
+            const results = this.getJobResultsFrom(gmeInfo);
+            this.emit('end', id, results);
+            delete this.previousGMEInfo[id];
         }
     };
-
-    // What is the API for the executor?
-    // It should "push" the data to the client
-    //   - createJob
-    //   - cancelJob
-    //     - getInfo
-    //     - getOutput
-    // TODO
 
     return GMEExecutor;
 });
