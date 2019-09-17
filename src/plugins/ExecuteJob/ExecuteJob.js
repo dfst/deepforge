@@ -123,11 +123,11 @@ define([
         );
 
         this.executor.on('update', (jobInfo, status) => {
-                try {
-                    this.onUpdate(jobInfo, status);
-                } catch (err) {
-                    this.logger.error(`Error when processing operation update: ${err}`);
-                }
+            try {
+                this.onUpdate(jobInfo, status);
+            } catch (err) {
+                this.logger.error(`Error when processing operation update: ${err}`);
+            }
         });
 
         this.executor.on('end',
