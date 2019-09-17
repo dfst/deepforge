@@ -2,6 +2,7 @@
 // TODO: Show an error if not running on the server...
 define([
     '../BaseExecutor',
+    '../JobResults',
     'blob/BlobClient',
     'child_process',
     'minimatch',
@@ -12,6 +13,7 @@ define([
     'path',
 ], function(
     BaseExecutor,
+    JobResults,
     BlobClient,
     childProcess,
     minimatch,
@@ -374,13 +376,6 @@ define([
         // FIXME: check for unzip here!
     }
     // - [ ] emit updates on stdout...
-
-    class JobResults {
-        constructor(status) {
-            this.status = status || LocalExecutor.prototype.CREATED;
-            this.resultHashes = [];
-        }
-    }
 
     return LocalExecutor;
 });
