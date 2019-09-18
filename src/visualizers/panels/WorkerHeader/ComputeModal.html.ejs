@@ -1,0 +1,31 @@
+<div class="compute-modal modal fade in" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">x</button>
+                <i class="header-icon gme-icon"></i>
+                <span>Compute Overview</span>
+            </div>
+            <div class="modal-body">
+                <% if (tabs.length > 1) { %>
+                <div role="tabpanel">
+                    <ul class="nav nav-tabs" role="tablist">
+                    <% tabs.forEach((tab, i) => { %>
+                        <li role="presentation" <%= i === 0 ? 'class="active"' : '' %>><a href="#<%= tab %>-dashboard-container" data-toggle="tab" role="tab"><%= tab %></a></li>
+                    <% }); %>
+                    </ul>
+                    <div class="tab-content">
+                    <% tabs.forEach((tab, i) => { %>
+                        <div role="tabpanel" class="tab-pane <%= i === 0 ? 'active' : '' %>" id="<%= tab %>-dashboard-container"></div>
+                    <% }); %>
+                    </div>
+                </div>
+                <% } else if (tabs.length === 1) { %>
+                <div class="container-fluid" id="<%= tabs[0] %>-dashboard-container"></div>
+                <% } else { %>
+                    <!-- TODO -->
+                <% } %>
+            </div>
+        </div>
+    </div>
+</div>

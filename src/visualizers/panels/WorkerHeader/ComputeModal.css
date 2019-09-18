@@ -12,6 +12,10 @@
   background-size: 28px 28px;
 }
 
-.compute-modal .modal-content .modal-body th {
+.compute-modal .modal-content .modal-body {
   text-align: left;
+}
+
+.compute-modal .tab-pane {
+  padding: 15px;
 }

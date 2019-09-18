@@ -4,26 +4,34 @@ define([
     'q',
     'deepforge/viz/Utils',
     './EmptyDashboard',
-    'text!./ComputeModal.html',
+    'underscore',
+    'text!./ComputeModal.html.ejs',
     'css!./ComputeModal.css'
 ], function(
     Execution,
     Q,
     utils,
     EmptyDashboard,
+    _,
     ComputeHtml,
 ) {
     'use strict';
 
+    const ComputeHtmlTpl = _.template(ComputeHtml);
     const ComputeDialog = function(logger) {
         this.active = false;
         this.logger = logger.fork('ComputeDialog');
-        this.$el = $(ComputeHtml);
-        // TODO: Handle this differently if there are multiple dashboards?
-        this.$content = this.$el.find('.dashboard-content');
-        this.dashboards = Execution.getAvailableBackends().slice(0, 1)  // FIXME
-            .map(name => Execution.getBackend(name).getDashboard() || EmptyDashboard.bind(null, name))
-            .map(ctor => new ctor(this.logger, this.$content));
+
+        const backendNames = Execution.getAvailableBackends();
+        this.$el = $(ComputeHtmlTpl({tabs: backendNames}));
+        this.dashboards = backendNames
+            .map(name => {
+                const backend = Execution.getBackend(name);
+                const Dashboard = backend.getDashboard() || EmptyDashboard.bind(null, name);
+                const $container = this.$el.find(`#${name}-dashboard-container`);
+
+                return new Dashboard(this.logger, $container);
+            });
     };
 
     ComputeDialog.prototype.initialize = function() {
