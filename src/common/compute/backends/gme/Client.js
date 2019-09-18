@@ -1,13 +1,13 @@
 /* globals define */
 define([
-    '../BaseExecutor',
+    '../ComputeClient',
     '../JobResults',
     'deepforge/ExecutionEnv',
     'executor/ExecutorClient',
     'path',
     'module',
 ], function(
-    BaseExecutor,
+    ComputeClient,
     JobResults,
     ExecutionEnv,
     ExecutorClient,
@@ -16,7 +16,7 @@ define([
 ) {
     const PROJECT_ROOT = path.join(path.dirname(module.uri), '..', '..', '..', '..', '..');
     const GMEExecutor = function(/*logger*/) {
-        BaseExecutor.apply(this, arguments);
+        ComputeClient.apply(this, arguments);
         const configPath = path.join(PROJECT_ROOT, 'config');
         const gmeConfig = require.nodeRequire(configPath);
         this.pollInterval = 1500;
@@ -27,7 +27,7 @@ define([
             httpsecure: false
         });
     };
-    GMEExecutor.prototype = Object.create(BaseExecutor.prototype);
+    GMEExecutor.prototype = Object.create(ComputeClient.prototype);
 
     GMEExecutor.prototype.getConsoleOutput = async function(hash) {
         return (await this.executor.getOutput(hash))

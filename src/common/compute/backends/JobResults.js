@@ -1,7 +1,7 @@
-const BaseExecutor = require('./BaseExecutor');
+const ComputeClient = require('./ComputeClient');
 
 class JobResults {
-    constructor(status=BaseExecutor.prototype.CREATED) {
+    constructor(status=ComputeClient.prototype.CREATED) {
         this.status = status;
         this.resultHashes = [];
     }

@@ -1,7 +1,7 @@
 /*globals define*/
 // TODO: Show an error if not running on the server...
 define([
-    '../BaseExecutor',
+    '../ComputeClient',
     '../JobResults',
     'blob/BlobClient',
     'child_process',
@@ -12,7 +12,7 @@ define([
     'os',
     'path',
 ], function(
-    BaseExecutor,
+    ComputeClient,
     JobResults,
     BlobClient,
     childProcess,
@@ -46,7 +46,7 @@ define([
     const touch = async name => await closeFile(await openFile(name, 'w'));
 
     const LocalExecutor = function(/*logger*/) {
-        BaseExecutor.apply(this, arguments);
+        ComputeClient.apply(this, arguments);
 
         const configPath = path.join(PROJECT_ROOT, 'config');
         const gmeConfig = require.nodeRequire(configPath);
@@ -63,7 +63,7 @@ define([
         });
     };
 
-    LocalExecutor.prototype = Object.create(BaseExecutor.prototype);
+    LocalExecutor.prototype = Object.create(ComputeClient.prototype);
 
     LocalExecutor.prototype.cancelJob = function(jobInfo) {
         const {hash} = jobInfo;

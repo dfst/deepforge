@@ -1,5 +1,6 @@
 /* globals define, $ */
 define([
+    '../../ComputeDashboard',
     'deepforge/ExecutionEnv',
     'q',
     'deepforge/viz/Utils',
@@ -9,6 +10,7 @@ define([
     'text!./WorkerJobItem.html',
     'css!./WorkerModal.css'
 ], function(
+    ComputeDashboard,
     ExecutionEnv,
     Q,
     utils,
@@ -41,16 +43,15 @@ define([
         $container.append(this.$el);
     };
 
-    WorkerDialog.prototype.initialize = function() {
-    };
+    WorkerDialog.prototype.initialize = Object.create(ComputeDashboard.prototype);
 
-    WorkerDialog.prototype.onDeactivate =
     WorkerDialog.prototype.onActivate = function() {};
     WorkerDialog.prototype.onShow = function() {
         this.active = true;
         this.update();
     };
 
+    WorkerDialog.prototype.onDeactivate =
     WorkerDialog.prototype.onHide = function() {
         this.active = false;
     };

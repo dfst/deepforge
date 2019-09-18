@@ -1,4 +1,4 @@
-const BaseExecutor = function(logger, gmeConfig) {
+const ComputeClient = function(logger, gmeConfig) {
     const isHttps = typeof window === 'undefined' ? false :
         window.location.protocol !== 'http:';
 
@@ -6,62 +6,60 @@ const BaseExecutor = function(logger, gmeConfig) {
     this._events = {};
 };
 
-BaseExecutor.prototype.cancelJob = function(job) {
+ComputeClient.prototype.cancelJob = function(job) {
     const msg = `cancelJob is not implemented for current executor backend!`;
     this.logger.warn(msg);
     throw new Error(msg);
 };
 
-BaseExecutor.prototype.getInfo = function(job) {
+ComputeClient.prototype.getInfo = function(job) {
     const msg = `getInfo is not implemented for current executor backend!`;
     this.logger.warn(msg);
     throw new Error(msg);
 };
 
-BaseExecutor.prototype.createJob = async function(hash) {
+ComputeClient.prototype.createJob = async function(hash) {
     const msg = `createJob is not implemented for current executor backend!`;
     this.logger.warn(msg);
     throw new Error(msg);
 };
 
-BaseExecutor.prototype.getStatus = async function(jobInfo) {
+ComputeClient.prototype.getStatus = async function(jobInfo) {
     const msg = `getStatus is not implemented for current executor backend!`;
     this.logger.warn(msg);
     throw new Error(msg);
 };
 
-BaseExecutor.prototype.getOutputHashes = async function(jobInfo) {
+ComputeClient.prototype.getOutputHashes = async function(jobInfo) {
     const msg = `getOutputHashes is not implemented for current executor backend!`;
     this.logger.warn(msg);
     throw new Error(msg);
 };
 
-// TODO: Should I remove this?
-BaseExecutor.prototype.getConsoleOutput = async function(hash) {
+ComputeClient.prototype.getConsoleOutput = async function(hash) {
     const msg = `getConsoleOutput is not implemented for current executor backend!`;
     this.logger.warn(msg);
     throw new Error(msg);
 };
 
 // Some functions for event support
-BaseExecutor.prototype.on = function(ev, cb) {
+ComputeClient.prototype.on = function(ev, cb) {
     this._events[ev] = this._events[ev] || [];
     this._events[ev].push(cb);
 };
 
-BaseExecutor.prototype.emit = function(ev) {
+ComputeClient.prototype.emit = function(ev) {
     const args = Array.prototype.slice.call(arguments, 1);
     const handlers = this._events[ev] || [];
     handlers.forEach(fn => fn.apply(this, args));
 };
 
-// TODO: Make these match the values in the model (`status` enum on pipeline.Job)
-BaseExecutor.prototype.QUEUED = 'queued';
-BaseExecutor.prototype.PENDING = 'pending';
-BaseExecutor.prototype.RUNNING = 'running';
-BaseExecutor.prototype.SUCCESS = 'success';
-BaseExecutor.prototype.FAILED = 'failed';
-BaseExecutor.prototype.CANCELED = 'canceled';
-BaseExecutor.prototype.NOT_FOUND = 'NOT_FOUND';
+ComputeClient.prototype.QUEUED = 'queued';
+ComputeClient.prototype.PENDING = 'pending';
+ComputeClient.prototype.RUNNING = 'running';
+ComputeClient.prototype.SUCCESS = 'success';
+ComputeClient.prototype.FAILED = 'failed';
+ComputeClient.prototype.CANCELED = 'canceled';
+ComputeClient.prototype.NOT_FOUND = 'NOT_FOUND';
 
-module.exports = BaseExecutor;
+module.exports = ComputeClient;

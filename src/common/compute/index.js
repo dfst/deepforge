@@ -1,28 +1,27 @@
 /*globals define, requirejs */
 const COMPUTE_BACKENDS = ['gme', 'local'];
-
 define([
-    'underscore',
+    'q',
     'module'
-].concat(COMPUTE_BACKENDS.map(name => `deepforge/execution/backends/${name}/index`)),
+].concat(COMPUTE_BACKENDS.map(name => `deepforge/compute/backends/${name}/index`)),
 function(
-    _,
+    Q,
     module
 ) {
-    const Execution = {};
+    const Compute = {};
 
-    Execution.getBackend = function(name) {
+    Compute.getBackend = function(name) {
         name = name.toLowerCase();
         if (!COMPUTE_BACKENDS.includes(name)) {
-            throw new Error(`Execution backend not found: ${name}`);
+            throw new Error(`Compute backend not found: ${name}`);
         }
 
         const relativePath = `backends/${name}/index`;
-        const Backend = requirejs(`deepforge/execution/${relativePath}`);
+        const Backend = requirejs(`deepforge/compute/${relativePath}`);
         return new Backend();
     };
 
-    Execution.getAvailableBackends = function() {
+    Compute.getAvailableBackends = function() {
         const settings = {backends: ['local', 'gme']};
         if (require.isBrowser) {
             const ComponentSettings = requirejs('js/Utils/ComponentSettings');
@@ -34,15 +33,15 @@ function(
             const path = require('path');
             const dirname = path.dirname(module.uri);
             const deploymentSettings = JSON.parse(requirejs('text!' + dirname + '/../../../config/components.json'));
-            _.extend(settings, deploymentSettings[this.getComponentId()]);
+            Object.assign(settings, deploymentSettings[this.getComponentId()]);
         }
 
         return settings.backends;
     };
 
-    Execution.getComponentId = function() {
+    Compute.getComponentId = function() {
         return 'Compute';
     };
 
-    return Execution;
+    return Compute;
 });

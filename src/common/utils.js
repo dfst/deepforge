@@ -84,7 +84,6 @@
         return lines;
     };
 
-
     return {
         getSetterSchema: getSetterSchema,
         resolveCarriageReturns: resolveCarriageReturns,
