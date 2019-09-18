@@ -1,10 +1,10 @@
-/*globals define, requirejs*/
+/*globals define */
 /*jshint node:true, browser:true*/
 
 define([
     'common/util/assert',
     'text!./metadata.json',
-    'deepforge/execution/index',
+    'deepforge/compute/index',
     'plugin/PluginBase',
     'deepforge/plugin/LocalExecutor',
     'deepforge/plugin/PtrCodeGen',
@@ -22,7 +22,7 @@ define([
 ], function (
     assert,
     pluginMetadata,
-    Execution,
+    Compute,
     PluginBase,
     LocalExecutor,  // DeepForge operation primitives
     PtrCodeGen,
@@ -95,10 +95,10 @@ define([
         this.pulseClient = new ExecPulseClient(params);
         this._execHashToJobNode = {};
 
-        const name = Execution.getAvailableBackends()[0];  // FIXME: enable the user to select one
-        const backend = Execution.getBackend(name);
-        this.executor = backend.getClient(this.logger);
-        this.executor.on(
+        const name = Compute.getAvailableBackends()[0];  // FIXME: enable the user to select one
+        const backend = Compute.getBackend(name);
+        this.compute = backend.getClient(this.logger);
+        this.compute.on(
             'data',
             (id, data) => {
                 const job = this.getNodeForJobId(id);
@@ -106,7 +106,7 @@ define([
             }
         );
 
-        this.executor.on('update', (jobId, status) => {
+        this.compute.on('update', (jobId, status) => {
             try {
                 this.onUpdate(jobId, status);
             } catch (err) {
@@ -114,7 +114,7 @@ define([
             }
         });
 
-        this.executor.on('end',
+        this.compute.on('end',
             (id, info) => {
                 try {
                     this.onOperationEnd(id);
@@ -190,11 +190,11 @@ define([
 
     ExecuteJob.prototype.onAbort =
     ExecuteJob.prototype.onUserCancelDetected = function () {
-        this.logger.info('>>>>> Received Abort. Canceling jobs.');
+        this.logger.info('Received Abort. Canceling jobs.');
         this.runningJobHashes
             .map(hash => this.getNodeForJobId(hash))
             .map(node => JSON.parse(this.getAttribute(node, 'jobInfo')))
-            .forEach(jobInfo => this.executor.cancelJob(jobInfo));
+            .forEach(jobInfo => this.compute.cancelJob(jobInfo));
     };
 
     ExecuteJob.prototype.isResuming = async function (job) {
@@ -240,9 +240,7 @@ define([
 
         this.outputLineCount[id] = count;
 
-        // TODO: Need to be able to poll the stdout...
-        const stdout = await this.executor.getConsoleOutput(hash);
-
+        const stdout = await this.compute.getConsoleOutput(hash);
         const result = this.processStdout(job, stdout);
 
         if (result.hasMetadata) {
@@ -384,7 +382,7 @@ define([
         const node = await this.getOperation(job);
         const name = this.getAttribute(node, 'name');
 
-        // Execute any special operation types here - not on an executor
+        // Execute any special operation types here - not on an compute
         this.logger.debug(`Executing operation "${name}"`);
         if (this.isLocalOperation(node)) {
             return this.executeLocalOperation(node);
@@ -457,7 +455,7 @@ define([
     ExecuteJob.prototype.createJob = async function (job, opNode, hash) {
         // Record the job info for the given hash
         this._execHashToJobNode[hash] = job;
-        const jobInfo = await this.executor.createJob(hash);
+        const jobInfo = await this.compute.createJob(hash);
         this.setAttribute(job, 'jobInfo', JSON.stringify(jobInfo));
         if (!this.currentRunId) {
             this.currentRunId = jobInfo.hash;
@@ -553,52 +551,12 @@ define([
         let last = stdout.lastIndexOf('\n');
         let lastLine;
 
-        //const currentLine = this.outputLineCount[jobId];
-        //const actualLine = info.outputNumber;  // TODO: Keep this??
-
-        //// TODO: Move this to the onOutput handler
-        //if (actualLine !== null && actualLine >= currentLine) {
-            //this.outputLineCount[jobId] = actualLine + 1;
-            //// TODO: Keep this??
-            //let output = await this.executor.getConsoleOutput(hash, currentLine, actualLine+1))
-
-            //var stdout = this.getAttribute(job, 'stdout'),
-                //last = stdout.lastIndexOf('\n'),
-                //result,
-                //lastLine,
-                //next = Q(),
-                //msg;
-
-            // parse deepforge commands
         if (last !== -1) {
             stdout = stdout.substring(0, last+1);
             lastLine = stdout.substring(last+1);
             output = lastLine + output;
         }
-            //result = this.processStdout(job, output, true);
-            //output = result.stdout;
 
-            //if (output) {
-                //// Send notification to all clients watching the branch
-                //const metadata = {
-                    //lineCount: this.outputLineCount[jobId]
-                //};
-                //await this.logManager.appendTo(jobId, output, metadata);
-                //await this.notifyStdoutUpdate(jobId);
-            //}
-            //if (result.hasMetadata) {
-                //msg = `Updated graph/image output for ${name}`;
-                //await this.save(msg);
-            //}
-        //}
-
-        // parse deepforge commands
-        // FIXME: This needs to be added back!
-        //if (last !== -1) {
-            //stdout = stdout.substring(0, last+1);
-            //lastLine = stdout.substring(last+1);
-            //output = lastLine + output;
-        //}
         const result = this.processStdout(job, output, true);
         output = result.stdout;
 
@@ -612,19 +570,6 @@ define([
         }
     };
 
-    // TODO: Watch if the execution is ever canceled (on the origin branch).
-    // If so, cancel the executing jobs
-    /*
-        if (this.canceled || this.isExecutionCanceled()) {
-            if (jobInfo) {
-                this.executor.cancelJob(jobInfo);
-                this.delAttribute(job, 'jobInfo');
-                this.canceled = true;
-                return this.onOperationCanceled(op);
-            }
-        }
-    */
-
     ExecuteJob.prototype.onOperationEnd = async function (hash) {
         // Record that the job hash is no longer running
         const job = this.getNodeForJobId(hash);
@@ -633,11 +578,11 @@ define([
         const jobId = this.core.getPath(job);
         const jobInfo = JSON.parse(this.getAttribute(job, 'jobInfo'));
 
-        const status = await this.executor.getStatus(jobInfo);
+        const status = await this.compute.getStatus(jobInfo);
         this.logger.info(`Job "${name}" has finished (${status})`);
         this.cleanJobHashInfo(hash);
 
-        if (status === this.executor.CANCELED) {
+        if (status === this.compute.CANCELED) {
             // If it was canceled, the pipeline has been stopped
             this.logger.debug(`"${name}" has been CANCELED!`);
             this.canceled = true;
@@ -646,8 +591,8 @@ define([
             return this.onOperationCanceled(op);
         }
 
-        if (status === this.executor.SUCCESS || status === this.executor.FAILED) {
-            const fileHashes = await this.executor.getOutputHashes(jobInfo);
+        if (status === this.compute.SUCCESS || status === this.compute.FAILED) {
+            const fileHashes = await this.compute.getOutputHashes(jobInfo);
             const execFilesHash = fileHashes[name + '-all-files'];
             this.setAttribute(job, 'execFiles', execFilesHash);
 
@@ -659,7 +604,7 @@ define([
             // Parse the remaining code
             this.setAttribute(job, 'stdout', result.stdout);
             this.logManager.deleteLog(jobId);
-            if (status === this.executor.SUCCESS) {
+            if (status === this.compute.SUCCESS) {
                 this.onDistOperationComplete(op, fileHashes);
             } else {
                 // Download all files

@@ -1,7 +1,9 @@
 /* globals define, $ */
 define([
-    'css!./EmptyDashboard.css'
+    'deepforge/compute/backends/ComputeDashboard',
+    'css!./EmptyDashboard.css',
 ], function(
+    ComputeDashboard
 ) {
 
     const EmptyDashboard = function(name, logger, $container) {
@@ -11,10 +13,7 @@ define([
         $container.append(this.$el);
     };
 
-    EmptyDashboard.prototype.onShow =
-    EmptyDashboard.prototype.onHide =
-    EmptyDashboard.prototype.onActivate =
-    EmptyDashboard.prototype.onDeactivate = () => {};
+    EmptyDashboard.prototype = Object.create(ComputeDashboard.prototype);
 
     return EmptyDashboard;
 });

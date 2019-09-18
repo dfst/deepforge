@@ -1,6 +1,6 @@
 /* globals define, $ */
 define([
-    'deepforge/execution/index',
+    'deepforge/compute/index',
     'q',
     'deepforge/viz/Utils',
     './EmptyDashboard',
@@ -8,7 +8,7 @@ define([
     'text!./ComputeModal.html.ejs',
     'css!./ComputeModal.css'
 ], function(
-    Execution,
+    Compute,
     Q,
     utils,
     EmptyDashboard,
@@ -22,16 +22,24 @@ define([
         this.active = false;
         this.logger = logger.fork('ComputeDialog');
 
-        const backendNames = Execution.getAvailableBackends();
+        const backendNames = Compute.getAvailableBackends();
         this.$el = $(ComputeHtmlTpl({tabs: backendNames}));
-        this.dashboards = backendNames
-            .map(name => {
-                const backend = Execution.getBackend(name);
-                const Dashboard = backend.getDashboard() || EmptyDashboard.bind(null, name);
+        this.backends = backendNames;
+        this.dashboards = null;
+    };
+
+    ComputeDialog.prototype.loadDashboards = async function() {
+        const fetchDashboards = this.backends
+            .map(async name => {
+                const backend = Compute.getBackend(name);
+                console.log('loading dashboard for', name);
+                const Dashboard = await backend.getDashboard() || EmptyDashboard.bind(null, name);
                 const $container = this.$el.find(`#${name}-dashboard-container`);
 
                 return new Dashboard(this.logger, $container);
             });
+
+        this.dashboards = await Promise.all(fetchDashboards);
     };
 
     ComputeDialog.prototype.initialize = function() {
@@ -39,8 +47,9 @@ define([
         this.$el.on('hidden.bs.modal', () => this.onHide());
     };
 
-    ComputeDialog.prototype.show = function() {
+    ComputeDialog.prototype.show = async function() {
         this.initialize();
+        await this.loadDashboards();
         this.dashboards.forEach(dashboard => dashboard.onShow());
     };
 
