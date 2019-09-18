@@ -27,20 +27,21 @@ define([
         this.jobsDict = {};
         this.jobs = {};
         this.active = false;
-        this.$el = $(WorkerHtml);
-        $container.append(this.$el);
         this.originManager = new JobOriginClient({
             logger: this.logger
         });
+
+        this.$el = $(WorkerHtml);
+        this.$table = this.$el.find('.worker-list');
+        this.$noJobs = this.$el.find('.no-jobs-msg');
+        this.$noWorkers = this.$el.find('.no-workers-msg');
+        this._isShowingJobs = false;
+        this._isShowingWorkers = true;
+        this.$queue = this.$el.find('.job-queue-list');
+        $container.append(this.$el);
     };
 
     WorkerDialog.prototype.initialize = function() {
-        this.$table = this._dialog.find('.worker-list');
-        this.$noJobs = this._dialog.find('.no-jobs-msg');
-        this.$noWorkers = this._dialog.find('.no-workers-msg');
-        this._isShowingJobs = false;
-        this._isShowingWorkers = true;
-        this.$queue = this._dialog.find('.job-queue-list');
     };
 
     WorkerDialog.prototype.onDeactivate =
