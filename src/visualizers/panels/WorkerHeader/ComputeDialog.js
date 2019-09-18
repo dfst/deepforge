@@ -23,7 +23,7 @@ define([
         this.$content = this.$el.find('.dashboard-content');
         this.dashboards = Execution.getAvailableBackends().slice(0, 1)  // FIXME
             .map(name => Execution.getBackend(name).getDashboard() || EmptyDashboard.bind(null, name))
-            .map(ctor => new ctor(this.$content));
+            .map(ctor => new ctor(this.logger, this.$content));
     };
 
     ComputeDialog.prototype.initialize = function() {

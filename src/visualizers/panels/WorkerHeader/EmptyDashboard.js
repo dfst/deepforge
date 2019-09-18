@@ -4,9 +4,10 @@ define([
 ], function(
 ) {
 
-    const EmptyDashboard = function(name, $container) {
+    const EmptyDashboard = function(name, logger, $container) {
         this.$el = $('<div>', {class: 'empty-dashboard'});
         this.$el.text(`No dashboard available for ${name} backend`);
+        this.logger = logger.fork(name);
         $container.append(this.$el);
     };
 
