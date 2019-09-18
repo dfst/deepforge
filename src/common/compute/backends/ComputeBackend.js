@@ -7,19 +7,30 @@ define([
     Q,
 ) {
 
-    const ComputeBackend = function(name) {
+    const ComputeBackend = function(id, metadata) {
+        const {name, dashboard, client} = metadata;
+        this.id = id;
         this.name = name;
+        this.dashboardPath = dashboard;
+        this.clientPath = client || './Client';
     };
 
     ComputeBackend.prototype.getClient = function(logger) {
-        const path = require('path');
-        const dirname = path.dirname(module.uri);
-        const Client = requirejs(`${dirname}/${this.name.toLowerCase()}/Client.js`);
+        if (require.isBrowser) {
+            throw new Error('Compute clients cannot be loaded in the browser.');
+        }
+
+        const Client = requirejs(`deepforge/compute/backends/${this.id}/${this.clientPath}`);
         return new Client(logger);
     };
 
     ComputeBackend.prototype.getDashboard = async function() {
-        return null;
+        if (this.dashboardPath) {
+            const absPath = `deepforge/compute/backends/${this.id}/${this.dashboardPath}`;
+            return await this.require(absPath);
+        } else {
+            return null;
+        }
     };
 
     ComputeBackend.prototype.require = function(path) {  // helper for loading async

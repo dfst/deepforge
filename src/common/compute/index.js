@@ -2,27 +2,29 @@
 const COMPUTE_BACKENDS = ['gme', 'local'];
 define([
     'q',
-    'module'
-].concat(COMPUTE_BACKENDS.map(name => `deepforge/compute/backends/${name}/index`)),
+    'module',
+    'deepforge/compute/backends/ComputeBackend',
+].concat(COMPUTE_BACKENDS.map(name => `text!deepforge/compute/backends/${name}/metadata.json`)),
 function(
     Q,
-    module
+    module,
+    ComputeBackend,
 ) {
     const Compute = {};
 
-    Compute.getBackend = function(name) {
-        name = name.toLowerCase();
-        if (!COMPUTE_BACKENDS.includes(name)) {
-            throw new Error(`Compute backend not found: ${name}`);
+    Compute.getBackend = function(id) {
+        id = id.toLowerCase();
+        if (!COMPUTE_BACKENDS.includes(id)) {
+            throw new Error(`Compute backend not found: ${id}`);
         }
 
-        const relativePath = `backends/${name}/index`;
-        const Backend = requirejs(`deepforge/compute/${relativePath}`);
-        return new Backend();
+        const relativePath = `backends/${id}/metadata.json`;
+        const metadata = JSON.parse(requirejs(`text!deepforge/compute/${relativePath}`));
+        return new ComputeBackend(id, metadata);
     };
 
     Compute.getAvailableBackends = function() {
-        const settings = {backends: ['local', 'gme']};
+        const settings = {backends: COMPUTE_BACKENDS};  // all by default
         if (require.isBrowser) {
             const ComponentSettings = requirejs('js/Utils/ComponentSettings');
             ComponentSettings.resolveWithWebGMEGlobal(

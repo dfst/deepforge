@@ -1,10 +1,16 @@
-const ComputeClient = require('./ComputeClient');
+/* globals define */
+define([
+    './ComputeClient',
+], function(
+    ComputeClient,
+) {
 
-class JobResults {
-    constructor(status=ComputeClient.prototype.CREATED) {
-        this.status = status;
-        this.resultHashes = [];
+    class JobResults {
+        constructor(status=ComputeClient.prototype.CREATED) {
+            this.status = status;
+            this.resultHashes = [];
+        }
     }
-}
 
-module.exports = JobResults;
+    return JobResults;
+});
