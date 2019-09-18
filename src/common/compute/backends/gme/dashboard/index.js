@@ -1,7 +1,7 @@
 /* globals define, $ */
 define([
     '../../ComputeDashboard',
-    'deepforge/ExecutionEnv',
+    '../ExecutorHelper',
     'q',
     'deepforge/viz/Utils',
     'deepforge/api/JobOriginClient',
@@ -11,7 +11,7 @@ define([
     'css!./WorkerModal.css'
 ], function(
     ComputeDashboard,
-    ExecutionEnv,
+    ExecutorHelper,
     Q,
     utils,
     JobOriginClient,
@@ -57,8 +57,8 @@ define([
     };
 
     WorkerDialog.prototype.update = async function() {
-        const workers = await ExecutionEnv.getWorkers();
-        const jobs = await ExecutionEnv.getJobs();
+        const workers = await ExecutorHelper.getWorkers();
+        const jobs = await ExecutorHelper.getJobs();
 
         await Q.all([this.updateWorkers(workers), this.updateJobs(jobs)]);
 

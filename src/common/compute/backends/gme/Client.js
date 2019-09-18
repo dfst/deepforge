@@ -2,14 +2,14 @@
 define([
     '../ComputeClient',
     '../JobResults',
-    'deepforge/ExecutionEnv',
+    './ExecutorHelper',
     'executor/ExecutorClient',
     'path',
     'module',
 ], function(
     ComputeClient,
     JobResults,
-    ExecutionEnv,
+    ExecutorHelper,
     ExecutorClient,
     path,
     module,
@@ -75,7 +75,7 @@ define([
 
     GMEExecutor.prototype.checkExecutionEnv = async function () {
         this.logger.info(`Checking execution environment`);
-        const workers = await ExecutionEnv.getWorkers();
+        const workers = await ExecutorHelper.getWorkers();
         if (workers.length === 0) {
             this.logger.info(`Cannot execute job(s): No connected workers`);
             throw new Error('No connected workers');

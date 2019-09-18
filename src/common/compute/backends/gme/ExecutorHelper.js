@@ -11,19 +11,18 @@ define([
     const WORKER_ENDPOINT = '/rest/executor/worker';
     const JOBS_ENDPOINT = '/rest/executor';
     const values = dict => Object.keys(dict).map(k => dict[k]);
+    const ExecutorHelper = {};
 
-    const ExecutionEnv = {};
-
-    ExecutionEnv.url = function(urlPath) {
+    ExecutorHelper.url = function(urlPath) {
         if (typeof window === 'undefined') {
-            const configPath = module.uri.replace('src/common/ExecutionEnv.js', 'config/index.js');
+            const configPath = module.uri.replace('src/common/ExecutorHelper.js', 'config/index.js');
             const gmeConfig = require.nodeRequire(configPath);
             return `http://127.0.0.1:${gmeConfig.server.port}${urlPath}`;
         }
         return urlPath;
     };
 
-    ExecutionEnv.get = function(urlPath) {
+    ExecutorHelper.get = function(urlPath) {
         const deferred = Q.defer();
         const url = this.url(urlPath);
 
@@ -38,15 +37,15 @@ define([
         return deferred.promise;
     };
 
-    ExecutionEnv.getWorkers = function() {
+    ExecutorHelper.getWorkers = function() {
         return Q(1);  // TODO
         return this.get(WORKER_ENDPOINT)
             .then(workerDict => values(workerDict));
     };
 
-    ExecutionEnv.getJobs = function() {
+    ExecutorHelper.getJobs = function() {
         return this.get(JOBS_ENDPOINT);
     };
 
-    return ExecutionEnv;
+    return ExecutorHelper;
 });
