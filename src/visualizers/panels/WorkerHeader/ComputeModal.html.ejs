@@ -11,12 +11,12 @@
                 <div role="tabpanel">
                     <ul class="nav nav-tabs" role="tablist">
                     <% tabs.forEach((tab, i) => { %>
-                        <li role="presentation" <%= i === 0 ? 'class="active"' : '' %>><a href="#<%= tab %>-dashboard-container" data-toggle="tab" role="tab"><%= tab %></a></li>
+                        <li role="presentation" <%= i === 0 ? 'class="active"' : '' %>><a href="#<%= tab.id %>-dashboard-container" data-toggle="tab" role="tab"><%= tab.name %></a></li>
                     <% }); %>
                     </ul>
                     <div class="tab-content">
                     <% tabs.forEach((tab, i) => { %>
-                        <div role="tabpanel" class="tab-pane <%= i === 0 ? 'active' : '' %>" id="<%= tab %>-dashboard-container"></div>
+                        <div role="tabpanel" class="tab-pane <%= i === 0 ? 'active' : '' %>" id="<%= tab.id %>-dashboard-container"></div>
                     <% }); %>
                     </div>
                 </div>
