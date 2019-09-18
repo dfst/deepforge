@@ -1,17 +1,19 @@
 /*globals define, requirejs */
+const COMPUTE_BACKENDS = ['gme', 'local'];
+
 define([
     'underscore',
-    'module',
-], function(
+    'module'
+].concat(COMPUTE_BACKENDS.map(name => `deepforge/execution/backends/${name}/index`)),
+function(
     _,
     module
 ) {
     const Execution = {};
-    const BACKENDS = ['gme', 'local'];
 
     Execution.getBackend = function(name) {
         name = name.toLowerCase();
-        if (!BACKENDS.includes(name)) {
+        if (!COMPUTE_BACKENDS.includes(name)) {
             throw new Error(`Execution backend not found: ${name}`);
         }
 
