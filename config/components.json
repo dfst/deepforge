@@ -131,6 +131,6 @@
         ]
     },
     "Compute": {
-        "backends": ["local", "gme"]
+        "backends": ["gme", "local"]
     }
 }
