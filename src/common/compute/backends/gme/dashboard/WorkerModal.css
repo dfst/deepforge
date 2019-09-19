@@ -4,12 +4,12 @@
 }
 
 .gme-dashboard .modal-content .modal-header .header-icon {
-  height: 28px;
-  width: 28px;
-  margin-right: 1ex;
-  display: inline-block;
-  vertical-align: middle;
   background-size: 28px 28px;
+  display: inline-block;
+  height: 28px;
+  margin-right: 1ex;
+  vertical-align: middle;
+  width: 28px;
 }
 
 .gme-dashboard .modal-content .modal-body th {
@@ -21,25 +21,25 @@
 }
 
 .gme-dashboard .queue-title {
-  float: left;
-  margin-right: 5px;
-  font-size: 1.4em;
   color: #555555;
+  float: left;
+  font-size: 1.4em;
   font-weight: bold;
-  width: 100%;
+  margin-right: 5px;
   text-align: center;
+  width: 100%;
 }
 
 .gme-dashboard .no-jobs-msg {
-  font-style: italic;
-  font-size: 1.3em;
   color: #777;
+  font-size: 1.3em;
+  font-style: italic;
 }
 
 .gme-dashboard .no-workers-msg {
-  font-style: italic;
-  font-size: 1.3em;
   color: #777;
+  font-size: 1.3em;
+  font-style: italic;
 }
 
 .gme-dashboard .job-queue {

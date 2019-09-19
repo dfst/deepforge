@@ -1,44 +1,42 @@
+/* globals define */
 define([], function() {
-    const ComputeClient = function(logger, gmeConfig) {
-        const isHttps = typeof window === 'undefined' ? false :
-            window.location.protocol !== 'http:';
-
-        this.logger = logger.fork('executor');
+    const ComputeClient = function(logger) {
+        this.logger = logger.fork('compute');
         this._events = {};
     };
 
-    ComputeClient.prototype.cancelJob = function(job) {
-        const msg = `cancelJob is not implemented for current executor backend!`;
+    ComputeClient.prototype.cancelJob = function(/*job*/) {
+        const msg = `cancelJob is not implemented for current compute backend!`;
         this.logger.warn(msg);
         throw new Error(msg);
     };
 
-    ComputeClient.prototype.getInfo = function(job) {
-        const msg = `getInfo is not implemented for current executor backend!`;
+    ComputeClient.prototype.getInfo = function(/*job*/) {
+        const msg = `getInfo is not implemented for current compute backend!`;
         this.logger.warn(msg);
         throw new Error(msg);
     };
 
-    ComputeClient.prototype.createJob = async function(hash) {
-        const msg = `createJob is not implemented for current executor backend!`;
+    ComputeClient.prototype.createJob = async function(/*hash*/) {
+        const msg = `createJob is not implemented for current compute backend!`;
         this.logger.warn(msg);
         throw new Error(msg);
     };
 
-    ComputeClient.prototype.getStatus = async function(jobInfo) {
-        const msg = `getStatus is not implemented for current executor backend!`;
+    ComputeClient.prototype.getStatus = async function(/*jobInfo*/) {
+        const msg = `getStatus is not implemented for current compute backend!`;
         this.logger.warn(msg);
         throw new Error(msg);
     };
 
-    ComputeClient.prototype.getOutputHashes = async function(jobInfo) {
-        const msg = `getOutputHashes is not implemented for current executor backend!`;
+    ComputeClient.prototype.getOutputHashes = async function(/*jobInfo*/) {
+        const msg = `getOutputHashes is not implemented for current compute backend!`;
         this.logger.warn(msg);
         throw new Error(msg);
     };
 
-    ComputeClient.prototype.getConsoleOutput = async function(hash) {
-        const msg = `getConsoleOutput is not implemented for current executor backend!`;
+    ComputeClient.prototype.getConsoleOutput = async function(/*hash*/) {
+        const msg = `getConsoleOutput is not implemented for current compute backend!`;
         this.logger.warn(msg);
         throw new Error(msg);
     };
