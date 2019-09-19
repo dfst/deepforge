@@ -257,8 +257,8 @@ describe('ExecuteJob', function () {
             mockCompute.createJob = async () => jobInfo;
             plugin.compute = mockCompute;
 
-            return plugin.createJob(node, jobInfo.hash)
-                .then(() => plugin.onAbort());
+            return Q(plugin.createJob(node, jobInfo.hash))
+                .finally(() => plugin.onAbort());
         });
 
         it('should set exec to running', function(done) {
