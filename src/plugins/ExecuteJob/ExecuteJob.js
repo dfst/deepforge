@@ -161,9 +161,9 @@ define([
         await this.prepare(isResuming);
 
         if (isResuming) {
-            this.currentRunId = this.getJobId(this.activeNode);
             this.startExecHeartBeat();
             if (this.canResumeJob(this.activeNode)) {
+                this.currentRunId = this.getJobId(this.activeNode);
                 return this.resumeJob(this.activeNode);
             } else {
                 var name = this.getAttribute(this.activeNode, 'name'),
@@ -445,14 +445,14 @@ define([
 
         try {
             await this.save(`Queued "${name}" operation in ${this.pipelineName}`);
-            await this.createJob(job, opNode, hash);
+            await this.createJob(job, hash);
         } catch (err) {
             this.logger.error(`Could not execute "${name}": ${err}`);
         }
 
     };
 
-    ExecuteJob.prototype.createJob = async function (job, opNode, hash) {
+    ExecuteJob.prototype.createJob = async function (job, hash) {
         // Record the job info for the given hash
         this._execHashToJobNode[hash] = job;
         const jobInfo = await this.compute.createJob(hash);

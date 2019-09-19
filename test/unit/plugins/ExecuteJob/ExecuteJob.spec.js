@@ -21,40 +21,28 @@ describe('ExecuteJob', function () {
             return Q();
         };
 
-    before(function (done) {
+    before(async function () {
         this.timeout(10000);
-        testFixture.clearDBAndGetGMEAuth(gmeConfig, projectName)
-            .then(function (gmeAuth_) {
-                gmeAuth = gmeAuth_;
-                // This uses in memory storage. Use testFixture.getMongoStorage to persist test to database.
-                storage = testFixture.getMemoryStorage(logger, gmeConfig, gmeAuth);
-                return storage.openDatabase();
-            })
-            .then(function () {
-                var importParam = {
-                    projectSeed: testFixture.path.join(testFixture.DF_SEED_DIR, 'devProject', 'devProject.webgmex'),
-                    projectName: projectName,
-                    branchName: 'master',
-                    logger: logger,
-                    gmeConfig: gmeConfig
-                };
+        gmeAuth = await testFixture.clearDBAndGetGMEAuth(gmeConfig, projectName);
+        storage = testFixture.getMemoryStorage(logger, gmeConfig, gmeAuth);
+        await storage.openDatabase();
+        const importParam = {
+            projectSeed: testFixture.path.join(testFixture.DF_SEED_DIR, 'devProject', 'devProject.webgmex'),
+            projectName: projectName,
+            branchName: 'master',
+            logger: logger,
+            gmeConfig: gmeConfig
+        };
 
-                return testFixture.importProject(storage, importParam);
-            })
-            .then(function (importResult) {
-                project = importResult.project;
-                commitHash = importResult.commitHash;
-                return project.createBranch('test', commitHash);
-            })
-            .nodeify(done);
+        const importResult = await testFixture.importProject(storage, importParam);
+        project = importResult.project;
+        commitHash = importResult.commitHash;
+        await project.createBranch('test', commitHash);
     });
 
-    after(function (done) {
-        storage.closeDatabase()
-            .then(function () {
-                return gmeAuth.unload();
-            })
-            .nodeify(done);
+    after(async function () {
+        await storage.closeDatabase();
+        await gmeAuth.unload();
     });
 
     it('should verify activeNode is "Job"', function (done) {
@@ -89,7 +77,6 @@ describe('ExecuteJob', function () {
             return manager.initializePlugin(pluginName)
                 .then(plugin_ => {
                     plugin = plugin_;
-                    plugin.checkExecutionEnv = () => Q();
                     return manager.configurePlugin(plugin, {}, context);
                 })
                 .then(() => node = plugin.activeNode)
@@ -185,7 +172,7 @@ describe('ExecuteJob', function () {
             plugin.createIdToMetadataId[graphTmp] = id;
 
             // Check that the value is correct before applying node changes
-            var applyModelChanges = plugin.applyModelChanges;
+            const applyModelChanges = plugin.applyModelChanges;
             plugin.applyModelChanges = function() {
                 return applyModelChanges.apply(this, arguments)
                     .then(() => {
@@ -196,17 +183,14 @@ describe('ExecuteJob', function () {
             plugin.save().nodeify(done);
         });
 
-        it('should update _metadata in updateNodes', function(done) {
-            var id = 'testId';
+        it('should update _metadata in updateNodes', async function() {
+            const id = 'testId';
 
             plugin._metadata[id] = node;
             node.old = true;
-            plugin.updateNodes()
-                .then(() => {
-                    var graph = plugin._metadata[id];
-                    expect(graph.old).to.not.equal(true);
-                })
-                .nodeify(done);
+            await plugin.updateNodes();
+            const graph = plugin._metadata[id];
+            expect(graph.old).to.not.equal(true);
         });
 
         // Check that it gets the correct value from a newly created node after
@@ -260,30 +244,21 @@ describe('ExecuteJob', function () {
     describe('cancel', function() {
         beforeEach(preparePlugin);
 
-        it('should stop the job if the execution is canceled', function(done) {
-            var job = node,
-                hash = 'abc123';
-
-            plugin.setAttribute(node, 'jobInfo', JSON.stringify({secret:'abc'}));
-            plugin.isExecutionCanceled = () => true;
-            plugin.onOperationCanceled = () => done();
-            plugin.executor = {
-                cancelJob: jobHash => expect(jobHash).equal(hash)
+        // TODO: Update this so that they can be canceled synchronously
+        it('should cancel running jobs on plugin abort', function(done) {
+            const jobInfo = {hash: 'abc123', secret: 'abc'};
+            const mockCompute = {};
+            mockCompute.cancelJob = job => {
+                if (job.hash !== jobInfo.hash) {
+                    done(new Error('Invalid jobInfo'));
+                }
+                done();
             };
-            plugin.watchOperation(hash, job, job);
-        });
+            mockCompute.createJob = async () => jobInfo;
+            plugin.compute = mockCompute;
 
-        it('should stop the job if a job is canceled', function(done) {
-            var job = node,
-                hash = 'abc123';
-
-            plugin.setAttribute(node, 'jobInfo', JSON.stringify({secret:'abc'}));
-            plugin.canceled = true;
-            plugin.onOperationCanceled = () => done();
-            plugin.executor = {
-                cancelJob: jobHash => expect(jobHash).equal(hash)
-            };
-            plugin.watchOperation(hash, job, job);
+            return plugin.createJob(node, jobInfo.hash)
+                .then(() => plugin.onAbort());
         });
 
         it('should set exec to running', function(done) {
@@ -392,7 +367,7 @@ describe('ExecuteJob', function () {
 
         it('should handle error if missing jobId', function(done) {
             // Remove jobId
-            plugin.delAttribute(plugin.activeNode, 'runId');
+            plugin.delAttribute(plugin.activeNode, 'jobInfo');
             plugin.startExecHeartBeat = () => {};
             plugin.isResuming = () => Q(true);
             plugin.main(function(err) {
