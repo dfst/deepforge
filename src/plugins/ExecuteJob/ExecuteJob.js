@@ -44,7 +44,7 @@ define([
 
     pluginMetadata = JSON.parse(pluginMetadata);
 
-    var STDOUT_FILE = 'job_stdout.txt';
+    const STDOUT_FILE = 'job_stdout.txt';
 
     /**
      * Initializes a new instance of ExecuteJob.
@@ -177,7 +177,6 @@ define([
             this.currentRunId = null;  // will be set after exec files created
             return this.executeJob(this.activeNode);
         }
-        //.catch(err => this._callback(err, this.result));  // TODO: Is this needed?
     };
 
     ExecuteJob.prototype.getJobId = function (node) {
@@ -566,6 +565,7 @@ define([
         await this.notifyStdoutUpdate(jobId);
 
         if (result.hasMetadata) {
+            const name = this.getAttribute(job, 'name');
             const msg = `Updated graph/image output for ${name}`;
             await this.save(msg);
         }
