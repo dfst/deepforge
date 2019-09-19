@@ -34,24 +34,19 @@ define([
     Execute.prototype.runExecutionPlugin = function(pluginId, opts) {
         var deferred = Q.defer(),
             context = this.client.getCurrentPluginContext(pluginId),
-            node = opts.node || this.client.getNode(this._currentNodeId),
-            name = node.getAttribute('name'),
-            onPluginInitiated,
-            method;
+            node = opts.node || this.client.getNode(this._currentNodeId);
 
         // Set the activeNode
         context.managerConfig.namespace = 'pipeline';
         context.managerConfig.activeNode = node.getId();
-        method = opts.useSecondary ? 'runBrowserPlugin' : 'runServerPlugin';
 
-        if (method === 'runServerPlugin' &&
-            this.client.getBranchStatus() !== this.client.CONSTANTS.BRANCH_STATUS.SYNC) {
+        if (this.client.getBranchStatus() !== this.client.CONSTANTS.BRANCH_STATUS.SYNC) {
 
             Materialize.toast('Cannot execute operations when client is out-of-sync', 2000);
             return;
         }
 
-        onPluginInitiated = (sender, event) => {
+        const onPluginInitiated = (sender, event) => {
             this.client.removeEventListener(this._client.CONSTANTS.PLUGIN_INITIATED, onPluginInitiated);
             this.client.setAttribute(node.getId(), 'executionId', event.executionId);
             deferred.resolve(event.executionId);
@@ -62,8 +57,9 @@ define([
             onPluginInitiated
         );
 
-        this.client[method](pluginId, context, (err, result) => {
-            var msg = err ? `${name} failed!` : `${name} executed successfully!`,
+        this.client.runServerPlugin(pluginId, context, (err, result) => {
+            const name = node.getAttribute('name');
+            let msg = err ? `${name} failed!` : `${name} executed successfully!`,
                 duration = err ? 4000 : 2000;
 
             // Check if it was canceled - if so, show that type of message

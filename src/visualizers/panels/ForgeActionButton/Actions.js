@@ -96,8 +96,8 @@ define([
                 // Only show if stopped!
                 return !this.isRunning();
             },
-            action: function(event) {
-                this.runExecutionPlugin(pluginId, {useSecondary: event.shiftKey});
+            action: function() {
+                this.runExecutionPlugin(pluginId);
             }
         };
     };
