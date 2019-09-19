@@ -31,10 +31,10 @@ define([
         return this.runExecutionPlugin('ExecutePipeline', {node: node});
     };
 
-    Execute.prototype.runExecutionPlugin = function(pluginId, opts={}) {
+    Execute.prototype.runExecutionPlugin = function(pluginId, activeNode) {
         var deferred = Q.defer(),
             context = this.client.getCurrentPluginContext(pluginId),
-            node = opts.node || this.client.getNode(this._currentNodeId);
+            node = activeNode || this.client.getNode(this._currentNodeId);
 
         // Set the activeNode
         context.managerConfig.namespace = 'pipeline';
