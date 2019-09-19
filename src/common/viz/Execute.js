@@ -31,7 +31,7 @@ define([
         return this.runExecutionPlugin('ExecutePipeline', {node: node});
     };
 
-    Execute.prototype.runExecutionPlugin = function(pluginId, opts) {
+    Execute.prototype.runExecutionPlugin = function(pluginId, opts={}) {
         var deferred = Q.defer(),
             context = this.client.getCurrentPluginContext(pluginId),
             node = opts.node || this.client.getNode(this._currentNodeId);
