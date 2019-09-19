@@ -183,10 +183,6 @@ define([
         return JSON.parse(this.getAttribute(node, 'jobInfo')).hash;
     };
 
-    ExecuteJob.prototype.onAbort = function () {
-        this.canceled = true;
-    };
-
     ExecuteJob.prototype.onAbort =
     ExecuteJob.prototype.onUserCancelDetected = function () {
         this.logger.info('Received Abort. Canceling jobs.');
