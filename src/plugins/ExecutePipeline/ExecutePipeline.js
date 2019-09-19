@@ -440,6 +440,7 @@ define([
                         (this.canceled ? 'canceled' : 'success')
                     )
                 );
+                this.delAttribute(this.activeNode, 'executionId');
 
                 this._finished = true;
                 this.resultMsg(msg);

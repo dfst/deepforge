@@ -325,9 +325,10 @@ define([
         const jobId = this.core.getPath(job);
         const status = err ? 'fail' : (this.canceled ? 'canceled' : 'success');
         const msg = err ? `${name} execution failed!` :
-                `${name} executed successfully!`;
+            `${name} executed successfully!`;
 
         this.setAttribute(job, 'status', status);
+        this.delAttribute(job, 'executionId');
         this.logger.info(`Setting ${name} (${jobId}) status to ${status}`);
         this.clearOldMetadata(job);
 
