@@ -8,7 +8,7 @@
     "src": ""
   },
   "disableServerSideExecution": false,
-  "disableBrowserSideExecution": false,
+  "disableBrowserSideExecution": true,
   "canBeAborted": true,
   "configStructure": [
       {
