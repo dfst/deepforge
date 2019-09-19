@@ -55,7 +55,7 @@ define([
             const path = require('path');
             const dirname = path.dirname(module.uri);
             const deploymentSettings = JSON.parse(requirejs('text!' + dirname + '/../../../config/components.json'));
-            _.extend(this.settings, deploymentSettings);
+            _.extend(this.settings, deploymentSettings[this.getComponentId()]);
         }
     };
 
