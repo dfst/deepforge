@@ -155,7 +155,7 @@
         "src": "panels/Footer/FooterPanel",
         "title": "Footer",
         "panel": "src/visualizers/panels/Footer",
-        "secondary": false,
+        "secondary": true,
         "widget": "src/visualizers/widgets/Footer"
       },
       "LogViewer": {
@@ -218,7 +218,7 @@
         "src": "panels/WorkerHeader/WorkerHeaderPanel",
         "title": "WorkerHeader",
         "panel": "src/visualizers/panels/WorkerHeader",
-        "secondary": false,
+        "secondary": true,
         "widget": "src/visualizers/widgets/WorkerHeader"
       },
       "ArtifactIndex": {

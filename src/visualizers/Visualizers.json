@@ -114,12 +114,6 @@
     "DEBUG_ONLY": false
   },
   {
-    "id": "WorkerHeader",
-    "title": "WorkerHeader",
-    "panel": "panels/WorkerHeader/WorkerHeaderPanel",
-    "DEBUG_ONLY": false
-  },
-  {
     "id": "ArtifactIndex",
     "title": "ArtifactIndex",
     "panel": "panels/ArtifactIndex/ArtifactIndexPanel",
