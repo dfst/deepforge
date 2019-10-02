@@ -1,10 +1,10 @@
-/*globals $, window, define, _, WebGMEGlobal */
+/*globals $, define, _, WebGMEGlobal */
 /*jshint browser: true*/
 
 define([
     'blob/BlobClient',
     'js/Utils/SaveToDisk',
-    './ConfigDialog',
+    'deepforge/viz/ConfigDialog',
     'js/Constants',
     'panel/FloatingActionButton/FloatingActionButton',
     'deepforge/viz/PipelineControl',
