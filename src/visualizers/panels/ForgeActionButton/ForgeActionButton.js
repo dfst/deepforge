@@ -402,8 +402,7 @@ define([
 
     // Export Pipeline Support
     ForgeActionButton.prototype.exportPipeline = async function() {
-        var deferred = Q.defer(),
-            pluginId = 'Export',
+        var pluginId = 'Export',
             metadata = WebGMEGlobal.allPluginsMetadata[pluginId],
             id = this._currentNodeId,
             node = this.client.getNode(id),
