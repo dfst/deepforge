@@ -400,8 +400,8 @@ define([
             .fail(err => this.logger.error(`Blob download failed: ${err}`));
     };
 
-    /// Export Pipeline Support
-    ForgeActionButton.prototype.exportPipeline = function() {
+    // Export Pipeline Support
+    ForgeActionButton.prototype.exportPipeline = async function() {
         var deferred = Q.defer(),
             pluginId = 'Export',
             metadata = WebGMEGlobal.allPluginsMetadata[pluginId],
@@ -475,26 +475,52 @@ define([
 
         // Try to get the extension options
         if (inputOpts.length || exportFormats.length > 1) {
-            configDialog.show(inputConfig, (allConfigs) => {
-                var context = this.client.getCurrentPluginContext(pluginId),
-                    exportFormat = allConfigs.FormatOptions.exportFormat,
-                    staticInputs = Object.keys(allConfigs[pluginId]).filter(input => allConfigs[pluginId][input]);
-
-                this.logger.debug('Exporting pipeline to format', exportFormat);
-                this.logger.debug('static inputs:', staticInputs);
-
-                context.managerConfig.namespace = 'pipeline';
-                context.pluginConfig = {
-                    format: exportFormat,
-                    staticInputs: staticInputs,
-                    extensionConfig: allConfigs.extensionConfig
-                };
-                return Q.ninvoke(this.client, 'runBrowserPlugin', pluginId, context)
-                    .then(deferred.resolve)
-                    .fail(deferred.reject);
+            inputConfig.configStructure.unshift({
+                name: 'staticInputs',
+                displayName: 'Static Artifacts',
+                valueType: 'section'
             });
+            if (exportFormats.length > 1) {
+                inputConfig.configStructure.push({
+                    name: 'exportFormatOptions',
+                    displayName: 'Export Options',
+                    valueType: 'section'
+                });
+                const valueItems = Object.keys(ExportFormatDict)
+                    .map(id => {
+                        const configStructure = ExportFormatDict[id].getConfigStructure ?
+                            ExportFormatDict[id].getConfigStructure() : [];
+                        return {id, configStructure};
+                    });
+
+                inputConfig.configStructure.push({
+                    name: 'exportFormat',
+                    displayName: 'Export Format',
+                    description: '',
+                    value: exportFormats[0],
+                    valueType: 'dict',
+                    valueItems: valueItems
+                });
+            }
+
+            const allConfigs = await configDialog.show(inputConfig);
+            const context = this.client.getCurrentPluginContext(pluginId);
+            const exportFormat = allConfigs[pluginId].exportFormat.id;
+            const staticInputs = Object.keys(allConfigs[pluginId])
+                .filter(input => input !== 'exportFormat' && allConfigs[pluginId][input]);
+
+            this.logger.debug('Exporting pipeline to format', exportFormat);
+            this.logger.debug('static inputs:', staticInputs);
+
+            context.managerConfig.namespace = 'pipeline';
+            context.pluginConfig = {
+                format: exportFormat,
+                staticInputs: staticInputs,
+                extensionConfig: allConfigs[pluginId].exportFormat.config
+            };
+            return await Q.ninvoke(this.client, 'runBrowserPlugin', pluginId, context);
         } else {  // no options - just run the plugin!
-            var context = this.client.getCurrentPluginContext(pluginId);
+            const context = this.client.getCurrentPluginContext(pluginId);
 
             this.logger.debug('Exporting pipeline to format', exportFormats[0]);
 
@@ -503,10 +529,8 @@ define([
                 format: exportFormats[0],
                 staticInputs: []
             };
-            return Q.ninvoke(this.client, 'runBrowserPlugin', pluginId, context);
+            return await Q.ninvoke(this.client, 'runBrowserPlugin', pluginId, context);
         }
-
-        return deferred.promise;
     };
 
     return ForgeActionButton;

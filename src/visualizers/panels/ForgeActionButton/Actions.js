@@ -233,7 +233,7 @@ define([
                             this.results.push(result);
                             this._updatePluginBtns();
                         })
-                        .fail(err => {
+                        .catch(err => {
                             this.logger.warn('Pipeline export failed:', err);
                             Materialize.toast(`Export failed: ${err}`, 4000);
                         });

@@ -1,20 +1,20 @@
 /* globals define, $*/
 define([
+    'q',
     'js/Dialogs/PluginConfig/PluginConfigDialog',
     'text!js/Dialogs/PluginConfig/templates/PluginConfigDialog.html',
-    'plugin/Export/Export/format',
     'css!./ConfigDialog.css'
 ], function(
+    Q,
     PluginConfigDialog,
     pluginConfigDialogTemplate,
-    ExportFormats
 ) {
     var SECTION_DATA_KEY = 'section',
         ATTRIBUTE_DATA_KEY = 'attribute',
-    //jscs:disable maximumLineLength
+        //jscs:disable maximumLineLength
         PLUGIN_CONFIG_SECTION_BASE = $('<div><fieldset><form class="form-horizontal" role="form"></form><fieldset></div>'),
         ENTRY_BASE = $('<div class="form-group"><div class="row"><label class="col-sm-4 control-label">NAME</label><div class="col-sm-8 controls"></div></div><div class="row description"><div class="col-sm-4"></div></div></div>'),
-    //jscs:enable maximumLineLength
+        //jscs:enable maximumLineLength
         DESCRIPTION_BASE = $('<div class="desc muted col-sm-8"></div>'),
         SECTION_HEADER = $('<h6 class="config-section-header">');
 
@@ -26,26 +26,11 @@ define([
 
     ConfigDialog.prototype = Object.create(PluginConfigDialog.prototype);
 
-    ConfigDialog.prototype.getFormatOptions = function() {
-        this._exportFormats = Object.keys(ExportFormats);
+    ConfigDialog.prototype.show = function(pluginMetadata) {
+        const deferred = Q.defer();
 
-        this._formatOptions = [];
-        if (this._exportFormats.length > 1) {
-            this._formatOptions.push({  // format options
-                name: 'exportFormat',
-                displayName: 'Export Format',
-                valueType: 'string',
-                value: this._exportFormats[0],
-                valueItems: this._exportFormats,
-                readOnly: false
-            });
-        }
-    };
-
-    ConfigDialog.prototype.show = function(pluginMetadata, callback) {
         this._pluginMetadata = pluginMetadata;
 
-        this.getFormatOptions();
         this._initDialog();
 
         this._dialog.on('shown', () => {
@@ -53,7 +38,7 @@ define([
         });
 
         this._btnSave.on('click', event => {
-            this.submit(callback);
+            this.submit(deferred.resolve);
             event.stopPropagation();
             event.preventDefault();
         });
@@ -63,10 +48,11 @@ define([
             if (event.keyCode === 13 && (event.ctrlKey || event.metaKey)) {
                 event.stopPropagation();
                 event.preventDefault();
-                this.submit(callback);
+                this.submit(deferred.resolve);
             }
         });
         this._dialog.modal('show');
+        return deferred.promise;
     };
 
     ConfigDialog.prototype._initDialog = function() {
@@ -84,44 +70,15 @@ define([
         iconEl.addClass('plugin-icon pull-left');
         this._modalHeader.prepend(iconEl);
         this._title = this._modalHeader.find('.modal-title');
-        this._title.text(this._pluginMetadata.id + ' ' + 'v' + this._pluginMetadata.version);
+        this._title.text(this._pluginMetadata.id + ' v' + this._pluginMetadata.version);
 
         // Generate the config options
-        var sectionHeader = SECTION_HEADER.clone();
-
-        sectionHeader.text('Static Artifacts');
-        this._divContainer.append(sectionHeader);
         this.generateConfigSection(this._pluginMetadata);
-
-        if (this._exportFormats.length > 1) {
-            this._divContainer.append($('<hr class="extension-config-divider">'));
-            sectionHeader = SECTION_HEADER.clone();
-            sectionHeader.text('Export Options');
-            this._divContainer.append(sectionHeader);
-
-            this.generateConfigSection({
-                id: 'FormatOptions',
-                configStructure: this._formatOptions
-            });
-            this._widgets.FormatOptions.exportFormat.el.find('select').on('change', event => {
-                var format = event.target.value;
-                // Update the ext config
-                this.updateExtConfig(format);
-            });
-        }
-
-        this.updateExtConfig(this._exportFormats[0]);
     };
 
     ConfigDialog.prototype.submit = function (callback) {
         var config = this._getAllConfigValues();
         this._dialog.modal('hide');
-
-        if (this._exportFormats.length === 1) {
-            config.FormatOptions = {
-                exportFormat: this._exportFormats[0]
-            };
-        }
         return callback(config);
     };
 
@@ -139,42 +96,28 @@ define([
         return settings;
     };
 
-    ConfigDialog.prototype.updateExtConfig = function (format) {
-        var extConfig = {
-            id: 'extensionConfig',
-            class: 'extension-config',
-            configStructure: ExportFormats[format].getConfigStructure ?
-                ExportFormats[format].getConfigStructure(this._node, this._client) : []
-        };
-        this._divContainer.find('.extension-config').remove();
-
-        if (extConfig.configStructure.length) {
-            this.generateConfigSection(extConfig);
-        }
+    ConfigDialog.prototype.generateConfigSection = function (metadata, htmlClass) {
+        const html = this.getConfigHtml(metadata, htmlClass);
+        this._divContainer.append(html);
     };
 
-    ConfigDialog.prototype.generateConfigSection = function (metadata) {
+    ConfigDialog.prototype.getConfigHtml = function (metadata, htmlClass) {
         var len = metadata.configStructure.length,
-            i,
-            el,
             pluginConfigEntry,
-            widget,
-            descEl,
-            containerEl,
-            pluginSectionEl = PLUGIN_CONFIG_SECTION_BASE.clone();
+            pluginSectionEl = PLUGIN_CONFIG_SECTION_BASE.clone(),
+            html = $('<div>', {class: htmlClass});
 
         pluginSectionEl.data(SECTION_DATA_KEY, metadata.id);
-        this._divContainer.append(pluginSectionEl);
-        containerEl = pluginSectionEl.find('.form-horizontal');
+        html.append(pluginSectionEl);
+        let containerEl = pluginSectionEl.find('.form-horizontal');
 
-        if (metadata.class) {
-            pluginSectionEl.addClass(metadata.class);
+        if (htmlClass) {
+            pluginSectionEl.addClass(htmlClass);
         }
 
         this._widgets[metadata.id] = {};
-        for (i = 0; i < len; i += 1) {
+        for (let i = 0; i < len; i += 1) {
             pluginConfigEntry = metadata.configStructure[i];
-            descEl = undefined;
 
             // Make sure not modify the global metadata.
             pluginConfigEntry = JSON.parse(JSON.stringify(pluginConfigEntry));
@@ -182,40 +125,136 @@ define([
                 pluginConfigEntry.readOnly = true;
             }
 
-            widget = this._propertyGridWidgetManager.getWidgetForProperty(pluginConfigEntry);
-            this._widgets[metadata.id][pluginConfigEntry.name] = widget;
+            const entry = this.getEntryForProperty(pluginConfigEntry);
+            if (pluginConfigEntry.valueType === 'section') {
+                if (i > 0) {
+                    const {name} = pluginConfigEntry;
+                    html.append($(`<hr class="${name}-config-divider">`));
+                }
+                html.append(entry.el);
+                const pluginSectionEl = PLUGIN_CONFIG_SECTION_BASE.clone();
+                pluginSectionEl.data(SECTION_DATA_KEY, name);
+                containerEl = pluginSectionEl.find('.form-horizontal');
+                html.append(pluginSectionEl);
+            } else {
+                containerEl.append(entry.el);
+                this._widgets[metadata.id][pluginConfigEntry.name] = entry.widget;
+            }
+        }
+        return html;
+    };
 
-            el = ENTRY_BASE.clone();
-            el.data(ATTRIBUTE_DATA_KEY, pluginConfigEntry.name);
+    ConfigDialog.prototype.getEntryForProperty = function (configEntry) {
+        let entry = null;
+        if (ConfigDialog.ENTRIES[configEntry.valueType]) {
+            entry = ConfigDialog.ENTRIES[configEntry.valueType].call(this, configEntry);
+        } else {
+            const widget = this.getWidgetForProperty(configEntry);
+            const el = ENTRY_BASE.clone();
+            let descEl;
+            el.data(ATTRIBUTE_DATA_KEY, configEntry.name);
+            el.find('label.control-label').text(configEntry.displayName);
 
-            el.find('label.control-label').text(pluginConfigEntry.displayName);
-
-            if (pluginConfigEntry.description && pluginConfigEntry.description !== '') {
+            if (configEntry.description && configEntry.description !== '') {
                 descEl = descEl || DESCRIPTION_BASE.clone();
-                descEl.text(pluginConfigEntry.description);
+                descEl.text(configEntry.description);
             }
 
-            if (pluginConfigEntry.minValue !== undefined &&
-                pluginConfigEntry.minValue !== null &&
-                pluginConfigEntry.minValue !== '') {
+            if (configEntry.minValue !== undefined &&
+                configEntry.minValue !== null &&
+                configEntry.minValue !== '') {
                 descEl = descEl || DESCRIPTION_BASE.clone();
-                descEl.append(' The minimum value is: ' + pluginConfigEntry.minValue + '.');
+                descEl.append(' The minimum value is: ' + configEntry.minValue + '.');
             }
 
-            if (pluginConfigEntry.maxValue !== undefined &&
-                pluginConfigEntry.maxValue !== null &&
-                pluginConfigEntry.maxValue !== '') {
+            if (configEntry.maxValue !== undefined &&
+                configEntry.maxValue !== null &&
+                configEntry.maxValue !== '') {
                 descEl = descEl || DESCRIPTION_BASE.clone();
-                descEl.append(' The maximum value is: ' + pluginConfigEntry.maxValue + '.');
+                descEl.append(' The maximum value is: ' + configEntry.maxValue + '.');
             }
 
             el.find('.controls').append(widget.el);
             if (descEl) {
                 el.find('.description').append(descEl);
             }
-
-            containerEl.append(el);
+            entry = {widget, el};
         }
+        entry.id = configEntry.name;
+        return entry;
+    };
+
+    ConfigDialog.prototype.getWidgetForProperty = function (configEntry) {
+        if (ConfigDialog.WIDGETS[configEntry.valueType]) {
+            return ConfigDialog.WIDGETS[configEntry.valueType].call(this, configEntry);
+        } else {
+            return this._propertyGridWidgetManager.getWidgetForProperty(configEntry);
+        }
+    };
+
+    ConfigDialog.WIDGETS = {};
+    ConfigDialog.ENTRIES = {};
+    ConfigDialog.ENTRIES.section = function(configEntry) {
+        const sectionHeader = SECTION_HEADER.clone();
+        sectionHeader.text(configEntry.displayName);
+        return {el: sectionHeader};
+    };
+
+    ConfigDialog.ENTRIES.dict = function(configEntry) {
+        const itemIds = configEntry.valueItems.map(item => item.id);
+        const configForKeys = {
+            name: configEntry.name,
+            displayName: configEntry.displayName,
+            value: itemIds[0],
+            valueType: 'string',
+            valueItems: itemIds
+        };
+        const selector = this.getEntryForProperty(configForKeys);
+        const widget = {active: itemIds[0]};
+        selector.el.find('select').on('change', event => {
+            const {value} = event.target;
+            const oldEntries = entriesForItem[widget.active];
+            oldEntries.forEach(entry => entry.el.css('display', 'none'));
+
+            widget.active = value;
+            entriesForItem[widget.active]
+                .forEach(entry => entry.el.css('display', ''));
+        });
+
+        widget.el = $('<div>', {class: configEntry.name});
+        widget.getValue = () => {
+            const id = widget.active;
+            const config = {};
+            entriesForItem[id].forEach(entry => {
+                if (entry.widget) {
+                    config[entry.id] = entry.widget.getValue();
+                }
+            });
+            return {id, config};
+        };
+
+        widget.el.append(selector.el);
+
+        const entriesForItem = {};
+        for (let i = configEntry.valueItems.length; i--;) {
+            const valueItem = configEntry.valueItems[i];
+            const entries = valueItem.configStructure
+                .map(item => {
+                    const entry = this.getEntryForProperty(item);
+                    return entry;
+                });
+
+            entries.forEach(entry => {
+                if (i > 0) {
+                    entry.el.css('display', 'none');
+                }
+                widget.el.append(entry.el);
+            });
+
+            entriesForItem[valueItem.id] = entries;
+        }
+
+        return {widget, el: widget.el};
     };
 
     return ConfigDialog;
