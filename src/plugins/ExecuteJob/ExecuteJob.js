@@ -73,7 +73,6 @@ define([
         this.logManager = null;
     };
 
-    // TODO: Update plugin metadata for the compute options
     ExecuteJob.metadata = pluginMetadata;
     ExecuteJob.HEARTBEAT_INTERVAL = 2500;
 
