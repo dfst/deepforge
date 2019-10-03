@@ -1,5 +1,6 @@
 {
     "name": "WebGME Executor Framework",
     "dashboard": "./dashboard/index",
-    "client": "./Client"
+    "client": "./Client",
+    "configStructure": []
 }

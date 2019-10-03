@@ -15,13 +15,13 @@ define([
         this.clientPath = client || './Client';
     };
 
-    ComputeBackend.prototype.getClient = function(logger) {
+    ComputeBackend.prototype.getClient = function(logger, config) {
         if (require.isBrowser) {
             throw new Error('Compute clients cannot be loaded in the browser.');
         }
 
         const Client = requirejs(`deepforge/compute/backends/${this.id}/${this.clientPath}`);
-        return new Client(logger);
+        return new Client(logger, config);
     };
 
     ComputeBackend.prototype.getDashboard = async function() {

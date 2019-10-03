@@ -12,15 +12,8 @@ function(
 ) {
     const Compute = {};
 
-    Compute.getBackend = function(id) {
-        id = id.toLowerCase();
-        if (!COMPUTE_BACKENDS.includes(id)) {
-            throw new Error(`Compute backend not found: ${id}`);
-        }
-
-        const relativePath = `backends/${id}/metadata.json`;
-        const metadata = JSON.parse(requirejs(`text!deepforge/compute/${relativePath}`));
-        return new ComputeBackend(id, metadata);
+    Compute.getComponentId = function() {
+        return 'Compute';
     };
 
     Compute.getAvailableBackends = function() {
@@ -41,8 +34,21 @@ function(
         return settings.backends;
     };
 
-    Compute.getComponentId = function() {
-        return 'Compute';
+    Compute.getBackend = function(id) {
+        const metadata = this.getMetadata(id);
+        return new ComputeBackend(id, metadata);
+    };
+
+    Compute.getMetadata = function(id) {
+        id = id.toLowerCase();
+        if (!COMPUTE_BACKENDS.includes(id)) {
+            throw new Error(`Compute backend not found: ${id}`);
+        }
+
+        const relativePath = `backends/${id}/metadata.json`;
+        const metadata = JSON.parse(requirejs(`text!deepforge/compute/${relativePath}`));
+        metadata.id = id;
+        return metadata;
     };
 
     return Compute;
