@@ -102,10 +102,12 @@ define([
      */
     ExecutePipeline.prototype.main = async function (callback) {
 
-        this.initRun();
         if (!this.META.Pipeline) {
             return callback(new Error('Incorrect namespace. Expected to be executed in the "pipeline" namespace'));
         }
+
+        this.configureCompute();
+        this.initRun();
 
         if (this.core.isTypeOf(this.activeNode, this.META.Pipeline)) {
             // If starting with a pipeline, we will create an Execution first

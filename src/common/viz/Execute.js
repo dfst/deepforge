@@ -1,17 +1,21 @@
-/* globals define */
+/* globals define, WebGMEGlobal */
 // Mixin for executing jobs and pipelines
 define([
     'q',
+    'deepforge/compute/index',
+    'deepforge/viz/ConfigDialog',
     'deepforge/api/ExecPulseClient',
     'deepforge/api/JobOriginClient',
     'deepforge/Constants',
-    'panel/FloatingActionButton/styles/Materialize'
+    'panel/FloatingActionButton/styles/Materialize',
 ], function(
     Q,
+    Compute,
+    ConfigDialog,
     ExecPulseClient,
     JobOriginClient,
     CONSTANTS,
-    Materialize
+    Materialize,
 ) {
 
     var Execute = function(client, logger) {
@@ -24,27 +28,51 @@ define([
     };
 
     Execute.prototype.executeJob = function(node) {
-        return this.runExecutionPlugin('ExecuteJob', {node: node});
+        return this.runExecutionPlugin('ExecuteJob', node);
     };
 
     Execute.prototype.executePipeline = function(node) {
-        return this.runExecutionPlugin('ExecutePipeline', {node: node});
+        return this.runExecutionPlugin('ExecutePipeline', node);
     };
 
-    Execute.prototype.runExecutionPlugin = function(pluginId, activeNode) {
+    Execute.prototype.runExecutionPlugin = async function(pluginId, activeNode) {
         var deferred = Q.defer(),
             context = this.client.getCurrentPluginContext(pluginId),
             node = activeNode || this.client.getNode(this._currentNodeId);
-
-        // Set the activeNode
-        context.managerConfig.namespace = 'pipeline';
-        context.managerConfig.activeNode = node.getId();
 
         if (this.client.getBranchStatus() !== this.client.CONSTANTS.BRANCH_STATUS.SYNC) {
 
             Materialize.toast('Cannot execute operations when client is out-of-sync', 2000);
             return;
         }
+
+        context.managerConfig.namespace = 'pipeline';
+        context.managerConfig.activeNode = node.getId();
+
+        const configDialog = new ConfigDialog(this.client, this._currentNodeId);
+        const metadata = JSON.parse(JSON.stringify(WebGMEGlobal.allPluginsMetadata[pluginId]));
+        metadata.configStructure.unshift({
+            name: 'basicHeader',
+            displayName: 'Basic Options',
+            valueType: 'section'
+        });
+        metadata.configStructure.push({
+            name: 'computeHeader',
+            displayName: 'Compute Options',
+            valueType: 'section'
+        });
+        metadata.configStructure.push({
+            name: 'compute',
+            displayName: 'Compute',
+            description: 'Computational resources to use for execution.',
+            valueType: 'dict',
+            value: Compute.getBackend(Compute.getAvailableBackends()[0]).name,
+            valueItems: Compute.getAvailableBackends()
+                .map(id => Compute.getMetadata(id)),
+        });
+
+        const allConfigs = await configDialog.show(metadata);
+        context.pluginConfig = allConfigs[pluginId];
 
         const onPluginInitiated = (sender, event) => {
             this.client.removeEventListener(this._client.CONSTANTS.PLUGIN_INITIATED, onPluginInitiated);

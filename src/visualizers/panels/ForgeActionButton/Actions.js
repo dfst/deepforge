@@ -238,6 +238,14 @@ define([
                             Materialize.toast(`Export failed: ${err}`, 4000);
                         });
                 }
+            },
+            {
+                name: 'Execute Pipeline',
+                icon: 'play_arrow',
+                priority: 1,
+                action: function() {
+                    return this.executePipeline();
+                }
             }
         ],
         MyUtilities_META: [
