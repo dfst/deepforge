@@ -22,7 +22,19 @@
         MemoryStorage.prototype.putFile = async function(filename, content) {
             FILES[filename] = content;
             console.log('storing', filename, content);
-            return this.createDataInfo(filename, filename);
+            return this.createDataInfo(filename);
+        };
+
+        MemoryStorage.prototype.getMetadata = async function(dataInfo) {
+            //const {data} = dataInfo;
+            return {
+                size: 1000  // arbitrary as this is only for testing
+            };
+        };
+
+        MemoryStorage.prototype.getDownloadURL = async function(dataInfo) {
+            const {data} = dataInfo;
+            return data;  // dummy url
         };
 
         return MemoryStorage;

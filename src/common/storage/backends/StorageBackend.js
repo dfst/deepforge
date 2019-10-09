@@ -1,4 +1,4 @@
-/* globals define, requirejs */
+/* globals define */
 define([
     'module',
     'q',

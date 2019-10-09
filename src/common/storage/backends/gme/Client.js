@@ -35,7 +35,17 @@ define([
 
     GMEStorage.prototype.putFile = async function(filename, content) {
         const hash = await this.blobClient.putFile(filename, content);
-        return this.createDataInfo(filename, hash);
+        return this.createDataInfo(hash);
+    };
+
+    GMEStorage.prototype.getMetadata = async function(dataInfo) {
+        const {data} = dataInfo;
+        return await this.blobClient.getMetadata(data);
+    };
+
+    GMEStorage.prototype.getDownloadURL = async function(dataInfo) {
+        const {data} = dataInfo;
+        return this.blobClient.getDownloadURL(data);
     };
 
     return GMEStorage;

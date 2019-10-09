@@ -1,9 +1,17 @@
 /* globals define */
-define([], function() {
+define([
+    'client/logger'
+], function(
+    Logger
+) {
     const StorageClient = function(id, name, logger) {
         this.id = id;
         this.name = name;
-        this.logger = logger.fork('storage');
+        if (!logger) {
+            // FIXME: actually get the config from the gmeConfig
+            logger = Logger.create(`gme:storage:${id}`, {level: 'debug'});
+        }
+        this.logger = logger.fork(`storage:${id}`);
     };
 
     StorageClient.prototype.getFile = async function() {
@@ -14,8 +22,17 @@ define([], function() {
         throw new Error(`File upload not supported by ${this.name}`);
     };
 
-    StorageClient.prototype.createDataInfo = function(filename, data) {
-        return {backend: this.id, filename, data};
+    StorageClient.prototype.getDownloadURL = async function() {
+        // TODO: Remove this in favor of directly downloading w/ getFile, etc
+        throw new Error(`getDownloadURL not implemented for ${this.name}`);
+    };
+
+    StorageClient.prototype.getMetadata = async function() {
+        throw new Error(`getDownloadURL not implemented for ${this.name}`);
+    };
+
+    StorageClient.prototype.createDataInfo = function(data) {
+        return {backend: this.id, data};
     };
 
     return StorageClient;

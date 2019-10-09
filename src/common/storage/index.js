@@ -35,11 +35,11 @@
         };
 
         Storage.getBackend = function(id) {
-            const metadata = this.getMetadata(id);
+            const metadata = this.getStorageMetadata(id);
             return new StorageBackend(id, metadata);
         };
 
-        Storage.getMetadata = function(id) {
+        Storage.getStorageMetadata = function(id) {
             id = id.toLowerCase();
             if (!STORAGE_BACKENDS.includes(id)) {
                 throw new Error(`Storage backend not found: ${id}`);
@@ -51,17 +51,16 @@
             return metadata;
         };
 
-        Storage.transfer = async function(dataInfo, id) {
-            // TODO: Should dataInfo include the filename?
-            const {filename} = dataInfo;
-            //if (dataInfo.backend === id) return;  // TODO: Should we be able to transfer between different locations in the same backend?
+        Storage.getMetadata = async function(logger, dataInfo) {
+            const backend = this.getBackend(dataInfo.backend);
+            const client = await backend.getClient(logger);
+            return client.getMetadata(dataInfo);
+        };
 
-            const srcStorage = this.getBackend(dataInfo.backend).getClient();
-            const dstStorage = this.getBackend(id).getClient();
-            const content = await srcStorage.getFile(dataInfo);
-            // TODO: What should the filename be?
-            // TODO: It might be nice to stream in the future...
-            return await dstStorage.putFile(filename, content);
+        Storage.getDownloadURL = async function(logger, dataInfo) {
+            const backend = this.getBackend(dataInfo.backend);
+            const client = await backend.getClient(logger);
+            return client.getDownloadURL(dataInfo);
         };
 
         return Storage;
