@@ -88,8 +88,9 @@ define([
     ImportArtifact.prototype.transfer = async function (hash, dstId) {
         const metadata = await this.blobClient.getMetadata(hash);
         const filename = metadata.name;
+
         const gmeStorageClient = await Storage.getBackend('gme').getClient(this.logger);
-        const dataInfo = gmeStorageClient.createDataInfo(filename, hash);
+        const dataInfo = gmeStorageClient.createDataInfo(hash);
         const content = await gmeStorageClient.getFile(dataInfo);
         const dstStorage = await Storage.getBackend(dstId).getClient(this.logger);
         return await dstStorage.putFile(filename, content);
