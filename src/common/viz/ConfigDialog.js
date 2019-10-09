@@ -18,10 +18,9 @@ define([
         DESCRIPTION_BASE = $('<div class="desc muted col-sm-8"></div>'),
         SECTION_HEADER = $('<h6 class="config-section-header">');
 
-    var ConfigDialog = function(client, nodeId) {
+    var ConfigDialog = function(client) {
         PluginConfigDialog.call(this, {client: client});
         this._widgets = {};
-        this._node = this._client.getNode(nodeId);
     };
 
     ConfigDialog.prototype = Object.create(PluginConfigDialog.prototype);

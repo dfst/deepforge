@@ -467,7 +467,7 @@ define([
         }).sort((a, b) => a.displayName < b.displayName ? -1 : 1);
 
         var exportFormats = Object.keys(ExportFormatDict),
-            configDialog = new ConfigDialog(this.client, this._currentNodeId),
+            configDialog = new ConfigDialog(this.client),
             inputConfig = _.extend({}, metadata);
 
         inputConfig.configStructure = inputOpts;
