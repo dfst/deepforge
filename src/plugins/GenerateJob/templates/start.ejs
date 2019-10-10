@@ -266,8 +266,8 @@ requirejs([
             job.on('close', async code => {
                 exitCode = code;
                 log('script finished w/ exit code:', code);
-                const results = JSON.parse(fs.readFileSync('result-types.json'));
                 if (exitCode === 0) {
+                    const results = JSON.parse(fs.readFileSync('result-types.json'));
                     const client = await Storage.getBackend('gme').getClient(logger);
                     const outputNames = Object.keys(results);
 
@@ -278,8 +278,8 @@ requirejs([
                         const type = results[filename];
                         results[filename] = {type, dataInfo};
                     }
+                    fs.writeFileSync('results.json', JSON.stringify(results));
                 }
-                fs.writeFileSync('results.json', JSON.stringify(results));
                 checkFinished();
             });
         })
