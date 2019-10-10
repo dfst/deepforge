@@ -63,6 +63,18 @@
             return client.getDownloadURL(dataInfo);
         };
 
+        Storage.getFile = async function(logger, dataInfo) {
+            const backend = this.getBackend(dataInfo.backend);
+            const client = await backend.getClient(logger);
+            return client.getFile(dataInfo);
+        };
+
+        Storage.getCachePath = async function(logger, dataInfo) {
+            const backend = this.getBackend(dataInfo.backend);
+            const client = await backend.getClient(logger);
+            return await client.getCachePath(dataInfo);
+        };
+
         return Storage;
     });
 })();

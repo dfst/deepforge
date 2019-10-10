@@ -48,11 +48,15 @@ var startExecutor = function() {
     process.on('uncaughtException', cleanUp);
 
     // Start the executor
+    const env = Object.assign({}, process.env);
+    env.DEEPFORGE_ROOT = path.join(__dirname, '..');
+
+    const options = {env: env};
     var execJob = spawn('node', [
         executorSrc,
         workerConfigPath,
         workerTmp
-    ]);
+    ], options);
     execJob.stdout.pipe(process.stdout);
     execJob.stderr.pipe(process.stderr);
 };

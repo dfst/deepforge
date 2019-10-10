@@ -37,6 +37,10 @@
             return data;  // dummy url
         };
 
+        MemoryStorage.prototype.getCachePath = async function(dataInfo) {
+            return dataInfo.data;
+        };
+
         return MemoryStorage;
     });
 })();

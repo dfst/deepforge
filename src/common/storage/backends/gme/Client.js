@@ -48,5 +48,13 @@ define([
         return this.blobClient.getDownloadURL(data);
     };
 
+    GMEStorage.prototype.getCachePath = async function(dataInfo) {
+        const metadata = await this.getMetadata(dataInfo);
+        const hash = metadata.content;
+        const dir = hash.substring(0, 2);
+        const filename = hash.substring(2);
+        return `${this.id}/${dir}/${filename}`;
+    };
+
     return GMEStorage;
 });

@@ -9,20 +9,34 @@ var spawn = require('child_process').spawn,
 
 // Create the stderr only logger
 ['error', 'warn', 'info', 'log', 'debug'].forEach(method => logger[method] = log);
+logger.fork = () => logger;
 
 // Get the BlobClient...
 var COMMAND_PREFIX = '<%= CONSTANTS.START_CMD %>',
     IMAGE = '<%= CONSTANTS.IMAGE.PREFIX %>',
-    requirejs = require('webgme').requirejs,
     remainingImageCount = 0,
     exitCode;
 
+const assert = require('assert');
+const cwd = process.cwd();
+
+assert(process.env.DEEPFORGE_ROOT, 'Must have DEEPFORGE_ROOT environment variable set.');
+process.chdir(process.env.DEEPFORGE_ROOT);
+const webgme = require('webgme');
+const gmeConfig = require(process.env.DEEPFORGE_ROOT + '/config');
+webgme.addToRequireJsPaths(gmeConfig);
+process.chdir(cwd);
+
+const requirejs = webgme.requirejs;
+
 requirejs([
     'q',
-    'blob/BlobClient'
+    'blob/BlobClient',
+    'deepforge/storage/index',
 ], function(
     Q,
-    BlobClient
+    BlobClient,
+    Storage,
 ) {
     var url = process.env.ORIGIN_URL || 'http://127.0.0.1:8888',
         CACHE_DIR = process.env.DEEPFORGE_WORKER_CACHE || './worker-cache',
@@ -50,14 +64,19 @@ requirejs([
     };
 
 
-    var makeIfNeeded = function(dir) {
+    var makeIfNeeded = async function(dir) {
         var deferred = Q.defer(),
             job;
 
         log(`makeIfNeeded: ${JSON.stringify(dir)}`);
+        if (path.dirname(dir) !== dir) {
+            await makeIfNeeded(path.dirname(dir));
+        }
+
         fs.lstat(dir, (err, stat) => {
 
             if (err || !stat.isDirectory()) {
+            // TODO: Change this to mkdir -p
                 fs.mkdir(dir, err => {
                     if (err) {
                         return deferred.reject(err);
@@ -137,18 +156,13 @@ requirejs([
         process.stdout.write(result.join('\n'));
     };
 
-    var createCacheDir = function(hash) {
-        var dir = hash.substring(0, 2);
-        return makeIfNeeded(CACHE_DIR + '/' + dir);
+    var createCacheDir = function(cachePath) {
+        return makeIfNeeded(path.dirname(cachePath));
     };
 
-    var dataCachePath = function(hash) {
-        var dir = hash.substring(0, 2),
-            filename = hash.substring(2),
-            cachePath = `${CACHE_DIR}/${dir}/${filename}`;
-
-        // Get the path for data in the cache
-        return cachePath;
+    var dataCachePath = async function(dataInfo) {
+        const relPath = await Storage.getCachePath(logger, dataInfo);
+        return `${CACHE_DIR}/${relPath}`;
     };
 
     var makeSymLink = function(target, src) {
@@ -174,11 +188,11 @@ requirejs([
         return deferred.promise;
     };
 
-    var getData = function(ipath, hashes) {
+    var getData = async function(ipath, dataInfo) {
         // Download the data and put it in the given path
         var deferred = Q.defer(),
             inputName = ipath.split('/')[1],
-            cachePath = dataCachePath(hashes.cache);
+            cachePath = await dataCachePath(dataInfo);
 
         
         logger.debug(`retrieving ${ipath}`);
@@ -189,8 +203,8 @@ requirejs([
                 return makeSymLink(cachePath, ipath).then(deferred.resolve);
             }
 
-            createCacheDir(hashes.cache)
-                .then(() => blobClient.getObject(hashes.req))
+            createCacheDir(cachePath)
+                .then(() => Storage.getFile(logger, dataInfo))
                 .then(buffer => fs.writeFile(cachePath, buffer, (err, result) => {
                     if (err) {
                         logger.error('Retrieving ' + ipath + ' failed!');
@@ -200,7 +214,7 @@ requirejs([
                     logger.info('Retrieved ' + ipath);
                     return makeSymLink(cachePath, ipath).then(deferred.resolve);
                 }))
-                .fail(err => deferred.reject(`Could not retrieve "${inputName}" (${err})`));
+                .catch(err => deferred.reject(`Could not retrieve "${inputName}" (${err})`));
         });
 
         return deferred.promise;
@@ -239,16 +253,16 @@ requirejs([
     };
 
     process.on('exit', () => {
-        log('received "exit" event')
+        log('received "exit" event');
         cleanup();
     });
     process.on('SIGINT', function() {
-        log('received "SIGINT" event')
+        log('received "SIGINT" event');
         cleanup();
         process.exit(130);
     });
     process.on('uncaughtException', err => {
-        log('received "uncaughtException" event')
+        log('received "uncaughtException" event');
         log(err);
         cleanup();
     });
@@ -268,7 +282,7 @@ requirejs([
                 checkFinished();
             });
         })
-        .fail(err => {
+        .catch(err => {
             console.log(`Data retrieval failed: ${err}`);
             process.exit(1);
         });
