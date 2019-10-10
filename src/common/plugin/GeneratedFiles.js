@@ -1,8 +1,10 @@
 /*globals define*/
 define([
     'common/util/assert',
+    'deepforge/storage/index',
 ], function(
-    assert
+    assert,
+    Storage,
 ) {
 
     const GeneratedFiles = function(blobClient) {
@@ -53,8 +55,19 @@ define([
     GeneratedFiles.prototype.save = async function (artifactName) {
         const artifact = this.blobClient.createArtifact(artifactName);
 
-        // TODO: Transfer the data files to the blob and fetch them
-        //await artifact.addObjectHashes(this._data);  // TODO: Update this
+        // Transfer the data files to the blob and create an artifact
+        const userAssets = this.getUserAssets();
+        if (userAssets.length) {
+            const objectHashes = {};
+            for (let i = userAssets.length; i--;) {
+                const [filepath, dataInfo] = userAssets[i];
+                const contents = await Storage.getFile(null, dataInfo);
+                const filename = filepath.split('/').pop();
+                const hash = await this.blobClient.putFile(filename, contents);
+                objectHashes[filepath] = hash;
+            }
+            await artifact.addObjectHashes(objectHashes);
+        }
         await artifact.addFiles(this._files);
         return await artifact.save();
     };
