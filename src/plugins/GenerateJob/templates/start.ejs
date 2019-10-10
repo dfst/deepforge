@@ -1,21 +1,21 @@
-// A wrapper for the torch script which:
+// A wrapper for the worker script which:
 //   - merges stdout, stderr
 //   - receives some commands and uploads intermediate data
-var spawn = require('child_process').spawn,
-    fs = require('fs'),
-    path = require('path'),
-    log = console.error,
-    logger = {};
+const spawn = require('child_process').spawn;
+const fs = require('fs');
+const rm_rf = require('rimraf');
+const path = require('path');
+const COMMAND_PREFIX = '<%= CONSTANTS.START_CMD %>';
+const IMAGE = '<%= CONSTANTS.IMAGE.PREFIX %>';
+const log = console.error;
+const logger = {};
 
 // Create the stderr only logger
 ['error', 'warn', 'info', 'log', 'debug'].forEach(method => logger[method] = log);
 logger.fork = () => logger;
 
-// Get the BlobClient...
-var COMMAND_PREFIX = '<%= CONSTANTS.START_CMD %>',
-    IMAGE = '<%= CONSTANTS.IMAGE.PREFIX %>',
-    remainingImageCount = 0,
-    exitCode;
+let remainingImageCount = 0;
+let exitCode;
 
 const assert = require('assert');
 const cwd = process.cwd();
@@ -39,7 +39,7 @@ requirejs([
     Storage,
 ) {
     var url = process.env.ORIGIN_URL || 'http://127.0.0.1:8888',
-        CACHE_DIR = process.env.DEEPFORGE_WORKER_CACHE || './worker-cache',
+        workerCacheDir = process.env.DEEPFORGE_WORKER_CACHE,
         protocol = url.split('://').shift(),
         address,
         port = (url.split(':') || ['80']).pop();
@@ -48,14 +48,24 @@ requirejs([
     address = url.replace(protocol + '://', '')
         .replace(':' + port, '');
 
-    // Create CACHE_DIR if it doesn't exist
-    var prepareCache = function() {
-        var dirs = CACHE_DIR.replace(/\/$/, '').split('/'),
-            cacheParent;
+    // Create workerCacheDir if it doesn't exist
+    var prepareCache = async function() {
+        if (!workerCacheDir) {
+            workerCacheDir = './worker-cache';
+            const blobDir = process.env.DEEPFORGE_BLOB_DIR;
+            const isSharingBlob = process.env.DEEPFORGE_WORKER_USE_BLOB === 'true';
+            if (isSharingBlob && blobDir) {
+                await makeIfNeeded(workerCacheDir);
 
-        dirs.pop();
-        cacheParent = dirs.join('/');
-        return makeIfNeeded(cacheParent).then(() => makeIfNeeded(CACHE_DIR));
+                const blobContentDir = path.join(blobDir, 'wg-content');
+                const gmeStorageCache = path.join(workerCacheDir, 'gme');
+                rm_rf.sync(path.join(workerCacheDir, 'gme'));
+                await symlink(blobContentDir, gmeStorageCache);
+            }
+        } else {
+            await makeIfNeeded(workerCacheDir);
+        }
+
     };
 
     var prepareInputsOutputs = function() {
@@ -162,30 +172,7 @@ requirejs([
 
     var dataCachePath = async function(dataInfo) {
         const relPath = await Storage.getCachePath(logger, dataInfo);
-        return `${CACHE_DIR}/${relPath}`;
-    };
-
-    var makeSymLink = function(target, src) {
-        var deferred = Q.defer(),
-            job;
-
-        src = path.resolve(src);
-        target = path.resolve(target);
-        fs.stat(src, err => {
-            if (err && err.code === 'ENOENT') {
-                logger.debug(`creating symlink "ln -s ${target} ${src}"`);
-                job = spawn('ln', ['-s', target, src || '.']);
-                job.on('exit', code => {
-                    if (code) {
-                        deferred.reject(`Could not create symlink ${target} -> ${src||'.'}`);
-                        return;
-                    }
-                    deferred.resolve();
-                });
-            }
-            deferred.resolve();
-        });
-        return deferred.promise;
+        return `${workerCacheDir}/${relPath}`;
     };
 
     var getData = async function(ipath, dataInfo) {
@@ -200,7 +187,7 @@ requirejs([
             // Check if the data exists in the cache
             if (!err && cacheStats.isFile()) {
             logger.info(`${inputName} already cached. Skipping retrieval from blob`);
-                return makeSymLink(cachePath, ipath).then(deferred.resolve);
+                return symlink(cachePath, ipath).then(deferred.resolve);
             }
 
             createCacheDir(cachePath)
@@ -212,7 +199,7 @@ requirejs([
                     }
                     // Create the symlink
                     logger.info('Retrieved ' + ipath);
-                    return makeSymLink(cachePath, ipath).then(deferred.resolve);
+                    return symlink(cachePath, ipath).then(deferred.resolve);
                 }))
                 .catch(err => deferred.reject(`Could not retrieve "${inputName}" (${err})`));
         });
@@ -300,4 +287,29 @@ requirejs([
             console.log(`Data retrieval failed: ${err}`);
             process.exit(1);
         });
+
+    function symlink(target, src) {
+        var deferred = Q.defer(),
+            job;
+
+        src = path.resolve(src);
+        target = path.resolve(target);
+        fs.stat(src, err => {
+            if (err && err.code === 'ENOENT') {
+                logger.debug(`creating symlink "ln -s ${target} ${src}"`);
+                console.log(`creating symlink "ln -s ${target} ${src}"`);
+                job = spawn('ln', ['-s', target, src || '.']);
+                job.on('exit', code => {
+                    if (code) {
+                        deferred.reject(`Could not create symlink ${target} -> ${src||'.'}`);
+                        return;
+                    }
+                    deferred.resolve();
+                });
+            }
+            deferred.resolve();
+        });
+        return deferred.promise;
+    };
+
 });
