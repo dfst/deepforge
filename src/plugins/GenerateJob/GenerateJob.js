@@ -157,8 +157,8 @@ define([
                 resultPatterns: [STDOUT_FILE]
             },
             {
-                name: 'result-types',
-                resultPatterns: ['result-types.json']
+                name: 'results',
+                resultPatterns: ['results.json']
             },
             {
                 name: name + '-all-files',

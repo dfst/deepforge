@@ -629,58 +629,34 @@ define([
     };
 
     ExecuteJob.prototype.onDistOperationComplete = async function (node, fileHashes) {
-        const opName = this.getAttribute(node, 'name');
-        const resultTypes = await this.getResultTypes(fileHashes);
-        let nodeId = this.core.getPath(node),
-            outputMap = {},
-            outputs;
+        const results = await this.getResults(fileHashes);
+        const nodeId = this.core.getPath(node);
+        const outputPorts = await this.getOutputs(node);
+        const outputs = outputPorts.map(tuple => [tuple[0], tuple[2]]);
 
+        for (let i = outputs.length; i--;) {
+            const [name, node] = outputs[i];
+            const {type, dataInfo} = results[name];
 
-        // Match the output names to the actual nodes
-        // Create an array of [name, node]
-        // For now, just match by type. Later we may use ports for input/outputs
-        // Store the results in the outgoing ports
-        return this.getOutputs(node)
-            .then(outputPorts => {
-                outputs = outputPorts.map(tuple => [tuple[0], tuple[2]]);
-                outputs.forEach(output => outputMap[output[0]] = output[1]);
+            if (type) {
+                this.setAttribute(node, 'type', type);
+                this.logger.info(`Setting ${nodeId} data type to ${type}`);
+            } else {
+                this.logger.warn(`No data type found for ${nodeId}`);
+            }
 
-                // this should not be in directories -> flatten the data!
-                const hashes = outputs.map(tuple => {  // [ name, node ]
-                    let [name] = tuple;
-                    let artifactHash = fileHashes[name];
-                    return this.getContentHash(artifactHash, `outputs/${name}`);
-                });
+            if (dataInfo) {
+                this.setAttribute(node, 'data', dataInfo);
+                this.logger.info(`Setting ${nodeId} data to ${dataInfo}`);
+            }
+        }
 
-                return Q.all(hashes);
-            })
-            .then(hashes => {
-                // Create new metadata for each
-                hashes.forEach((hash, i) => {
-                    var name = outputs[i][0],
-                        dataType = resultTypes[name];
-
-                    if (dataType) {
-                        this.setAttribute(outputMap[name], 'type', dataType);
-                        this.logger.info(`Setting ${nodeId} data type to ${dataType}`);
-                    } else {
-                        this.logger.warn(`No data type found for ${nodeId}`);
-                    }
-
-                    if (hash) {
-                        this.setAttribute(outputMap[name], 'data', hash);
-                        this.logger.info(`Setting ${nodeId} data to ${hash}`);
-                    }
-                });
-
-                return this.onOperationComplete(node);
-            })
-            .catch(e => this.onOperationFail(node, `"${opName}" failed: ${e}`));
+        return this.onOperationComplete(node);
     };
 
-    ExecuteJob.prototype.getResultTypes = async function (fileHashes) {
-        const mdHash = fileHashes['result-types'];
-        const hash = await this.getContentHashSafe(mdHash, 'result-types.json', ERROR.NO_TYPES_FILE);
+    ExecuteJob.prototype.getResults = async function (fileHashes) {
+        const mdHash = fileHashes['results'];
+        const hash = await this.getContentHashSafe(mdHash, 'results.json', ERROR.NO_TYPES_FILE);
         return await this.blobClient.getObjectAsJSON(hash);
     };
 
