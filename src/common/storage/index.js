@@ -1,6 +1,6 @@
 /*globals define, requirejs */
 (function() {
-    const STORAGE_BACKENDS = ['gme', 'memory'];
+    const STORAGE_BACKENDS = ['gme'];
 
     define([
         'module',
