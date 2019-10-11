@@ -47,9 +47,12 @@ define([
             name: 'UpdateDataNodesToUserAssets',
             isNeeded: async function(core, rootNode) {
                 const pipelineRoot = core.getLibraryRoot(rootNode, 'pipeline');
-                const version = core.getAttribute(pipelineRoot, 'version');
-                const [major, minor, /*patch*/] = version.split('.').map(n => +n);
-                return major === 0 && minor < 13;
+                const hasPipelineLibrary = !!pipelineRoot;
+                if (hasPipelineLibrary) {
+                    const version = core.getAttribute(pipelineRoot, 'version');
+                    const [major, minor, /*patch*/] = version.split('.').map(n => +n);
+                    return major === 0 && minor < 13;
+                }
             },
             apply: async function(core, rootNode, META) {
                 const isDataNode = node => core.getMetaType(node) === META['pipeline.Data'];
