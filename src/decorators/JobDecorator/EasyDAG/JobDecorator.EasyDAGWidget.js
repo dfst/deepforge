@@ -39,7 +39,8 @@ define([
             execFiles: true,
             stdout: true,
             secret: true,
-            jobId: true,
+            jobInfo: true,
+            executionId: true,
             debug: true
         };
         EllipseDecorator.call(this, options);
