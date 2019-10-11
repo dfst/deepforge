@@ -132,5 +132,8 @@
     },
     "Compute": {
         "backends": ["gme", "local"]
+    },
+    "Storage": {
+        "backends": ["gme"]
     }
 }
