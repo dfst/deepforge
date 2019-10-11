@@ -73,7 +73,7 @@ define([
 
         this.result.addArtifact(hash);
         this.result.setSuccess(true);
-        callback(null, self.result);
+        callback(null, this.result);
     };
 
     ExportBranch.prototype.getUserAssetHashes = async function () {
