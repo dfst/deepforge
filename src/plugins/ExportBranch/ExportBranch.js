@@ -61,7 +61,7 @@ define([
         const shortCommitHash = commitHash.substr(1, 6);
         const filename = `${projectId}_${shortCommitHash}.webgmex`;
         const withAssets = true;
-        projectJson.hashes = await this.getUserAssetHashes();
+        projectJson.hashes.assets = await this.getUserAssetHashes();
 
         const hash = await blobUtil.buildProjectPackage(
             this.logger.fork('blobUtil'),
