@@ -251,7 +251,6 @@ define([
     const UPLOAD_PLUGIN = 'ImportArtifact';
     const copy = data => JSON.parse(JSON.stringify(data));
     DeepForge.create.Artifact = async function() {
-        // TODO: Add the storage backend options...
         const metadata = copy(WebGMEGlobal.allPluginsMetadata[UPLOAD_PLUGIN]);
 
         metadata.configStructure.unshift({

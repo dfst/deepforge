@@ -29,7 +29,6 @@ define([
 
     GMEStorage.prototype.getFile = async function(dataInfo) {
         const {data} = dataInfo;
-        // TODO: Convert it to a good format...?
         return await this.blobClient.getObject(data);
     };
 

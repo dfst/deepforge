@@ -98,7 +98,6 @@ define([
         // Remove user assets as they are downloaded by the worker
         files.getUserAssetPaths().forEach(path => files.remove(path));
         const hash = await files.save(artifactName);
-        console.log('hash', hash);
         this.result.setSuccess(true);
         this.result.addArtifact(hash);
         callback(null, this.result);
@@ -123,7 +122,6 @@ define([
         for (let i = assetPaths.length; i--;) {
             const dataPath = assetPaths[i];
             const dataInfo = files.getUserAsset(dataPath);
-            console.log('dataInfo', dataInfo);
             const url = await Storage.getDownloadURL(dataInfo, this.logger);
             runsh += `wget $DEEPFORGE_URL${url} -O ${dataPath}\n`;
         }
@@ -134,7 +132,7 @@ define([
     };
 
     GenerateJob.prototype.createDataMetadataFile = async function (files) {
-        const inputData = _.object(files.getUserAssets());  // FIXME: allow for clever caching...
+        const inputData = _.object(files.getUserAssets());
         const content = JSON.stringify(inputData, null, 2);
         files.addFile('input-data.json', content);
         return content;
