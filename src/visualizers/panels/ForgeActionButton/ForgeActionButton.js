@@ -479,28 +479,26 @@ define([
                 displayName: 'Static Artifacts',
                 valueType: 'section'
             });
-            if (exportFormats.length > 1) {
-                inputConfig.configStructure.push({
-                    name: 'exportFormatOptions',
-                    displayName: 'Export Options',
-                    valueType: 'section'
+            inputConfig.configStructure.push({
+                name: 'exportFormatOptions',
+                displayName: 'Export Options',
+                valueType: 'section'
+            });
+            const valueItems = Object.keys(ExportFormatDict)
+                .map(id => {
+                    const configStructure = ExportFormatDict[id].getConfigStructure ?
+                        ExportFormatDict[id].getConfigStructure() : [];
+                    return {id, configStructure};
                 });
-                const valueItems = Object.keys(ExportFormatDict)
-                    .map(id => {
-                        const configStructure = ExportFormatDict[id].getConfigStructure ?
-                            ExportFormatDict[id].getConfigStructure() : [];
-                        return {id, configStructure};
-                    });
 
-                inputConfig.configStructure.push({
-                    name: 'exportFormat',
-                    displayName: 'Export Format',
-                    description: '',
-                    value: exportFormats[0],
-                    valueType: 'dict',
-                    valueItems: valueItems
-                });
-            }
+            inputConfig.configStructure.push({
+                name: 'exportFormat',
+                displayName: 'Export Format',
+                description: '',
+                value: exportFormats[0],
+                valueType: 'dict',
+                valueItems: valueItems
+            });
 
             const allConfigs = await configDialog.show(inputConfig);
             const context = this.client.getCurrentPluginContext(pluginId);
