@@ -1,4 +1,4 @@
-/* globals define */
+/* globals define, WebGMEGlobal */
 define([
     'client/logger'
 ], function(
@@ -8,8 +8,13 @@ define([
         this.id = id;
         this.name = name;
         if (!logger) {
-            // FIXME: actually get the config from the gmeConfig
-            logger = Logger.create(`gme:storage:${id}`, {level: 'debug'});
+            let gmeConfig;
+            if (require.isBrowser) {
+                gmeConfig = WebGMEGlobal.gmeConfig;
+            } else {
+                gmeConfig = require.nodeRequire('../../../../config');
+            }
+            logger = Logger.create(`gme:storage:${id}`, gmeConfig.client.log);
         }
         this.logger = logger.fork(`storage:${id}`);
     };

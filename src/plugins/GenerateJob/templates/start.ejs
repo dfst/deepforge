@@ -86,7 +86,6 @@ requirejs([
         fs.lstat(dir, (err, stat) => {
 
             if (err || !stat.isDirectory()) {
-            // TODO: Change this to mkdir -p
                 fs.mkdir(dir, err => {
                     if (err) {
                         return deferred.reject(err);
