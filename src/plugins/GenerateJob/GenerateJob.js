@@ -124,7 +124,7 @@ define([
             const dataPath = assetPaths[i];
             const dataInfo = files.getUserAsset(dataPath);
             console.log('dataInfo', dataInfo);
-            const url = await Storage.getDownloadURL(this.logger, dataInfo);
+            const url = await Storage.getDownloadURL(dataInfo, this.logger);
             runsh += `wget $DEEPFORGE_URL${url} -O ${dataPath}\n`;
         }
 

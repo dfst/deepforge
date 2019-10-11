@@ -51,25 +51,25 @@
             return metadata;
         };
 
-        Storage.getMetadata = async function(logger, dataInfo) {
+        Storage.getMetadata = async function(dataInfo, logger) {
             const backend = this.getBackend(dataInfo.backend);
             const client = await backend.getClient(logger);
             return client.getMetadata(dataInfo);
         };
 
-        Storage.getDownloadURL = async function(logger, dataInfo) {
+        Storage.getDownloadURL = async function(dataInfo, logger) {
             const backend = this.getBackend(dataInfo.backend);
             const client = await backend.getClient(logger);
             return client.getDownloadURL(dataInfo);
         };
 
-        Storage.getFile = async function(logger, dataInfo) {
+        Storage.getFile = async function(dataInfo, logger) {
             const backend = this.getBackend(dataInfo.backend);
             const client = await backend.getClient(logger);
             return client.getFile(dataInfo);
         };
 
-        Storage.getCachePath = async function(logger, dataInfo) {
+        Storage.getCachePath = async function(dataInfo, logger) {
             const backend = this.getBackend(dataInfo.backend);
             const client = await backend.getClient(logger);
             return await client.getCachePath(dataInfo);

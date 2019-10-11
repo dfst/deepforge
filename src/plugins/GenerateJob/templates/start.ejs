@@ -171,7 +171,7 @@ requirejs([
     };
 
     var dataCachePath = async function(dataInfo) {
-        const relPath = await Storage.getCachePath(logger, dataInfo);
+        const relPath = await Storage.getCachePath(dataInfo, logger);
         return `${workerCacheDir}/${relPath}`;
     };
 
@@ -191,7 +191,7 @@ requirejs([
             }
 
             createCacheDir(cachePath)
-                .then(() => Storage.getFile(logger, dataInfo))
+                .then(() => Storage.getFile(dataInfo, logger))
                 .then(buffer => fs.writeFile(cachePath, buffer, (err, result) => {
                     if (err) {
                         logger.error('Retrieving ' + ipath + ' failed!');

@@ -61,7 +61,7 @@ define([
             const objectHashes = {};
             for (let i = userAssets.length; i--;) {
                 const [filepath, dataInfo] = userAssets[i];
-                const contents = await Storage.getFile(null, dataInfo);
+                const contents = await Storage.getFile(dataInfo);
                 const filename = filepath.split('/').pop();
                 const hash = await this.blobClient.putFile(filename, contents);
                 objectHashes[filepath] = hash;

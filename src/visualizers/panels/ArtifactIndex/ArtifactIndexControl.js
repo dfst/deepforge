@@ -96,8 +96,8 @@ define([
         if (node) {
             const type = node.getAttribute('type');
             const dataInfo = JSON.parse(node.getAttribute('data'));
-            const metadata = await Storage.getMetadata(this._logger, dataInfo);
-            const url = await Storage.getDownloadURL(this._logger, dataInfo);
+            const metadata = await Storage.getMetadata(dataInfo, this._logger);
+            const url = await Storage.getDownloadURL(dataInfo, this._logger);
             const size = this._humanFileSize(metadata.size);
 
             return {
