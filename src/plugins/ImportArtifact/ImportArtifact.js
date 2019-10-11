@@ -111,9 +111,5 @@ define([
                 this.activeNode;
     };
 
-    ImportArtifact.prototype.transferToStorage = async function(blobHash) {
-        // TODO
-    };
-
     return ImportArtifact;
 });
