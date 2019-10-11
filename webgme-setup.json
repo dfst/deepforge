@@ -52,6 +52,10 @@
       "ApplyUpdates": {
         "src": "src/plugins/ApplyUpdates",
         "test": "test/plugins/ApplyUpdates"
+      },
+      "ExportBranch": {
+        "src": "src/plugins/ExportBranch",
+        "test": "test/plugins/ExportBranch"
       }
     },
     "layouts": {
