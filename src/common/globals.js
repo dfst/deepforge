@@ -259,20 +259,21 @@ define([
             valueType: 'section'
         });
 
-        if (Storage.getAvailableBackends().length > 1) {
-            metadata.configStructure.push({
-                name: 'storageOptions',
-                displayName: 'Storage',
-                valueType: 'section'
-            });
-            metadata.configStructure.push({
-                name: 'storage',
-                displayName: 'Storage Location',
-                valueType: 'string',
-                valueItems: Storage.getAvailableBackends(),
-                value: Storage.getAvailableBackends()[0],
-            });
-        }
+        metadata.configStructure.push({
+            name: 'storageOptions',
+            displayName: 'Storage',
+            valueType: 'section'
+        });
+
+        metadata.configStructure.push({
+            name: 'storage',
+            displayName: 'Storage',
+            description: 'Location to store intermediate/generated data.',
+            valueType: 'dict',
+            value: Storage.getBackend(Storage.getAvailableBackends()[0]).name,
+            valueItems: Storage.getAvailableBackends()
+                .map(id => Storage.getStorageMetadata(id)),
+        });
 
         const configDialog = new ConfigDialog(client);
         const allConfigs = await configDialog.show(metadata);

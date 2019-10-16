@@ -66,7 +66,6 @@ define([
         const parent = await this.getArtifactsDir();
         const dataNode = this.core.createNode({base, parent});
 
-        config.storage = config.storage || Storage.getAvailableBackends()[0];
         const assetInfo = await this.transfer(hash, config.storage);
         this.core.setAttribute(dataNode, 'data', JSON.stringify(assetInfo));
         this.core.setAttribute(dataNode, 'type', baseName);
@@ -86,14 +85,16 @@ define([
 
     };
 
-    ImportArtifact.prototype.transfer = async function (hash, dstId) {
+    ImportArtifact.prototype.transfer = async function (hash, storage) {
         const metadata = await this.blobClient.getMetadata(hash);
         const filename = metadata.name;
 
         const gmeStorageClient = await Storage.getBackend('gme').getClient(this.logger);
         const dataInfo = gmeStorageClient.createDataInfo(hash);
         const content = await gmeStorageClient.getFile(dataInfo);
-        const dstStorage = await Storage.getBackend(dstId).getClient(this.logger);
+
+        const {id, config} = storage;
+        const dstStorage = await Storage.getBackend(id).getClient(this.logger, config);
         return await dstStorage.putFile(filename, content);
     };
 
