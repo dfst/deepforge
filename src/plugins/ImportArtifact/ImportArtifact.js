@@ -66,6 +66,7 @@ define([
         const parent = await this.getArtifactsDir();
         const dataNode = this.core.createNode({base, parent});
 
+        config.storage = config.storage || Storage.getAvailableBackends()[0];
         const assetInfo = await this.transfer(hash, config.storage);
         this.core.setAttribute(dataNode, 'data', JSON.stringify(assetInfo));
         this.core.setAttribute(dataNode, 'type', baseName);
