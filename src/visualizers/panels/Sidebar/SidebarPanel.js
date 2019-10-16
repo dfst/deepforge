@@ -155,7 +155,8 @@ define([
 
     SidebarPanel.prototype.checkUpdates = function () {
         const pluginId = 'CheckUpdates';
-        const context = this._client.getCurrentPluginContext(pluginId);
+        const rootNodeId = '';
+        const context = this._client.getCurrentPluginContext(pluginId, rootNodeId);
 
         return Q.ninvoke(this._client, 'runServerPlugin', pluginId, context)
             .then(res => {
