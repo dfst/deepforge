@@ -12,7 +12,7 @@ define([
             if (require.isBrowser) {
                 gmeConfig = WebGMEGlobal.gmeConfig;
             } else {
-                gmeConfig = require.nodeRequire('../../../../config');
+                gmeConfig = require.nodeRequire('../../../config');
             }
             logger = Logger.create(`gme:storage:${id}`, gmeConfig.client.log);
         }
