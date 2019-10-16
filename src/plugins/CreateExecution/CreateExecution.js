@@ -82,94 +82,81 @@ define([
             });
     };
 
-    CreateExecution.prototype.createExecution = function (node) {
-        // Get the user supplied name
-        var name = this.core.getAttribute(node, 'name'),
-            config = this.getCurrentConfig(),
-            basename = config.name || (name + '_execution');
-            
+    CreateExecution.prototype.getExecutionName = async function (node) {
+        const name = this.core.getAttribute(node, 'name');
+        const config = this.getCurrentConfig();
+        const basename = config.name || (name + '_execution');
 
+        // Get a unique name
+        this.logger.debug(`About to get a unique name starting w/ ${basename}`);
+
+        return await this.getUniqueExecName(basename);
+    };
+
+    CreateExecution.prototype.createExecution = async function (node) {
         // Given a pipeline, copy all the operations to a custom job
         //   - Copy the operations 
         //   - Wrap the operations in "Job" boxes which contain running info
         //   - Update the references
-        var tgtNode,
-            execName,
-            copies,
-            opTuples,  // [[op, index], [op, index], ...]
-            dataMapping = {};
+        const execDir = await this.getExecutionDir();
+        const execDirId = this.core.getPath(execDir);
+        const execTypeId = this.core.getPath(this.META.Execution);
 
-        return this.getExecutionDir()
-            .then(execDir => {
-                var execDirId = this.core.getPath(execDir),
-                    execTypeId = this.core.getPath(this.META.Execution);
+        this.logger.debug(`Creating execution node in ${execDirId} (type is ${execTypeId})`);
+        const tgtNode = this.core.createNode({
+            base: this.META.Execution,
+            parent: execDir
+        });
+        this.logger.debug(`New execution created w/ id: ${this.core.getPath(tgtNode)}`);
 
-                this.logger.debug(`Creating execution node in ${execDirId} (type is ${execTypeId})`);
-                tgtNode = this.core.createNode({
-                    base: this.META.Execution,
-                    parent: execDir
-                });
-                this.logger.debug(`New execution created w/ id: ${this.core.getPath(tgtNode)}`);
+        const execName = await this.getExecutionName(node);
+        const isSnapshot = !this.getCurrentConfig().debug;
+        const originName = this.core.getAttribute(node, 'name');
+        const oId = this.core.getPath(node);
+        const tgtId = this.core.getPath(tgtNode);
 
-                // Get a unique name
-                this.logger.debug(`About to get a unique name starting w/ ${basename}`);
-                return this.getUniqueExecName(basename);
-            })
-            .then(_execName => {
-                var isSnapshot = !this.getCurrentConfig().debug,
-                    originName = this.core.getAttribute(this.activeNode, 'name'),
-                    oId = this.core.getPath(this.activeNode),
-                    tgtId = this.core.getPath(tgtNode);
+        this.logger.debug(`Configuring execution attributes (${execName})`);
 
-                execName = _execName;
-                this.logger.debug(`Configuring execution attributes (${execName})`);
+        // Set all the metadata for the new execution
+        this.core.setAttribute(tgtNode, 'name', execName);
+        this.core.setAttribute(tgtNode, 'snapshot', isSnapshot);
+        this.core.setAttribute(tgtNode, 'tagname', execName);
+        this.core.setAttribute(tgtNode, 'createdAt', Date.now());
+        this.logger.debug(`Setting origin pipeline to ${originName} (${oId})`);
+        this.core.setPointer(tgtNode, 'origin', node);
+        this.logger.debug(`Adding ${tgtId} to execution list of ${originName} (${oId})`);
+        this.core.addMember(node, 'executions', tgtNode);
 
-                // Set all the metadata for the new execution
-                this.core.setAttribute(tgtNode, 'name', execName);
-                this.core.setAttribute(tgtNode, 'snapshot', isSnapshot);
-                this.core.setAttribute(tgtNode, 'tagname', execName);
-                this.core.setAttribute(tgtNode, 'createdAt', Date.now());
-                this.logger.debug(`Setting origin pipeline to ${originName} (${oId})`);
-                this.core.setPointer(tgtNode, 'origin', this.activeNode);
-                this.logger.debug(`Adding ${tgtId} to execution list of ${originName} (${oId})`);
-                this.core.addMember(this.activeNode, 'executions', tgtNode);
+        this.logger.debug(`Creating tag "${execName}"`);
+        const children = await this.core.loadChildren(node);
+        if (!children.length) {
+            this.logger.warn('No children in pipeline. Will proceed anyway');
+        }
 
-                this.logger.debug(`Creating tag "${execName}"`);
-            })
-            .then(() => this.core.loadChildren(node))
-            .then(children => {
-                if (!children.length) {
-                    this.logger.warn('No children in pipeline. Will proceed anyway');
-                }
+        this.logger.debug(`Copying operations to "${execName}"`);
+        const copiedPairs = await this.copyOperations(children, tgtNode);
+        const originals = copiedPairs.map(pair => pair[0]);
+        const copies = copiedPairs.map(pair => pair[1]);
+        const opTuples = copies
+            .map((copy, i) => [copy, i])  // zip w/ index
+            .filter(pair => this.core.isTypeOf(pair[0], this.META.Operation));
 
-                this.logger.debug(`Copying operations to "${execName}"`);
-                return this.copyOperations(children, tgtNode);
-            })
-            .then(copiedPairs => {
-                var originals = copiedPairs.map(pair => pair[0]);
-                copies = copiedPairs.map(pair => pair[1]);
-                opTuples = copies
-                    .map((copy, i) => [copy, i])  // zip w/ index
-                    .filter(pair => this.core.isTypeOf(pair[0], this.META.Operation));
+        // Create a mapping of old names to new names
+        this.logger.debug('Creating mapping of old->new');
+        const dataMapping = {};
 
-                // Create a mapping of old names to new names
-                this.logger.debug('Creating mapping of old->new');
-                return Q.all(opTuples.map(pair =>
-                        // Add the input/output mappings to the dataMapping
-                        this.addDataToMap(originals[pair[1]], pair[0], dataMapping)
-                    )
-                );
-            })
-            .then(() => {  // datamapping is set!
-                this.logger.debug('Updating references...');
-                this.updateReferences(copies, dataMapping);
-                this.logger.debug('Placing operations in Job containers');
-                this.boxOperations(opTuples.map(o => o[0]), tgtNode);
-                this.logger.debug('Finished! Saving...');
-                return this.save(`Created execution from ${name}`);
-            })
-            .then(() => this.project.createTag(execName, this.currentHash))
-            .then(() => tgtNode);  // return tgtNode
+        await Q.all(opTuples.map(pair =>
+            // Add the input/output mappings to the dataMapping
+            this.addDataToMap(originals[pair[1]], pair[0], dataMapping)
+        ));
+
+        this.logger.debug('Updating references...');
+        this.updateReferences(copies, dataMapping);
+        this.logger.debug('Placing operations in Job containers');
+        this.boxOperations(opTuples.map(o => o[0]), tgtNode);
+        await this.save(`Created execution from ${originName}`);
+        await this.project.createTag(execName, this.currentHash);
+        return tgtNode;
     };
 
     CreateExecution.prototype.getUniqueExecName = function (basename) {

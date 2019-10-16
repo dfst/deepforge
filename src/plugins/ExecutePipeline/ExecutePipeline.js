@@ -111,6 +111,8 @@ define([
 
         if (this.core.isTypeOf(this.activeNode, this.META.Pipeline)) {
             // If starting with a pipeline, we will create an Execution first
+            this.pipelineName = await this.getExecutionName(this.activeNode);
+            this.forkNameBase = this.pipelineName;
             const execNode = await this.createExecution(this.activeNode);
             this.logger.debug(`Finished creating execution "${this.getAttribute(execNode, 'name')}"`);
             this.activeNode = execNode;

@@ -251,23 +251,6 @@ define([
         return this.getOperation(job);
     };
 
-    ExecuteJob.prototype.updateForkName = function (basename) {
-        basename = basename + '_fork';
-        basename = basename.replace(/[- ]/g, '_');
-        return this.project.getBranches().then(branches => {
-            var names = Object.keys(branches),
-                name = basename,
-                i = 2;
-
-            while (names.indexOf(name) !== -1) {
-                name = basename + '_' + i;
-                i++;
-            }
-
-            this.forkName = name;
-        });
-    };
-
     ExecuteJob.prototype.getConnections = function (nodes) {
         var conns = [];
         for (var i = nodes.length; i--;) {
