@@ -5,6 +5,7 @@ define([
     'text!./metadata.json',
     './format',
     'plugin/GenerateJob/GenerateJob/GenerateJob',
+    'deepforge/plugin/GeneratedFiles',
     'deepforge/Constants',
     'blob/BlobConfig',
     'underscore',
@@ -13,6 +14,7 @@ define([
     pluginMetadata,
     FORMATS,
     PluginBase,
+    GeneratedFiles,
     CONSTANTS,
     BlobConfig,
     _,
@@ -80,13 +82,13 @@ define([
         }
         this.activeNodeDepth = this.core.getPath(this.activeNode).split('/').length + 1;
 
-        const files = {};
+        const files = new GeneratedFiles(this.blobClient);
         const name = this.core.getAttribute(this.activeNode, 'name');
         const staticInputs = this.getCurrentConfig().staticInputs;
         return this.createPipelineFiles(this.activeNode, files)
             .then(() => this.addStaticInputs(staticInputs, files))
             .then(() => this.createDefaultMainFile(this.activeNode, staticInputs, files))
-            .then(() => this.createArtifact(name, files))
+            .then(() => files.save(name))
             .then(hash => {
                 this.result.addArtifact(hash);
                 this.result.setSuccess(true);
@@ -126,20 +128,20 @@ define([
         return varName;
     };
 
-    Export.prototype.addStaticInputs = function (ids, files={}) {
+    Export.prototype.addStaticInputs = function (ids, files) {
         // Get the static inputs and add them in artifacts/
         return Q.all(ids.map(id => this.core.loadByPath(this.rootNode, id)))
             .then(nodes => {
                 nodes.forEach((node, i) => {
                     const name = this.getVariableNameFor(ids[i]);
-                    const hash = this.getAttribute(node, 'data');
-                    files._data[`artifacts/${name}`] = hash;
+                    const dataInfo = this.getAttribute(node, 'data');
+                    files.addUserAsset(`artifacts/${name}`, dataInfo);
                 });
                 return files;
             });
     };
 
-    Export.prototype.createDefaultMainFile = function (node, staticInputs, files={}) {
+    Export.prototype.createDefaultMainFile = function (node, staticInputs, files) {
         // Get the variable name for the pipeline
         const name = PluginBase.toUpperCamelCase(this.core.getAttribute(node, 'name'));
         const instanceName = this.getVariableName(name.toLowerCase());
@@ -210,7 +212,7 @@ define([
                     ].join('\n');
                 }
 
-                files['main.py'] = [
+                const mainPy = [
                     'import deepforge',
                     // Get the input operations from the cli
                     'import sys',
@@ -225,12 +227,13 @@ define([
                     `${instanceName} = ${name}()`,
                     runPipeline
                 ].join('\n');
+                files.addFile('main.py', mainPy);
                 // Add file for storing results
-                files['outputs/README.md'] = 'Results from the cli execution are stored here';
+                files.addFile('outputs/README.md', 'Results from the cli execution are stored here');
             });
     };
 
-    Export.prototype.createPipelineFiles = function (node, files={}) {
+    Export.prototype.createPipelineFiles = function (node, files) {
         const name = PluginBase.toUpperCamelCase(this.core.getAttribute(node, 'name'));
         // Generate the file for the pipeline in pipelines/
 
@@ -332,7 +335,7 @@ define([
                 code = code.concat(opInvocations);
 
                 const filename = PluginBase.toSnakeCase(name);
-                files[`pipelines/${filename}.py`] = [
+                const pipelinePy = [
                     importCode.join('\n'),
                     '',
                     `class ${name}():`,
@@ -340,9 +343,8 @@ define([
                     indent(indent(code.join('\n'))),
                     indent(indent(`return ${outputs}`))
                 ].join('\n');
-                files['pipelines/__init__.py'] = files['pipelines/__init__.py'] || '';
-                files['pipelines/__init__.py'] += `from pipelines.${filename} import ${name}\n`;
-
+                files.addFile(`pipelines/${filename}.py`, pipelinePy);
+                files.appendToFile('pipelines/__init__.py', `from pipelines.${filename} import ${name}\n`);
                 return Q.all(operations.map(node => this.createOperationFiles(node, files)));
             });
     };

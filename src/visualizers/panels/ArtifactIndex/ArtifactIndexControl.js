@@ -2,9 +2,11 @@
 /*jshint browser: true*/
 
 define([
+    'deepforge/storage/index',
     'blob/BlobClient',
     'js/Constants'
 ], function (
+    Storage,
     BlobClient,
     CONSTANTS
 ) {
@@ -88,30 +90,27 @@ define([
     };
 
     // This next function retrieves the relevant node information for the widget
-    ArtifactIndexControl.prototype._getObjectDescriptor = function (nodeId) {
-        var node = this._client.getNode(nodeId),
-            type,
-            hash,
-            objDescriptor;
+    ArtifactIndexControl.prototype._getObjectDescriptor = async function (nodeId) {
+        const node = this._client.getNode(nodeId);
 
         if (node) {
-            type = node.getAttribute('type');
-            hash = node.getAttribute('data');
-            objDescriptor = {
+            const type = node.getAttribute('type');
+            const dataInfo = JSON.parse(node.getAttribute('data'));
+            const metadata = await Storage.getMetadata(dataInfo, this._logger);
+            const url = await Storage.getDownloadURL(dataInfo, this._logger);
+            const size = this._humanFileSize(metadata.size);
+
+            return {
                 id: node.getId(),
                 type: type,
                 name: node.getAttribute('name'),
                 createdAt: node.getAttribute('createdAt'),
-                dataURL: this.blobClient.getDownloadURL(hash),
-                parentId: node.getParentId()
+                dataURL: url,
+                parentId: node.getParentId(),
+                size: size
             };
         }
 
-        return this.blobClient.getMetadata(hash)
-            .then(metadata => {
-                objDescriptor.size = this._humanFileSize(metadata.size);
-                return objDescriptor;
-            });
     };
 
     ArtifactIndexControl.prototype._humanFileSize = function (bytes, si) {

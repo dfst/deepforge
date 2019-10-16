@@ -9,6 +9,8 @@ define([
     'deepforge/plugin/Operation',
     'deepforge/OperationCode',
     'deepforge/plugin/PtrCodeGen',
+    'deepforge/plugin/GeneratedFiles',
+    'deepforge/storage/index',
     'text!./metadata.json',
     'plugin/PluginBase',
     'module'
@@ -20,6 +22,8 @@ define([
     OperationHelpers,
     OperationCode,
     PtrCodeGen,
+    GeneratedFiles,
+    Storage,
     pluginMetadata,
     PluginBase,
     module
@@ -83,52 +87,23 @@ define([
      *
      * @param {function(string, plugin.PluginResult)} callback - the result callback
      */
-    GenerateJob.prototype.main = function (callback) {
+    GenerateJob.prototype.main = async function (callback) {
         const name = this.getAttribute(this.activeNode, 'name');
         const opId = this.core.getPath(this.activeNode);
 
-        return this.createExecutableOperationFiles(this.activeNode)
-            .then(files => {
-                this.logger.info('Created operation files!');
-                const artifactName = `${name}_${opId.replace(/\//g, '_')}-execution-files`;
-                return this.createArtifact(artifactName, files);
-            })
-            .then(hash => {
-                this.result.setSuccess(true);
-                this.result.addArtifact(hash);
-                callback(null, this.result);
-            })
-            .catch(err => {
-                this.result.setSuccess(false);
-                callback(err, this.result);
-            });
+        const files = await this.createExecutableOperationFiles(this.activeNode);
+        this.logger.info('Created operation files!');
+        const artifactName = `${name}_${opId.replace(/\//g, '_')}-execution-files`;
+
+        // Remove user assets as they are downloaded by the worker
+        files.getUserAssetPaths().forEach(path => files.remove(path));
+        const hash = await files.save(artifactName);
+        this.result.setSuccess(true);
+        this.result.addArtifact(hash);
+        callback(null, this.result);
     }; 
 
-    GenerateJob.prototype.createArtifact = function (artifactName, files) {
-        let artifact = this.blobClient.createArtifact(artifactName);
-        const data = files._data;
-        delete files._data;
-
-        // Remove empty hashes
-        for (let file in data) {
-            if (!data[file]) {
-                this.logger.warn(`Empty data hash has been found for file "${file}". Removing it...`);
-                delete data[file];
-            }
-        }
-
-        return artifact.addObjectHashes(data)
-            .then(() => {
-                this.logger.info(`Added data hashes for "${artifactName}"`);
-                return artifact.addFiles(files);
-            })
-            .then(() => {
-                this.logger.info(`Added files for "${artifactName}"`);
-                return artifact.save();
-            });
-    };
-
-    GenerateJob.prototype.createRunScript = function (inputs, files={}) {
+    GenerateJob.prototype.createRunScript = async function (files) {
         let runsh = [
             '# Bash script to download data files and run job',
             !this.settings.enableJobCaching ? `# Created at ${Date.now()}` : '',
@@ -143,44 +118,29 @@ define([
             `mkdir -p ${DATA_DIR}\n`
         ].join('\n');
 
-        inputs.forEach(input => {
-            let [dataPath, /* hash */, url] = input;
-            // Add to the run.sh file
+        const assetPaths = files.getUserAssetPaths();
+        for (let i = assetPaths.length; i--;) {
+            const dataPath = assetPaths[i];
+            const dataInfo = files.getUserAsset(dataPath);
+            const url = await Storage.getDownloadURL(dataInfo, this.logger);
             runsh += `wget $DEEPFORGE_URL${url} -O ${dataPath}\n`;
-        });
+        }
 
         runsh += 'python main.py';
-        files['run.sh'] = runsh;
+        files.addFile('run.sh', runsh);
         return runsh;
     };
 
-    GenerateJob.prototype.createDataMetadataFile = function (inputs, metadata, files={}) {
-        let inputData = {};
-
-        metadata.forEach((data, i) => {
-            // add the hashes for each input
-            let [dataPath, hash] = inputs[i];
-
-            inputData[dataPath] = {
-                req: hash,
-                cache: data.content
-            };
-        });
-
+    GenerateJob.prototype.createDataMetadataFile = async function (files) {
+        const inputData = _.object(files.getUserAssets());
         const content = JSON.stringify(inputData, null, 2);
-        files['input-data.json'] = content;
+        files.addFile('input-data.json', content);
         return content;
     };
 
-    GenerateJob.prototype.createExecConfig = function (node, outputNodes, files={}) {
-        var outputs,
-            fileList,
-            ptrFiles = Object.keys(files._data).filter(name => !name.startsWith(DATA_DIR));
-
-        fileList = Object.keys(files).concat(ptrFiles)
-            .filter(name => name !== '_data');
-
-        outputs = outputNodes.map(pair => pair[0])
+    GenerateJob.prototype.createExecConfig = function (node, outputNodes, files) {
+        const fileList = files.getFilePaths();
+        const outputs = outputNodes.map(pair => pair[0])
             .map(name => {
                 return {
                     name: name,
@@ -195,8 +155,8 @@ define([
                 resultPatterns: [STDOUT_FILE]
             },
             {
-                name: 'result-types',
-                resultPatterns: ['result-types.json']
+                name: 'results',
+                resultPatterns: ['results.json']
             },
             {
                 name: name + '-all-files',
@@ -211,94 +171,65 @@ define([
             resultArtifacts: outputs
         }, null, 2);
 
-        files['executor_config.json'] = config;
+        files.addFile('executor_config.json', config);
         return config;
     };
 
-    GenerateJob.prototype.createExecutableOperationFiles = function (node, files={}) {
-        let inputs = null;
+    GenerateJob.prototype.createExecutableOperationFiles = async function (node) {
+        const files = await this.createOperationFiles(node);
+        const metaDict = this.core.getAllMetaNodes(node);
+        const metanodes = Object.keys(metaDict).map(id => metaDict[id]);
+        const operations = metanodes
+            .filter(node => this.core.isTypeOf(node, this.META.Operation))
+            .filter(node => this.core.getAttribute(node, 'code'))  // remove local ops
+            .map(node => {
+                const name = this.core.getAttribute(node, 'name');
+                const filename = GenerateJob.toSnakeCase(name);
+                const code = this.core.getAttribute(node, 'code');
 
-        return this.createOperationFiles(node, files)
-            .then(() => {  // add all operation definitions
-                const metaDict = this.core.getAllMetaNodes(node);
-                const metanodes = Object.keys(metaDict).map(id => metaDict[id]);
-                const operations = metanodes
-                    .filter(node => this.core.isTypeOf(node, this.META.Operation))
-                    .filter(node => this.core.getAttribute(node, 'code'))  // remove local ops
-                    .map(node => {
-                        const name = this.core.getAttribute(node, 'name');
-                        const filename = GenerateJob.toSnakeCase(name);
-                        const code = this.core.getAttribute(node, 'code');
+                return [filename, name, code];
+            });
 
-                        return [filename, name, code];
-                    });
+        operations.forEach(tuple => {
+            const [filename, name, code] = tuple;
 
-                operations.forEach(tuple => {
-                    const [filename, name, code] = tuple;
+            // Add file to `operations/`
+            files.addFile(`operations/${filename}.py`, code);
 
-                    // Add file to `operations/`
-                    files[`operations/${filename}.py`] = code;
+            files.appendToFile(
+                'operations/__init__.py',
+                `from operations.${filename} import ${name}\n`
+            );
+        });
 
-                    // Create the `operations/__init___.py`
-                    files['operations/__init__.py'] = files['operations/__init__.py'] || '';
-                    files['operations/__init__.py'] += `from operations.${filename} import ${name}\n`;
-                });
-            })
-            .then(() => {
-                inputs = Object.keys(files._data)
-                    .filter(filename => filename.startsWith(DATA_DIR))
-                    .map(name => [
-                        name,
-                        files._data[name],
-                        this.blobClient.getRelativeDownloadURL(files._data[name])
-                    ]);  // (path, hash, url) tuples
+        await this.createRunScript(files);
+        await this.createDataMetadataFile(files);
+        const outputs = await this.getOutputs(this.activeNode);
+        await this.createExecConfig(node, outputs, files);
 
-                return this.createRunScript(inputs, files);
-            })
-            .then(() => {
-                const mdPromises = inputs.map(input => {  // Get the metadata for each input
-                    let [name, hash] = input;
-
-                    // data asset for "input"
-                    return this.blobClient.getMetadata(hash)
-                        .catch(() => {
-                            throw Error(`BLOB_FETCH_FAILED: ${name}`);
-                        });
-                });
-
-                return Q.all(mdPromises);
-            })
-            .then(mds => this.createDataMetadataFile(inputs, mds, files))
-            .then(() => this.getOutputs(this.activeNode))
-            .then(outputs => this.createExecConfig(node, outputs, files))
-            .then(() => files);
+        return files;
     };
 
     GenerateJob.prototype.isUtilsNode = function (node) {
         return this.core.getAttribute(node, 'name').includes('Utilities');
     };
 
-    GenerateJob.prototype.createCustomUtils = function (files={}) {
+    GenerateJob.prototype.createCustomUtils = async function (files) {
         // Load all custom utilities defined by the user
-        return this.core.loadChildren(this.rootNode)
-            .then(children => {
-                const utilsNode = children.find(child => this.isUtilsNode(child));
-                if (utilsNode) {  // backwards compatibility
-                    return this.core.loadChildren(utilsNode);
-                }
-                return [];
-            })
-            .then(modules => {
-                modules.forEach(node => {
-                    const name = this.core.getAttribute(node, 'name');
-                    const code = this.core.getAttribute(node, 'code');
-                    files[`utils/${name}`] = code;
-                });
-                return files;
-            });
+        const children = await this.core.loadChildren(this.rootNode);
+        const utilsNode = children.find(child => this.isUtilsNode(child));
+        const modules = utilsNode ? await this.core.loadChildren(utilsNode) : [];
+
+        modules.forEach(node => {
+            const name = this.core.getAttribute(node, 'name');
+            const code = this.core.getAttribute(node, 'code');
+            files.addFile(`utils/${name}`, code);
+        });
+
+        return files;
     };
 
-    GenerateJob.prototype.createOperationFiles = function (node, files={}) {
+    GenerateJob.prototype.createOperationFiles = async function (node, files) {
         // For each operation, generate the output files:
         //   artifacts/<arg-name>  (respective serialized input data)
         //   outputs/ (make dir for the outputs)
@@ -306,34 +237,27 @@ define([
         //   main.py (main file -> calls main and serializes outputs)
 
         // add the given files
+        files = files || new GeneratedFiles(this.blobClient);
         this.logger.info('About to generate operation execution files');
-        return this.createEntryFile(node, files)
-            .then(() => this.createCustomUtils(files))
-            .then(() => this.createInputs(node, files))
-            .then(() => this.createMainFile(node, files))
-            .then(() => files)
-            .fail(err => {
-                this.logger.error(err);
-                throw err;
-            });
+        await this.createEntryFile(node, files);
+        await this.createCustomUtils(files);
+        await this.createInputs(node, files);
+        await this.createMainFile(node, files);
+        return files;
     };
 
     GenerateJob.prototype.createEntryFile = function (node, files) {
         this.logger.info('Creating deepforge.py file...');
         const serializeTpl = _.template(Templates.DEEPFORGE_SERIALIZATION);
-        files['deepforge/serialization.py'] = serializeTpl(CONSTANTS);
-        files['deepforge/__init__.py'] = Templates.DEEPFORGE_INIT;
-        return this.getOutputs(node)
-            .then(outputs => {
-                var name = this.getAttribute(node, 'name'),
-                    content = {};
+        files.addFile('deepforge/serialization.py', serializeTpl(CONSTANTS));
+        files.addFile('deepforge/__init__.py', Templates.DEEPFORGE_INIT);
+        //const outputs = await this.getOutputs(node);
+        //const name = this.getAttribute(node, 'name');
+        //const content = {};
 
-                // inputs and outputs
-                content.name = name;
-                content.outputs = outputs.map(output => output[0]);
-
-                // Create the deepforge file
-            });
+        // inputs and outputs
+        //content.name = name;
+        //content.outputs = outputs.map(output => output[0]);
     };
 
     GenerateJob.prototype.getConnectionContainer = function () {
@@ -358,73 +282,67 @@ define([
             });
     };
 
-    GenerateJob.prototype.createInputs = function (node, files) {
-        files._data = files._data || {};  // data assets
-
+    GenerateJob.prototype.createInputs = async function (node, files) {
         this.logger.info('Retrieving inputs and deserialize fns...');
-        return this.getInputs(node)
-            .then(allInputs => {
-                // For each input, match the connection with the input name
-                //   [ name, type ] => [ name, type, node ]
-                //
-                // For each input,
-                //  - store the data in /inputs/<name>
-                let inputs = allInputs
-                    .filter(pair => !!this.getAttribute(pair[2], 'data'));  // remove empty inputs
+        const allInputs = await this.getInputs(node);
+        // For each input, match the connection with the input name
+        //   [ name, type ] => [ name, type, node ]
+        //
+        // For each input,
+        //  - store the data in /inputs/<name>
+        const inputs = allInputs
+            .filter(pair => !!this.getAttribute(pair[2], 'data'));  // remove empty inputs
 
-                files['start.js'] = _.template(Templates.START)({
-                    CONSTANTS,
-                    inputs: inputs.map(pair => pair[0])
-                });
-                inputs.forEach(pair => {
-                    var hash = this.getAttribute(pair[2], 'data');
-                    files._data[DATA_DIR + pair[0]] = hash;
-                });
-                // Add the deepforge matplotlib backend file...
-                files['backend_deepforge.py'] = Templates.MATPLOTLIB_BACKEND;
+        const startJS = _.template(Templates.START)({
+            CONSTANTS,
+            inputs: inputs.map(pair => pair[0])
+        });
+        files.addFile('start.js', startJS);
+        files.addFile('backend_deepforge.py', Templates.MATPLOTLIB_BACKEND);
 
-                return files;
-            });
+        inputs.forEach(pair => {
+            const dataInfo = this.getAttribute(pair[2], 'data');
+            const datapath = DATA_DIR + pair[0];
+            files.addUserAsset(datapath, dataInfo);
+        });
+
+        return files;
     };
 
-    GenerateJob.prototype.createMainFile = function (node, files) {
+    GenerateJob.prototype.createMainFile = async function (node, files) {
         this.logger.info('Creating main file...');
-        var content = {};
-        return this.getInputs(node)
-            .then(inputs => {
-                var name = this.getAttribute(node, 'name'),
-                    code = this.getAttribute(node, 'code');
+        const inputs = await this.getInputs(node);
+        const name = this.getAttribute(node, 'name');
+        const code = this.getAttribute(node, 'code');
 
-                content.name = name;
+        // Add remaining code
+        const outputs = await this.getOutputs(node);
+        const initCode = await this.getAllInitialCode();
+        const references = await this.getReferencedContent(node);
 
-                // Get input data arguments
-                content.inputs = inputs
-                    .map(pair => [  // [name, type, isNone?]
-                        pair[0],
-                        this.getAttribute(pair[2], 'type'),
-                        !this.getAttribute(pair[2], 'data')
-                    ]);  // remove empty inputs
+        const content = {};
+        content.name = name;
+        content.initCode = initCode;
+        content.code = code;
+        content.inputs = inputs
+            .map(pair => [  // [name, type, isNone?]
+                pair[0],
+                this.getAttribute(pair[2], 'type'),
+                !this.getAttribute(pair[2], 'data')
+            ]);  // remove empty inputs
+        content.outputs = outputs.map(output => output[0]);
+        content.arguments = this.getOperationArguments(node)
+            .map(arg => arg.value).join(', ');
+        content.references = references;
 
-                // Add remaining code
-                content.code = code;
-                return this.getOutputs(node);
-            })
-            .then(outputs => {
-                content.outputs = outputs.map(output => output[0]);
-                content.arguments = this.getOperationArguments(node)
-                    .map(arg => arg.value).join(', ');
-                return this.getAllInitialCode();
-            })
-            .then(code => content.initCode = code)
-            .then(() => this.getReferencedContent(node))
-            .then(references => {
-                const filename = GenerateJob.toSnakeCase(content.name);
-                content.references = references;
-                files['main.py'] = _.template(Templates.MAIN)(content);
-                files[`operations/${filename}.py`] = content.code;
-                files['operations/__init__.py'] = files['operations/__init__.py'] || '';
-                files['operations/__init__.py'] += `from operations.${filename} import ${content.name}\n`;
-            });
+        files.addFile('main.py', _.template(Templates.MAIN)(content));
+
+        const filename = GenerateJob.toSnakeCase(content.name);
+        files.addFile(`operations/${filename}.py`, content.code);
+        files.appendToFile(
+            'operations/__init__.py',
+            `from operations.${filename} import ${content.name}\n`
+        );
     };
 
     GenerateJob.validateVariableName = function (word) {
@@ -447,7 +365,6 @@ define([
     };
 
     GenerateJob.prototype.getAllInitialCode = function () {
-        // TODO: Get the InitCode's 'code' attribute and then all library code
         return this.core.loadChildren(this.rootNode)
             .then(children => {
                 const codeNodes = children.filter(child => this.isMetaTypeOf(child, this.META.Code));

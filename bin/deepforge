@@ -102,13 +102,6 @@ var storeConfig = function(id, value) {
         var cKey = envToConf[env];
         process.env[env] = process.env[env] || p(getConfigValue(cKey));
     });
-
-    // Special cases
-    if (process.env.DEEPFORGE_WORKER_USE_BLOB === 'true' &&
-        exists.sync(process.env.DEEPFORGE_BLOB_DIR)) {
-
-        process.env.DEEPFORGE_WORKER_CACHE = process.env.DEEPFORGE_BLOB_DIR + '/wg-content';
-    }
 })();
 
 program

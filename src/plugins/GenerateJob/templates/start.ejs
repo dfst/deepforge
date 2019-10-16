@@ -1,31 +1,45 @@
-// A wrapper for the torch script which:
+// A wrapper for the worker script which:
 //   - merges stdout, stderr
 //   - receives some commands and uploads intermediate data
-var spawn = require('child_process').spawn,
-    fs = require('fs'),
-    path = require('path'),
-    log = console.error,
-    logger = {};
+const spawn = require('child_process').spawn;
+const fs = require('fs');
+const rm_rf = require('rimraf');
+const path = require('path');
+const COMMAND_PREFIX = '<%= CONSTANTS.START_CMD %>';
+const IMAGE = '<%= CONSTANTS.IMAGE.PREFIX %>';
+const log = console.error;
+const logger = {};
 
 // Create the stderr only logger
 ['error', 'warn', 'info', 'log', 'debug'].forEach(method => logger[method] = log);
+logger.fork = () => logger;
 
-// Get the BlobClient...
-var COMMAND_PREFIX = '<%= CONSTANTS.START_CMD %>',
-    IMAGE = '<%= CONSTANTS.IMAGE.PREFIX %>',
-    requirejs = require('webgme').requirejs,
-    remainingImageCount = 0,
-    exitCode;
+let remainingImageCount = 0;
+let exitCode;
+
+const assert = require('assert');
+const cwd = process.cwd();
+
+assert(process.env.DEEPFORGE_ROOT, 'Must have DEEPFORGE_ROOT environment variable set.');
+process.chdir(process.env.DEEPFORGE_ROOT);
+const webgme = require('webgme');
+const gmeConfig = require(process.env.DEEPFORGE_ROOT + '/config');
+webgme.addToRequireJsPaths(gmeConfig);
+process.chdir(cwd);
+
+const requirejs = webgme.requirejs;
 
 requirejs([
     'q',
-    'blob/BlobClient'
+    'blob/BlobClient',
+    'deepforge/storage/index',
 ], function(
     Q,
-    BlobClient
+    BlobClient,
+    Storage,
 ) {
     var url = process.env.ORIGIN_URL || 'http://127.0.0.1:8888',
-        CACHE_DIR = process.env.DEEPFORGE_WORKER_CACHE || './worker-cache',
+        workerCacheDir = process.env.DEEPFORGE_WORKER_CACHE,
         protocol = url.split('://').shift(),
         address,
         port = (url.split(':') || ['80']).pop();
@@ -34,14 +48,24 @@ requirejs([
     address = url.replace(protocol + '://', '')
         .replace(':' + port, '');
 
-    // Create CACHE_DIR if it doesn't exist
-    var prepareCache = function() {
-        var dirs = CACHE_DIR.replace(/\/$/, '').split('/'),
-            cacheParent;
+    // Create workerCacheDir if it doesn't exist
+    var prepareCache = async function() {
+        if (!workerCacheDir) {
+            workerCacheDir = './worker-cache';
+            const blobDir = process.env.DEEPFORGE_BLOB_DIR;
+            const isSharingBlob = process.env.DEEPFORGE_WORKER_USE_BLOB === 'true';
+            if (isSharingBlob && blobDir) {
+                await makeIfNeeded(workerCacheDir);
 
-        dirs.pop();
-        cacheParent = dirs.join('/');
-        return makeIfNeeded(cacheParent).then(() => makeIfNeeded(CACHE_DIR));
+                const blobContentDir = path.join(blobDir, 'wg-content');
+                const gmeStorageCache = path.join(workerCacheDir, 'gme');
+                rm_rf.sync(path.join(workerCacheDir, 'gme'));
+                await symlink(blobContentDir, gmeStorageCache);
+            }
+        } else {
+            await makeIfNeeded(workerCacheDir);
+        }
+
     };
 
     var prepareInputsOutputs = function() {
@@ -50,11 +74,15 @@ requirejs([
     };
 
 
-    var makeIfNeeded = function(dir) {
+    var makeIfNeeded = async function(dir) {
         var deferred = Q.defer(),
             job;
 
         log(`makeIfNeeded: ${JSON.stringify(dir)}`);
+        if (path.dirname(dir) !== dir) {
+            await makeIfNeeded(path.dirname(dir));
+        }
+
         fs.lstat(dir, (err, stat) => {
 
             if (err || !stat.isDirectory()) {
@@ -137,48 +165,20 @@ requirejs([
         process.stdout.write(result.join('\n'));
     };
 
-    var createCacheDir = function(hash) {
-        var dir = hash.substring(0, 2);
-        return makeIfNeeded(CACHE_DIR + '/' + dir);
+    var createCacheDir = function(cachePath) {
+        return makeIfNeeded(path.dirname(cachePath));
     };
 
-    var dataCachePath = function(hash) {
-        var dir = hash.substring(0, 2),
-            filename = hash.substring(2),
-            cachePath = `${CACHE_DIR}/${dir}/${filename}`;
-
-        // Get the path for data in the cache
-        return cachePath;
+    var dataCachePath = async function(dataInfo) {
+        const relPath = await Storage.getCachePath(dataInfo, logger);
+        return `${workerCacheDir}/${relPath}`;
     };
 
-    var makeSymLink = function(target, src) {
-        var deferred = Q.defer(),
-            job;
-
-        src = path.resolve(src);
-        target = path.resolve(target);
-        fs.stat(src, err => {
-            if (err && err.code === 'ENOENT') {
-                logger.debug(`creating symlink "ln -s ${target} ${src}"`);
-                job = spawn('ln', ['-s', target, src || '.']);
-                job.on('exit', code => {
-                    if (code) {
-                        deferred.reject(`Could not create symlink ${target} -> ${src||'.'}`);
-                        return;
-                    }
-                    deferred.resolve();
-                });
-            }
-            deferred.resolve();
-        });
-        return deferred.promise;
-    };
-
-    var getData = function(ipath, hashes) {
+    var getData = async function(ipath, dataInfo) {
         // Download the data and put it in the given path
         var deferred = Q.defer(),
             inputName = ipath.split('/')[1],
-            cachePath = dataCachePath(hashes.cache);
+            cachePath = await dataCachePath(dataInfo);
 
         
         logger.debug(`retrieving ${ipath}`);
@@ -186,11 +186,11 @@ requirejs([
             // Check if the data exists in the cache
             if (!err && cacheStats.isFile()) {
             logger.info(`${inputName} already cached. Skipping retrieval from blob`);
-                return makeSymLink(cachePath, ipath).then(deferred.resolve);
+                return symlink(cachePath, ipath).then(deferred.resolve);
             }
 
-            createCacheDir(hashes.cache)
-                .then(() => blobClient.getObject(hashes.req))
+            createCacheDir(cachePath)
+                .then(() => Storage.getFile(dataInfo, logger))
                 .then(buffer => fs.writeFile(cachePath, buffer, (err, result) => {
                     if (err) {
                         logger.error('Retrieving ' + ipath + ' failed!');
@@ -198,9 +198,9 @@ requirejs([
                     }
                     // Create the symlink
                     logger.info('Retrieved ' + ipath);
-                    return makeSymLink(cachePath, ipath).then(deferred.resolve);
+                    return symlink(cachePath, ipath).then(deferred.resolve);
                 }))
-                .fail(err => deferred.reject(`Could not retrieve "${inputName}" (${err})`));
+                .catch(err => deferred.reject(`Could not retrieve "${inputName}" (${err})`));
         });
 
         return deferred.promise;
@@ -239,16 +239,16 @@ requirejs([
     };
 
     process.on('exit', () => {
-        log('received "exit" event')
+        log('received "exit" event');
         cleanup();
     });
     process.on('SIGINT', function() {
-        log('received "SIGINT" event')
+        log('received "SIGINT" event');
         cleanup();
         process.exit(130);
     });
     process.on('uncaughtException', err => {
-        log('received "uncaughtException" event')
+        log('received "uncaughtException" event');
         log(err);
         cleanup();
     });
@@ -262,14 +262,52 @@ requirejs([
             job = spawn('python', ['main.py'], {detached: true});
             job.stdout.on('data', onStdout);
             job.stderr.on('data', onStderr);
-            job.on('close', code => {
+            job.on('close', async code => {
                 exitCode = code;
                 log('script finished w/ exit code:', code);
+                if (exitCode === 0) {
+                    const results = JSON.parse(fs.readFileSync('result-types.json'));
+                    const client = await Storage.getBackend('gme').getClient(logger);
+                    const outputNames = Object.keys(results);
+
+                    for (let i = outputNames.length; i--;) {
+                        const filename = outputNames[i];
+                        const contents = fs.readFileSync(`outputs/${filename}`);
+                        const dataInfo = await client.putFile(filename, contents);
+                        const type = results[filename];
+                        results[filename] = {type, dataInfo};
+                    }
+                    fs.writeFileSync('results.json', JSON.stringify(results));
+                }
                 checkFinished();
             });
         })
-        .fail(err => {
+        .catch(err => {
             console.log(`Data retrieval failed: ${err}`);
             process.exit(1);
         });
+
+    function symlink(target, src) {
+        var deferred = Q.defer(),
+            job;
+
+        src = path.resolve(src);
+        target = path.resolve(target);
+        fs.stat(src, err => {
+            if (err && err.code === 'ENOENT') {
+                logger.debug(`creating symlink "ln -s ${target} ${src}"`);
+                job = spawn('ln', ['-s', target, src || '.']);
+                job.on('exit', code => {
+                    if (code) {
+                        deferred.reject(`Could not create symlink ${target} -> ${src||'.'}`);
+                        return;
+                    }
+                    deferred.resolve();
+                });
+            }
+            deferred.resolve();
+        });
+        return deferred.promise;
+    };
+
 });

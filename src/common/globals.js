@@ -1,6 +1,8 @@
 /* globals WebGMEGlobal, define*/
 // This file creates the DeepForge namespace and defines basic actions
 define([
+    'deepforge/storage/index',
+    'deepforge/viz/ConfigDialog',
     'panel/FloatingActionButton/styles/Materialize',
     'text!./NewOperationCode.ejs',
     'js/RegistryKeys',
@@ -9,6 +11,8 @@ define([
     'underscore',
     'q'
 ], function(
+    Storage,
+    ConfigDialog,
     Materialize,
     DefaultCodeTpl,
     REGISTRY_KEYS,
@@ -224,43 +228,6 @@ define([
         });
     };
 
-    // Creating Artifacts
-    var UPLOAD_PLUGIN = 'ImportArtifact';
-
-    var uploadArtifact = function() {
-        // Get the data types
-        var dataBase,
-            dataBaseId,
-            metanodes = client.getAllMetaNodes(),
-            dataTypes = [];
-
-        dataBase = metanodes.find(n => n.getAttribute('name') === 'Data');
-
-        if (!dataBase) {
-            this.logger.error('Could not find the base Data node!');
-            return;
-        }
-
-        dataBaseId = dataBase.getId();
-        dataTypes = metanodes.filter(n => n.isTypeOf(dataBaseId))
-            .filter(n => !n.getRegistry('isAbstract'))
-            .map(node => node.getAttribute('name'));
-
-        // Add the target type to the pluginMetadata...
-        var metadata = WebGMEGlobal.allPluginsMetadata[UPLOAD_PLUGIN];
-
-        WebGMEGlobal.InterpreterManager.configureAndRun(metadata, result => {
-            var msg = 'Artifact upload complete!';
-            if (!result) {
-                return;
-            }
-            if (!result.success) {
-                msg = `Artifact upload failed: ${result.error}`;
-            }
-            Materialize.toast(msg, 2000);
-        });
-    };
-
     DeepForge.last = {};
     DeepForge.create = {};
     DeepForge.register = {};
@@ -280,7 +247,39 @@ define([
         };
     });
 
-    DeepForge.create.Artifact = uploadArtifact;
+    // Creating Artifacts
+    const UPLOAD_PLUGIN = 'ImportArtifact';
+    const copy = data => JSON.parse(JSON.stringify(data));
+    DeepForge.create.Artifact = async function() {
+        const metadata = copy(WebGMEGlobal.allPluginsMetadata[UPLOAD_PLUGIN]);
+
+        metadata.configStructure.unshift({
+            name: 'artifactOptions',
+            displayName: 'New Artifact',
+            valueType: 'section'
+        });
+
+        if (Storage.getAvailableBackends().length > 1) {
+            metadata.configStructure.push({
+                name: 'storageOptions',
+                displayName: 'Storage',
+                valueType: 'section'
+            });
+            metadata.configStructure.push({
+                name: 'storage',
+                displayName: 'Storage Location',
+                valueType: 'string',
+                valueItems: Storage.getAvailableBackends(),
+                value: Storage.getAvailableBackends()[0],
+            });
+        }
+
+        const configDialog = new ConfigDialog(client);
+        const allConfigs = await configDialog.show(metadata);
+        const context = client.getCurrentPluginContext(UPLOAD_PLUGIN);
+        context.pluginConfig = allConfigs[UPLOAD_PLUGIN];
+        return await Q.ninvoke(client, 'runBrowserPlugin', UPLOAD_PLUGIN, context);
+    };
 
     //////////////////// DeepForge prev locations ////////////////////
     // Update DeepForge on project changed

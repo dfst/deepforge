@@ -1,7 +1,9 @@
 /* globals define */
 define([
+    'deepforge/storage/index',
     'q'
 ], function(
+    Storage,
     Q
 ) {
 
@@ -39,6 +41,34 @@ define([
 
                 // Set the default visualizer to TabbedTextEditor
                 core.setRegistry(utils, 'validVisualizers', 'TabbedTextEditor');
+            }
+        },
+        {
+            name: 'UpdateDataNodesToUserAssets',
+            isNeeded: async function(core, rootNode) {
+                const pipelineRoot = core.getLibraryRoot(rootNode, 'pipeline');
+                const hasPipelineLibrary = !!pipelineRoot;
+                if (hasPipelineLibrary) {
+                    const version = core.getAttribute(pipelineRoot, 'version');
+                    const [major, minor, /*patch*/] = version.split('.').map(n => +n);
+                    return major === 0 && minor < 13;
+                }
+            },
+            apply: async function(core, rootNode, META) {
+                const isDataNode = node => core.getMetaType(node) === META['pipeline.Data'];
+                const dataNodes = (await core.loadSubTree(rootNode))
+                    .filter(isDataNode)
+                    .filter(node => !core.isLibraryElement(node));
+
+                const storageClient = await Storage.getBackend('gme').getClient();
+                for (let i = dataNodes.length; i--;) {
+                    const node = dataNodes[i];
+                    const hash = core.getAttribute(node, 'data');
+                    if (hash && !hash.includes('{')) {  // not already updated
+                        const dataInfo = storageClient.createDataInfo(hash);
+                        core.setAttribute(node, 'data', JSON.stringify(dataInfo));
+                    }
+                }
             }
         }
     ];

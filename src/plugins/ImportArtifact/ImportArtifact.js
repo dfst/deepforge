@@ -2,13 +2,13 @@
 /*jshint node:true, browser:true*/
 
 define([
+    'deepforge/storage/index',
     'text!./metadata.json',
     'plugin/PluginBase',
-    'q'
 ], function (
+    Storage,
     pluginMetadata,
     PluginBase,
-    Q
 ) {
     'use strict';
 
@@ -47,77 +47,68 @@ define([
      *
      * @param {function(string, plugin.PluginResult)} callback - the result callback
      */
-    ImportArtifact.prototype.main = function (callback) {
-        var self = this,
-            config = this.getCurrentConfig(),
-            hash = config.dataHash,
-            baseName = config.dataTypeId,
-            name,
-            baseType,
-            dataNode,
-
-            metaDict,
-            metanodes;
-
-        // Create node of type "typeId" in the activeNode and set the hash, name
-        metaDict = this.core.getAllMetaNodes(this.activeNode);
-        metanodes = Object.keys(metaDict).map(id => metaDict[id]);
-        baseType = metanodes.find(node =>
+    ImportArtifact.prototype.main = async function (callback) {
+        const config = this.getCurrentConfig();
+        const hash = config.dataHash;
+        const baseName = config.dataTypeId;
+        const metaDict = this.core.getAllMetaNodes(this.activeNode);
+        const metanodes = Object.keys(metaDict).map(id => metaDict[id]);
+        const base = metanodes.find(node =>
             this.core.getAttribute(node, 'name') === 'Data'
         );
 
-        if (!baseType) {
+        if (!base) {
             callback(`Could not find data type "${baseName}"`, this.result);
             return;
         }
 
         // Get the base node
-        this.getArtifactsDir()
-            .then(targetDir => {
-                dataNode = this.core.createNode({
-                    base: baseType,
-                    parent: targetDir
-                });
+        const parent = await this.getArtifactsDir();
+        const dataNode = this.core.createNode({base, parent});
 
-                this.core.setAttribute(dataNode, 'data', hash);
-                this.core.setAttribute(dataNode, 'type', baseName);
-                this.core.setAttribute(dataNode, 'createdAt', Date.now());
-                baseName = this.core.getAttribute(baseType, 'name');
+        const assetInfo = await this.transfer(hash, config.storage);
+        this.core.setAttribute(dataNode, 'data', JSON.stringify(assetInfo));
+        this.core.setAttribute(dataNode, 'type', baseName);
+        this.core.setAttribute(dataNode, 'createdAt', Date.now());
 
-                var getName;
-                if (config.name) {
-                    getName = Q().then(() => config.name);
-                } else {
-                    getName = this.blobClient.getMetadata(hash)
-                        .then(md => {
-                            name = baseName[0].toLowerCase() + baseName.substring(1);
-                            if (md) {
-                                name = md.name.replace(/\.[^\.]*?$/, '');
-                            }
-                            return name;
-                        });
-                }
-                return getName;
-            })
-            .then(name => this.core.setAttribute(dataNode, 'name', name))
-            .then(() => this.save(`Uploaded "${name}" data`))
-            .then(function () {
-                self.result.setSuccess(true);
-                callback(null, self.result);
-            })
-            .fail(function (err) {
-                callback(err, self.result);
-            });
+        try {
+            const name = config.name || await this.getAssetName(hash) ||
+                baseName[0].toLowerCase() + baseName.substring(1);
+
+            this.core.setAttribute(dataNode, 'name', name);
+            await this.save(`Uploaded "${name}" data`);
+            this.result.setSuccess(true);
+            callback(null, this.result);
+        } catch (err) {
+            callback(err, this.result);
+        }
 
     };
 
-    ImportArtifact.prototype.getArtifactsDir = function() {
+    ImportArtifact.prototype.transfer = async function (hash, dstId) {
+        const metadata = await this.blobClient.getMetadata(hash);
+        const filename = metadata.name;
+
+        const gmeStorageClient = await Storage.getBackend('gme').getClient(this.logger);
+        const dataInfo = gmeStorageClient.createDataInfo(hash);
+        const content = await gmeStorageClient.getFile(dataInfo);
+        const dstStorage = await Storage.getBackend(dstId).getClient(this.logger);
+        return await dstStorage.putFile(filename, content);
+    };
+
+    ImportArtifact.prototype.getAssetName = async function (hash) {
+        const metadata = await this.blobClient.getMetadata(hash);
+        if (metadata) {
+            return metadata.name.replace(/\.[^.]*?$/, '');
+        }
+    };
+
+    ImportArtifact.prototype.getArtifactsDir = async function() {
         // Find the artifacts dir
-        return this.core.loadChildren(this.rootNode)
-            .then(children => children
-                .find(child => this.core.getAttribute(child, 'name') === 'MyArtifacts') ||
-                    this.activeNode
-            );
+        const children = await this.core.loadChildren(this.rootNode);
+        return children
+            .find(child => this.core.getAttribute(child, 'name') === 'MyArtifacts') ||
+                this.activeNode;
     };
 
     return ImportArtifact;
