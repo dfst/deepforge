@@ -1,9 +1,11 @@
 /* globals define */
 define([
     'deepforge/storage/index',
+    './Version',
     'q'
 ], function(
     Storage,
+    Version,
     Q
 ) {
 
@@ -49,9 +51,9 @@ define([
                 const pipelineRoot = core.getLibraryRoot(rootNode, 'pipeline');
                 const hasPipelineLibrary = !!pipelineRoot;
                 if (hasPipelineLibrary) {
-                    const version = core.getAttribute(pipelineRoot, 'version');
-                    const [major, minor, /*patch*/] = version.split('.').map(n => +n);
-                    return major === 0 && minor < 13;
+                    const versionString = core.getAttribute(pipelineRoot, 'version');
+                    const version = new Version(versionString);
+                    return version.lessThan(new Version('0.13.0'));
                 }
             },
             apply: async function(core, rootNode, META) {

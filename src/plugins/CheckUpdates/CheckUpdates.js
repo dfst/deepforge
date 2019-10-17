@@ -3,6 +3,7 @@
 
 define([
     'deepforge/updates/Updates',
+    'deepforge/updates/Version',
     'plugin/UploadSeedToBlob/UploadSeedToBlob/UploadSeedToBlob',
     './metadata.json',
     'module',
@@ -11,6 +12,7 @@ define([
     'util',
 ], function (
     Updates,
+    Version,
     PluginBase,
     pluginMetadata,
     module,
@@ -98,7 +100,7 @@ define([
         const librariesWithUpdates = libraries.filter(library => {
             const [name, latestVersion] = library;
             const currentVersion = this.getLoadedVersion(name);
-            return currentVersion < latestVersion;
+            return currentVersion.lessThan(latestVersion);
         });
 
         for (let i = librariesWithUpdates.length; i--;) {
@@ -131,8 +133,9 @@ define([
         let hash;
         try {
             const filename = this.getSeedHashPath(name);
-            let [lastHash, lastVersion] = fs.readFileSync(filename, 'utf8').split(' ');
-            if (lastVersion === version) {
+            let [lastHash, versionString] = fs.readFileSync(filename, 'utf8').split(' ');
+            const lastVersion = new Version(versionString);
+            if (lastVersion.equalTo(version)) {
                 hash = lastHash;
             }
         } catch (err) {
@@ -180,7 +183,7 @@ define([
                 const version = fs.readFileSync(versionPath, 'utf8').trim();
                 this.logger.debug(`${name} version is ${version}`);
                 if (version) {
-                    libraries.push([name, version]);
+                    libraries.push([name, new Version(version)]);
                 } else {
                     this.logger.debug(`Invalid version for ${name}: "${version}"`);
                 }
@@ -195,7 +198,7 @@ define([
         var node = this.libraries[libName],
             version = this.core.getAttribute(node, 'version');  // using library root hash
 
-        return version;
+        return new Version(version);
     };
 
     return CheckUpdates;
