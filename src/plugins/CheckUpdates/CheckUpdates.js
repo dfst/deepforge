@@ -8,7 +8,7 @@ define([
     'module',
     'path',
     'fs',
-    'q'
+    'util',
 ], function (
     Updates,
     PluginBase,
@@ -16,10 +16,11 @@ define([
     module,
     path,
     fs,
-    Q
+    util,
 ) {
     'use strict';
 
+    const writeFile = util.promisify(fs.writeFile);
     /**
      * Initializes a new instance of CheckUpdates.
      * @class
@@ -93,52 +94,21 @@ define([
     };
 
     CheckUpdates.prototype.checkMainLibraries = async function () {
-        const libs = await this.getAllLibraries();
-        const tuples = libs
-            .map(lib => {  // map to [name, version, dir]
-                var version,
-                    hash,
-                    data,
-                    versionPath = this.getSeedVersionPath(lib);
+        const libraries = await this.getAllLibraries();
+        const librariesWithUpdates = libraries.filter(library => {
+            const [name, latestVersion] = library;
+            const currentVersion = this.getLoadedVersion(name);
+            return currentVersion < latestVersion;
+        });
 
-                try {
-                    this.logger.info(`Checking for version info at ${versionPath}`);
-                    version = fs.readFileSync(versionPath, 'utf8');
-                    this.logger.debug(`${lib} version is ${version}`);
-                    data = fs.readFileSync(this.getSeedHashPath(lib), 'utf8').split(' ');
-                    if (data[1] === version) {
-                        hash = data[0];
-                        this.logger.debug(`${lib} hash is ${hash}`);
-                    }
-                } catch (e) {
-                    if (!version) {
-                        this.logger.warn(`Could not find library version for ${lib}`);
-                    } else {
-                        this.logger.warn(`Could not find library hash for ${lib}`);
-                    }
-                }
+        for (let i = librariesWithUpdates.length; i--;) {
+            const library = librariesWithUpdates[i];
+            library.push(await this.getLibraryHash.apply(this, library));
+        }
+        this.logger.info(`Found ${librariesWithUpdates.length} out-of-date libraries`);
 
-                return [lib, version, hash];
-            })
-            .filter(tuple => {  // get only the libs w/ updates available
-                let [lib, version] = tuple;
-
-                if (!version) return false;
-
-                let projVersion = this.getLoadedVersion(lib);
-                let latest = version.replace(/\s+/g, '');
-
-                this.logger.info(`${lib} version info:\n${projVersion} ` +
-                    `(project)\n${latest} (latest)`);
-                return projVersion < latest;
-            });
-
-        const hashes = await Q.all(tuples.map(tuple => this.uploadSeed.apply(this, tuple)));
-
-        this.logger.info(`Found ${hashes.length} out of date libraries`);
-
-        return hashes.map((hash, i) => {
-            const [name] = tuples[i];
+        const updates = librariesWithUpdates.map(library => {
+            const [name, /*version*/, hash] = library;
             return {
                 type: Updates.SEED,
                 name: name,
@@ -146,6 +116,7 @@ define([
                 hash: hash
             };
         });
+        return updates;
     };
 
     CheckUpdates.prototype.getSeedHashPath = function (name) {
@@ -156,47 +127,68 @@ define([
         return path.join(this.getSeedDir(name), 'version.txt');
     };
 
-    CheckUpdates.prototype.upgradeSeedToVersion = function (name, version, hash) {
-        if (!hash) {  // Upload the seed
-            // Get the data
+    CheckUpdates.prototype.getLibraryHash = async function (name, version) {
+        let hash;
+        try {
+            const filename = this.getSeedHashPath(name);
+            let [lastHash, lastVersion] = fs.readFileSync(filename, 'utf8').split(' ');
+            if (lastVersion === version) {
+                hash = lastHash;
+            }
+        } catch (err) {
             this.logger.info(`Uploading new version of ${name} (${version})`);
-            return this.uploadSeed(name)
-                .then(newHash => {  // Store the new hash
-                    this.logger.info(`Upload of ${name} finished!`);
-                    hash = newHash;
-                    return Q.nfcall(
-                        fs.writeFile,
-                        this.getSeedHashPath(name),
-                        `${hash} ${version}`
-                    );
-                }).then(() => hash);
+        }
+        if (!hash) {
+            this.logger.info(`Uploading new version of ${name} (${version})`);
+            hash = await this.uploadSeed(name);
+            await writeFile(this.getSeedHashPath(name), `${hash} ${version}`);
         }
         return hash;
     };
 
-    CheckUpdates.prototype.getAllLibraries = function () {
+    CheckUpdates.prototype.getAllLibraryNames = async function () {
         const DEFAULT_LIBRARIES = ['pipeline'];
         var name,
             names = [];
 
-        return this.core.loadChildren(this.rootNode)
-            .then(children => {
-                for (var i = children.length; i--;) {
-                    if (this.core.isLibraryRoot(children[i])) {
-                        name = this.core.getAttribute(children[i], 'name');
-                        this.libraries[name] = children[i];
-                        if (DEFAULT_LIBRARIES.includes(name)) {
-                            names.push(name);
-                        }
-                    }
+        const children = await this.core.loadChildren(this.rootNode);
+        for (var i = children.length; i--;) {
+            if (this.core.isLibraryRoot(children[i])) {
+                name = this.core.getAttribute(children[i], 'name');
+                this.libraries[name] = children[i];
+                if (DEFAULT_LIBRARIES.includes(name)) {
+                    names.push(name);
                 }
-                if (names.length) {
-                    this.logger.debug(`Found libraries: ${names.join(', ')}`);
+            }
+        }
+        if (names.length) {
+            this.logger.debug(`Found libraries: ${names.join(', ')}`);
+        } else {
+            this.logger.debug('Found no libraries!');
+        }
+        return names;
+    };
+
+    CheckUpdates.prototype.getAllLibraries = async function () {
+        const names = await this.getAllLibraryNames();
+        const libraries = [];
+
+        for (let i = names.length; i--;) {
+            const name = names[i];
+            try {
+                const versionPath = this.getSeedVersionPath(name);
+                const version = fs.readFileSync(versionPath, 'utf8').trim();
+                this.logger.debug(`${name} version is ${version}`);
+                if (version) {
+                    libraries.push([name, version]);
                 } else {
-                    this.logger.debug('Found no libraries!');
+                    this.logger.debug(`Invalid version for ${name}: "${version}"`);
                 }
-                return names;
-            });
+            } catch (e) {
+                this.logger.warn(`Could not find library version for ${name}`);
+            }
+        }
+        return libraries;
     };
 
     CheckUpdates.prototype.getLoadedVersion = function (libName) {
