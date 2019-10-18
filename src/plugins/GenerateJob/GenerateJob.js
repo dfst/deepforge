@@ -293,10 +293,16 @@ define([
         const inputs = allInputs
             .filter(pair => !!this.getAttribute(pair[2], 'data'));  // remove empty inputs
 
+        const storage = this.getCurrentConfig().storage || {};
+        storage.id = storage.id || 'gme';
+        storage.config = storage.config || {};
+
         const startJS = _.template(Templates.START)({
             CONSTANTS,
-            inputs: inputs.map(pair => pair[0])
+            storageId: storage.id,
+            inputs: inputs.map(pair => pair[0]),
         });
+        files.addFile('storage-config.json', JSON.stringify(storage.config));
         files.addFile('start.js', startJS);
         files.addFile('backend_deepforge.py', Templates.MATPLOTLIB_BACKEND);
 

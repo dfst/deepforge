@@ -3,6 +3,7 @@
 define([
     'q',
     'deepforge/compute/index',
+    'deepforge/storage/index',
     'deepforge/viz/ConfigDialog',
     'deepforge/api/ExecPulseClient',
     'deepforge/api/JobOriginClient',
@@ -11,6 +12,7 @@ define([
 ], function(
     Q,
     Compute,
+    Storage,
     ConfigDialog,
     ExecPulseClient,
     JobOriginClient,
@@ -69,6 +71,21 @@ define([
             value: Compute.getBackend(Compute.getAvailableBackends()[0]).name,
             valueItems: Compute.getAvailableBackends()
                 .map(id => Compute.getMetadata(id)),
+        });
+
+        metadata.configStructure.push({
+            name: 'storageHeader',
+            displayName: 'Storage Options',
+            valueType: 'section'
+        });
+        metadata.configStructure.push({
+            name: 'storage',
+            displayName: 'Storage',
+            description: 'Location to store intermediate/generated data.',
+            valueType: 'dict',
+            value: Storage.getBackend(Storage.getAvailableBackends()[0]).name,
+            valueItems: Storage.getAvailableBackends()
+                .map(id => Storage.getStorageMetadata(id)),
         });
 
         const allConfigs = await configDialog.show(metadata);

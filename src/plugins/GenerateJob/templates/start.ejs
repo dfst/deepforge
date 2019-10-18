@@ -266,8 +266,10 @@ requirejs([
                 exitCode = code;
                 log('script finished w/ exit code:', code);
                 if (exitCode === 0) {
-                    const results = JSON.parse(fs.readFileSync('result-types.json'));
-                    const client = await Storage.getBackend('gme').getClient(logger);
+                    const results = require('./result-types.json');
+                    const STORAGE_ID = '<%= storageId %>';
+                    const config = require('./storage-config.json');
+                    const client = await Storage.getBackend(STORAGE_ID).getClient(logger, config);
                     const outputNames = Object.keys(results);
 
                     for (let i = outputNames.length; i--;) {
