@@ -32,6 +32,7 @@ define([
     };
 
     GeneratedFiles.prototype.addFile = function (path, contents) {
+        assert(typeof contents === 'string', `Cannot add non-string file ${path}.`);
         this._files[path] = contents;
     };
 
