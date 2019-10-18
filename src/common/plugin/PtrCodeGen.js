@@ -1,4 +1,4 @@
-/*globals define, requirejs*/
+/*globals define */
 define([
     '../../../config',
     'webgme',
