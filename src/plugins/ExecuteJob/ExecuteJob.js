@@ -373,7 +373,8 @@ define([
             // Generate all execution files
             let hash;
             try {
-                hash = await this.getPtrCodeHash(this.core.getPath(node));
+                const config = this.getCurrentConfig();
+                hash = await this.getPtrCodeHash(this.core.getPath(node), config);
             } catch (err) {
                 this.logger.error(`Could not generate files: ${err}`);
                 if (err.message.indexOf('BLOB_FETCH_FAILED') > -1) {
