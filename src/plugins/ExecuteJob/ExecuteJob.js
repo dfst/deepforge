@@ -630,7 +630,7 @@ define([
             }
 
             if (dataInfo) {
-                this.setAttribute(node, 'data', dataInfo);
+                this.setAttribute(node, 'data', JSON.stringify(dataInfo));
                 this.logger.info(`Setting ${nodeId} data to ${dataInfo}`);
             }
         }
