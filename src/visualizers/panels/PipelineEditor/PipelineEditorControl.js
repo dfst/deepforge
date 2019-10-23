@@ -655,10 +655,9 @@ define([
         this._client.startTransaction(msg);
         this._deleteTag(name);  // Remove execution tag
         if (this.isRunning(node)) {
-            this.silentStopExecution(id, true).then(() => {
-                this._client.deleteNode(id);
-                this._client.completeTransaction();
-            });
+            this.stopExecution(id);
+            this._client.deleteNode(id);
+            this._client.completeTransaction();
         } else {
             this._client.deleteNode(id);
             this._client.completeTransaction();
