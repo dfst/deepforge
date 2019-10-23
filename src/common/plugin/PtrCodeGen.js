@@ -35,9 +35,7 @@ define([
             namespace = this.core.getNamespace(node),
             pluginId;
 
-        //this.logger.debug(`loaded pointer target of ${ptrId}: ${ptrNode}`);
         pluginId = (this.core.getOwnRegistry(node, 'validPlugins') || '').split(' ').shift();
-        //this.logger.info(`generating code for ${this.core.getAttribute(ptrNode, 'name')} using ${pluginId}`);
 
         if (this.core.isMetaNode(node) && CodeGen[name]) {
             pluginId = CodeGen[name].pluginId || CodeGen[name];
@@ -56,30 +54,27 @@ define([
         }
     };
 
-    PtrCodeGen.prototype.getPtrCodeHash = function(ptrId, config={}) {
-        return this.core.loadByPath(this.rootNode, ptrId)
-            .then(ptrNode => {
-                // Look up the plugin to use
-                const info = this.getCodeGenPluginIdFor(ptrNode);
+    PtrCodeGen.prototype.getPtrCodeHash = async function(ptrId, config={}) {
+        const node = await this.core.loadByPath(this.rootNode, ptrId);
+        const info = this.getCodeGenPluginIdFor(node);
 
-                if (info && info.pluginId) {
-                    var context = {
-                        namespace: info.namespace,
-                        activeNode: this.core.getPath(ptrNode),
-                        project: this.project,
-                        commitHash: this.commitHash,
-                    };
+        if (info && info.pluginId) {
+            const context = {
+                namespace: info.namespace,
+                activeNode: this.core.getPath(node),
+                project: this.project,
+                commitHash: this.currentHash,
+            };
 
-                    // Load and run the plugin
-                    return this.executePlugin(info.pluginId, config, context);
-                } else {
-                    var metanode = this.core.getMetaType(ptrNode),
-                        type = this.core.getAttribute(metanode, 'name');
-                    this.logger.warn(`Could not find plugin for ${type}. Will try to proceed anyway`);
-                    return null;
-                }
-            })
-            .then(hashes => hashes[0]);  // Grab the first asset for now
+            // Load and run the plugin
+            const result = await this.executePlugin(info.pluginId, config, context);
+            return result.artifacts[0];
+        } else {
+            var metanode = this.core.getMetaType(node),
+                type = this.core.getAttribute(metanode, 'name');
+            this.logger.warn(`Could not find plugin for ${type}. Will try to proceed anyway`);
+            return null;
+        }
     };
 
     PtrCodeGen.prototype.getPtrCode = function() {
@@ -97,7 +92,7 @@ define([
             context
         );
         this.logger.info('Finished calling ' + pluginId);
-        return result.artifacts;
+        return result;
     };
 
     return PtrCodeGen;
