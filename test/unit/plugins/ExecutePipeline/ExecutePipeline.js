@@ -1,4 +1,4 @@
-/* globals describe, before, after */
+/* globals */
 /*jshint node:true, mocha:true*/
 
 describe('ExecutePipeline', function () {
@@ -62,7 +62,8 @@ describe('ExecutePipeline', function () {
     });
 
     it.skip('should execute single job', function (done) {
-        var context = {
+        const config = {compute: {id: 'gme'}};
+        const context = {
             project: project,
             commitHash: commitHash,
             namespace: 'pipeline',
@@ -70,7 +71,7 @@ describe('ExecutePipeline', function () {
             activeNode: '/f/5'
         };
 
-        manager.executePlugin(pluginName, {}, context, function (err, pluginResult) {
+        manager.executePlugin(pluginName, config, context, function (err, pluginResult) {
             expect(err).to.equal(null);
             expect(typeof pluginResult).to.equal('object');
             expect(pluginResult.success).to.equal(true);
@@ -107,7 +108,8 @@ describe('ExecutePipeline', function () {
     });
 
     var preparePlugin = function(done) {
-        var context = {
+        const config = {compute: {id: 'gme'}};
+        const context = {
             project: project,
             commitHash: commitHash,
             namespace: 'pipeline',
@@ -120,7 +122,8 @@ describe('ExecutePipeline', function () {
                 plugin = plugin_;
                 plugin.checkExecutionEnv = () => Q();
                 plugin.startExecHeartBeat = () => {};
-                return manager.configurePlugin(plugin, {}, context);
+                plugin.executionId = Promise.resolve('some_execution_id');
+                return manager.configurePlugin(plugin, config, context);
             })
             .then(() => node = plugin.activeNode)
             .nodeify(done);

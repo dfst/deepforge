@@ -66,7 +66,8 @@ describe('ExecuteJob', function () {
     var plugin,
         node,
         preparePlugin = function(done) {
-            var context = {
+            const config = {compute: {id: 'gme'}};
+            const context = {
                 project: project,
                 commitHash: commitHash,
                 namespace: 'pipeline',
@@ -77,7 +78,8 @@ describe('ExecuteJob', function () {
             return manager.initializePlugin(pluginName)
                 .then(plugin_ => {
                     plugin = plugin_;
-                    return manager.configurePlugin(plugin, {}, context);
+                    plugin.executionId = Promise.resolve('some_execution_id');
+                    return manager.configurePlugin(plugin, config, context);
                 })
                 .then(() => node = plugin.activeNode)
                 .nodeify(done);
