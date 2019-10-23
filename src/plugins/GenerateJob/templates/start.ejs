@@ -271,11 +271,13 @@ requirejs([
                     const config = require('./storage-config.json');
                     const client = await Storage.getBackend(STORAGE_ID).getClient(logger, config);
                     const outputNames = Object.keys(results);
+                    const storageDir = '<%= storageDir %>';
 
                     for (let i = outputNames.length; i--;) {
                         const filename = outputNames[i];
+                        const storagePath = `${storageDir}/${filename}`;
                         const contents = fs.readFileSync(`outputs/${filename}`);
-                        const dataInfo = await client.putFile(filename, contents);
+                        const dataInfo = await client.putFile(storagePath, contents);
                         const type = results[filename];
                         results[filename] = {type, dataInfo};
                     }

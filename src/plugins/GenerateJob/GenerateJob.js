@@ -296,8 +296,11 @@ define([
         const storage = this.getCurrentConfig().storage || {};
         storage.id = storage.id || 'gme';
         storage.config = storage.config || {};
+        const jobId = this.core.getPath(this.activeNode).replace(/\//g, '_');
+        const storageDir = `${this.projectId}/executions/${jobId}`;
 
         const startJS = _.template(Templates.START)({
+            storageDir,
             CONSTANTS,
             storageId: storage.id,
             inputs: inputs.map(pair => pair[0]),
