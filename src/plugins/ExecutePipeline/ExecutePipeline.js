@@ -122,6 +122,7 @@ define([
             return callback('Current node is not a Pipeline or Execution!', this.result);
         }
 
+        this.setAttribute(this.activeNode, 'executionId', await this.getExecutionId());
         this._callback = callback;
         this.currentForkName = null;
 

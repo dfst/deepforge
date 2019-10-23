@@ -93,8 +93,9 @@ define([
 
         const onPluginInitiated = (sender, event) => {
             this.client.removeEventListener(this._client.CONSTANTS.PLUGIN_INITIATED, onPluginInitiated);
-            this.client.setAttribute(node.getId(), 'executionId', event.executionId);
-            deferred.resolve(event.executionId);
+            const {executionId} = event;
+            this.client.sendMessageToPlugin(executionId, 'executionId', executionId);
+            deferred.resolve(executionId);
         };
 
         this.client.addEventListener(

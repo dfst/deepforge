@@ -71,6 +71,10 @@ define([
         this.deletions = [];
         this.createIdToMetadataId = {};
         this.logManager = null;
+
+        const deferred = Q.defer();
+        this.executionId = deferred.promise;
+        this.setExecutionId = deferred.resolve;
     };
 
     ExecuteJob.metadata = pluginMetadata;
@@ -114,15 +118,16 @@ define([
     ExecuteJob.prototype.main = async function (callback) {
         // Check the activeNode to make sure it is a valid node
         var type = this.core.getMetaType(this.activeNode),
-            typeName = type && this.getAttribute(type, 'name'),
-            execNode;
+            typeName = type && this.getAttribute(type, 'name');
 
         if (typeName !== 'Job') {
             return callback(new Error(`Cannot execute ${typeName} (expected Job)`), this.result);
         }
 
+        this.setAttribute(this.activeNode, 'executionId', await this.getExecutionId());
+
         // Set the parent execution to 'running'
-        execNode = this.core.getParent(this.activeNode);
+        const execNode = this.core.getParent(this.activeNode);
         this.setAttribute(execNode, 'status', 'running');
 
         this._callback = callback;
@@ -185,6 +190,16 @@ define([
 
     ExecuteJob.prototype.getJobId = function (node) {
         return JSON.parse(this.getAttribute(node, 'jobInfo')).hash;
+    };
+
+    ExecuteJob.prototype.getExecutionId = utils.withTimeout(async function() {
+        return await this.executionId;
+    }, new Error('Timeout: Did not receive execution ID'));
+
+    ExecuteJob.prototype.onMessage = function(messageId, content) {
+        if (messageId === 'executionId') {
+            this.setExecutionId(content);
+        }
     };
 
     ExecuteJob.prototype.onAbort =

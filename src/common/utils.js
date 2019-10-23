@@ -84,9 +84,37 @@
         return lines;
     };
 
+    const defer = function() {
+        const deferred = {resolve: null, reject: null};
+        deferred.promise = new Promise((resolve, reject) => {
+            deferred.resolve = resolve;
+            deferred.reject = reject;
+        });
+        return deferred;
+    };
+
+    const withTimeout = function(fn, err, time=1500) {
+        return async function() {
+            let deferred = defer();
+            let result = null;
+
+            setTimeout(() => {
+                if (!result) {
+                    deferred.reject(err);
+                }
+            }, time);
+
+            result = await fn.call(this);
+            deferred.resolve(result);
+            return deferred.promise;
+        };
+    };
+
     return {
-        getSetterSchema: getSetterSchema,
-        resolveCarriageReturns: resolveCarriageReturns,
-        abbr: abbr
+        getSetterSchema,
+        resolveCarriageReturns,
+        abbr,
+        withTimeout,
+        defer,
     };
 }));
