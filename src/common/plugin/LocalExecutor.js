@@ -17,7 +17,6 @@ define([
 
         const dataNodes = await this.core.loadChildren(outputContainer);
         const dataInfo = this.getAttribute(dataNodes[0], 'data');
-        console.log('dataInfo:', dataInfo, '(', typeof dataInfo, ')');
 
         // Pass the dataInfo to the next nodes
         const outputs = (await this.getOutputs(node))
