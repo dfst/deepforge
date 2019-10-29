@@ -171,22 +171,23 @@ define([
             });
     };
 
-    ExecuteJob.prototype.clearOldMetadata = function (job) {
-        var nodeId = this.core.getPath(job),
-            nodeIds,
-            node;
+    ExecuteJob.prototype.clearOldMetadata = async function (job) {
+        const nodeId = this.core.getPath(job);
+        const node = await this.getOperation(job);
 
-        // Remove created nodes left over from resumed job
-        this.createdMetadataIds[nodeId].forEach(id => delete this._markForDeletion[nodeId][id]);
-        nodeIds = Object.keys(this._markForDeletion[nodeId]);
-        this.logger.debug(`About to delete ${nodeIds.length}: ${nodeIds.join(', ')}`);
-        for (var i = nodeIds.length; i--;) {
-            node = this._markForDeletion[nodeId][nodeIds[i]];
-            this.deleteNode(this.core.getPath(node));
+        if (!this.isLocalOperation(node)) {
+            // Remove created nodes left over from resumed job
+            this.createdMetadataIds[nodeId].forEach(id => delete this._markForDeletion[nodeId][id]);
+            const nodeIds = Object.keys(this._markForDeletion[nodeId]);
+            this.logger.debug(`About to delete ${nodeIds.length}: ${nodeIds.join(', ')}`);
+            for (var i = nodeIds.length; i--;) {
+                const node = this._markForDeletion[nodeId][nodeIds[i]];
+                this.deleteNode(this.core.getPath(node));
+            }
+            delete this.lastAppliedCmd[nodeId];
+            delete this.createdMetadataIds[nodeId];
+            delete this._markForDeletion[nodeId];
         }
-        delete this.lastAppliedCmd[nodeId];
-        delete this.createdMetadataIds[nodeId];
-        delete this._markForDeletion[nodeId];
 
         this.delAttribute(job, 'jobInfo');
     };

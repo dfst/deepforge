@@ -202,7 +202,6 @@ requirejs([
                 logger.info('Retrieved ' + ipath);
                 return symlink(cachePath, ipath).then(deferred.resolve);
             })
-            .catch(err => deferred.reject(`Could not retrieve "${inputName}" (${err})`));
         });
 
         return deferred.promise;

@@ -5,6 +5,7 @@ define([
     'common/util/assert',
     'text!./metadata.json',
     'deepforge/compute/index',
+    'deepforge/storage/index',
     'plugin/PluginBase',
     'deepforge/plugin/LocalExecutor',
     'deepforge/plugin/PtrCodeGen',
@@ -23,6 +24,7 @@ define([
     assert,
     pluginMetadata,
     Compute,
+    Storage,
     PluginBase,
     LocalExecutor,  // DeepForge operation primitives
     PtrCodeGen,
@@ -187,6 +189,11 @@ define([
         );
     };
 
+    ExecuteJob.prototype.getStorageClient = async function () {
+        const {storage} = this.getCurrentConfig();
+        const backend = Storage.getBackend(storage.id);
+        return await backend.getClient(this.logger, storage.config);
+    };
 
     ExecuteJob.prototype.getJobId = function (node) {
         return JSON.parse(this.getAttribute(node, 'jobInfo')).hash;
@@ -675,16 +682,22 @@ define([
     };
 
     //////////////////////////// Special Operations ////////////////////////////
-    ExecuteJob.prototype.executeLocalOperation = function (node) {
+    ExecuteJob.prototype.executeLocalOperation = async function (node) {
         const type = this.getLocalOperationType(node);
 
         // Retrieve the given LOCAL_OP type
         if (!this[type]) {
-            this.logger.error(`No local operation handler for ${type}`);
+            const err = new Error(`No local operation handler for "${type}"`);
+            this.logger.error(err.message);
+            throw err;
         }
-        this.logger.info(`Running local operation ${type}`);
 
-        return this[type](node);
+        try {
+            await this[type](node);
+            this.onOperationComplete(node);
+        } catch (err) {
+            this.onOperationFail(node, err);
+        }
     };
 
     _.extend(

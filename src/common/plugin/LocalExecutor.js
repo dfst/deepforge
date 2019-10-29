@@ -3,44 +3,30 @@
 // These are all primitives in DeepForge
 define([
     'deepforge/Constants',
-    'deepforge/storage/index',
 ], function(
     CONSTANTS,
-    Storage,
 ) {
     'use strict';
     var LocalExecutor = function() {
     };
 
-    LocalExecutor.prototype[CONSTANTS.OP.INPUT] = function(node) {
-        // Get the hash from the output node
-        var hash;
-        return this.core.loadChildren(node)
-            .then(cntrs => {
-                // Get the output container and load it's children
-                var output = cntrs
-                    .find(cntr => {
-                        var metaNode = this.core.getMetaType(cntr),
-                            metaName = this.getAttribute(metaNode, 'name');
-                        return metaName === 'Outputs';
-                    });
-                return this.core.loadChildren(output);
-            })
-            .then(dataNodes => {
-                hash = this.getAttribute(dataNodes[0], 'data');
-                return this.getOutputs(node);
-            })
-            .then(outputTuples => {
-                var outputs = outputTuples.map(tuple => tuple[2]),
-                    paths;
+    LocalExecutor.prototype[CONSTANTS.OP.INPUT] = async function(node) {
+        // Get the dataInfo for the output node
+        const outputContainer = (await this.core.loadChildren(node))
+            .find(cntr => this.isMetaTypeOf(cntr, this.META.Outputs));
 
-                paths = outputs.map(output => this.core.getPath(output));
-                // Get the 'data' hash and store it in the output data ports
-                this.logger.info(`Loading blob data (${hash}) to ${paths.map(p => `"${p}"`)}`);
-                outputs.forEach(output => this.core.setAttribute(output, 'data', hash));
+        const dataNodes = await this.core.loadChildren(outputContainer);
+        const dataInfo = this.getAttribute(dataNodes[0], 'data');
+        console.log('dataInfo:', dataInfo, '(', typeof dataInfo, ')');
 
-                this.onOperationComplete(node);
+        // Pass the dataInfo to the next nodes
+        const outputs = (await this.getOutputs(node))
+            .map(tuple => {
+                const [/*name*/, /*type*/, node] = tuple;
+                return node;
             });
+
+        outputs.forEach(output => this.core.setAttribute(output, 'data', dataInfo));
     };
 
     LocalExecutor.prototype.ArtifactFinder = function(node) {
@@ -74,7 +60,6 @@ define([
                             // Get the 'data' hash and store it in the output data ports
                             outputs.forEach(output => this.setAttribute(output, 'data', hash));
 
-                            this.onOperationComplete(node);
                         });
                 }
             });
@@ -123,26 +108,23 @@ define([
                 .find(pair => pair[0] === name && pair[1] === hash));
         });
 
-        this.logger.info(`Saving ${dataNodes.length} artifacts in ${this.projectId}.`);
         const saveDir = `${this.projectId}/artifacts/`;
+        const storage = await this.getStorageClient();
         for (let i = dataNodes.length; i--;) {
-            const artifact = this.core.createNode({
-                base: this.META.Data,
-                parent: artifactsDir,
-            });
+            const artifact = this.createNode('Data', artifactsDir);
             const name = this.core.getOwnAttribute(node, 'saveName') ||
                 this.getAttribute(dataNodes[i], 'name');
             const createdAt = Date.now();
-            const originalData = this.getAttribute(dataNodes[i], 'data');
-            const userAsset = await Storage.copy(originalData, saveDir + name);
+            const originalData = JSON.parse(this.getAttribute(dataNodes[i], 'data'));
+            const userAsset = await storage.copy(originalData, saveDir + name);
 
-            this.setAttribute(artifact, 'data', userAsset);
+            this.setAttribute(artifact, 'data', JSON.stringify(userAsset));
             this.setAttribute(artifact, 'name', name);
             this.setAttribute(artifact, 'createdAt', createdAt);
             this.setPointer(artifact, 'origin', inputs[0][2]);
         }
 
-        this.onOperationComplete(node);
+        this.logger.info(`Saved ${dataNodes.length} artifacts in ${this.projectId}.`);
     };
 
     // Helper methods
