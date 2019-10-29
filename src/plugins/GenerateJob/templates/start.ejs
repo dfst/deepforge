@@ -10,7 +10,6 @@ const IMAGE = '<%= CONSTANTS.IMAGE.PREFIX %>';
 const log = console.error;
 const logger = {};
 const StorageInfo = require('./storage-config.json');
-console.log('STORAGE INFO', StorageInfo);
 
 // Create the stderr only logger
 ['error', 'warn', 'info', 'log', 'debug'].forEach(method => logger[method] = log);
