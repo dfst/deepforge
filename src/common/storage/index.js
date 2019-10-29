@@ -51,28 +51,30 @@
             return metadata;
         };
 
-        Storage.getMetadata = async function(dataInfo, logger) {
-            const backend = this.getBackend(dataInfo.backend);
-            const client = await backend.getClient(logger);
+        Storage.getMetadata = async function(dataInfo, logger, configs) {
+            const client = await this.getClient(dataInfo, logger, configs);
             return client.getMetadata(dataInfo);
         };
 
-        Storage.getDownloadURL = async function(dataInfo, logger) {
-            const backend = this.getBackend(dataInfo.backend);
-            const client = await backend.getClient(logger);
+        Storage.getDownloadURL = async function(dataInfo, logger, configs) {
+            const client = await this.getClient(dataInfo, logger, configs);
             return client.getDownloadURL(dataInfo);
         };
 
-        Storage.getFile = async function(dataInfo, logger) {
-            const backend = this.getBackend(dataInfo.backend);
-            const client = await backend.getClient(logger);
+        Storage.getFile = async function(dataInfo, logger, configs) {
+            const client = await this.getClient(dataInfo, logger, configs);
             return client.getFile(dataInfo);
         };
 
-        Storage.getCachePath = async function(dataInfo, logger) {
-            const backend = this.getBackend(dataInfo.backend);
-            const client = await backend.getClient(logger);
+        Storage.getCachePath = async function(dataInfo, logger, configs) {
+            const client = await this.getClient(dataInfo, logger, configs);
             return await client.getCachePath(dataInfo);
+        };
+
+        Storage.getClient = async function(dataInfo, logger, configs={}) {
+            const config = configs[dataInfo.backend];
+            const backend = this.getBackend(dataInfo.backend);
+            return await backend.getClient(logger, config);
         };
 
         return Storage;

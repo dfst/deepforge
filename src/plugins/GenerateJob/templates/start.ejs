@@ -9,6 +9,8 @@ const COMMAND_PREFIX = '<%= CONSTANTS.START_CMD %>';
 const IMAGE = '<%= CONSTANTS.IMAGE.PREFIX %>';
 const log = console.error;
 const logger = {};
+const StorageInfo = require('./storage-config.json');
+console.log('STORAGE INFO', StorageInfo);
 
 // Create the stderr only logger
 ['error', 'warn', 'info', 'log', 'debug'].forEach(method => logger[method] = log);
@@ -176,31 +178,31 @@ requirejs([
 
     var getData = async function(ipath, dataInfo) {
         // Download the data and put it in the given path
-        var deferred = Q.defer(),
-            inputName = ipath.split('/')[1],
-            cachePath = await dataCachePath(dataInfo);
+        const deferred = Q.defer();
+        const inputName = ipath.split('/')[1];
+        const cachePath = await dataCachePath(dataInfo);
 
         
         logger.debug(`retrieving ${ipath}`);
-        fs.lstat(cachePath, (err, cacheStats) => {
+        fs.lstat(cachePath, async (err, cacheStats) => {
             // Check if the data exists in the cache
             if (!err && cacheStats.isFile()) {
             logger.info(`${inputName} already cached. Skipping retrieval from blob`);
                 return symlink(cachePath, ipath).then(deferred.resolve);
             }
 
-            createCacheDir(cachePath)
-                .then(() => Storage.getFile(dataInfo, logger))
-                .then(buffer => fs.writeFile(cachePath, buffer, (err, result) => {
-                    if (err) {
-                        logger.error('Retrieving ' + ipath + ' failed!');
-                        return deferred.reject(`Could not write to ${ipath}: ${err}`);
-                    }
-                    // Create the symlink
-                    logger.info('Retrieved ' + ipath);
-                    return symlink(cachePath, ipath).then(deferred.resolve);
-                }))
-                .catch(err => deferred.reject(`Could not retrieve "${inputName}" (${err})`));
+            await createCacheDir(cachePath);
+            const buffer = await Storage.getFile(dataInfo, logger, StorageInfo);
+            fs.writeFile(cachePath, buffer, (err, result) => {
+                if (err) {
+                    logger.error('Retrieving ' + ipath + ' failed!');
+                    return deferred.reject(`Could not write to ${ipath}: ${err}`);
+                }
+                // Create the symlink
+                logger.info('Retrieved ' + ipath);
+                return symlink(cachePath, ipath).then(deferred.resolve);
+            })
+            .catch(err => deferred.reject(`Could not retrieve "${inputName}" (${err})`));
         });
 
         return deferred.promise;
@@ -268,7 +270,7 @@ requirejs([
                 if (exitCode === 0) {
                     const results = require('./result-types.json');
                     const STORAGE_ID = '<%= storageId %>';
-                    const config = require('./storage-config.json');
+                    const config = StorageInfo[STORAGE_ID];
                     const client = await Storage.getBackend(STORAGE_ID).getClient(logger, config);
                     const outputNames = Object.keys(results);
                     const storageDir = '<%= storageDir %>';

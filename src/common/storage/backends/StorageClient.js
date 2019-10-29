@@ -19,21 +19,26 @@ define([
         this.logger = logger.fork(`storage:${id}`);
     };
 
-    StorageClient.prototype.getFile = async function() {
+    StorageClient.prototype.getFile = async function(/*dataInfo*/) {
         throw new Error(`File download not implemented for ${this.name}`);
     };
 
-    StorageClient.prototype.putFile = async function() {
+    StorageClient.prototype.putFile = async function(/*filename, content*/) {
         throw new Error(`File upload not supported by ${this.name}`);
     };
 
-    StorageClient.prototype.getDownloadURL = async function() {
+    StorageClient.prototype.getDownloadURL = async function(/*dataInfo*/) {
         // TODO: Remove this in favor of directly downloading w/ getFile, etc
         throw new Error(`getDownloadURL not implemented for ${this.name}`);
     };
 
-    StorageClient.prototype.getMetadata = async function() {
+    StorageClient.prototype.getMetadata = async function(/*dataInfo*/) {
         throw new Error(`getDownloadURL not implemented for ${this.name}`);
+    };
+
+    StorageClient.prototype.copy = async function(dataInfo, filename) {
+        const content = await this.getFile(dataInfo);
+        return this.putFile(filename, content);
     };
 
     StorageClient.prototype.createDataInfo = function(data) {
