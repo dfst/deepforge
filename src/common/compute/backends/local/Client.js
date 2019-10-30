@@ -41,7 +41,7 @@ define([
     const UNZIP_EXE = '/usr/bin/unzip';  // FIXME: more platform support
     const UNZIP_ARGS = ['-o'];  // FIXME: more platform support
     const DEEPFORGE_ROOT = path.join(path.dirname(module.uri), '..', '..', '..', '..', '..');
-    const NODE_MODULES = path.join(DEEPFORGE_ROOT, 'node_modules');  // TODO
+    const NODE_MODULES = path.join(DEEPFORGE_ROOT, 'node_modules');
     const symlink = promisify(fs.symlink);
     const touch = async name => await closeFile(await openFile(name, 'w'));
 
