@@ -185,7 +185,6 @@ define([
     LocalExecutor.prototype.onConsoleOutput = async function(workdir, hash, data) {
         const filename = path.join(workdir, 'job_stdout.txt');
         appendFile(filename, data);
-        this.logger.info('stdout:', data);
         this.emit('data', hash, data);
     };
 
