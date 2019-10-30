@@ -271,5 +271,11 @@ define([
         };
     };
 
+    ExecuteJob.prototype.onNodeCreated = async function (tmpId, node) {
+        const id = this.createIdToMetadataId[tmpId];
+        delete this.createIdToMetadataId[tmpId];
+        this._metadata[id] = node;
+    };
+
     return ExecuteJob;
 });

@@ -56,6 +56,10 @@
       "ExportBranch": {
         "src": "src/plugins/ExportBranch",
         "test": "test/plugins/ExportBranch"
+      },
+      "TwoPhaseCommit": {
+        "src": "src/plugins/TwoPhaseCommit",
+        "test": "test/plugins/TwoPhaseCommit"
       }
     },
     "layouts": {

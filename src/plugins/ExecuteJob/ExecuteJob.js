@@ -6,7 +6,7 @@ define([
     'text!./metadata.json',
     'deepforge/compute/index',
     'deepforge/storage/index',
-    'plugin/PluginBase',
+    'plugin/TwoPhaseCommit/TwoPhaseCommit/TwoPhaseCommit',
     'deepforge/plugin/LocalExecutor',
     'deepforge/plugin/PtrCodeGen',
     'deepforge/plugin/Operation',
@@ -14,7 +14,6 @@ define([
     'deepforge/api/JobOriginClient',
     'deepforge/api/ExecPulseClient',
     './ExecuteJob.Metadata',
-    './ExecuteJob.SafeSave',
     'deepforge/Constants',
     'deepforge/utils',
     'q',
@@ -34,7 +33,6 @@ define([
     ExecPulseClient,
 
     ExecuteJobMetadata,
-    ExecuteJobSafeSave,
 
     CONSTANTS,
     utils,
@@ -58,7 +56,6 @@ define([
     var ExecuteJob = function () {
         // Call base class' constructor.
         PluginBase.call(this);
-        ExecuteJobSafeSave.call(this);
         ExecuteJobMetadata.call(this);
         this.pluginMetadata = pluginMetadata;
         this._running = null;
@@ -67,16 +64,14 @@ define([
         this.lastAppliedCmd = {};
         this.canceled = false;
 
-        this.changes = {};
-        this.currentChanges = {};  // read-only changes being applied
-        this.creations = {};
-        this.deletions = [];
         this.createIdToMetadataId = {};
         this.logManager = null;
 
         const deferred = Q.defer();
         this.executionId = deferred.promise;
         this.setExecutionId = deferred.resolve;
+
+        this.runningJobHashes = [];
     };
 
     ExecuteJob.metadata = pluginMetadata;
@@ -704,7 +699,6 @@ define([
         ExecuteJob.prototype,
         OperationPlugin.prototype,
         ExecuteJobMetadata.prototype,
-        ExecuteJobSafeSave.prototype,
         PtrCodeGen.prototype,
         LocalExecutor.prototype
     );
@@ -715,6 +709,17 @@ define([
 
         result.stdout = utils.resolveCarriageReturns(result.stdout).join('\n');
         return result;
+    };
+
+    ExecuteJob.prototype.getNodeCaches = function () {
+        const caches = PluginBase.prototype.getNodeCaches.call(this);
+        return caches.concat([this._execHashToJobNode, ]);
+    };
+
+    ExecuteJob.prototype.onSaveForked = function (forkName) {
+        PluginBase.prototype.onSaveForked.call(this, forkName);
+        this.logManager.fork(forkName);
+        this.runningJobHashes.forEach(jobId => this.originManager.fork(jobId, forkName));
     };
 
     const ERROR = {};
