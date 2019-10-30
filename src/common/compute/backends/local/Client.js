@@ -165,10 +165,12 @@ define([
         this.subprocess = spawn(config.cmd, config.args, env);
         this.emit('update', jobInfo.hash, this.RUNNING);
         this.subprocess.stdout.on('data', data => this.onConsoleOutput(tmpdir, hash, data));
+        this.subprocess.stderr.on('data', data => this.onConsoleOutput(tmpdir, hash, data));
 
         this.subprocess.on('close', async code => {
             const status = this.canceled ? this.CANCELED :
                 (code !== 0 ? this.FAILED : this.SUCCESS);
+
             const jobResults = new JobResults(status);
             this.canceled = false;
 
