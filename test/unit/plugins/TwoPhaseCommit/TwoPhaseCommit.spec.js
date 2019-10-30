@@ -303,6 +303,30 @@ describe('TwoPhaseCommit', function() {
             const root = await loadRootNode(context);
             assert.equal(plugin.core.getAttribute(root, 'name'), 'hello');
         });
+
+        it('should update create nodes', async function() {
+            plugin.getNodeCaches = function() {
+                const caches = TwoPhaseCommit.prototype.getNodeCaches.call(this);
+                return caches.concat([this.customCache]);
+            };
+
+            plugin.main = async function(callback) {
+                this.customCache = {};
+                const oldNode = this.createNode('FCO', this.rootNode);
+                this.customCache['hi'] = oldNode;
+
+                await this.save('Test save...');
+
+                assert.notEqual(this.customCache['hi'], oldNode, 'Custom cache value not updated.');
+                this.result.setSuccess(true);
+                return callback(null, this.result);
+            };
+            await manager.runPluginMain(plugin);
+
+            const root = await loadRootNode(context);
+            const children = await plugin.core.loadChildren(root);
+            assert.equal(children.length, 2);
+        });
     });
 
     describe('while saving', function() {

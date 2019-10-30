@@ -17,9 +17,7 @@ define([
 
     pluginMetadata = JSON.parse(pluginMetadata);
 
-    var CREATE_PREFIX = 'created_node_',
-        INDEX = 1;
-
+    const CREATE_PREFIX = 'created_node_';
     const TwoPhaseCommit = function() {
         PluginBase.call(this);
         this.pluginMetadata = pluginMetadata;
@@ -31,10 +29,6 @@ define([
         this.deletions = [];
 
         this.queuedChangesToCommit = [];
-
-        this._metadata = {};
-        this.createIdToMetadataId = {};  // TODO: REMOVE
-        
     };
 
     TwoPhaseCommit.INVOKE_ERR = 'TwoPhaseCommit is an abstract plugin and not meant for direct usage.';
@@ -59,7 +53,7 @@ define([
 
     TwoPhaseCommit.prototype.createNode = function (baseType, parent) {
         const parentId = parent instanceof CreatedNode ? parent.id : this.core.getPath(parent);
-        const node = new CreatedNode(baseType, parentId);
+        const node = new CreatedNode(this.META[baseType], parent);
 
         this.logger.info(`Creating ${node.id} of type ${baseType} in ${parentId}`);
         assert(this.META[baseType], `Cannot create node w/ unrecognized type: ${baseType}`);
@@ -245,7 +239,7 @@ define([
         for (let j = tier.length; j--;) {
             const tmpId = tier[j];
             const createdNode = changes.getCreatedNode(tmpId);
-            const node = await this.applyCreateNode(createdNode);
+            const node = await createdNode.toGMENode(this.rootNode, this.core);
             changes.onNodeCreated(createdNode, this.core.getPath(node));
             this.onNodeCreated(createdNode, node);
             newNodes[tmpId] = node;
@@ -253,20 +247,6 @@ define([
     };
 
     TwoPhaseCommit.prototype.onNodeCreated = async function (/*tmpId, node*/) {
-    };
-
-    TwoPhaseCommit.prototype.applyCreateNode = async function (createdNode) {
-        const {id, baseType, parentId} = createdNode;
-        const base = this.META[baseType];
-
-        this.logger.info(`Applying creation of ${id} (${baseType}) in ${parentId}`);
-
-        assert(!isCreateId(parentId),
-            `Did not resolve parent id: ${parentId} for ${id}`);
-        assert(base, `Invalid base type: ${baseType}`);
-        const parent = await this.core.loadByPath(this.rootNode, parentId);
-        const node = await this.core.createNode({base, parent});
-        return node;
     };
 
     TwoPhaseCommit.prototype.applyDeletions = async function (changes) {
@@ -343,11 +323,6 @@ define([
         for (let i = caches.length; i--;) {
             await this.updateExistingNodeDict(caches[i]);
         }
-
-        const existingIds = Object.keys(this._metadata)
-            .filter(id => !isCreateId(this._metadata[id]));
-
-        await this.updateExistingNodeDict(this._metadata, existingIds);
     };
 
     TwoPhaseCommit.prototype.getNodeCaches = function () {
@@ -358,15 +333,17 @@ define([
      * Update a dictionary of *existing* nodes to the node instances in the
      * current commit.
      */
-    TwoPhaseCommit.prototype.updateExistingNodeDict = function (dict, keys) {
+    TwoPhaseCommit.prototype.updateExistingNodeDict = async function (dict, keys) {
         keys = keys || Object.keys(dict);
 
-        return Q.all(keys.map(key => {
-            const oldNode = dict[key];
+        for (let i = keys.length; i--;) {
+            const key = keys[i];
+            const oldNode = isCreatedNode(dict[key]) ?
+                await dict[key].toGMENode(this.rootNode, this.core) : dict[key];
+
             const nodePath = this.core.getPath(oldNode);
-            return this.core.loadByPath(this.rootNode, nodePath)
-                .then(newNode => dict[key] = newNode);
-        }));
+            dict[key] = await this.core.loadByPath(this.rootNode, nodePath);
+        }
     };
 
     function StagedChanges(createdNodes, changes, deletions) {
@@ -468,11 +445,32 @@ define([
         return this.deletions;
     };
 
-    function CreatedNode(baseType, parentId) {
-        this.id = CREATE_PREFIX + (++INDEX);
-        this.baseType = baseType;
-        this.parentId = parentId;
+    let counter = 0;
+    function CreatedNode(base, parent) {
+        this.id = CREATE_PREFIX + (++counter);
+        this.base = base;
+        this.parent = parent;
+        this._nodeId = null;
     }
+
+    CreatedNode.getGMENode = async function(rootNode, core, node) {
+        return !isCreatedNode(node) ?
+            await core.loadByPath(rootNode, core.getPath(node)) :
+            await node.toGMENode(rootNode, core);
+    };
+
+    CreatedNode.prototype.toGMENode = async function(rootNode, core) {
+        if (!this._nodeId) {
+            console.log('parent...');
+            const parent = await CreatedNode.getGMENode(rootNode, core, this.parent);
+            console.log('base...');
+            const base = await CreatedNode.getGMENode(rootNode, core, this.base);
+            const node = core.createNode({base, parent});
+            this._nodeId = core.getPath(node);
+            return node;
+        }
+        return core.loadByPath(rootNode, this._nodeId);
+    };
 
     return TwoPhaseCommit;
 });
