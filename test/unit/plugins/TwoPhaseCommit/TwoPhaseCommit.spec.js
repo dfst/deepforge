@@ -110,7 +110,79 @@ describe('TwoPhaseCommit', function() {
     });
 
     describe('editing nodes', function() {
-        it('should be able to edit existing nodes', async function() {
+        it('should be able to setPointer btwn existing nodes', async function() {
+            plugin.main = async function(callback) {
+                this.setPointer(this.activeNode, 'root', this.rootNode);
+                await this.save('Test save...');
+                this.result.setSuccess(true);
+                return callback(null, this.result);
+            };
+            await manager.runPluginMain(plugin);
+
+            const root = await loadRootNode(context);
+            const fco = await plugin.core.loadByPath(root, '/1');
+            const ptrPath = plugin.core.getPointerPath(fco, 'root');
+            assert.equal(plugin.core.getPath(root), ptrPath, 'Pointer not set to root node.');
+        });
+
+        it('should be able to setPointer on new node', async function() {
+            let newNodePath = null;
+            plugin.main = async function(callback) {
+                const newNode = this.createNode('FCO', this.rootNode);
+                this.setPointer(newNode, 'root', this.rootNode);
+                await this.save('Test save...');
+                newNodePath = this.core.getPath(await newNode.toGMENode(this.rootNode, this.core));
+                this.result.setSuccess(true);
+                return callback(null, this.result);
+            };
+            await manager.runPluginMain(plugin);
+
+            const root = await loadRootNode(context);
+            const newNode = await plugin.core.loadByPath(root, newNodePath);
+            const ptrPath = plugin.core.getPointerPath(newNode, 'root');
+            assert.equal(plugin.core.getPath(root), ptrPath, 'Pointer not set to root node.');
+        });
+
+        it('should be able to setPointer to new node', async function() {
+            let newNodePath = null;
+            plugin.main = async function(callback) {
+                const newNode = this.createNode('FCO', this.rootNode);
+                this.setPointer(this.activeNode, 'newNode', newNode);
+                await this.save('Test save...');
+                newNodePath = this.core.getPath(await newNode.toGMENode(this.rootNode, this.core));
+                this.result.setSuccess(true);
+                return callback(null, this.result);
+            };
+            await manager.runPluginMain(plugin);
+
+            const root = await loadRootNode(context);
+            const fco = await plugin.core.loadByPath(root, '/1');
+            const ptrPath = plugin.core.getPointerPath(fco, 'newNode');
+            assert.equal(newNodePath, ptrPath, 'Pointer not set to new node.');
+        });
+
+        it('should be able to setPointer btwn new nodes', async function() {
+            let newNodePath = null;
+            let targetPath = null;
+            plugin.main = async function(callback) {
+                const newNode = this.createNode('FCO', this.rootNode);
+                const target = this.createNode('FCO', this.rootNode);
+                this.setPointer(newNode, 'somePointer', target);
+                await this.save('Test save...');
+                newNodePath = this.core.getPath(await newNode.toGMENode(this.rootNode, this.core));
+                targetPath = this.core.getPath(await target.toGMENode(this.rootNode, this.core));
+                this.result.setSuccess(true);
+                return callback(null, this.result);
+            };
+            await manager.runPluginMain(plugin);
+
+            const root = await loadRootNode(context);
+            const newNode = await plugin.core.loadByPath(root, newNodePath);
+            const ptrPath = plugin.core.getPointerPath(newNode, 'somePointer');
+            assert.equal(targetPath, ptrPath, `Pointer not set to new node: ${ptrPath}`);
+        });
+
+        it('should be able to setAttribute on existing nodes', async function() {
             plugin.main = async function(callback) {
                 this.setAttribute(this.rootNode, 'name', 'hello');
                 await this.save('Test save...');
@@ -123,7 +195,7 @@ describe('TwoPhaseCommit', function() {
             assert.equal(plugin.core.getAttribute(root, 'name'), 'hello');
         });
 
-        it('should be able to edit newly created nodes', async function() {
+        it('should be able to setAttribute on newly created nodes', async function() {
             plugin.main = async function(callback) {
                 const newNode = this.createNode('FCO', this.rootNode);
                 this.setAttribute(newNode, 'name', 'hello');

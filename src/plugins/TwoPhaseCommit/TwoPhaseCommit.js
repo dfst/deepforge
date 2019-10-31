@@ -136,8 +136,7 @@ define([
 
     TwoPhaseCommit.prototype.setPointer = function (node, name, target) {
         const changes = this.getChangesForNode(node);
-        const targetId = isCreatedNode(target) ? target.id : this.core.getPath(target);
-        changes.ptr[name] = targetId;
+        changes.ptr[name] = target;
     };
 
     TwoPhaseCommit.prototype._getValueFrom = function (nodeId, attr, node, changes) {
@@ -169,8 +168,8 @@ define([
 
         const ptrPairs = Object.entries(edits.ptr);
         for (let i = ptrPairs.length; i--;) {
-            const [ptr, targetId] = ptrPairs[i];
-            const target = await this.core.loadByPath(this.rootNode, targetId);
+            let [ptr, target] = ptrPairs[i];
+            target = await CreatedNode.getGMENode(this.rootNode, this.core, target);
             this.core.setPointer(node, ptr, target);
         }
 
@@ -209,16 +208,12 @@ define([
     };
 
     TwoPhaseCommit.prototype.applyCreations = async function (changes) {
-        const tiers = changes.createCreationTiers();
-        const newNodes = {};
-
-        this.logger.info('Applying staged changes: node creations');
-        for (let i = 0; i < tiers.length; i++) {
-            const tier = tiers[i];
-            await this.applyCreationTier(changes, newNodes, tier);
+        for (let i = changes.createdNodes.length; i--;) {
+            const createdNode = changes.createdNodes[i];
+            const node = await createdNode.toGMENode(this.rootNode, this.core);
+            changes.onNodeCreated(createdNode, this.core.getPath(node));
+            this.onNodeCreated(createdNode, node);
         }
-
-        return await this.resolveCreatedPtrTargets(newNodes);
     };
 
     TwoPhaseCommit.prototype.resolveCreatedPtrTargets = function (newNodes) {
@@ -233,17 +228,6 @@ define([
                 }
             });
         });
-    };
-
-    TwoPhaseCommit.prototype.applyCreationTier = async function (changes, newNodes, tier) {
-        for (let j = tier.length; j--;) {
-            const tmpId = tier[j];
-            const createdNode = changes.getCreatedNode(tmpId);
-            const node = await createdNode.toGMENode(this.rootNode, this.core);
-            changes.onNodeCreated(createdNode, this.core.getPath(node));
-            this.onNodeCreated(createdNode, node);
-            newNodes[tmpId] = node;
-        }
     };
 
     TwoPhaseCommit.prototype.onNodeCreated = async function (/*tmpId, node*/) {
@@ -352,52 +336,6 @@ define([
         this.deletions = deletions;
     }
 
-    // Figure out the dependencies between nodes to create.
-    // eg, if newId1 is to be created in newId2, then newId2 will
-    // be in an earlier tier than newId1. Essentially a topo-sort
-    // on a tree structure
-    StagedChanges.prototype.createCreationTiers = function () {
-        const nodes = this.createdNodes.slice();
-        var tiers = [],
-            prevTier = {},
-            tier = {},
-            id,
-            prevLen,
-            i;
-
-        // Create first tier (created inside existing nodes)
-        for (i = nodes.length; i--;) {
-            id = nodes[i].id;
-            if (!isCreateId(nodes[i].parentId)) {
-                tier[id] = true;
-                nodes.splice(i, 1);
-            }
-        }
-        prevTier = tier;
-        tiers.push(Object.keys(tier));
-
-        // Now, each tier consists of the nodes to be created inside a
-        // node from the previous tier
-        while (nodes.length) {
-            prevLen = nodes.length;
-            tier = {};
-            for (i = nodes.length; i--;) {
-                id = nodes[i].id;
-                if (prevTier[nodes[i].parentId]) {
-                    tier[id] = true;
-                    nodes.splice(i, 1);
-                }
-            }
-            prevTier = tier;
-            tiers.push(Object.keys(tier));
-            // Every iteration should find at least one node
-            assert(prevLen > nodes.length,
-                `Created empty create tier! Remaining: ${nodes.length}`);
-        }
-
-        return tiers;
-    };
-
     StagedChanges.prototype.getCreatedNode = function(id) {
         return this.createdNodes.find(node => node.id === id);
     };
@@ -412,12 +350,6 @@ define([
 
             delete this.changes[tmpId];
         }
-
-        this.createdNodes.forEach(node => {
-            if (node.parentId === tmpId) {
-                node.parentId = nodeId;
-            }
-        });
 
         // Update any deletions
         let index = this.deletions.indexOf(tmpId);
@@ -461,9 +393,7 @@ define([
 
     CreatedNode.prototype.toGMENode = async function(rootNode, core) {
         if (!this._nodeId) {
-            console.log('parent...');
             const parent = await CreatedNode.getGMENode(rootNode, core, this.parent);
-            console.log('base...');
             const base = await CreatedNode.getGMENode(rootNode, core, this.base);
             const node = core.createNode({base, parent});
             this._nodeId = core.getPath(node);
