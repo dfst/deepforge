@@ -285,9 +285,8 @@ describe('TwoPhaseCommit', function() {
             assert.equal(children.length, 1);
         });
 
-        it.skip('should be able to delete nodes', async function() {
+        it('should be able to delete using created node', async function() {
             plugin.main = async function(callback) {
-                // FIXME: This is a problem!
                 const newNode = this.createNode('FCO', this.rootNode);
                 await this.save('Test save...');
                 this.deleteNode(newNode);  // newNode is currently incorrect...
@@ -299,7 +298,7 @@ describe('TwoPhaseCommit', function() {
 
             const root = await loadRootNode(context);
             const children = await plugin.core.loadChildren(root);
-            assert.equal(children.length, 0);
+            assert.equal(children.length, 1);
         });
     });
 

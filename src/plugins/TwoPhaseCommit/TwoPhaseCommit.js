@@ -62,8 +62,20 @@ define([
     };
 
     TwoPhaseCommit.prototype.deleteNode = function (node) {
-        const nodeId = isCreatedNode(node) ? node.id : this.core.getPath(node);
-        this.deletions.push(nodeId);
+        this.deletions.push(node);
+    };
+
+    TwoPhaseCommit.prototype.loadChildren = async function (node) {
+        if (isCreatedNode(node)) {
+            const parentId = node.id;
+            const allCreatedNodes = this.queuedChangesToCommit.concat([this])
+                .map(changes => changes.createdNodes)
+                .reduce((l1, l2) => l1.concat(l2));
+
+            return allCreatedNodes.filter(node => node.parentId === parentId);
+        } else {
+            return await this.core.loadChildren(node);
+        }
     };
 
     TwoPhaseCommit.prototype.delAttribute = function (node, attr) {
@@ -234,15 +246,10 @@ define([
     };
 
     TwoPhaseCommit.prototype.applyDeletions = async function (changes) {
-        const deletedIds = changes.getDeletedNodeIds();
+        const nodes = await changes.getDeletedNodes(this.rootNode, this.core);
 
-        for (let i = deletedIds.length; i--;) {
-            const id = deletedIds[i];
-            if (isCreateId(id)) {
-                continue;
-            }
-            const node = await this.core.loadByPath(this.rootNode, id);
-            this.core.deleteNode(node);
+        for (let i = nodes.length; i--;) {
+            this.core.deleteNode(nodes[i]);
         }
     };
 
@@ -373,8 +380,11 @@ define([
         return Object.keys(this.changes);
     };
 
-    StagedChanges.prototype.getDeletedNodeIds = function() {
-        return this.deletions;
+    StagedChanges.prototype.getDeletedNodes = function(root, core) {
+        const gmeNodes = this.deletions
+            .map(node => CreatedNode.getGMENode(root, core, node));
+
+        return Promise.all(gmeNodes);
     };
 
     let counter = 0;
