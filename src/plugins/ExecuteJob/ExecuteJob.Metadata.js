@@ -10,8 +10,7 @@ define([
         this._markForDeletion = {};  // id -> node
         this._oldMetadataByName = {};  // name -> id
         this.createdMetadataIds = {};
-
-        this.plotLines = {};
+        this.createIdToMetadataId = {};
     };
 
     // I think I should convert these to just a single 'update graph' command
@@ -25,8 +24,6 @@ define([
         if (!graph) {
             graph = this.createNode('Graph', job);
             this.setAttribute(graph, 'id', id);
-
-            this.createIdToMetadataId[graph] = id;
         }
 
         // Apply whatever updates are needed
@@ -38,55 +35,17 @@ define([
         this.setAttribute(graph, 'ylabel', axes.ylabel);
         this.logger.info(`Updating graph named ${axes.title}`);
 
-        // Delete current line nodes
-        if (!this.isCreateId(graph)) {
-            //const children = await this.core.loadChildren(graph);
-            const childIds = this.core.getChildrenPaths(graph);
-            childIds.forEach(id => this.deleteNode(id));
-        }
-
-        if (this.plotLines[id]) {
-            this.plotLines[id].forEach(lineId => {
-                if (this._metadata[lineId]) {
-                    const nodeId = this.core.getPath(this._metadata[lineId]);
-                    this.deleteNode(nodeId);
-                } else {
-                    const createId = Object.keys(this.createIdToMetadataId)
-                        .find(createId => this.createIdToMetadataId[createId] === lineId);
-
-                    if (createId) {
-                        this.deleteNode(createId);
-                    }
-                }
-            });
-        }
-        this.plotLines[id] = [];
+        const children = await this.loadChildren(graph);
+        children.forEach(node => this.deleteNode(node));
 
         // Update the points for each of the lines 
         axes.lines.forEach((line, index) => {
-            let lineId = id + '/' + index;
             let node = this.createNode('Line', graph);
-            this.plotLines[id].push(lineId);
-            this.createIdToMetadataId[node] = lineId;
 
             this.setAttribute(node, 'name', line.label || `line ${index+1}`);
             let points = line.points.map(pts => pts.join(',')).join(';');
             this.setAttribute(node, 'points', points);
         });
-    };
-
-    ExecuteJob.prototype[CONSTANTS.GRAPH_CREATE_LINE] = function (job, graphId, id) {
-        var jobId = this.core.getPath(job),
-            graph = this._metadata[jobId + '/' + graphId],
-            name = Array.prototype.slice.call(arguments, 3).join(' '),
-            line;
-
-        // Create a 'line' node in the given Graph metadata node
-        name = name.replace(/\s+$/, '');
-        line = this.createNode('Line', graph);
-        this.setAttribute(line, 'name', name);
-        this._metadata[jobId + '/' + id] = line;
-        this.createIdToMetadataId[line] = jobId + '/' + id;
     };
 
     ExecuteJob.prototype[CONSTANTS.IMAGE.BASIC] =
@@ -118,7 +77,6 @@ define([
                 this.logger.info(`Creating image ${id} named ${name}`);
                 imageNode = this.createNode('Image', job);
                 this.setAttribute(imageNode, 'name', name);
-                this.createIdToMetadataId[imageNode] = id;
             }
             this._metadata[id] = imageNode;
         }
@@ -198,18 +156,11 @@ define([
     };
 
     ExecuteJob.prototype.getExistingMetadataById = function (job, type, id) {
-        const createId = Object.keys(this.createIdToMetadataId)
-            .find(createId => this.createIdToMetadataId[createId] === id);
-
-        if (createId) {  // on the queue to be created
-            return createId;
-        }
-
-        if (this._metadata[id]) {  // already created
+        if (this._metadata[id]) {
             return this._metadata[id];
         }
 
-        return this._getExistingMetadata( // exists from prev run
+        return this._getExistingMetadata(  // exists from prev run
             this.core.getPath(job),
             type,
             node => this.getAttribute(node, 'id') === id
