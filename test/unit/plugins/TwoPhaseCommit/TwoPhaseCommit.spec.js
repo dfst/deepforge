@@ -347,6 +347,40 @@ describe('TwoPhaseCommit', function() {
 
             assert(!childNames.includes('hello'));
         });
+
+        it('should include new nodes in loadChildren', async function() {
+            plugin.main = async function(callback) {
+                const newNode = this.createNode('FCO', this.rootNode);
+                this.setAttribute(newNode, 'name', 'NEW NODE');
+                const children = await this.loadChildren(this.rootNode);
+                assert.equal(children.length, 2, 'Did not include new node in loadChildren');
+                this.result.setSuccess(true);
+                return callback(null, this.result);
+            };
+            await manager.runPluginMain(plugin);
+
+            const root = await loadRootNode(context);
+            const children = (await plugin.core.loadChildren(root));
+
+            assert.equal(children.length, 1);
+        });
+
+        it('should include loadChildren from newNodes', async function() {
+            plugin.main = async function(callback) {
+                const newNode = this.createNode('FCO', this.rootNode);
+                /*const anotherNode = */this.createNode('FCO', newNode);
+                const children = await this.loadChildren(newNode);
+                assert.equal(children.length, 1, 'Did not include new node in loadChildren');
+                this.result.setSuccess(true);
+                return callback(null, this.result);
+            };
+            await manager.runPluginMain(plugin);
+
+            const root = await loadRootNode(context);
+            const children = (await plugin.core.loadChildren(root));
+
+            assert.equal(children.length, 1);
+        });
     });
 
     describe('cached nodes', function() {

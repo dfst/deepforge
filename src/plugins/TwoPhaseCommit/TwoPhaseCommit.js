@@ -40,17 +40,6 @@ define([
         throw new Error(TwoPhaseCommit.INVOKE_ERR);
     };
 
-    TwoPhaseCommit.prototype.getCreateId = function () {
-    };
-
-    const isCreatedNode = function (node) {
-        return node instanceof CreatedNode;
-    };
-
-    const isCreateId = function (id) {
-        return (typeof id === 'string') && (id.indexOf(CREATE_PREFIX) === 0);
-    };
-
     TwoPhaseCommit.prototype.createNode = function (baseType, parent) {
         const parentId = parent instanceof CreatedNode ? parent.id : this.core.getPath(parent);
         const node = new CreatedNode(this.META[baseType], parent);
@@ -66,16 +55,18 @@ define([
     };
 
     TwoPhaseCommit.prototype.loadChildren = async function (node) {
-        if (isCreatedNode(node)) {
-            const parentId = node.id;
-            const allCreatedNodes = this.queuedChangesToCommit.concat([this])
-                .map(changes => changes.createdNodes)
-                .reduce((l1, l2) => l1.concat(l2));
+        const getId = node => isCreatedNode(node) ? node.id : this.core.getPath(node);
+        const nodeId = getId(node);
 
-            return allCreatedNodes.filter(node => node.parentId === parentId);
-        } else {
-            return await this.core.loadChildren(node);
+        const allCreatedNodes = this.queuedChangesToCommit.concat([this])
+            .map(changes => changes.createdNodes)
+            .reduce((l1, l2) => l1.concat(l2));
+
+        let children = allCreatedNodes.filter(node => getId(node.parent) === nodeId);
+        if (!isCreatedNode(node)) {
+            children = children.concat(await this.core.loadChildren(node));
         }
+        return children;
     };
 
     TwoPhaseCommit.prototype.delAttribute = function (node, attr) {
@@ -387,6 +378,7 @@ define([
         return Promise.all(gmeNodes);
     };
 
+    // TODO: Should I wrap all nodes with something like this?
     let counter = 0;
     function CreatedNode(base, parent) {
         this.id = CREATE_PREFIX + (++counter);
@@ -410,6 +402,14 @@ define([
             return node;
         }
         return core.loadByPath(rootNode, this._nodeId);
+    };
+
+    const isCreatedNode = function (node) {
+        return node instanceof CreatedNode;
+    };
+
+    const isCreateId = function (id) {
+        return (typeof id === 'string') && (id.indexOf(CREATE_PREFIX) === 0);
     };
 
     return TwoPhaseCommit;
