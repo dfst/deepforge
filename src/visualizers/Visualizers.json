@@ -130,5 +130,11 @@
     "title": "TabbedTextEditor",
     "panel": "panels/TabbedTextEditor/TabbedTextEditorPanel",
     "DEBUG_ONLY": false
+  },
+  {
+    "id": "PlotlyGraph",
+    "title": "PlotlyGraph",
+    "panel": "panels/PlotlyGraph/PlotlyGraphPanel",
+    "DEBUG_ONLY": false
   }
 ]
