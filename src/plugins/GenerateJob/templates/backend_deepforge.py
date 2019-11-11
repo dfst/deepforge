@@ -280,6 +280,7 @@ class FigureCanvasTemplate(FigureCanvasBase):
                     lineDict['label'] = line.get_label()
 
                 axes_data['lines'].append(lineDict)
+            state['axes'].append(axes_data)
         return state
 
     # You should provide a print_xxx function for every file format

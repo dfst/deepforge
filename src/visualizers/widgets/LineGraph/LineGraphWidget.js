@@ -79,7 +79,8 @@ define([
             // Add node to a table of nodes
             if (desc.type === 'line') {
                 this.lineData[desc.id] = {
-                    key: desc.name,
+                    key: desc.label,
+                    color: desc.color,
                     values: desc.points
                 };
             } else {
@@ -99,6 +100,7 @@ define([
         if (this.lineData[desc.id]) {
             this.lineData[desc.id].values = desc.points;
             this.lineData[desc.id].key = desc.name;
+            this.lineData[desc.id].color = desc.color;
         } else {
             this.options.xAxis = desc.xlabel;
             this.options.yAxis = desc.ylabel;

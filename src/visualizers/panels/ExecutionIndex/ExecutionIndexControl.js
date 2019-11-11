@@ -105,12 +105,12 @@ define([
             });
 
             // Update the territory
-            self._selfPatterns[nodeId] = {children: 4};
+            self._selfPatterns[nodeId] = {children: 5};
             self._client.updateTerritory(self._territoryId, self._selfPatterns);
         }
     };
 
-    ExecutionIndexControl.prototype.getUniqAbbreviation = function(desc) {
+    ExecutionIndexControl.prototype.getUniqAbbreviation = function (desc) {
         // Get a unique abbreviation for the given execution
         var base = utils.abbr(desc.name).toLowerCase(),
             abbr = base,
@@ -172,10 +172,21 @@ define([
                 this._pipelineNames[desc.id] = desc.name;
             } else if (type === 'Graph') {
                 childIds = node.getChildrenIds();
-                desc.lines = childIds.map(id => {
-                    var n = this._client.getNode(id);
-                    return this.getLineDesc(n);
-                });
+                let firstSubplot;
+                if (childIds.length > 0)
+                    firstSubplot = this._client.getNode(childIds[0]);
+                if (firstSubplot) {
+                    let childLineIds = firstSubplot.getChildrenIds();
+                    desc.lines = childLineIds.map(id => {
+                        var n = this._client.getNode(id);
+                        if(n) {
+                            return this.getLineDesc(n);
+                        }
+                        else {
+                            return null;
+                        }
+                    });
+                }
             }
         }
 
@@ -184,7 +195,8 @@ define([
 
     ExecutionIndexControl.prototype.getLineDesc = function (node) {
         var id = node.getId(),
-            graphId = node.getParentId(),
+            axesId = node.getParentId(),
+            graphId = this._client.getNode(axesId).getParentId(),
             jobId = this._client.getNode(graphId).getParentId(),
             execId = this._client.getNode(jobId).getParentId(),
             points,
@@ -199,14 +211,15 @@ define([
                     y: nums[1]
                 };
             });
-
         desc = {
             id: id,
             execId: execId,
             lineName: node.getAttribute('name'),
+            label: node.getAttribute('label'),
             name: node.getAttribute('name'),
             type: 'line',
-            points: points
+            points: points,
+            color: node.getAttribute('color')
         };
 
         if (!this._lineToExec[id]) {
@@ -217,7 +230,6 @@ define([
             this._linesForExecution[execId].push(id);
             this._lineToExec[id] = execId;
         }
-
         // If there are multiple executions, add the exec's abbr
         var displayedCnt = this.displayedExecCount(),
             execAbbr;
@@ -242,17 +254,17 @@ define([
             event = events[i];
             switch (event.etype) {
 
-            case CONSTANTS.TERRITORY_EVENT_LOAD:
-                this._onLoad(event.eid);
-                break;
-            case CONSTANTS.TERRITORY_EVENT_UPDATE:
-                this._onUpdate(event.eid);
-                break;
-            case CONSTANTS.TERRITORY_EVENT_UNLOAD:
-                this._onUnload(event.eid);
-                break;
-            default:
-                break;
+                case CONSTANTS.TERRITORY_EVENT_LOAD:
+                    this._onLoad(event.eid);
+                    break;
+                case CONSTANTS.TERRITORY_EVENT_UPDATE:
+                    this._onUpdate(event.eid);
+                    break;
+                case CONSTANTS.TERRITORY_EVENT_UNLOAD:
+                    this._onUnload(event.eid);
+                    break;
+                default:
+                    break;
             }
         }
 

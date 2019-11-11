@@ -18,7 +18,6 @@ define([
     // I think I should convert these to just a single 'update graph' command
     ExecuteJob.prototype[CONSTANTS.PLOT_UPDATE] = async function (job, state) {
         const jobId = this.core.getPath(job);
-
         // Check if the graph already exists
         // use the id to look up the graph
         let id = jobId + '/' + state.id;
@@ -30,6 +29,7 @@ define([
             this.createIdToMetadataId[graph] = id;
             this.logger.info(`Adding graph titled ${state.title}`);
         }
+        this._metadata[id] = graph;
         if(!this.isCreateId(graph)){
             const subGraphs = await this.core.loadChildren(graph);
             subGraphs.forEach((subGraph) => {
@@ -41,11 +41,11 @@ define([
         }
         if(this.subGraphs[id]){
             this.subGraphs[id].forEach((subGraphId, index) => {
-               if(this.plotLines[subGraphId + '/' + index]){
-                   this.plotLines[subGraphId + '/' + index].forEach((lineId) => {
-                       this._deleteByMetaDataId(lineId);
-                   });
-                   this._deleteByMetaDataId(subGraphId);
+                if(this.plotLines[subGraphId + '/' + index]){
+                    this.plotLines[subGraphId + '/' + index].forEach((lineId) => {
+                        this._deleteByMetaDataId(lineId);
+                    });
+                    this._deleteByMetaDataId(subGraphId);
                 }
             });
         }
@@ -54,38 +54,42 @@ define([
         const axeses = state.axes;
         this.subGraphs[id] = [];
         axeses.forEach((axes, index) => {
-           const axesId = id + '/' + index;
-           let axesNode = this.getExistingMetadataById(job, 'SubGraph', axesId);
-           if (!axesNode){
-               axesNode = this.createNode('SubGraph', job);
-               this.subGraphs[id].push(axesId);
-               this.setAttribute(axesNode, 'title', axes.title);
-               this.setAttribute(axesNode, 'xlabel', axes.xlabel);
-               this.setAttribute(axesNode, 'ylabel', axes.ylabel);
-               this.setAttribute(axesNode, 'xlim', axes.xlim);
-               this.setAttribute(axesNode, 'ylim', axes.ylim);
-               this.createIdToMetadataId[axesNode] = axesId;
-               this.logger.info(`Adding subgraph with title ${axes.title}`);
+            const axesId = id + '/' + index;
+            let axesNode = this.getExistingMetadataById(job, 'SubGraph', axesId);
+            if (!axesNode){
+                axesNode = this.createNode('SubGraph', graph);
+                this.subGraphs[id].push(axesId);
+                this.createIdToMetadataId[axesNode] = axesId;
+                this.setAttribute(axesNode, 'title', axes.title);
+                this.setAttribute(axesNode, 'xlabel', axes.xlabel);
+                this.setAttribute(axesNode, 'ylabel', axes.ylabel);
+                this.setAttribute(axesNode, 'xlim', axes.xlim);
+                this.setAttribute(axesNode, 'ylim', axes.ylim);
+                this.createIdToMetadataId[axesNode] = axesId;
+                this.logger.info(`Adding subgraph with title ${axes.title}`);
 
                 // Now check for line Nodes
-               const lines = axes.lines;
-               this.plotLines[axesId] = [];
-               lines.forEach((line, index) => {
-                  const lineId = axesId + '/' + index;
-                  let lineNode = this.core.getExistingMetadataById(job, 'Line', lineId);
-                  if (!lineNode) {
-                      lineNode = this.createNode('Line', job);
-                      this.plotLines[axesId].push(lineId);
-                      this.setAttribute(lineNode, 'color', line.color);
-                      this.setAttribute(lineNode, 'label', line.label);
-                      this.setAttribute(lineNode, 'lineStyle', line.lineStyle);
-                      this.setAttribute(lineNode, 'marker', line.marker);
-                      let points = line.points.map(pts => pts.join(',')).join(';');
-                      this.setAttribute(lineNode, 'points', points);
-                      this.setAttribute(lineNode, 'lineWidth', line.lineWidth);
-                  }
-               });
-           }
+                const lines = axes.lines;
+                this.plotLines[axesId] = [];
+                lines.forEach((line, index) => {
+                    const lineId = axesId + '/' + index;
+                    let lineNode = this.getExistingMetadataById(job, 'Line', lineId);
+                    if (!lineNode) {
+                        lineNode = this.createNode('Line', axesNode);
+                        this.plotLines[axesId].push(lineId);
+                        this.createIdToMetadataId[lineNode] = lineId;
+                        this.setAttribute(lineNode, 'color', line.color);
+                        this.setAttribute(lineNode, 'label', line.label || `line ${index+1}`);
+                        this.setAttribute(lineNode, 'lineStyle', line.lineStyle);
+                        this.setAttribute(lineNode, 'marker', line.marker);
+                        let points = line.points.map(pts => pts.join(',')).join(';');
+                        this.setAttribute(lineNode, 'points', points);
+                        this.setAttribute(lineNode, 'lineWidth', line.lineWidth);
+                    }
+                    this._metadata[lineId] = lineNode;
+                });
+                this._metadata[axesId] = axesNode;
+            }
         });
     };
 
@@ -95,7 +99,7 @@ define([
             this.deleteNode(nodeId);
         } else {
             const createId = Object.keys(this.createIdToMetadataId)
-                .find(createId => this.createIdToMetadataId[createId] === subGraphId);
+                .find(createId => this.createIdToMetadataId[createId] === id);
             if (createId) {
                 this.deleteNode(createId);
             }
