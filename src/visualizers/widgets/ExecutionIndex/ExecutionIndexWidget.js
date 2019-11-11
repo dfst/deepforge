@@ -4,12 +4,14 @@
 define([
     'deepforge/viz/Utils',
     'widgets/LineGraph/LineGraphWidget',
+    'widgets/PlotlyGraph/PlotlyGraphWidget',
     './lib/moment.min',
     'text!./ExecTable.html',
     'css!./styles/ExecutionIndexWidget.css'
 ], function (
     Utils,
     LineGraphWidget,
+    PlotlyGraphWidget,
     moment,
     TableHtml
 ) {
@@ -48,7 +50,7 @@ define([
         this.$execList = this.$table.find('.execs-content');
 
         // Create the graph in the right half
-        this.lineGraph = new LineGraphWidget(this.logger, this.$right);
+        this.lineGraph = new PlotlyGraphWidget(this.logger, this.$right);
         this.defaultSelection = null;
         this.hasRunning = false;
     };
