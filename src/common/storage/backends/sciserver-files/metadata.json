@@ -1,0 +1,21 @@
+{
+    "name": "SciServer Files Service",
+    "configStructure": [
+        {
+            "name": "token",
+            "displayName": "Access Token",
+            "description": "SciServer access token.",
+            "value": "",
+            "valueType": "string",
+            "readOnly": false
+        },
+        {
+            "name": "volume",
+            "displayName": "Volume",
+            "description": "Volume to use for upload.",
+            "value": "USERNAME/deepforge_data",
+            "valueType": "string",
+            "readOnly": false
+        }
+    ]
+}
