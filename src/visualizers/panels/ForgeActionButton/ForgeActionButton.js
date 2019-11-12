@@ -515,7 +515,7 @@ define([
                 staticInputs: staticInputs,
                 extensionConfig: allConfigs[pluginId].exportFormat.config
             };
-            return await Q.ninvoke(this.client, 'runBrowserPlugin', pluginId, context);
+            return await Q.ninvoke(this.client, 'runServerPlugin', pluginId, context);
         } else {  // no options - just run the plugin!
             const context = this.client.getCurrentPluginContext(pluginId);
 
@@ -526,7 +526,7 @@ define([
                 format: exportFormats[0],
                 staticInputs: []
             };
-            return await Q.ninvoke(this.client, 'runBrowserPlugin', pluginId, context);
+            return await Q.ninvoke(this.client, 'runServerPlugin', pluginId, context);
         }
     };
 
