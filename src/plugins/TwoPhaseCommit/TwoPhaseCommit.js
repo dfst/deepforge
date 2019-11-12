@@ -24,6 +24,9 @@ define([
         this.forkNameBase = null;
         this._currentSave = Q();
 
+        // TODO: Should I wrap this.core?
+        // TODO: Wrapping all nodes would make the code a little easier as we wouldn't need to keep
+        // checking the type and handling them differently...
         this.changes = {};
         this.createdNodes = [];
         this.deletions = [];

@@ -20,10 +20,13 @@ define([
         // Check if the graph already exists
         // use the id to look up the graph
         let id = jobId + '/' + state.id;
+        console.log('>>> Updating plot', id);
         let graph = this.getExistingMetadataById(job, 'Graph', id);
         if (!graph) {
+            console.log('Creating new graph...');
             graph = this.createNode('Graph', job);
             this.setAttribute(graph, 'id', id);
+            this._metadata[id] = graph;
         }
 
         // Apply whatever updates are needed

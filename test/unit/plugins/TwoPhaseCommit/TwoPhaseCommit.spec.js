@@ -1,6 +1,6 @@
 /*eslint-env node, mocha*/
 
-describe('TwoPhaseCommit', function() {
+describe.only('TwoPhaseCommit', function() {
     const testFixture = require('../../../globals');
     const assert = require('assert');
     const gmeConfig = testFixture.getGmeConfig();
