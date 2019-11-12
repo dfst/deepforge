@@ -134,6 +134,6 @@
         "backends": ["gme", "local"]
     },
     "Storage": {
-        "backends": ["gme"]
+        "backends": ["gme", "sciserver-files"]
     }
 }
