@@ -402,14 +402,12 @@ define([
 
     // Export Pipeline Support
     ForgeActionButton.prototype.exportPipeline = async function() {
-        var pluginId = 'Export',
-            metadata = WebGMEGlobal.allPluginsMetadata[pluginId],
-            id = this._currentNodeId,
-            node = this.client.getNode(id),
-            inputData,
-            inputNames;
+        const pluginId = 'Export';
+        const metadata = WebGMEGlobal.allPluginsMetadata[pluginId];
+        const id = this._currentNodeId;
+        const node = this.client.getNode(id);
 
-        inputData = node.getChildrenIds()
+        const inputData = node.getChildrenIds()
             .map(id => this.client.getNode(id))
             .filter(node => {
                 var typeId = node.getMetaTypeId(),
@@ -444,7 +442,7 @@ define([
             .filter(output => output.getAttribute('data'));
 
         // get the name of node referenced from the input op
-        inputNames = inputData
+        const inputNames = inputData
             .map(node => {
                 var cntrId = node.getParentId(),
                     opId = this._client.getNode(cntrId).getParentId(),

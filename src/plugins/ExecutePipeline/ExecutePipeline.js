@@ -454,14 +454,13 @@ define([
                         this.result.setSuccess(!this.pipelineError);
                         this._callback(this.pipelineError || null, this.result);
                     })
-                    .fail(e => this.logger.error(e));
+                    .catch(e => this.logger.error(e));
             } else {  // deleted!
                 this.logger.debug('Execution has been deleted!');
                 this.result.setSuccess(!this.pipelineError);
                 this._callback(this.pipelineError || null, this.result);
             }
         });
-
     };
 
     ExecutePipeline.prototype.isDeleted = function () {
