@@ -55,7 +55,6 @@ define([
 
     SciServerFiles.prototype.getDownloadURL = async function(dataInfo) {
         const {data} = dataInfo;
-        // TODO: Download it to the blob and pass that url?
         return data.url;
     };
 
