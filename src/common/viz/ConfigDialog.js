@@ -260,7 +260,7 @@ define([
             return {name, config};
         };
 
-        widget.el.append(selector.el);
+        widget.el.prepend(selector.el);
 
         return {widget, el: widget.el};
     };
