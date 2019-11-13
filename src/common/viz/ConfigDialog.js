@@ -200,42 +200,12 @@ define([
     };
 
     ConfigDialog.ENTRIES.dict = function(configEntry) {
-        const itemIds = configEntry.valueItems.map(item => item.id);
-        const configForKeys = {
-            name: configEntry.name,
-            displayName: configEntry.displayName,
-            value: itemIds[0],
-            valueType: 'string',
-            valueItems: itemIds
-        };
-        const selector = this.getEntryForProperty(configForKeys);
-        const widget = {active: itemIds[0]};
-        selector.el.find('select').on('change', event => {
-            const {value} = event.target;
-            const oldEntries = entriesForItem[widget.active];
-            oldEntries.forEach(entry => entry.el.css('display', 'none'));
-
-            widget.active = value;
-            entriesForItem[widget.active]
-                .forEach(entry => entry.el.css('display', ''));
-        });
-
+        const widget = {el: null, active: null};
         widget.el = $('<div>', {class: configEntry.name});
-        widget.getValue = () => {
-            const id = widget.active;
-            const config = {};
-            entriesForItem[id].forEach(entry => {
-                if (entry.widget) {
-                    config[entry.id] = entry.widget.getValue();
-                }
-            });
-            return {id, config};
-        };
-
-        widget.el.append(selector.el);
 
         const entriesForItem = {};
-        for (let i = configEntry.valueItems.length; i--;) {
+        const valueItemsDict = {};
+        for (let i = 0; i < configEntry.valueItems.length; i++) {
             const valueItem = configEntry.valueItems[i];
             const entries = valueItem.configStructure
                 .map(item => {
@@ -250,8 +220,47 @@ define([
                 widget.el.append(entry.el);
             });
 
-            entriesForItem[valueItem.id] = entries;
+            const displayName = valueItem.displayName || valueItem.name;
+            entriesForItem[displayName] = entries;
+            valueItemsDict[displayName] = valueItem;
         }
+
+        const itemNames = Object.keys(valueItemsDict);
+        const defaultValue = itemNames[0];
+
+        const configForKeys = {
+            name: configEntry.name,
+            displayName: configEntry.displayName,
+            value: defaultValue,
+            valueType: 'string',
+            valueItems: itemNames
+        };
+        const selector = this.getEntryForProperty(configForKeys);
+
+        widget.active = defaultValue;
+        selector.el.find('select').on('change', event => {
+            const {value} = event.target;
+            const oldEntries = entriesForItem[widget.active];
+            oldEntries.forEach(entry => entry.el.css('display', 'none'));
+
+            widget.active = value;
+            entriesForItem[widget.active]
+                .forEach(entry => entry.el.css('display', ''));
+        });
+
+        widget.getValue = () => {
+            const displayName = widget.active;
+            const name = valueItemsDict[displayName].name;
+            const config = {};
+            entriesForItem[name].forEach(entry => {
+                if (entry.widget) {
+                    config[entry.name] = entry.widget.getValue();
+                }
+            });
+            return {name, config};
+        };
+
+        widget.el.append(selector.el);
 
         return {widget, el: widget.el};
     };

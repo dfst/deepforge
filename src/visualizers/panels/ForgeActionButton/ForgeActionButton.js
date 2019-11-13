@@ -488,7 +488,7 @@ define([
                 .map(id => {
                     const configStructure = ExportFormatDict[id].getConfigStructure ?
                         ExportFormatDict[id].getConfigStructure() : [];
-                    return {id, configStructure};
+                    return {id, name: id, configStructure};
                 });
 
             inputConfig.configStructure.push({
