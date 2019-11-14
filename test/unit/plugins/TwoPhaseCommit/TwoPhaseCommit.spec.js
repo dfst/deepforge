@@ -255,6 +255,30 @@ describe('TwoPhaseCommit', function() {
             };
             await manager.runPluginMain(plugin);
         });
+
+        it('should get attribute inherited from existing', async function() {
+            plugin.main = async function(callback) {
+                const node = this.core.createNode({base: this.META.FCO, parent: this.rootNode});
+                assert.equal(this.core.getAttribute(node, 'name'), 'FCO');
+                this.result.setSuccess(true);
+                return callback(null, this.result);
+            };
+
+            await manager.runPluginMain(plugin);
+        });
+
+        it.skip('should get attribute inherited from staged', async function() {
+            plugin.main = async function(callback) {
+                const base = this.core.createNode({base: this.META.FCO, parent: this.rootNode});
+                this.core.setAttribute(base, 'name', 'hello');
+                const node = this.core.createNode({base, parent: this.rootNode});
+                assert.equal(this.core.getAttribute(node, 'name'), 'hello');
+                this.result.setSuccess(true);
+                return callback(null, this.result);
+            };
+
+            await manager.runPluginMain(plugin);
+        });
     });
 
     describe('deletion', function() {

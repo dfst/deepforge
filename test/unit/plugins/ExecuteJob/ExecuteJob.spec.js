@@ -92,97 +92,81 @@ describe('ExecuteJob', function () {
         beforeEach(preparePlugin);
 
         it('should get correct attribute after set', function() {
-            plugin.setAttribute(node, 'status', 'queued');
-            var attrValue = plugin.getAttribute(node, 'status');
+            plugin.core.setAttribute(node, 'status', 'queued');
+            var attrValue = plugin.core.getAttribute(node, 'status');
             expect(attrValue).to.equal('queued');
         });
 
-        it('should get correct attribute before updating nodes', function(done) {
+        it('should get correct attribute before updating nodes', async function() {
             // Run setAttribute on some node
-            plugin.setAttribute(node, 'status', 'queued');
+            plugin.core.setAttribute(node, 'status', 'queued');
 
             // Check that the value is correct before applying node changes
             var updateNodes = plugin.updateNodes;
             plugin.updateNodes = function() {
-                var attrValue = plugin.getAttribute(node, 'status');
+                var attrValue = plugin.core.getAttribute(node, 'status');
                 expect(attrValue).to.equal('queued');
                 return updateNodes.apply(this, arguments);
             };
-            plugin.save().nodeify(done);
+            await plugin.save();
         });
 
-        it('should get correct attribute (from new node) before updating nodes', function(done) {
+        it('should get correct attribute (from new node) before updating nodes', async function() {
             // Run setAttribute on some node
-            var graphTmp = plugin.createNode('Graph', node),
-                newVal = 'testGraph',
-                id = 'testId';
+            const Graph = plugin.META.Graph;
+            const graphTmp = plugin.core.createNode({base: Graph, parent: node});
+            const newVal = 'testGraph';
+            const id = 'testId';
 
-            // Get the 
-            plugin.setAttribute(graphTmp, 'name', newVal);
+            plugin.core.setAttribute(graphTmp, 'name', newVal);
             plugin._metadata[id] = graphTmp;
-            plugin.createIdToMetadataId[graphTmp] = id;
+            plugin.createIdToMetadataId[graphTmp.id] = id;
 
             // Check that the value is correct before applying node changes
-            var updateNodes = plugin.updateNodes;
-            plugin.updateNodes = function() {
-                var graph = plugin._metadata[id],
-                    attrValue = plugin.getAttribute(graph, 'name');
-
+            const updateNodes = plugin.updateNodes;
+            plugin.updateNodes = async function() {
+                const graph = plugin._metadata[id];
+                const attrValue = plugin.core.getAttribute(graph, 'name');
                 expect(attrValue).to.equal(newVal);
-                return updateNodes.apply(this, arguments);
+                await updateNodes.apply(this, arguments);
             };
-            plugin.save().nodeify(done);
+            await plugin.save();
         });
 
-        it('should get correct attribute after save', function(done) {
+        it('should get correct attribute after save', async function() {
             // Run setAttribute on some node
-            plugin.setAttribute(node, 'status', 'queued');
+            plugin.core.setAttribute(node, 'status', 'queued');
 
             // Check that the value is correct before applying node changes
-            plugin.save()
-                .then(() => {
-                    var attrValue = plugin.getAttribute(node, 'status');
-                    expect(attrValue).to.equal('queued');
-                })
-                .nodeify(done);
-        });
-
-        it('should get correct attribute while applying node changes', function(done) {
-            // Run setAttribute on some node
-            plugin.setAttribute(node, 'status', 'queued');
-
-            // Check that the value is correct before applying node changes
-            var oldApplyChanges = plugin._applyNodeChanges;
-            plugin._applyNodeChanges = function() {
-                var attrValue = plugin.getAttribute(node, 'status');
-                expect(attrValue).to.equal('queued');
-                return oldApplyChanges.apply(this, arguments);
-            };
-            plugin.save().nodeify(done);
+            await plugin.save();
+            const attrValue = plugin.core.getAttribute(node, 'status');
+            expect(attrValue).to.equal('queued');
         });
     });
 
     describe('createNode', function() {
         beforeEach(preparePlugin);
 
-        it('should update _metadata after applying changes', function(done) {
+        it('should update _metadata after applying changes', async function() {
             // Run setAttribute on some node
-            var graphTmp = plugin.createNode('Graph', node),
-                id = 'testId';
+            const graphTmp = plugin.core.createNode({
+                base: plugin.META.Graph,
+                parent: node,
+            });
+            const id = 'testId';
 
             plugin._metadata[id] = graphTmp;
             plugin.createIdToMetadataId[graphTmp] = id;
 
             // Check that the value is correct before applying node changes
             const applyModelChanges = plugin.applyModelChanges;
-            plugin.applyModelChanges = function() {
-                return applyModelChanges.apply(this, arguments)
-                    .then(() => {
-                        var graph = plugin._metadata[id];
-                        expect(graph).to.not.equal(graphTmp);
-                    });
+            plugin.applyModelChanges = async function() {
+                const result = applyModelChanges.apply(this, arguments);
+                const graph = plugin._metadata[id];
+                expect(graph).to.not.equal(graphTmp);
+                return result;
             };
-            plugin.save().nodeify(done);
+            await plugin.save();
         });
 
         it('should update _metadata in updateNodes', async function() {
@@ -197,49 +181,23 @@ describe('ExecuteJob', function () {
 
         // Check that it gets the correct value from a newly created node after
         // it has been saved/created
-        it('should get changed attribute', function(done) {
+        it('should get changed attribute', async function() {
             // Run setAttribute on some node
-            var graphTmp = plugin.createNode('Graph', node),
-                id = 'testId';
+            const graphTmp = plugin.core.createNode({
+                base: plugin.META.Graph,
+                parent: node,
+            });
+            const id = 'testId';
 
-            plugin._metadata[id] = node;
-            plugin.createIdToMetadataId[graphTmp] = id;
+            plugin._metadata[id] = graphTmp;
+            plugin.core.setAttribute(graphTmp, 'name', 'firstName');
 
-            plugin.setAttribute(graphTmp, 'name', 'firstName');
-
-            // Check that the value is correct before applying node changes
-            plugin.save()
-                .then(() => {
-                    var graph = plugin._metadata[id],
-                        val = plugin.getAttribute(graph, 'name');
-                    expect(val).to.equal('firstName');
-                })
-                .nodeify(done);
+            await plugin.save();
+            const graph = plugin._metadata[id];
+            const val = plugin.core.getAttribute(graph, 'name');
+            expect(val).to.equal('firstName');
         });
 
-        it('should get inherited attribute', function(done) {
-            // Run setAttribute on some node
-            var graphTmp = plugin.createNode('Graph', node),
-                id = 'testId',
-                val;
-
-            // Check that the value is correct before applying node changes
-            plugin._metadata[id] = node;
-            plugin.createIdToMetadataId[graphTmp] = id;
-
-            val = plugin.getAttribute(graphTmp, 'name');
-            expect(val).to.equal('Graph');
-
-            plugin.save()
-                .then(() => {
-                    var graph = plugin._metadata[id];
-
-                    val = plugin.getAttribute(graph, 'name');
-
-                    expect(val).to.equal('Graph');
-                })
-                .nodeify(done);
-        });
     });
 
     // Canceling
@@ -268,9 +226,9 @@ describe('ExecuteJob', function () {
                 execNode = plugin.core.getParent(job);
 
             // Set the execution to canceled
-            plugin.setAttribute(execNode, 'status', 'canceled');
+            plugin.core.setAttribute(execNode, 'status', 'canceled');
             plugin.prepare = () => {
-                var status = plugin.getAttribute(execNode, 'status');
+                var status = plugin.core.getAttribute(execNode, 'status');
                 expect(status).to.not.equal('canceled');
                 return {then: () => done()};
             };
@@ -280,8 +238,8 @@ describe('ExecuteJob', function () {
 
     describe('resume detection', function() {
         var mockPluginForJobStatus = function(gmeStatus, pulse, originBranch, shouldResume, done) {
-            plugin.setAttribute(node, 'status', gmeStatus);
-            plugin.setAttribute(node, 'jobInfo', JSON.stringify({hash:'abc'}));
+            plugin.core.setAttribute(node, 'status', gmeStatus);
+            plugin.core.setAttribute(node, 'jobInfo', JSON.stringify({hash:'abc'}));
             // Mocks:
             //  - prepare should basically nop
             //  - Should call 'resumeJob' or 'executeJob'
@@ -333,34 +291,37 @@ describe('ExecuteJob', function () {
         beforeEach(preparePlugin);
 
         // should not delete child nodes during 'prepare' if resuming
-        it('should delete child metadata nodes', function(done) {
+        it('should delete child metadata nodes', async function() {
             // Create a metadata node w/ a child
-            var graphId = plugin.createNode('Graph', plugin.activeNode);
-            plugin.createNode('Line', graphId);
+            const graph = plugin.core.createNode({
+                base: plugin.META.Graph,
+                parent: plugin.activeNode
+            });
+            plugin.core.createNode({
+                base: plugin.META.Line,
+                parent: graph
+            });
 
-            plugin.save()
-                .then(() => plugin.prepare(true))
-                .then(() => {
-                    expect(plugin.deletions.length).to.equal(1);
-                })
-                .nodeify(done);
+            await plugin.save();
+            await plugin.prepare(true);
+            const children = await plugin.core.loadChildren(graph);
+            expect(children.length).to.equal(0);
         });
 
         // should not mark any nodes for deletion during `prepare` if resuming
-        it('should mark nodes for deletion', function(done) {
-            var jobId = plugin.core.getPath(plugin.activeNode),
-                deleteIds;
+        it('should mark nodes for deletion', async function() {
+            const jobId = plugin.core.getPath(plugin.activeNode);
 
             // Create a metadata node
-            plugin.createNode('Graph', plugin.activeNode);
+            plugin.core.createNode({
+                base: plugin.META.Graph,
+                parent: plugin.activeNode,
+            });
 
-            plugin.save()
-                .then(() => plugin.prepare(true))
-                .then(() => {
-                    deleteIds = Object.keys(plugin._markForDeletion[jobId]);
-                    expect(deleteIds.length).to.equal(1);
-                })
-                .nodeify(done);
+            await plugin.save();
+            await plugin.prepare(true);
+            const deleteIds = Object.keys(plugin._markForDeletion[jobId]);
+            expect(deleteIds.length).to.equal(1);
         });
     });
 
@@ -369,7 +330,7 @@ describe('ExecuteJob', function () {
 
         it('should handle error if missing jobId', function(done) {
             // Remove jobId
-            plugin.delAttribute(plugin.activeNode, 'jobInfo');
+            plugin.core.delAttribute(plugin.activeNode, 'jobInfo');
             plugin.startExecHeartBeat = () => {};
             plugin.isResuming = () => Q(true);
             plugin.main(function(err) {

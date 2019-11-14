@@ -10,7 +10,7 @@ define([
     };
 
     OperationOps.prototype.getOutputs = function (node) {
-        const code = this.getAttribute(node, 'code');
+        const code = this.core.getAttribute(node, 'code');
         let outputNames = [];
         if (code) {
             const operation = OperationCode.findOperation(code);
@@ -25,7 +25,7 @@ define([
     };
 
     OperationOps.prototype.getInputs = function (node) {
-        const code = this.getAttribute(node, 'code');
+        const code = this.core.getAttribute(node, 'code');
         let inputNames = [];
         if (code) {
             const operation = OperationCode.findOperation(code);
@@ -50,8 +50,8 @@ define([
                 var bases = outputs.map(node => this.core.getMetaType(node));
                 // return [[arg1, Type1, node1], [arg2, Type2, node2]]
                 return outputs.map((node, i) => [
-                    this.getAttribute(node, 'name'),
-                    this.getAttribute(bases[i], 'name'),
+                    this.core.getAttribute(node, 'name'),
+                    this.core.getAttribute(bases[i], 'name'),
                     node
                 ]);
             });

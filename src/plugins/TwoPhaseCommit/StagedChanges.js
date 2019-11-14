@@ -7,10 +7,11 @@ define([
     assert,
 ) {
 
-    function StagedChanges(createdNodes, changes, deletions) {
+    function StagedChanges(createdNodes, changes, deletions, idDict) {
         this.createdNodes = createdNodes;
         this.changes = changes;
         this.deletions = deletions;
+        this._createdGMEIds = idDict;
     }
 
     StagedChanges.prototype.getCreatedNode = function(id) {
@@ -35,13 +36,37 @@ define([
         }
     };
 
+    StagedChanges.prototype.resolveCreateIds = function() {
+        const changedIds = Object.keys(this.changes)
+            .filter(id => CreatedNode.isCreateId(id));
+
+        changedIds.forEach(createId => {
+            const gmeId = this.resolveCreateId(createId);
+            this.changes[gmeId] = this.changes[createId];
+            delete this.changes[createId];
+        });
+
+        this.deletions = this.deletions.map(id => {
+            if (CreatedNode.isCreateId(id)) {
+                return this.resolveCreateId(id);
+            }
+            return id;
+        });
+    };
+
     StagedChanges.prototype.getAllNodeEdits = function() {
         return this.changes;
     };
 
+    StagedChanges.prototype.resolveCreateId = function(id) {
+        const gmeId = this._createdGMEIds[id];
+        assert(gmeId, `Creation id not resolved to actual id: ${id}`);
+
+        return gmeId;
+    };
+
     StagedChanges.prototype.getNodeEdits = function(id) {
-        assert(!CreatedNode.isCreateId(id),
-            `Creation id not resolved to actual id: ${id}`);
+        id = CreatedNode.isCreateId(id) ? this.resolveCreateId(id) : id;
 
         return this.changes[id];
     };

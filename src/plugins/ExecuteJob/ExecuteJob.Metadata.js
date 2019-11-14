@@ -39,7 +39,7 @@ define([
         this.logger.info(`Updating graph named ${axes.title}`);
 
         const children = await this.loadChildren(graph);
-        children.forEach(node => this.deleteNode(node));
+        children.forEach(node => this.core.deleteNode(node));
 
         // Update the points for each of the lines 
         axes.lines.forEach((line, index) => {
@@ -108,7 +108,7 @@ define([
                     if (this.isMetaTypeOf(child, this.META.Metadata)) {
                         id = this.core.getPath(child);
                         base = this.core.getBase(child);
-                        type = this.getAttribute(base, 'name');
+                        type = this.core.getAttribute(base, 'name');
 
                         this._markForDeletion[nodeId][id] = child;
                         // namespace by metadata type
@@ -127,7 +127,7 @@ define([
                 // make the deletion ids relative to the job node
                 this.logger.debug(`About to delete ${idsToDelete.length}: ${idsToDelete.join(', ')}`);
                 for (i = idsToDelete.length; i--;) {
-                    this.deleteNode(idsToDelete[i]);
+                    this.core.deleteNode(idsToDelete[i]);
                 }
             });
     };
@@ -143,14 +143,14 @@ define([
             this.logger.debug(`About to delete ${nodeIds.length}: ${nodeIds.join(', ')}`);
             for (var i = nodeIds.length; i--;) {
                 const node = this._markForDeletion[nodeId][nodeIds[i]];
-                this.deleteNode(this.core.getPath(node));
+                this.core.deleteNode(this.core.getPath(node));
             }
             delete this.lastAppliedCmd[nodeId];
             delete this.createdMetadataIds[nodeId];
             delete this._markForDeletion[nodeId];
         }
 
-        this.delAttribute(job, 'jobInfo');
+        this.core.delAttribute(job, 'jobInfo');
     };
 
     ExecuteJob.prototype.resultMsg = function(msg) {
@@ -166,7 +166,7 @@ define([
         return this._getExistingMetadata(  // exists from prev run
             this.core.getPath(job),
             type,
-            node => this.getAttribute(node, 'id') === id
+            node => this.core.getAttribute(node, 'id') === id
         );
     };
 

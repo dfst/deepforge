@@ -17,6 +17,7 @@ define([
         this.deletions = [];
         this.queuedChanges = [];
         this._events = {};
+        this._createdGMEIds = {};
     }
 
     TwoPhaseCore.prototype.unwrap = function () {
@@ -30,10 +31,39 @@ define([
     passToCore('persist');
     passToCore('loadRoot');
     passToCore('loadByPath');
+    passToCore('loadSubTree');
     passToCore('getPointerPath');
+    passToCore('getParent');
+    passToCore('getNamespace');
+    passToCore('getMetaType');
+    passToCore('getChildrenMeta');
+    passToCore('getChildrenPaths');
+    passToCore('addMember');
+    passToCore('isMetaNode');
+    passToCore('getOwnRegistry');
+    passToCore('getOwnAttribute');
+
+    TwoPhaseCore.prototype.getBase = function (node) {
+        if (node instanceof CreatedNode) {
+            return node.base;
+        }
+        return this.core.getBase(node);
+    };
+
+    TwoPhaseCore.prototype.isTypeOf = function (node, base) {
+        if (node instanceof CreatedNode) {
+            return this.core.isTypeOf(node.base, base);
+        }
+        return this.core.isTypeOf(node, base);
+    };
 
     TwoPhaseCore.prototype.getStagedChanges = function () {
-        const changes = new StagedChanges(this.createdNodes, this.changes, this.deletions);
+        const changes = new StagedChanges(
+            this.createdNodes,
+            this.changes,
+            this.deletions,
+            this._createdGMEIds
+        );
         this.createdNodes = [];
         this.changes = {};
         this.deletions = [];
@@ -102,10 +132,16 @@ define([
     };
 
     TwoPhaseCore.prototype.setAttribute = function (node, attr, value) {
-        if (value === undefined) {
-            throw new Error(`Cannot set attribute to undefined value (${attr})`);
+        assert(
+            value !== undefined,
+            `Cannot set attribute to undefined value (${attr})`
+        );
+        if (node instanceof CreatedNode) {
+            console.log(`setting ${attr} on ${node.id}`);
+            // TODO
         }
 
+        // TODO: Ensure that the node is value
         this.logger.warn(`setting ${attr} to ${value}`);
         const changes = this.getChangesForNode(node);
         changes.attr[attr] = value;
@@ -116,7 +152,7 @@ define([
 
         // Check if it was newly created
         if (node instanceof CreatedNode) {
-            nodeId = node.id;
+            nodeId = node._nodeId || node.id;
             node = node.base;
         } else {
             nodeId = this.core.getPath(node);
@@ -168,9 +204,12 @@ define([
         for (let i = changes.createdNodes.length; i--;) {
             const createdNode = changes.createdNodes[i];
             const node = await createdNode.toGMENode(rootNode, this.core);
-            changes.onNodeCreated(createdNode, this.core.getPath(node));
+            const nodeId = this.core.getPath(node);
+            //changes.onNodeCreated(createdNode, nodeId);
             this.emit('nodeCreated', createdNode, node);
+            this._createdGMEIds[createdNode.id] = nodeId;
         }
+        changes.resolveCreateIds();
     };
 
     TwoPhaseCore.prototype.on = function(ev, cb) {

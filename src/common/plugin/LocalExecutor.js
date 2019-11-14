@@ -16,7 +16,7 @@ define([
             .find(cntr => this.isMetaTypeOf(cntr, this.META.Outputs));
 
         const dataNodes = await this.core.loadChildren(outputContainer);
-        const dataInfo = this.getAttribute(dataNodes[0], 'data');
+        const dataInfo = this.core.getAttribute(dataNodes[0], 'data');
 
         // Pass the dataInfo to the next nodes
         const outputs = (await this.getOutputs(node))
@@ -75,7 +75,7 @@ define([
         });
 
         const saveDir = containers.find(c =>
-            this.getAttribute(c, 'name').toLowerCase().includes('artifacts')
+            this.core.getAttribute(c, 'name').toLowerCase().includes('artifacts')
         ) || containers[0];
 
         return saveDir || this.rootNode;  // default to rootNode
@@ -86,8 +86,8 @@ define([
         const artifacts = await this.core.loadChildren(artifactsDir);
         const currNameHashPairs = artifacts
             .map(node => [
-                this.getAttribute(node, 'name'),
-                this.getAttribute(node, 'data')
+                this.core.getAttribute(node, 'name'),
+                this.core.getAttribute(node, 'data')
             ]);
         const inputs = await this.getInputs(node);
         const ids = inputs.map(i => this.core.getPath(i[2]));
@@ -99,9 +99,9 @@ define([
 
         // Remove nodes that already exist
         const dataNodes = incomingData.filter(dataNode => {
-            const hash = this.getAttribute(dataNode, 'data');
+            const hash = this.core.getAttribute(dataNode, 'data');
             const name = this.core.getOwnAttribute(node, 'saveName') ||
-                    this.getAttribute(dataNode, 'name');
+                    this.core.getAttribute(dataNode, 'name');
 
             return !(currNameHashPairs
                 .find(pair => pair[0] === name && pair[1] === hash));
@@ -109,18 +109,19 @@ define([
 
         const saveDir = `${this.projectId}/artifacts/`;
         const storage = await this.getStorageClient();
+        const createParams = {base: this.META.Data, parent: artifactsDir};
         for (let i = dataNodes.length; i--;) {
-            const artifact = this.createNode('Data', artifactsDir);
+            const artifact = this.core.createNode(createParams);
             const name = this.core.getOwnAttribute(node, 'saveName') ||
-                this.getAttribute(dataNodes[i], 'name');
+                this.core.getAttribute(dataNodes[i], 'name');
             const createdAt = Date.now();
-            const originalData = JSON.parse(this.getAttribute(dataNodes[i], 'data'));
+            const originalData = JSON.parse(this.core.getAttribute(dataNodes[i], 'data'));
             const userAsset = await storage.copy(originalData, saveDir + name);
 
-            this.setAttribute(artifact, 'data', JSON.stringify(userAsset));
-            this.setAttribute(artifact, 'name', name);
-            this.setAttribute(artifact, 'createdAt', createdAt);
-            this.setPointer(artifact, 'origin', inputs[0][2]);
+            this.core.setAttribute(artifact, 'data', JSON.stringify(userAsset));
+            this.core.setAttribute(artifact, 'name', name);
+            this.core.setAttribute(artifact, 'createdAt', createdAt);
+            this.core.setPointer(artifact, 'origin', inputs[0][2]);
         }
 
         this.logger.info(`Saved ${dataNodes.length} artifacts in ${this.projectId}.`);

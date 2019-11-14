@@ -25,7 +25,7 @@ define([
         PluginBase.call(this);
         this.pluginMetadata = pluginMetadata;
         this.forkNameBase = null;
-        this._currentSave = Q();
+        this._currentSave = Promise.resolve();
 
         // TODO: Should I wrap this.core?
         // TODO: Wrapping all nodes would make the code a little easier as we wouldn't need to keep
@@ -73,17 +73,16 @@ define([
             .then(() => this.updateForkName(this.forkNameBase))
             .then(() => this.core.apply(this.rootNode, changes))
             .then(() => PluginBase.prototype.save.call(this, msg))
-            .then(result => {
-                this.core.discard(changes);
-
+            .then(async result => {
                 this.logger.info(`Save finished w/ status: ${result.status}`);
                 if (result.status === STORAGE_CONSTANTS.FORKED) {
-                    return this.onSaveForked(result.forkName);
+                    await this.onSaveForked(result.forkName);
                 } else if (result.status === STORAGE_CONSTANTS.MERGED ||
                     result.status === STORAGE_CONSTANTS.SYNCED) {
                     this.logger.debug('Applied changes successfully. About to update plugin nodes');
-                    return this.updateNodes();
                 }
+                await this.updateNodes();
+                this.core.discard(changes);
             });
 
         return this._currentSave;
