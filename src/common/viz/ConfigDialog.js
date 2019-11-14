@@ -254,7 +254,7 @@ define([
             const config = {};
             entriesForItem[name].forEach(entry => {
                 if (entry.widget) {
-                    config[entry.name] = entry.widget.getValue();
+                    config[entry.id] = entry.widget.getValue();
                 }
             });
             return {name, config};
