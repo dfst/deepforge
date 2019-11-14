@@ -1,0 +1,29 @@
+{
+  "markers": {
+    "." : "circle",
+    ","	: "circle-dot",
+    "o"	: "circle",
+    "v" : "triangle-down",
+    "^"	: "triangle-up",
+    "<"	: "triangle-left",
+    ">"	: "triangle-right",
+    "1"	: "triangle-down",
+    "2"	: "triangle-up",
+    "3"	: "triangle-left",
+    "4"	: "triangle-right",
+    "8"	: "octagon",
+    "s"	: "square",
+    "p"	: "pentagon",
+    "P"	: "square-x",
+    "*"	: "star",
+    "h"	: "hexagon",
+    "H"	: "hexagon",
+    "+"	: "star",
+    "x"	: "square-x-open",
+    "X"	: "square-x",
+    "D"	: "diamond-tall",
+    "d"	: "diamond-tall",
+    "|"	: "line-ns-open",
+    "_"	: "line-ew-open"
+  }
+}
