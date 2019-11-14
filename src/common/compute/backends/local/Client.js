@@ -40,15 +40,15 @@ define([
     ensureHasUnzip();
     const UNZIP_EXE = '/usr/bin/unzip';  // FIXME: more platform support
     const UNZIP_ARGS = ['-o'];  // FIXME: more platform support
-    const PROJECT_ROOT = path.join(path.dirname(module.uri), '..', '..', '..', '..', '..');
-    const NODE_MODULES = path.join(PROJECT_ROOT, 'node_modules');  // TODO
+    const DEEPFORGE_ROOT = path.join(path.dirname(module.uri), '..', '..', '..', '..', '..');
+    const NODE_MODULES = path.join(DEEPFORGE_ROOT, 'node_modules');
     const symlink = promisify(fs.symlink);
     const touch = async name => await closeFile(await openFile(name, 'w'));
 
     const LocalExecutor = function(/*logger*/) {
         ComputeClient.apply(this, arguments);
 
-        const configPath = path.join(PROJECT_ROOT, 'config');
+        const configPath = path.join(DEEPFORGE_ROOT, 'config');
         const gmeConfig = require.nodeRequire(configPath);
         this.completedJobs = {};
         this.jobQueue = [];
@@ -160,9 +160,12 @@ define([
         // Spin up a subprocess
         const config = JSON.parse(await readFile(tmpdir.replace(path.sep, '/') + '/executor_config.json', 'utf8'));
 
-        const env = {cwd: tmpdir};
+        const options = {
+            cwd: tmpdir,
+            env: {DEEPFORGE_ROOT}
+        };
         this.logger.info(`Running ${config.cmd} ${config.args.join(' ')}`);
-        this.subprocess = spawn(config.cmd, config.args, env);
+        this.subprocess = spawn(config.cmd, config.args, options);
         this.emit('update', jobInfo.hash, this.RUNNING);
         this.subprocess.stdout.on('data', data => this.onConsoleOutput(tmpdir, hash, data));
         this.subprocess.stderr.on('data', data => this.onConsoleOutput(tmpdir, hash, data));
@@ -182,7 +185,6 @@ define([
     LocalExecutor.prototype.onConsoleOutput = async function(workdir, hash, data) {
         const filename = path.join(workdir, 'job_stdout.txt');
         appendFile(filename, data);
-        this.logger.info('stdout:', data);
         this.emit('data', hash, data);
     };
 

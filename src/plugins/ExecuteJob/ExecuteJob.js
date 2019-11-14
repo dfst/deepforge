@@ -174,7 +174,7 @@ define([
         });
 
         this.compute.on('end',
-            (id, info) => {
+            (id/*, info*/) => {
                 try {
                     this.onOperationEnd(id);
                 } catch (err) {

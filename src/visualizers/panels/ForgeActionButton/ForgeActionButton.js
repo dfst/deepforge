@@ -402,14 +402,12 @@ define([
 
     // Export Pipeline Support
     ForgeActionButton.prototype.exportPipeline = async function() {
-        var pluginId = 'Export',
-            metadata = WebGMEGlobal.allPluginsMetadata[pluginId],
-            id = this._currentNodeId,
-            node = this.client.getNode(id),
-            inputData,
-            inputNames;
+        const pluginId = 'Export';
+        const metadata = WebGMEGlobal.allPluginsMetadata[pluginId];
+        const id = this._currentNodeId;
+        const node = this.client.getNode(id);
 
-        inputData = node.getChildrenIds()
+        const inputData = node.getChildrenIds()
             .map(id => this.client.getNode(id))
             .filter(node => {
                 var typeId = node.getMetaTypeId(),
@@ -444,7 +442,7 @@ define([
             .filter(output => output.getAttribute('data'));
 
         // get the name of node referenced from the input op
-        inputNames = inputData
+        const inputNames = inputData
             .map(node => {
                 var cntrId = node.getParentId(),
                     opId = this._client.getNode(cntrId).getParentId(),
@@ -488,7 +486,7 @@ define([
                 .map(id => {
                     const configStructure = ExportFormatDict[id].getConfigStructure ?
                         ExportFormatDict[id].getConfigStructure() : [];
-                    return {id, configStructure};
+                    return {id, name: id, configStructure};
                 });
 
             inputConfig.configStructure.push({
@@ -515,7 +513,7 @@ define([
                 staticInputs: staticInputs,
                 extensionConfig: allConfigs[pluginId].exportFormat.config
             };
-            return await Q.ninvoke(this.client, 'runBrowserPlugin', pluginId, context);
+            return await Q.ninvoke(this.client, 'runServerPlugin', pluginId, context);
         } else {  // no options - just run the plugin!
             const context = this.client.getCurrentPluginContext(pluginId);
 
@@ -526,7 +524,7 @@ define([
                 format: exportFormats[0],
                 staticInputs: []
             };
-            return await Q.ninvoke(this.client, 'runBrowserPlugin', pluginId, context);
+            return await Q.ninvoke(this.client, 'runServerPlugin', pluginId, context);
         }
     };
 
