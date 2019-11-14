@@ -48,6 +48,19 @@ define([
         return this.createDataInfo(metadata);
     };
 
+    SciServerFiles.prototype.deleteDir = async function(dirname) {
+        const url = `data/Storage/${this.volume}/${dirname}`;
+        const opts = {method: 'DELETE'};
+        return await this.fetch(url, opts);
+    };
+
+    SciServerFiles.prototype.deleteFile = async function(dataInfo) {
+        const {volume, filename} = dataInfo.data;
+        const url = `data/Storage/${volume}/${filename}`;
+        const opts = {method: 'DELETE'};
+        return await this.fetch(url, opts);
+    };
+
     SciServerFiles.prototype.getMetadata = async function(dataInfo) {
         const metadata = {size: dataInfo.data.size};
         return metadata;

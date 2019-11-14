@@ -27,6 +27,14 @@ define([
         throw new Error(`File upload not supported by ${this.name}`);
     };
 
+    StorageClient.prototype.deleteFile = async function(/*dataInfo*/) {
+        throw new Error(`File deletion not supported by ${this.name}`);
+    };
+
+    StorageClient.prototype.deleteDir = function(/*dirname*/) {
+        throw new Error(`Directory deletion not supported by ${this.name}`);
+    };
+
     StorageClient.prototype.getDownloadURL = async function(/*dataInfo*/) {
         // TODO: Remove this in favor of directly downloading w/ getFile, etc
         throw new Error(`getDownloadURL not implemented for ${this.name}`);
