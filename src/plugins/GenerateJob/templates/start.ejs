@@ -263,25 +263,13 @@ requirejs([
             job.stdout.on('data', onStdout);
             job.stderr.on('data', onStderr);
             job.on('close', async code => {
-                exitCode = code;
                 log('script finished w/ exit code:', code);
-                if (exitCode === 0) {
-                    const results = require('./result-types.json');
-                    const STORAGE_ID = '<%= storageId %>';
-                    const config = StorageInfo[STORAGE_ID];
-                    const client = await Storage.getBackend(STORAGE_ID).getClient(logger, config);
-                    const outputNames = Object.keys(results);
-                    const storageDir = '<%= storageDir %>';
-
-                    for (let i = outputNames.length; i--;) {
-                        const filename = outputNames[i];
-                        const storagePath = `${storageDir}/${filename}`;
-                        const contents = fs.readFileSync(`outputs/${filename}`);
-                        const dataInfo = await client.putFile(storagePath, contents);
-                        const type = results[filename];
-                        results[filename] = {type, dataInfo};
-                    }
-                    fs.writeFileSync('results.json', JSON.stringify(results));
+                try {
+                    exitCode = code;
+                    await uploadOutputData(code);
+                } catch (err) {
+                    exitCode = 1;
+                    onStderr(err.message);
                 }
                 checkFinished();
             });
@@ -290,6 +278,28 @@ requirejs([
             console.log(`Data retrieval failed: ${err}`);
             process.exit(1);
         });
+
+    async function uploadOutputData(code) {
+        if (exitCode === 0) {
+            const results = require('./result-types.json');
+            const STORAGE_ID = '<%= storageId %>';
+            const config = StorageInfo[STORAGE_ID];
+            const client = await Storage.getBackend(STORAGE_ID).getClient(logger, config);
+            const outputNames = Object.keys(results);
+            const storageDir = '<%= storageDir %>';
+
+            for (let i = outputNames.length; i--;) {
+                const filename = outputNames[i];
+                const storagePath = `${storageDir}/${filename}`;
+                const contents = fs.readFileSync(`outputs/${filename}`);
+                const dataInfo = await client.putFile(storagePath, contents);
+                const type = results[filename];
+                results[filename] = {type, dataInfo};
+            }
+
+            fs.writeFileSync('results.json', JSON.stringify(results));
+        }
+    }
 
     function symlink(target, src) {
         var deferred = Q.defer(),
