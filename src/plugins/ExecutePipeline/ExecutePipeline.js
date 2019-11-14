@@ -132,10 +132,7 @@ define([
         }
 
         this.core.setAttribute(this.activeNode, 'executionId', await this.getExecutionId());
-        this._callback = function() {
-            console.log('\n\n\n----> FINISHED');
-            return callback.apply(this, arguments);
-        };
+        this._callback = callback;
         this.currentForkName = null;
 
         const subtree = await this.core.loadSubTree(this.activeNode);
@@ -415,7 +412,6 @@ define([
     };
 
     ExecutePipeline.prototype.onPipelineComplete = async function(err) {
-        console.log('\n\n>>>> on pipeline complete');
         const name = this.core.getAttribute(this.activeNode, 'name');
 
         if (err) {
@@ -530,7 +526,6 @@ define([
     };
 
     ExecutePipeline.prototype.onOperationComplete = async function (opNode) {
-        console.log('>>> onOperationComplete');
         const name = this.core.getAttribute(opNode, 'name');
         const jobNode = this.core.getParent(opNode);
         const jobId = this.core.getPath(jobNode);
@@ -545,24 +540,15 @@ define([
 
         const counts = this.updateJobCompletionRecords(opNode);
 
-        console.log('>>> saving..');
         await this.save(`Operation "${name}" in ${this.pipelineName} completed successfully`);
-        console.log('>>> saved!');
-        try {
-            const hasReadyOps = counts.indexOf(0) > -1;
-            console.log('hasReadyOps:', hasReadyOps);
-            console.log('this.completedCount', this.completedCount);
-            console.log('this.totalCount', this.totalCount);
+        const hasReadyOps = counts.indexOf(0) > -1;
 
-            this.logger.debug(`Operation "${name}" completed. ` +
-                `${this.totalCount - this.completedCount} remaining.`);
-            if (hasReadyOps) {
-                this.executeReadyOperations();
-            } else if (this.completedCount === this.totalCount) {
-                this.onPipelineComplete();
-            }
-        } catch (err) {
-            console.log('>>> ERROR', err);
+        this.logger.debug(`Operation "${name}" completed. ` +
+            `${this.totalCount - this.completedCount} remaining.`);
+        if (hasReadyOps) {
+            this.executeReadyOperations();
+        } else if (this.completedCount === this.totalCount) {
+            this.onPipelineComplete();
         }
     };
 

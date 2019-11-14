@@ -136,13 +136,8 @@ define([
             value !== undefined,
             `Cannot set attribute to undefined value (${attr})`
         );
-        if (node instanceof CreatedNode) {
-            console.log(`setting ${attr} on ${node.id}`);
-            // TODO
-        }
 
-        // TODO: Ensure that the node is value
-        this.logger.warn(`setting ${attr} to ${value}`);
+        this.logger.info(`setting ${attr} to ${value}`);
         const changes = this.getChangesForNode(node);
         changes.attr[attr] = value;
     };

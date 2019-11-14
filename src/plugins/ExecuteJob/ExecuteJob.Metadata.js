@@ -13,17 +13,15 @@ define([
         this.createIdToMetadataId = {};
     };
 
-    // I think I should convert these to just a single 'update graph' command
+    // TODO: Add tests
     ExecuteJob.prototype[CONSTANTS.PLOT_UPDATE] = async function (job, state) {
         const jobId = this.core.getPath(job);
 
         // Check if the graph already exists
         // use the id to look up the graph
         let id = jobId + '/' + state.id;
-        console.log('>>> Updating plot', id);
         let graph = this.getExistingMetadataById(job, 'Graph', id);
         if (!graph) {
-            console.log('Creating new graph...');
             graph = this.createNode('Graph', job);
             this.setAttribute(graph, 'id', id);
             this._metadata[id] = graph;
