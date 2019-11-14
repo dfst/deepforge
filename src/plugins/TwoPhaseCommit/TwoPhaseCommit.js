@@ -26,12 +26,6 @@ define([
         this.pluginMetadata = pluginMetadata;
         this.forkNameBase = null;
         this._currentSave = Promise.resolve();
-
-        // TODO: Should I wrap this.core?
-        // TODO: Wrapping all nodes would make the code a little easier as we wouldn't need to keep
-        // checking the type and handling them differently...
-
-        this.queuedChangesToCommit = [];
     };
 
     TwoPhaseCommit.INVOKE_ERR = 'TwoPhaseCommit is an abstract plugin and not meant for direct usage.';

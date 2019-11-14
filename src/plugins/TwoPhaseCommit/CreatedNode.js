@@ -2,7 +2,6 @@
 define([
 ], function(
 ) {
-    // TODO: Should I wrap all nodes with something like this?
     CreatedNode.CREATE_PREFIX = 'created_node_';
     let counter = 0;
     function CreatedNode(base, parent) {

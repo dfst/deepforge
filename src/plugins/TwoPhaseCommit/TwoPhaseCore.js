@@ -8,7 +8,6 @@ define([
     CreatedNode,
     assert,
 ) {
-    // TODO: Should I update the core so that it has a couple extra methods
     function TwoPhaseCore(logger, core) {
         this.logger = logger;
         this.core = core;
