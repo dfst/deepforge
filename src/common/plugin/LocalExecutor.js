@@ -28,42 +28,6 @@ define([
         outputs.forEach(output => this.core.setAttribute(output, 'data', dataInfo));
     };
 
-    LocalExecutor.prototype.ArtifactFinder = function(node) {
-        // Check the save dir for a node with the given name
-        // that has the given type
-        var hash,
-            typeId = this.core.getPointerPath(node, 'type'),
-            type,
-            artifactName = this.getAttribute(node, 'artifactName');
-
-        return this.core.loadByPath(this.rootNode, typeId)
-            .then(_type => {
-                type = _type;
-                return this._getSaveDir();
-            })
-            .then(saveDir => this.core.loadChildren(saveDir))
-            .then(artifacts => {
-                return artifacts.find(artifact =>
-                    this.getAttribute(artifact, 'name') === artifactName &&
-                        this.isMetaTypeOf(artifact, type));
-            })
-            .then(matchingArtifact => {
-                hash = matchingArtifact && this.getAttribute(matchingArtifact, 'data');
-                // If no hash, just continue (the subsequent ops will receive 'nil')
-                if (!hash) {
-                    return this.onOperationComplete(node);
-                } else {
-                    return this.getOutputs(node)
-                        .then(outputPairs => {
-                            var outputs = outputPairs.map(pair => pair[2]);
-                            // Get the 'data' hash and store it in the output data ports
-                            outputs.forEach(output => this.setAttribute(output, 'data', hash));
-
-                        });
-                }
-            });
-    };
-
     LocalExecutor.prototype._getSaveDir = async function () {
         const children = await this.core.loadChildren(this.rootNode);
         const dataPath = this.core.getPath(this.META.Data);
@@ -130,10 +94,6 @@ define([
     LocalExecutor.prototype.getLocalOperationType = function(node) {
         for (let i = LocalExecutor.OPERATIONS.length; i--;) {
             const type = LocalExecutor.OPERATIONS[i];
-            if (!this.META[type]) {
-                this.logger.warn(`Missing local operation: ${type}`);
-                continue;
-            }
             if (this.isMetaTypeOf(node, this.META[type])) {
                 return type;
             }
