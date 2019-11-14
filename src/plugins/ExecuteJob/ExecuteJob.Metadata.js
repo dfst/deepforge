@@ -22,8 +22,11 @@ define([
         let id = jobId + '/' + state.id;
         let graph = this.getExistingMetadataById(job, 'Graph', id);
         if (!graph) {
-            graph = this.createNode('Graph', job);
-            this.setAttribute(graph, 'id', id);
+            graph = this.core.createNode({
+                base: this.META.Graph,
+                parent: job
+            });
+            this.core.setAttribute(graph, 'id', id);
             this._metadata[id] = graph;
         }
 
@@ -31,21 +34,24 @@ define([
         // Set the plot title
         // Only support a single axes for now
         const axes = state.axes[0];
-        this.setAttribute(graph, 'name', axes.title);
-        this.setAttribute(graph, 'xlabel', axes.xlabel);
-        this.setAttribute(graph, 'ylabel', axes.ylabel);
+        this.core.setAttribute(graph, 'name', axes.title);
+        this.core.setAttribute(graph, 'xlabel', axes.xlabel);
+        this.core.setAttribute(graph, 'ylabel', axes.ylabel);
         this.logger.info(`Updating graph named ${axes.title}`);
 
-        const children = await this.loadChildren(graph);
+        const children = await this.core.loadChildren(graph);
         children.forEach(node => this.core.deleteNode(node));
 
         // Update the points for each of the lines 
         axes.lines.forEach((line, index) => {
-            let node = this.createNode('Line', graph);
+            let node = this.core.createNode({
+                base: this.META.Line,
+                parent: graph,
+            });
 
-            this.setAttribute(node, 'name', line.label || `line ${index+1}`);
+            this.core.setAttribute(node, 'name', line.label || `line ${index+1}`);
             let points = line.points.map(pts => pts.join(',')).join(';');
-            this.setAttribute(node, 'points', points);
+            this.core.setAttribute(node, 'points', points);
         });
     };
 
@@ -55,14 +61,14 @@ define([
         var name = Array.prototype.slice.call(arguments, 3).join(' '),
             imageNode = this._getImageNode(job, imgId, name);
 
-        this.setAttribute(imageNode, 'data', hash);
+        this.core.setAttribute(imageNode, 'data', hash);
     };
 
     ExecuteJob.prototype[CONSTANTS.IMAGE.NAME] = function (job, imgId) {
         var name = Array.prototype.slice.call(arguments, 2).join(' '),
             imageNode = this._getImageNode(job, imgId, name);
 
-        this.setAttribute(imageNode, 'name', name);
+        this.core.setAttribute(imageNode, 'name', name);
     };
 
     ExecuteJob.prototype._getImageNode = function (job, imgId, name) {
@@ -76,8 +82,11 @@ define([
             imageNode = this._getExistingMetadata(jobId, 'Image', name);
             if (!imageNode) {
                 this.logger.info(`Creating image ${id} named ${name}`);
-                imageNode = this.createNode('Image', job);
-                this.setAttribute(imageNode, 'name', name);
+                imageNode = this.core.createNode({
+                    base: this.META.Image,
+                    parent: job,
+                });
+                this.core.setAttribute(imageNode, 'name', name);
             }
             this._metadata[id] = imageNode;
         }
