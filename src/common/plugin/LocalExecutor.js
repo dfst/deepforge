@@ -15,6 +15,8 @@ define([
         const outputContainer = (await this.core.loadChildren(node))
             .find(cntr => this.isMetaTypeOf(cntr, this.META.Outputs));
 
+        const jobLogger = new JobLogger(this.core, this.core.getParent(node));
+        jobLogger.log(`Passing data reference to the ${outputs.length} subsequent jobs.`);
         const dataNodes = await this.core.loadChildren(outputContainer);
         const dataInfo = this.core.getAttribute(dataNodes[0], 'data');
 
@@ -26,6 +28,7 @@ define([
             });
 
         outputs.forEach(output => this.core.setAttribute(output, 'data', dataInfo));
+        jobLogger.append('Operation complete.');
     };
 
     LocalExecutor.prototype._getSaveDir = async function () {
@@ -71,8 +74,12 @@ define([
                 .find(pair => pair[0] === name && pair[1] === hash));
         });
 
+        const jobLogger = new JobLogger(this.core, this.core.getParent(node));
+        jobLogger.log('About to save output artifacts.');
         const saveDir = `${this.projectId}/artifacts/`;
         const storage = await this.getStorageClient();
+        jobLogger.append(`Saving output data to ${storage.name}`);
+
         const createParams = {base: this.META.Data, parent: artifactsDir};
         for (let i = dataNodes.length; i--;) {
             const artifact = this.core.createNode(createParams);
@@ -89,6 +96,7 @@ define([
         }
 
         this.logger.info(`Saved ${dataNodes.length} artifacts in ${this.projectId}.`);
+        jobLogger.append(`Saving output data to ${storage.name}`);
     };
 
     // Helper methods
@@ -110,5 +118,21 @@ define([
         .filter(name => name.indexOf('_') !== 0)
         .filter(name => name !== 'isLocalOperation' && name !== 'getLocalOperationType');
     
+    class JobLogger{
+        constructor(core, node) {
+            this.core = core;
+            this.job = node;
+        }
+
+        append(text) {
+            const stdout = this.core.getAttribute(this.job, 'stdout') + text + '\n';
+            this.core.setAttribute(this.job, 'stdout', stdout);
+        }
+
+        log(text) {
+            this.core.setAttribute(this.job, 'stdout', text + '\n');
+        }
+    }
+
     return LocalExecutor;
 });

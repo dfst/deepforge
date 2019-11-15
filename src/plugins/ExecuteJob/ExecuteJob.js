@@ -415,7 +415,7 @@ define([
         const job = this.core.getParent(node);
         const name = this.core.getAttribute(job, 'name');
         const e = `Failed to retrieve "${input}" (BLOB_FETCH_FAILED)`;
-        let consoleErr = `[0;31mFailed to execute operation: ${e}[0m`;
+        let consoleErr = red(`Failed to execute operation: ${e}`);
 
         consoleErr += [
             '\n\nA couple things to check out:\n',
@@ -621,7 +621,7 @@ define([
             }
         } else {  // something bad happened...
             const err = `Failed to execute operation "${jobId}": ${status}`;
-            const consoleErr = `[0;31mFailed to execute operation: ${status}[0m`;
+            const consoleErr = red(`Failed to execute operation: ${status}`);
 
             this.core.setAttribute(job, 'stdout', consoleErr);
             this.logger.error(err);
@@ -691,6 +691,11 @@ define([
             await this[type](node);
             this.onOperationComplete(node);
         } catch (err) {
+            const job = this.core.getParent(node);
+            const stdout = this.core.getAttribute(job, 'stdout') +
+                '\n' + red(err.toString());
+
+            this.core.setAttribute(job, 'stdout', stdout);
             this.onOperationFail(node, err);
         }
     };
@@ -725,6 +730,10 @@ define([
     const ERROR = {};
     ERROR.NO_STDOUT_FILE = 'Could not find logs in job results.';
     ERROR.NO_TYPES_FILE = 'Metadata about result types not found.';
+
+    function red(text) {
+        return `[0;31m${text}[0m`;
+    }
 
     return ExecuteJob;
 });

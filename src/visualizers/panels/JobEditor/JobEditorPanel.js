@@ -11,13 +11,15 @@ define([
     'panels/OutputViewer/OutputViewerPanel',
     'panels/OperationCodeEditor/OperationCodeEditorPanel',
     'deepforge/viz/Execute',
-    'js/Constants'
+    'deepforge/Constants',
+    'js/Constants',
 ], function (
     TilingViz,
     OutputViewer,
     OperationCodeEditor,
     Execute,
-    CONSTANTS
+    CONSTANTS,
+    GME_CONSTANTS,
 ) {
     'use strict';
 
@@ -45,30 +47,29 @@ define([
     };
 
     JobEditorPanel.prototype.selectedObjectChanged = function (nodeId) {
-        var node = this._client.getNode(nodeId),
-            typeId,
-            type,
-            typeName,
-            executionId,
-            execution;
+        const node = this._client.getNode(nodeId);
 
         if (typeof nodeId === 'string') {
-            typeId = node.getMetaTypeId();
-            type = this._client.getNode(typeId);
-            typeName = type.getAttribute('name');
+            const typeId = node.getMetaTypeId();
+            const type = this._client.getNode(typeId);
+            const typeName = type.getAttribute('name');
 
             if (typeName !== 'Job') {
                 this.logger.error(`Invalid node type for JobEditor: ${typeName}`);
                 return;
             }
 
-            executionId = node.getParentId();
-            execution = this._client.getNode(executionId);
+            const executionId = node.getParentId();
+            const execution = this._client.getNode(executionId);
 
             // If the current node is in a snapshotted execution, only show the log
             // viewer
-            if (this.readOnly !== execution.getAttribute('snapshot')) {
-                this.readOnly = execution.getAttribute('snapshot');
+            const isReadOnly = execution.getAttribute('snapshot') || 
+                node.getAttribute('name') === CONSTANTS.OP.INPUT ||
+                node.getAttribute('name') === CONSTANTS.OP.OUTPUT;
+
+            if (this.readOnly !== isReadOnly) {
+                this.readOnly = isReadOnly;
                 this.logger.info(`readonly set to ${this.readOnly}`);
                 this.updatePanels();
             }
@@ -104,7 +105,7 @@ define([
 
     JobEditorPanel.prototype.onOperationEvents = function (events) {
         var event = events.find(event => {
-            if (event.etype === CONSTANTS.TERRITORY_EVENT_LOAD) {
+            if (event.etype === GME_CONSTANTS.TERRITORY_EVENT_LOAD) {
                 // Check if the eid is an Operation
                 var typeId = this._client.getNode(event.eid).getMetaTypeId(),
                     type = this._client.getNode(typeId),

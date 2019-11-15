@@ -3,12 +3,10 @@
 define([
     'widgets/EasyDAG/SelectionManager',
     'widgets/EasyDAG/Buttons',
-    'deepforge/Constants',
     'underscore'
 ], function(
     EasyDAGSelectionManager,
     Buttons,
-    CONSTANTS,
     _
 ) {
     'use strict';
@@ -20,12 +18,7 @@ define([
     _.extend(SelectionManager.prototype, EasyDAGSelectionManager.prototype);
 
     SelectionManager.prototype.createActionButtons = function(width/*, height*/) {
-        var jobName = this.selectedItem.desc.name;
-
-        // Check if it is an Input or Output job
-        if (!this.selectedItem.isConnection && jobName !== CONSTANTS.OP.INPUT &&
-            jobName !== CONSTANTS.OP.OUTPUT) {
-
+        if (!this.selectedItem.isConnection) {
             new Buttons.Enter({
                 context: this._widget,
                 $pEl: this.$selection,
