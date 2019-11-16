@@ -5,12 +5,10 @@
 
 define([
     'js/Constants',
-    'js/Utils/GMEConcepts',
-    'js/NodePropertyNames'
+    'deepforge/viz/GraphDescExtractor'
 ], function (
     CONSTANTS,
-    GMEConcepts,
-    nodePropertyNames
+    GraphDescExtractor
 ) {
 
     'use strict';
@@ -27,17 +25,10 @@ define([
         this._currentNodeId = null;
         this._currentNodeParentId = undefined;
 
-        this._initWidgetEventHandlers();
+        this.graphDescExtractor = new GraphDescExtractor(this._client);
 
         this._logger.debug('ctor finished');
     }
-
-    PlotlyGraphControl.prototype._initWidgetEventHandlers = function () {
-        this._widget.onNodeClick = function (id) {
-            // Change the current active object
-            WebGMEGlobal.State.registerActiveObject(id);
-        };
-    };
 
     /* * * * * * * * Visualizer content update callbacks * * * * * * * */
     // One major concept here is with managing the territory. The territory
@@ -60,15 +51,9 @@ define([
         if (typeof self._currentNodeId === 'string') {
             // Put new node's info into territory rules
             self._selfPatterns = {};
-            self._selfPatterns[nodeId] = {children: 0};  // Territory "rule"
+            // self._selfPatterns[nodeId] = {children: 0};  // Territory "rule"
 
             self._widget.setTitle(desc.name.toUpperCase());
-
-            if (typeof desc.parentId === 'string') {
-                self.$btnModelHierarchyUp.show();
-            } else {
-                self.$btnModelHierarchyUp.hide();
-            }
 
             self._currentNodeParentId = desc.parentId;
 
@@ -77,28 +62,32 @@ define([
             });
 
             // Update the territory
-            self._client.updateTerritory(self._territoryId, self._selfPatterns);
+            // self._client.updateTerritory(self._territoryId, self._selfPatterns);
 
-            self._selfPatterns[nodeId] = {children: 1};
+            self._selfPatterns[nodeId] = {children: 2};
             self._client.updateTerritory(self._territoryId, self._selfPatterns);
         }
     };
 
     // This next function retrieves the relevant node information for the widget
     PlotlyGraphControl.prototype._getObjectDescriptor = function (nodeId) {
-        var node = this._client.getNode(nodeId),
-            objDescriptor;
-        if (node) {
-            objDescriptor = {
-                id: node.getId(),
-                name: node.getAttribute(nodePropertyNames.Attributes.name),
-                childrenIds: node.getChildrenIds(),
-                parentId: node.getParentId(),
-                isConnection: GMEConcepts.isConnection(nodeId)
-            };
+        let node = this._client.getNode(nodeId),
+            desc;
+        const metaTypeId = node.getMetaTypeId();
+        const metaNode = this._client.getNode(metaTypeId);
+        const type = metaNode.getAttribute('name');
+        switch (type) {
+            case 'SubGraph':
+                desc = this.graphDescExtractor.getSubGraphDesc(node);
+                break;
+            case 'Graph':
+                desc = this.graphDescExtractor.getGraphDesc(node);
+                break;
+            case 'Line':
+                desc = this.graphDescExtractor.getLineDesc(node);
+                break;
         }
-
-        return objDescriptor;
+        return desc;
     };
 
     /* * * * * * * * Node Event Handling * * * * * * * */
@@ -112,17 +101,17 @@ define([
             event = events[i];
             switch (event.etype) {
 
-            case CONSTANTS.TERRITORY_EVENT_LOAD:
-                this._onLoad(event.eid);
-                break;
-            case CONSTANTS.TERRITORY_EVENT_UPDATE:
-                this._onUpdate(event.eid);
-                break;
-            case CONSTANTS.TERRITORY_EVENT_UNLOAD:
-                this._onUnload(event.eid);
-                break;
-            default:
-                break;
+                case CONSTANTS.TERRITORY_EVENT_LOAD:
+                    this._onLoad(event.eid);
+                    break;
+                case CONSTANTS.TERRITORY_EVENT_UPDATE:
+                    this._onUpdate(event.eid);
+                    break;
+                case CONSTANTS.TERRITORY_EVENT_UNLOAD:
+                    this._onUnload(event.eid);
+                    break;
+                default:
+                    break;
             }
         }
 
@@ -154,7 +143,6 @@ define([
     /* * * * * * * * Visualizer life cycle callbacks * * * * * * * */
     PlotlyGraphControl.prototype.destroy = function () {
         this._detachClientEventListeners();
-        this._removeToolbarItems();
     };
 
     PlotlyGraphControl.prototype._attachClientEventListeners = function () {
@@ -168,79 +156,16 @@ define([
 
     PlotlyGraphControl.prototype.onActivate = function () {
         this._attachClientEventListeners();
-        this._displayToolbarItems();
 
         if (typeof this._currentNodeId === 'string') {
-            WebGMEGlobal.State.registerActiveObject(this._currentNodeId, {suppressVisualizerFromNode: true});
+            WebGMEGlobal.State.registerSuppressVisualizerFromNode(true);
+            WebGMEGlobal.State.registerActiveObject(this._currentNodeId);
+            WebGMEGlobal.State.registerSuppressVisualizerFromNode(false);
         }
     };
 
     PlotlyGraphControl.prototype.onDeactivate = function () {
         this._detachClientEventListeners();
-        this._hideToolbarItems();
-    };
-
-    /* * * * * * * * * * Updating the toolbar * * * * * * * * * */
-    PlotlyGraphControl.prototype._displayToolbarItems = function () {
-
-        if (this._toolbarInitialized === true) {
-            for (var i = this._toolbarItems.length; i--;) {
-                this._toolbarItems[i].show();
-            }
-        } else {
-            this._initializeToolbar();
-        }
-    };
-
-    PlotlyGraphControl.prototype._hideToolbarItems = function () {
-
-        if (this._toolbarInitialized === true) {
-            for (var i = this._toolbarItems.length; i--;) {
-                this._toolbarItems[i].hide();
-            }
-        }
-    };
-
-    PlotlyGraphControl.prototype._removeToolbarItems = function () {
-
-        if (this._toolbarInitialized === true) {
-            for (var i = this._toolbarItems.length; i--;) {
-                this._toolbarItems[i].destroy();
-            }
-        }
-    };
-
-    PlotlyGraphControl.prototype._initializeToolbar = function () {
-        var self = this,
-            toolBar = WebGMEGlobal.Toolbar;
-
-        this._toolbarItems = [];
-
-        this._toolbarItems.push(toolBar.addSeparator());
-
-        /************** Go to hierarchical parent button ****************/
-        this.$btnModelHierarchyUp = toolBar.addButton({
-            title: 'Go to parent',
-            icon: 'glyphicon glyphicon-circle-arrow-up',
-            clickFn: function (/*data*/) {
-                WebGMEGlobal.State.registerActiveObject(self._currentNodeParentId);
-            }
-        });
-        this._toolbarItems.push(this.$btnModelHierarchyUp);
-        this.$btnModelHierarchyUp.hide();
-
-        /************** Checkbox example *******************/
-
-        this.$cbShowConnection = toolBar.addCheckBox({
-            title: 'toggle checkbox',
-            icon: 'gme icon-gme_diagonal-arrow',
-            checkChangedFn: function (data, checked) {
-                self._logger.debug('Checkbox has been clicked!');
-            }
-        });
-        this._toolbarItems.push(this.$cbShowConnection);
-
-        this._toolbarInitialized = true;
     };
 
     return PlotlyGraphControl;

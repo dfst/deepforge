@@ -45,7 +45,6 @@ define([
         this.dimensions = null;
         this._params = params;
         this._initialize();
-
         this.logger.debug('ctor finished');
     };
 
@@ -182,7 +181,6 @@ define([
             this._territory = {};
             this._territory[nodeId] = {children: 1};
             this._client.updateTerritory(this._territoryUI, this._territory);
-
             this.activePanel.control.selectedObjectChanged(nodeId);
         }
     };

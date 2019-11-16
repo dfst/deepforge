@@ -3,10 +3,12 @@
 
 define([
     'js/Constants',
-    'deepforge/utils'
+    'deepforge/utils',
+    'deepforge/viz/GraphDescExtractor'
 ], function (
     CONSTANTS,
-    utils
+    utils,
+    GraphDescExtractor
 ) {
 
     'use strict';
@@ -31,9 +33,8 @@ define([
 
         this.abbrToId = {};
         this.abbrFor = {};
-
+        this.graphDescExtractor = new GraphDescExtractor(this._client);
         this._initWidgetEventHandlers();
-
         this._logger.debug('ctor finished');
     };
 
@@ -165,38 +166,29 @@ define([
                     this._selfPatterns[desc.originId] = {children: 0};
                 }
                 setTimeout(() => this._client.updateTerritory(this._territoryId, this._selfPatterns), 0);
-            } else if (type === 'Line') {
-                desc = this.getLineDesc(node);
+            } else if (type === 'Graph') {
+                desc = this.graphDescExtractor.getGraphDesc(node);
             } else if (type === 'Pipeline') {
                 desc.execs = node.getMemberIds('executions');
                 this._pipelineNames[desc.id] = desc.name;
-            } else if (type === 'Graph') {
-                childIds = node.getChildrenIds();
-                let firstSubplot;
-                if (childIds.length > 0)
-                    firstSubplot = this._client.getNode(childIds[0]);
-                if (firstSubplot) {
-                    let childLineIds = firstSubplot.getChildrenIds();
-                    desc.lines = childLineIds.map(id => {
-                        var n = this._client.getNode(id);
-                        if(n) {
-                            return this.getLineDesc(n);
-                        }
-                        else {
-                            return null;
-                        }
-                    });
-                }
+            } else if(type === 'SubGraph'){
+                let graphId = node.getParentId();
+                let graphNode = this._client.getNode(graphId);
+                desc = this.graphDescExtractor.getGraphDesc(graphNode);
+            } else if (type === 'Line'){
+                let subGraphId = node.getParentId();
+                let graphId = this._client.getNode(subGraphId).getParentId();
+                let graphNode = this._client.getNode(graphId);
+                desc = this.graphDescExtractor.getGraphDesc(graphNode);
             }
         }
-
         return desc;
     };
 
-    ExecutionIndexControl.prototype.getLineDesc = function (node) {
+    ExecutionIndexControl.prototype.getLineDesc2 = function (node) {
         var id = node.getId(),
-            axesId = node.getParentId(),
-            graphId = this._client.getNode(axesId).getParentId(),
+            subGraphId = node.getParentId(),
+            graphId = this._client.getNode(subGraphId).getParentId(),
             jobId = this._client.getNode(graphId).getParentId(),
             execId = this._client.getNode(jobId).getParentId(),
             points,
@@ -214,6 +206,7 @@ define([
         desc = {
             id: id,
             execId: execId,
+            subgraphId: this._client.getNode(node.getParentId()).getAttribute('id'),
             lineName: node.getAttribute('name'),
             label: node.getAttribute('label'),
             name: node.getAttribute('name'),
@@ -282,6 +275,8 @@ define([
             this._widget.addNode(desc);
         } else if (desc.type === 'Pipeline') {
             this.updatePipelineNames(desc);
+        } else if (desc.type === 'graph') {
+            this._widget.addNode(desc);
         }
     };
 
@@ -293,6 +288,8 @@ define([
             this._widget.updateNode(desc);
         } else if (desc.type === 'Pipeline') {
             this.updatePipelineNames(desc);
+        } else if(desc.type === 'graph') {
+            this._widget.updateNode(desc);
         }
     };
 

@@ -65,6 +65,7 @@ define([
                 this.setAttribute(axesNode, 'ylabel', axes.ylabel);
                 this.setAttribute(axesNode, 'xlim', axes.xlim);
                 this.setAttribute(axesNode, 'ylim', axes.ylim);
+                this.setAttribute(axesNode, 'id', axesId);
                 this.createIdToMetadataId[axesNode] = axesId;
                 this.logger.info(`Adding subgraph with title ${axes.title}`);
 
@@ -105,7 +106,6 @@ define([
             }
         }
     };
-
 
     ExecuteJob.prototype[CONSTANTS.GRAPH_CREATE_LINE] = function (job, graphId, id) {
         var jobId = this.core.getPath(job),

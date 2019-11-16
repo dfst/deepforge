@@ -14,7 +14,7 @@ define(['./lib/changeset'], function (diff) {
     };
 
     PlotlyJSONCreator.prototype.update = function (newDesc) {
-        if(!this.plotlyJSONSchema){
+        if (!this.plotlyJSONSchema) {
             this.create(newDesc);
             return;
         }
@@ -34,6 +34,10 @@ define(['./lib/changeset'], function (diff) {
             return createScatterTraces(subGraph, index);
         });
         plotlyJSON.data = flatten(dataArr);
+        const axesData = addAxesLabels(desc.subGraphs);
+        Object.keys(axesData).forEach((axis) => {
+            plotlyJSON.layout[axis] = axesData[axis];
+        });
         return plotlyJSON;
     };
     /*** Helper Methods For Creating The plotly JSON Reference ***/
@@ -56,7 +60,7 @@ define(['./lib/changeset'], function (diff) {
             layout.height = 250 * numRows;
             let subPlots = [];
             let currentSubplotAxes;
-            for (let i = 0; i < numRows * 2; i+=2) {
+            for (let i = 0; i < numRows * 2; i += 2) {
                 if (i === 0)
                     currentSubplotAxes = ['xy', 'x2y2'];
                 else
@@ -85,8 +89,9 @@ define(['./lib/changeset'], function (diff) {
         return subGraphs.map((subGraph, index) => {
             const yPosMarker = (index % 2 === 0) ? index : index - 1;
             return {
-                text: subGraph.title,
+                text: `<b>${subGraph.title}</b>`,
                 font: {
+                    family: 'Arial',
                     color: 'black',
                     size: 14
                 },
@@ -108,11 +113,12 @@ define(['./lib/changeset'], function (diff) {
                 y: points[1],
                 name: line.label,
                 type: TraceTypes.SCATTER,
-                mode: line.marker ? "line+marker": "line",
+                mode: line.marker ? "line+marker" : "line",
                 line: {
-                    width: line.lineWidth ? line.lineWidth: 3
+                    width: line.lineWidth ? line.lineWidth : 3,
+                    color: line.color
                 },
-                color: line.color
+
             };
             if (index !== 0) {
                 traceData.xaxis = `x${index + 1}`;
@@ -121,6 +127,38 @@ define(['./lib/changeset'], function (diff) {
             return traceData;
         });
         return traceArr;
+    };
+
+    const addAxesLabels = function (subGraphs) {
+        let axesData = {};
+        subGraphs.forEach((subGraph, index) => {
+            let xAxisName;
+            let yAxisName;
+            if (index === 0) {
+                xAxisName = 'xaxis';
+                yAxisName = 'yaxis';
+            } else {
+                xAxisName = `xaxis${index + 1}`;
+                yAxisName = `yaxis${index + 1}`;
+            }
+            axesData[xAxisName] = {
+                title: {
+                    text: subGraph.xlabel,
+                    color: '#7f7f7f',
+                    standoff: 0
+                }
+
+            };
+
+            axesData[yAxisName] = {
+                title: {
+                    text: subGraph.ylabel,
+                    color: '#7f7f7f',
+                    standoff: 0
+                }
+            };
+        });
+        return axesData;
     };
 
     const pointsToCartesianArray = function (points) {

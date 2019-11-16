@@ -111,6 +111,8 @@ define([
         } else if (desc.type === 'line') {
             desc.type = 'line';
             this.lineGraph.addNode(desc);
+        } else if (desc.type === 'graph') {
+            this.lineGraph.addNode(desc);
         }
 
         if (isFirstNode) {
@@ -299,6 +301,8 @@ define([
             node.statusClass = Utils.ClassForJobStatus[desc.status];
             node.desc = desc;
         } else if (desc.type === 'line') {
+            this.lineGraph.updateNode(desc);
+        } else if(desc.type === 'graph'){
             this.lineGraph.updateNode(desc);
         }
     };
