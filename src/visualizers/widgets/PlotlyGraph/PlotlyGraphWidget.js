@@ -1,5 +1,8 @@
-/*globals define, WebGMEGlobal*/
-define(['./lib/plotly.min', './PlotlyJSONCreator'], function (Plotly, PlotlyJSONCreator) {
+/*globals define, WebGMEGlobal, _*/
+define([
+        './lib/plotly.min',
+        './PlotlyJSONCreator'
+    ], function (Plotly, PlotlyJSONCreator) {
         'use strict';
 
         const WIDGET_CLASS = 'plotly-graph';
@@ -43,17 +46,17 @@ define(['./lib/plotly.min', './PlotlyJSONCreator'], function (Plotly, PlotlyJSON
         // Adding/Removing/Updating items
         PlotlyGraphWidget.prototype.addNode = function (desc) {
             this.plotsData[desc.id] = desc;
-            this.createOrUpdateChart();
+            this.refreshChart();
         };
 
         PlotlyGraphWidget.prototype.removeNode = function (id) {
             delete this.plotsData[id];
-            this.createOrUpdateChart();
+            this.refreshChart();
         };
 
         PlotlyGraphWidget.prototype.updateNode = function (desc) {
             this.plotsData[desc.id] = desc;
-            this.createOrUpdateChart();
+            this.refreshChart();
         };
 
         PlotlyGraphWidget.prototype.createOrUpdateChart = function () {
@@ -66,13 +69,19 @@ define(['./lib/plotly.min', './PlotlyJSONCreator'], function (Plotly, PlotlyJSON
                     this.created = true;
                 } else {
                     this.plotlyJSONCreator.update(this.plotsData);
-                    Plotly.react(this.$el[0], this.plotlyJSONCreator.plotlyJSONSchema);
+                    if (this.plotlyJSONCreator.plotlyJSONSchema !== null)
+                        Plotly.react(this.$el[0], this.plotlyJSONCreator.plotlyJSONSchema);
                 }
             }
         };
 
+        PlotlyGraphWidget.prototype.refreshChart = _.debounce(PlotlyGraphWidget.prototype.createOrUpdateChart, 50);
+
         PlotlyGraphWidget.prototype.deleteChart = function () {
-            Plotly.purge(this.$el[0]);
+            this.plotsData = {};
+            if (this.created) {
+                Plotly.purge(this.$el[0]);
+            }
             this.created = false;
         };
 

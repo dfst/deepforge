@@ -1,6 +1,6 @@
 /*globals define*/
 /*eslint-env browser*/
-define(['./lib/changeset'], function (diff) {
+define([], function () {
     'use strict';
     const PlotlyJSONCreator = function () {
         this.plotlyJSONSchema = null;
@@ -14,15 +14,7 @@ define(['./lib/changeset'], function (diff) {
 
     };
 
-    PlotlyJSONCreator.prototype.update = function (newDesc) {
-        if (!this.plotlyJSONSchema) {
-            this.create(newDesc);
-            return;
-        }
-        let newJSONSchema = this._descToPlotlyJSON(newDesc);
-        let changes = diff(this.plotlyJSONSchema, newJSONSchema);
-        diff.apply(changes, this.plotlyJSONSchema, true);
-    };
+    PlotlyJSONCreator.prototype.update = PlotlyJSONCreator.prototype.create;
 
     PlotlyJSONCreator.prototype.delete = function () {
         this.plotlyJSONSchema = null;
@@ -184,7 +176,7 @@ define(['./lib/changeset'], function (diff) {
     };
 
     const consolidateGraphsDesc = function (desc) {
-        if(Object.keys(desc).length === 0){
+        if (Object.keys(desc).length === 0) {
             return;
         }
         if (!isMultiGraph(desc)) {
@@ -192,29 +184,33 @@ define(['./lib/changeset'], function (diff) {
         }
         let descKeys = Object.keys(desc);
         let consolidatedGraphData = null;
-        let currentGraph,
-            currentConsSubgraph,
+        let currentGraph = null,
+            currentConsSubgraph = null,
             numSubGraphs;
         descKeys.forEach((key) => {
             currentGraph = desc[key];
             if (!consolidatedGraphData) {
-                consolidatedGraphData = currentGraph;
+                consolidatedGraphData = JSON.parse(JSON.stringify(currentGraph));
+                consolidatedGraphData.title = consolidatedGraphData.title || `Graph`;
                 numSubGraphs = consolidatedGraphData.subGraphs.length;
             } else {
                 consolidatedGraphData.execId += ` vs ${currentGraph.execId}`;
                 consolidatedGraphData.graphId += ` vs ${appendStringWithAbbr(currentGraph.execId, currentGraph.abbr)}`;
-                consolidatedGraphData.title += ` vs  ${appendStringWithAbbr(currentGraph.title, currentGraph.abbr)}`;
-                for (let i = 0; i < numSubGraphs; i++) {
+                consolidatedGraphData.title +=
+                    ` vs ${appendStringWithAbbr(currentGraph.title || 'Graph', currentGraph.abbr)}`;
+                let subIterNum = numSubGraphs > currentGraph.subGraphs.length ? currentGraph.subGraphs.length : numSubGraphs;
+                for (let i = 0; i < subIterNum; i++) {
                     currentConsSubgraph = consolidatedGraphData.subGraphs[i];
-                    currentConsSubgraph.title += `vs ${currentGraph.subGraphs[i].title}`;
+                    currentConsSubgraph.title = currentConsSubgraph.title || `SubGraph${i+1}`;
+                    currentConsSubgraph.title += ` vs ${currentGraph.subGraphs[i].title || `SubGraph${i+1}`}`;
                     currentGraph.subGraphs[i].lines.forEach((line, index) => {
-                        line.label = line.label || `line${index} + ${currentGraph.abbr}`;
-                        currentConsSubgraph.lines.push(line);
+                        let lineClone = JSON.parse(JSON.stringify(line));
+                        lineClone.label = (lineClone.label || `line${index}`) + ` (${currentGraph.abbr})`;
+                        currentConsSubgraph.lines.push(lineClone);
                     });
                 }
             }
         });
-        console.log(consolidatedGraphData);
         return consolidatedGraphData;
     };
 

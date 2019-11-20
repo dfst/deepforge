@@ -26,6 +26,7 @@ define([], function () {
             let subGraphNode = this._client.getNode(subGraphNodeId);
             desc.subGraphs.push(this.getSubGraphDesc(subGraphNode));
         });
+        desc.subGraphs.sort(this.compareSubgraphIDs);
         return desc;
     };
 
@@ -91,6 +92,13 @@ define([], function () {
 
         return desc;
     };
+
+
+    GraphDescExtractor.prototype.compareSubgraphIDs = function (desc1, desc2) {
+        if (desc1.subgraphId >= desc2.subgraphId) return 1;
+        else return -1;
+    };
+
 
     return GraphDescExtractor;
 });
