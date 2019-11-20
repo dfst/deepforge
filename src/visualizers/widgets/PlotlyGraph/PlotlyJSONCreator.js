@@ -11,6 +11,7 @@ define(['./lib/changeset'], function (diff) {
     // Create a plotly reference from the give Description
     PlotlyJSONCreator.prototype.create = function (desc) {
         this.plotlyJSONSchema = this._descToPlotlyJSON(desc);
+
     };
 
     PlotlyJSONCreator.prototype.update = function (newDesc) {
@@ -28,13 +29,14 @@ define(['./lib/changeset'], function (diff) {
     };
 
     PlotlyJSONCreator.prototype._descToPlotlyJSON = function (desc) {
+        let graphDesc = consolidateGraphsDesc(desc);
         let plotlyJSON = {};
-        plotlyJSON.layout = createLayout(desc);
-        let dataArr = desc.subGraphs.map((subGraph, index) => {
+        plotlyJSON.layout = createLayout(graphDesc);
+        let dataArr = graphDesc.subGraphs.map((subGraph, index) => {
             return createScatterTraces(subGraph, index);
         });
         plotlyJSON.data = flatten(dataArr);
-        const axesData = addAxesLabels(desc.subGraphs);
+        const axesData = addAxesLabels(graphDesc.subGraphs);
         Object.keys(axesData).forEach((axis) => {
             plotlyJSON.layout[axis] = axesData[axis];
         });
@@ -175,6 +177,49 @@ define(['./lib/changeset'], function (diff) {
         return arr.reduce(function (flat, toFlatten) {
             return flat.concat(Array.isArray(toFlatten) ? flatten(toFlatten) : toFlatten);
         }, []);
+    };
+
+    const isMultiGraph = function (desc) {
+        return Object.keys(desc).length > 1;
+    };
+
+    const consolidateGraphsDesc = function (desc) {
+        if(Object.keys(desc).length === 0){
+            return;
+        }
+        if (!isMultiGraph(desc)) {
+            return desc[Object.keys(desc)[0]];
+        }
+        let descKeys = Object.keys(desc);
+        let consolidatedGraphData = null;
+        let currentGraph,
+            currentConsSubgraph,
+            numSubGraphs;
+        descKeys.forEach((key) => {
+            currentGraph = desc[key];
+            if (!consolidatedGraphData) {
+                consolidatedGraphData = currentGraph;
+                numSubGraphs = consolidatedGraphData.subGraphs.length;
+            } else {
+                consolidatedGraphData.execId += ` vs ${currentGraph.execId}`;
+                consolidatedGraphData.graphId += ` vs ${appendStringWithAbbr(currentGraph.execId, currentGraph.abbr)}`;
+                consolidatedGraphData.title += ` vs  ${appendStringWithAbbr(currentGraph.title, currentGraph.abbr)}`;
+                for (let i = 0; i < numSubGraphs; i++) {
+                    currentConsSubgraph = consolidatedGraphData.subGraphs[i];
+                    currentConsSubgraph.title += `vs ${currentGraph.subGraphs[i].title}`;
+                    currentGraph.subGraphs[i].lines.forEach((line, index) => {
+                        line.label = line.label || `line${index} + ${currentGraph.abbr}`;
+                        currentConsSubgraph.lines.push(line);
+                    });
+                }
+            }
+        });
+        console.log(consolidatedGraphData);
+        return consolidatedGraphData;
+    };
+
+    const appendStringWithAbbr = function (str, abbr) {
+        return `${str} ( ${abbr} )`;
     };
 
     return PlotlyJSONCreator;

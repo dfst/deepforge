@@ -27,14 +27,15 @@ define([
 
         this._currentNodeId = null;
         this.displayedExecutions = {};
-        this._linesForExecution = {};
-        this._lineToExec = {};
+        this._graphsForExecution = {};
+        this._graphToExec = {};
         this._pipelineNames = {};
-
+        this._graphDescExtractor = new GraphDescExtractor(this._client);
         this.abbrToId = {};
         this.abbrFor = {};
-        this.graphDescExtractor = new GraphDescExtractor(this._client);
+
         this._initWidgetEventHandlers();
+
         this._logger.debug('ctor finished');
     };
 
@@ -43,40 +44,37 @@ define([
     };
 
     ExecutionIndexControl.prototype.setExecutionDisplayed = function (id, bool) {
-        var lines = this._linesForExecution[id] || [],
-            otherLines,
-            wasMultiLine = this.displayedExecCount() > 1,
-            isMultiLine;
+        var graphs = this._graphsForExecution[id] || [],
+            otherGraphs,
+            wasMultiGraph = this.displayedExecCount() > 1,
+            isMultiGraph;
 
         this._logger.info(`setting execution ${id} to ${bool ? 'displayed' : 'hidden'}`);
         this.displayedExecutions[id] = bool;
-
         // If we just crossed the multi line threshold, then update all the lines
-        isMultiLine = this.displayedExecCount() > 1;
-        if (isMultiLine !== wasMultiLine) {
-            // Refresh the other lines visible
-            otherLines = Object.keys(this.displayedExecutions)
+        isMultiGraph = this.displayedExecCount() > 1;
+        if (isMultiGraph !== wasMultiGraph) {
+            // Refresh the other graphs visible
+            otherGraphs = Object.keys(this.displayedExecutions)
                 .filter(eId => this.displayedExecutions[eId] && (eId !== id))
-                .map(id => this._linesForExecution[id] || [])
+                .map(id => this._graphsForExecution[id] || [])
                 .reduce((l1, l2) => l1.concat(l2), []);
-
-            this._updateLines(otherLines, false);
-            this._updateLines(otherLines, true);
+            this._updateGraphs(otherGraphs, false);
+            this._updateGraphs(otherGraphs, true);
         }
 
-        this._updateLines(lines, bool);
+        this._updateGraphs(graphs, bool);
     };
 
-    ExecutionIndexControl.prototype._updateLines = function (lines, added) {
+    ExecutionIndexControl.prototype._updateGraphs = function (graphs, added) {
         var action = added ? 'addNode' : 'removeNode';
-
         // If removing, just get the ids
-        lines = !added ? lines : lines.map(line => this._getObjectDescriptor(line))
-            .filter(line => !!line);
+        graphs = !added ? graphs : graphs.map(graph => this._getObjectDescriptor(graph))
+            .filter(graph => !!graph);
 
         // update the given lines
-        for (var i = lines.length; i--;) {
-            this._widget[action](lines[i]);
+        for (var i = graphs.length; i--;) {
+            this._widget[action](graphs[i]);
         }
     };
 
@@ -166,70 +164,42 @@ define([
                     this._selfPatterns[desc.originId] = {children: 0};
                 }
                 setTimeout(() => this._client.updateTerritory(this._territoryId, this._selfPatterns), 0);
-            } else if (type === 'Graph') {
-                desc = this.graphDescExtractor.getGraphDesc(node);
             } else if (type === 'Pipeline') {
                 desc.execs = node.getMemberIds('executions');
                 this._pipelineNames[desc.id] = desc.name;
-            } else if(type === 'SubGraph'){
-                let graphId = node.getParentId();
-                let graphNode = this._client.getNode(graphId);
-                desc = this.graphDescExtractor.getGraphDesc(graphNode);
-            } else if (type === 'Line'){
-                let subGraphId = node.getParentId();
-                let graphId = this._client.getNode(subGraphId).getParentId();
-                let graphNode = this._client.getNode(graphId);
-                desc = this.graphDescExtractor.getGraphDesc(graphNode);
+            } else if (type === 'Graph') {
+                desc = this.getGraphDesc(node);
+            } else if (type === 'SubGraph') {
+                const graphNodeId = node.getParentId();
+                let graphNode = this._client.getNode(graphNodeId);
+                desc = this.getGraphDesc(graphNode);
+            } else if (type === 'Line') {
+                const graphNodeId = this._client.getNode(node.getParentId()).getParentId();
+                let graphNode = this._client.getNode(graphNodeId);
+                desc = this.getGraphDesc(graphNode);
             }
         }
         return desc;
     };
 
-    ExecutionIndexControl.prototype.getLineDesc2 = function (node) {
-        var id = node.getId(),
-            subGraphId = node.getParentId(),
-            graphId = this._client.getNode(subGraphId).getParentId(),
-            jobId = this._client.getNode(graphId).getParentId(),
-            execId = this._client.getNode(jobId).getParentId(),
-            points,
-            desc;
+    ExecutionIndexControl.prototype.getGraphDesc = function (graphNode) {
+        let id = graphNode.getId();
+        let desc = this._graphDescExtractor.getGraphDesc(graphNode);
 
-        points = node.getAttribute('points').split(';')
-            .filter(data => !!data)  // remove any ''
-            .map(pair => {
-                var nums = pair.split(',').map(num => parseFloat(num));
-                return {
-                    x: nums[0],
-                    y: nums[1]
-                };
-            });
-        desc = {
-            id: id,
-            execId: execId,
-            subgraphId: this._client.getNode(node.getParentId()).getAttribute('id'),
-            lineName: node.getAttribute('name'),
-            label: node.getAttribute('label'),
-            name: node.getAttribute('name'),
-            type: 'line',
-            points: points,
-            color: node.getAttribute('color')
-        };
-
-        if (!this._lineToExec[id]) {
-            // Update records
-            if (!this._linesForExecution[execId]) {
-                this._linesForExecution[execId] = [];
+        if(!this._graphToExec[id]){
+            if(!this._graphsForExecution[desc.execId]){
+                this._graphsForExecution[desc.execId] = [];
             }
-            this._linesForExecution[execId].push(id);
-            this._lineToExec[id] = execId;
+            this._graphsForExecution[desc.execId].push(id);
+            this._graphToExec[id] = desc.execId;
         }
-        // If there are multiple executions, add the exec's abbr
-        var displayedCnt = this.displayedExecCount(),
+        let displayedCnt = this.displayedExecCount(),
             execAbbr;
 
-        if (displayedCnt > 1) {
-            execAbbr = this.abbrFor[execId] || this._getObjectDescriptor(execId).abbr;
+        if(displayedCnt > 1) {
+            execAbbr = this.abbrFor[desc.execId] || this._getObjectDescriptor(desc.execId).abbr;
             desc.name = `${desc.name} (${execAbbr})`;
+            desc.abbr = execAbbr;
         }
 
         return desc;
@@ -271,11 +241,9 @@ define([
             this._logger.debug('Adding node to widget...');
             this._logger.debug('desc:', desc);
             this._widget.addNode(desc);
-        } else if (desc.type === 'line' && this.isLineDisplayed(desc)) {
-            this._widget.addNode(desc);
         } else if (desc.type === 'Pipeline') {
             this.updatePipelineNames(desc);
-        } else if (desc.type === 'graph') {
+        } else if (desc.type === 'graph' && this.isGraphDisplayed(desc)) {
             this._widget.addNode(desc);
         }
     };
@@ -284,12 +252,10 @@ define([
         var desc = this._getObjectDescriptor(gmeId);
         if (desc.type === 'Execution') {
             this._widget.updateNode(desc);
-        } else if (desc.type === 'line' && this.isLineDisplayed(desc)) {
+        } else if (desc.type === 'graph' && this.isGraphDisplayed(desc)) {
             this._widget.updateNode(desc);
         } else if (desc.type === 'Pipeline') {
             this.updatePipelineNames(desc);
-        } else if(desc.type === 'graph') {
-            this._widget.updateNode(desc);
         }
     };
 
@@ -309,31 +275,29 @@ define([
     };
 
     ExecutionIndexControl.prototype._onUnload = function (id) {
-        var execId = this._lineToExec[id],
+        var execId = this._graphToExec[id],
             abbr;
 
-        if (execId) {  // it is a line
-            delete this._lineToExec[id];
-            for (var k = this._linesForExecution[execId].length; k--;) {
-                if (this._linesForExecution[execId][k] === id) {
-                    this._linesForExecution[execId].splice(k, 1);
+        if (execId) {  // it is a graph
+            delete this._graphToExec[id];
+            for (var k = this._graphsForExecution[execId].length; k--;) {
+                if (this._graphsForExecution[execId][k] === id) {
+                    this._graphsForExecution[execId].splice(k, 1);
                     break;
                 }
             }
         }
-
         if (this.abbrFor[id]) {
             abbr = this.abbrFor[id];
             delete this.abbrFor[id];
             delete this.abbrToId[abbr];
         }
-
         this._widget.removeNode(id);
     };
 
-    ExecutionIndexControl.prototype.isLineDisplayed = function (line) {
+    ExecutionIndexControl.prototype.isGraphDisplayed = function (graph) {
         // lines are only displayed if their execution is checked
-        return this.displayedExecutions[line.execId];
+        return this.displayedExecutions[graph.execId];
     };
 
     ExecutionIndexControl.prototype.displayedExecCount = function () {

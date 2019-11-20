@@ -76,15 +76,21 @@ define([
         const metaTypeId = node.getMetaTypeId();
         const metaNode = this._client.getNode(metaTypeId);
         const type = metaNode.getAttribute('name');
+        let graphNodeId,
+            graphNode;
         switch (type) {
             case 'SubGraph':
-                desc = this.graphDescExtractor.getSubGraphDesc(node);
+                graphNodeId = node.getParentId();
+                graphNode = this._client.getNode(graphNodeId);
+                desc = this.graphDescExtractor.getGraphDesc(graphNode);
                 break;
             case 'Graph':
                 desc = this.graphDescExtractor.getGraphDesc(node);
                 break;
             case 'Line':
-                desc = this.graphDescExtractor.getLineDesc(node);
+                graphNodeId = this._client.getNode(node.getParentId()).getParentId();
+                graphNode = this._client.getNode(graphNodeId);
+                desc = this.graphDescExtractor.getGraphDesc(graphNode);
                 break;
         }
         return desc;

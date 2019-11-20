@@ -280,7 +280,6 @@ define([
         if (!checked || isChecked) {
             this.toggleAbbreviations(checked, [id]);
         }
-
         this.setExecutionDisplayed(id, checked);
     };
 

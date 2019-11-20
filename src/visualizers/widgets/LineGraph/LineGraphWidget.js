@@ -113,36 +113,8 @@ define([
             width: width,
             height: height
         });
-        this.updateChart();
     };
 
-    LineGraphWidget.prototype.updateChartData = function () {
-        if (this.$chart && this.chart) {
-
-            if (this.options.yAxis) {
-                this.chart.yAxis
-                    .axisLabel(this.options.yAxis || '');
-            }
-            if (this.options.xAxis) {
-                this.chart.xAxis
-                    .axisLabel(this.options.xAxis || '');
-            }
-
-
-            this.$chart
-                .datum(this.getData())
-                .call(this.chart);
-        }
-    };
-
-    LineGraphWidget.prototype.refreshChart = 
-        _.debounce(LineGraphWidget.prototype.updateChartData, 50);
-
-    LineGraphWidget.prototype.updateChart = function () {
-        if (this.chart) {
-            this.chart.update();
-        }
-    };
 
     /* * * * * * * * Visualizer life cycle callbacks * * * * * * * */
     LineGraphWidget.prototype.destroy = function () {
