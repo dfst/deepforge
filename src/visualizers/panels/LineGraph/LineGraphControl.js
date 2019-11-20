@@ -65,7 +65,7 @@ define([
             // Update the territory
             self._client.updateTerritory(self._territoryId, self._selfPatterns);
 
-            self._selfPatterns[nodeId] = {children: 2};
+            self._selfPatterns[nodeId] = {children: 1};
             self._client.updateTerritory(self._territoryId, self._selfPatterns);
         }
     };
@@ -96,7 +96,7 @@ define([
                                 y:y
                             };
                         });
-                desc.color = node.getAttribute('color');
+
                 desc.type = 'line';
                 desc.points = points;
             } else {
