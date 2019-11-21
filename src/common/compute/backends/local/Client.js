@@ -1,6 +1,7 @@
 /*globals define*/
 // TODO: Show an error if not running on the server...
 define([
+    'common/util/assert',
     '../ComputeClient',
     '../JobResults',
     'blob/BlobClient',
@@ -12,6 +13,7 @@ define([
     'os',
     'path',
 ], function(
+    assert,
     ComputeClient,
     JobResults,
     BlobClient,
@@ -91,12 +93,42 @@ define([
         }
     };
 
-    LocalExecutor.prototype.getConsoleOutput = async function(hash) {
-        const filename = path.join(this._getWorkingDir(hash), 'job_stdout.txt');
-        return await readFile(filename, 'utf8');
+    LocalExecutor.prototype.getConsoleOutput = async function(job) {
+        const status = this.getStatus(job);
+        const isComplete = this.isFinishedStatus(status);
+
+        if (isComplete) {
+            const mdHash = (await this._getOutputHashes(job)).stdout;
+            const hash = await this._getContentHash(mdHash, 'job_stdout.txt');
+            assert(hash, 'Console output data not found.');
+            return await this.blobClient.getObjectAsString(hash);
+        } else {
+            const {hash} = job;
+            const filename = path.join(this._getWorkingDir(hash), 'job_stdout.txt');
+            return await readFile(filename, 'utf8');
+        }
     };
 
-    LocalExecutor.prototype.getOutputHashes = async function(jobInfo) {
+    LocalExecutor.prototype.getResultsInfo = async function(job) {
+        const mdHash = (await this._getOutputHashes(job)).results;
+        const hash = await this._getContentHash(mdHash, 'results.json');
+        assert(hash, 'Metadata about result types not found.');
+        return await this.blobClient.getObjectAsJSON(hash);
+    };
+
+    LocalExecutor.prototype._getContentHash = async function (artifactHash, fileName) {
+        const artifact = await this.blobClient.getArtifact(artifactHash);
+        const contents = artifact.descriptor.content;
+
+        return contents[fileName] && contents[fileName].content;
+    };
+
+    LocalExecutor.prototype.getDebugFilesHash = async function(job) {
+        const hashes = await this._getOutputHashes(job);
+        return hashes['debug-files'];
+    };
+
+    LocalExecutor.prototype._getOutputHashes = async function(jobInfo) {
         const {hash} = jobInfo;
 
         if (this.completedJobs[hash]) {

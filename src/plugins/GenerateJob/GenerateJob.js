@@ -149,7 +149,6 @@ define([
                 };
             });
 
-        const name = this.getAttribute(node, 'name');
         outputs.push(
             {
                 name: 'stdout',
@@ -160,7 +159,7 @@ define([
                 resultPatterns: ['results.json']
             },
             {
-                name: name + '-all-files',
+                name: 'debug-files',
                 resultPatterns: fileList
             }
         );

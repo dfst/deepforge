@@ -44,8 +44,6 @@ define([
 
     pluginMetadata = JSON.parse(pluginMetadata);
 
-    const STDOUT_FILE = 'job_stdout.txt';
-
     /**
      * Initializes a new instance of ExecuteJob.
      * @class
@@ -191,7 +189,11 @@ define([
     };
 
     ExecuteJob.prototype.getJobId = function (node) {
-        return JSON.parse(this.core.getAttribute(node, 'jobInfo')).hash;
+        return this.getJobInfo(node).hash;
+    };
+
+    ExecuteJob.prototype.getJobInfo = function (node) {
+        return JSON.parse(this.core.getAttribute(node, 'jobInfo'));
     };
 
     ExecuteJob.prototype.getExecutionId = utils.withTimeout(async function() {
@@ -239,7 +241,7 @@ define([
     };
 
     ExecuteJob.prototype.resumeJob = async function (job) {
-        var hash = this.getJobId(job),
+        var jobInfo = this.getJobInfo(job),
             name = this.core.getAttribute(job, 'name'),
             id = this.core.getPath(job);
 
@@ -256,7 +258,7 @@ define([
 
         this.outputLineCount[id] = count;
 
-        const stdout = await this.compute.getConsoleOutput(hash);
+        const stdout = await this.compute.getConsoleOutput(jobInfo);
         const result = this.processStdout(job, stdout);
 
         if (result.hasMetadata) {
@@ -594,20 +596,20 @@ define([
         }
 
         if (status === this.compute.SUCCESS || status === this.compute.FAILED) {
-            const fileHashes = await this.compute.getOutputHashes(jobInfo);
-            const execFilesHash = fileHashes[name + '-all-files'];
+            const execFilesHash = await this.compute.getDebugFilesHash(jobInfo);
+            assert(execFilesHash, `Debug files not found for ${name}`);
             this.core.setAttribute(job, 'execFiles', execFilesHash);
 
             const opName = this.core.getAttribute(op, 'name');
-            const stdoutHash = await this.getContentHashSafe(fileHashes.stdout, STDOUT_FILE, ERROR.NO_STDOUT_FILE);
-            const stdout = await this.blobClient.getObjectAsString(stdoutHash);
+            const stdout = await this.compute.getConsoleOutput(jobInfo);
             const result = this.processStdout(job, stdout);
 
             // Parse the remaining code
             this.core.setAttribute(job, 'stdout', result.stdout);
             this.logManager.deleteLog(jobId);
             if (status === this.compute.SUCCESS) {
-                this.onDistOperationComplete(op, fileHashes);
+                const results = await this.compute.getResultsInfo(jobInfo);
+                this.onDistOperationComplete(op, results);
             } else {
                 // Download all files
                 this.result.addArtifact(execFilesHash);
@@ -629,8 +631,7 @@ define([
         }
     };
 
-    ExecuteJob.prototype.onDistOperationComplete = async function (node, fileHashes) {
-        const results = await this.getResults(fileHashes);
+    ExecuteJob.prototype.onDistOperationComplete = async function (node, results) {
         const nodeId = this.core.getPath(node);
         const outputPorts = await this.getOutputs(node);
         const outputs = outputPorts.map(tuple => [tuple[0], tuple[2]]);
@@ -653,27 +654,6 @@ define([
         }
 
         return this.onOperationComplete(node);
-    };
-
-    ExecuteJob.prototype.getResults = async function (fileHashes) {
-        const mdHash = fileHashes['results'];
-        const hash = await this.getContentHashSafe(mdHash, 'results.json', ERROR.NO_TYPES_FILE);
-        return await this.blobClient.getObjectAsJSON(hash);
-    };
-
-    ExecuteJob.prototype.getContentHashSafe = async function (artifactHash, fileName, msg) {
-        const hash = await this.getContentHash(artifactHash, fileName);
-        if (!hash) {
-            throw new Error(msg);
-        }
-        return hash;
-    };
-
-    ExecuteJob.prototype.getContentHash = async function (artifactHash, fileName) {
-        const artifact = await this.blobClient.getArtifact(artifactHash);
-        const contents = artifact.descriptor.content;
-
-        return contents[fileName] && contents[fileName].content;
     };
 
     //////////////////////////// Special Operations ////////////////////////////
