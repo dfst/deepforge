@@ -5,10 +5,10 @@
 
 define([
     'js/Constants',
-    'deepforge/viz/GraphDescExtractor'
+    'deepforge/viz/PlotlyDescExtractor'
 ], function (
     CONSTANTS,
-    GraphDescExtractor
+    PlotlyDescExtractor
 ) {
 
     'use strict';
@@ -25,7 +25,7 @@ define([
         this._currentNodeId = null;
         this._currentNodeParentId = undefined;
 
-        this.graphDescExtractor = new GraphDescExtractor(this._client);
+        this._plotlyDescExtractor = new PlotlyDescExtractor(this._client);
 
         this._logger.debug('ctor finished');
     }
@@ -35,8 +35,7 @@ define([
     // defines the parts of the project that the visualizer is interested in
     // (this allows the browser to then only load those relevant parts).
     PlotlyGraphControl.prototype.selectedObjectChanged = function (nodeId) {
-        var desc = this._getObjectDescriptor(nodeId),
-            self = this;
+        let self = this;
 
         self._logger.debug('activeObject nodeId \'' + nodeId + '\'');
 
@@ -51,20 +50,15 @@ define([
         if (typeof self._currentNodeId === 'string') {
             // Put new node's info into territory rules
             self._selfPatterns = {};
-            // self._selfPatterns[nodeId] = {children: 0};  // Territory "rule"
 
-            self._widget.setTitle(desc.name.toUpperCase());
-
-            self._currentNodeParentId = desc.parentId;
+            self._widget.setTitle('Plotly Widget');
 
             self._territoryId = self._client.addUI(self, function (events) {
                 self._eventCallback(events);
             });
 
             // Update the territory
-            // self._client.updateTerritory(self._territoryId, self._selfPatterns);
-
-            self._selfPatterns[nodeId] = {children: 2};
+            self._selfPatterns[nodeId] = {children: 3};
             self._client.updateTerritory(self._territoryId, self._selfPatterns);
         }
     };
@@ -82,18 +76,18 @@ define([
             case 'SubGraph':
                 graphNodeId = node.getParentId();
                 graphNode = this._client.getNode(graphNodeId);
-                desc = this.graphDescExtractor.getGraphDesc(graphNode);
+                desc = this._plotlyDescExtractor.getGraphDesc(graphNode);
                 break;
             case 'Graph':
-                desc = this.graphDescExtractor.getGraphDesc(node);
+                desc = this._plotlyDescExtractor.getGraphDesc(node);
                 break;
             case 'Line':
                 graphNodeId = this._client.getNode(node.getParentId()).getParentId();
                 graphNode = this._client.getNode(graphNodeId);
-                desc = this.graphDescExtractor.getGraphDesc(graphNode);
+                desc = this._plotlyDescExtractor.getGraphDesc(graphNode);
                 break;
         }
-        return desc;
+        return this._plotlyDescExtractor.descToPlotlyJSON(desc);
     };
 
     /* * * * * * * * Node Event Handling * * * * * * * */

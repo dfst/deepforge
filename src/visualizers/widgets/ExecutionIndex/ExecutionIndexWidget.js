@@ -77,26 +77,26 @@ define([
             target = target.parentNode;
         }
         id = target.getAttribute('data-id');
-
         checked = this.nodes[id].$checkbox.checked;
+
         if (event.target.tagName.toLowerCase() !== 'input') {
             this.setSelect(id, !checked);
         } else {
-            this.setExecutionDisplayed(id, checked);
+            this.setSelect(id, checked);
         }
     };
 
     ExecutionIndexWidget.prototype.onWidgetContainerResize = function (width, height) {
         this.$left.css({
-            width: width/2,
+            width: width / 2,
             height: height
         });
         this.$right.css({
-            left: width/2,
-            width: width/2,
+            left: width / 2,
+            width: width / 2,
             height: height
         });
-        this.lineGraph.onWidgetContainerResize(width/2, height);
+        this.lineGraph.onWidgetContainerResize(width / 2, height);
         this.logger.debug('Widget is resizing...');
     };
 
@@ -209,7 +209,7 @@ define([
         for (var i = nodeIds.length; i--;) {
             updated = this.updateTime(nodeIds[i]) || updated;
         }
-        
+
         if (updated) {  // if there are still nodes, call again!
             setTimeout(this.updateTimes.bind(this), 1000);
         }
@@ -238,7 +238,6 @@ define([
             this.defaultSelection = desc.id;
             this.setSelect(desc.id, true);
         }
-        
     };
 
     ExecutionIndexWidget.prototype.toggleAbbreviations = function (show, ids) {
@@ -260,6 +259,7 @@ define([
             isChecked;
 
         this.nodes[id].$checkbox.checked = checked;
+        let checkedExecutionsBeforeClick = this.checkedIds.slice(0);
 
         // If multiple are checked, display the abbreviation
         if (checked) {
@@ -270,6 +270,7 @@ define([
                 this.checkedIds.splice(k, 1);
             }
         }
+        let checkedExecutionsAfterClick = this.checkedIds.slice(0);
 
         isChecked = this.checkedIds.length > 1;
         if (isChecked !== wasChecked) {
@@ -280,7 +281,9 @@ define([
         if (!checked || isChecked) {
             this.toggleAbbreviations(checked, [id]);
         }
-        this.setExecutionDisplayed(id, checked);
+
+        // this.setExecutionDisplayed([id], checked);
+        this.setDisplayedExecutions(checkedExecutionsBeforeClick, checkedExecutionsAfterClick);
     };
 
     ExecutionIndexWidget.prototype.updateNode = function (desc) {
@@ -301,7 +304,7 @@ define([
             node.desc = desc;
         } else if (desc.type === 'line') {
             this.lineGraph.updateNode(desc);
-        } else if(desc.type === 'graph'){
+        } else if (desc.type === 'graph') {
             this.lineGraph.updateNode(desc);
         }
     };

@@ -1,103 +1,93 @@
 /*globals define, WebGMEGlobal, _*/
-define([
-        './lib/plotly.min',
-        './PlotlyJSONCreator'
-    ], function (Plotly, PlotlyJSONCreator) {
-        'use strict';
+define(['./lib/plotly.min',], function (Plotly) {
+    'use strict';
 
-        const WIDGET_CLASS = 'plotly-graph';
+    const WIDGET_CLASS = 'plotly-graph';
 
-
-        function PlotlyGraphWidget(logger, container) {
-            this.logger = logger.fork('widget');
-            this.$el = container;
-            this.$el.css('overflow', 'auto');
-            this.$el.addClass(WIDGET_CLASS);
-            this.nodes = {};
-            this.plotsData = {};
-            this.layout = {};
-            this.plotlyJSONCreator = new PlotlyJSONCreator();
-            this.created = false;
-            this._initialize();
-            this.logger.debug('ctor finished');
-        }
-
-        PlotlyGraphWidget.prototype._initialize = function () {
-            // set widget class
-
-            this.created = false;
-        };
-
-        PlotlyGraphWidget.prototype.getData = function () {
-            return Object.keys(this.plotsData)
-                .map(id => this.plotsData[id])
-                .filter(data => data.x.length !== 0);
-        };
-
-        PlotlyGraphWidget.prototype.onWidgetContainerResize = function (width, height) {
-            // Nothing needs to be done here since the chart is already responsive
-            this.$el.css({
-                width: width,
-                height: height
-            });
-            this.logger.debug('Widget is resizing...');
-        };
-
-        // Adding/Removing/Updating items
-        PlotlyGraphWidget.prototype.addNode = function (desc) {
-            this.plotsData[desc.id] = desc;
-            this.refreshChart();
-        };
-
-        PlotlyGraphWidget.prototype.removeNode = function (id) {
-            delete this.plotsData[id];
-            this.refreshChart();
-        };
-
-        PlotlyGraphWidget.prototype.updateNode = function (desc) {
-            this.plotsData[desc.id] = desc;
-            this.refreshChart();
-        };
-
-        PlotlyGraphWidget.prototype.createOrUpdateChart = function () {
-            if (Object.keys(this.plotsData).length === 0) {
-                this.deleteChart();
-            } else {
-                if (!this.created) {
-                    this.plotlyJSONCreator.create(this.plotsData);
-                    Plotly.newPlot(this.$el[0], this.plotlyJSONCreator.plotlyJSONSchema);
-                    this.created = true;
-                } else {
-                    this.plotlyJSONCreator.update(this.plotsData);
-                    if (this.plotlyJSONCreator.plotlyJSONSchema !== null)
-                        Plotly.react(this.$el[0], this.plotlyJSONCreator.plotlyJSONSchema);
-                }
-            }
-        };
-
-        PlotlyGraphWidget.prototype.refreshChart = _.debounce(PlotlyGraphWidget.prototype.createOrUpdateChart, 50);
-
-        PlotlyGraphWidget.prototype.deleteChart = function () {
-            this.plotsData = {};
-            if (this.created) {
-                Plotly.purge(this.$el[0]);
-            }
-            this.created = false;
-        };
-
-        /* * * * * * * * Visualizer life cycle callbacks * * * * * * * */
-        PlotlyGraphWidget.prototype.destroy = function () {
-            Plotly.purge(this.$el[0]);
-        };
-
-        PlotlyGraphWidget.prototype.onActivate = function () {
-            this.logger.debug('PlotlyGraphWidget has been activated');
-        };
-
-        PlotlyGraphWidget.prototype.onDeactivate = function () {
-            this.logger.debug('PlotlyGraphWidget has been deactivated');
-        };
-
-        return PlotlyGraphWidget;
+    function PlotlyGraphWidget(logger, container) {
+        this.logger = logger.fork('widget');
+        this.$el = container;
+        this.$el.css('overflow', 'auto');
+        this.$el.addClass(WIDGET_CLASS);
+        this.nodes = {};
+        this.plotsData = {};
+        this.layout = {};
+        this.created = false;
+        this._initialize();
+        this.logger.debug('ctor finished');
     }
-);
+
+    PlotlyGraphWidget.prototype._initialize = function () {
+        this.created = false;
+    };
+
+
+    PlotlyGraphWidget.prototype.onWidgetContainerResize = function (width, height) {
+        // Nothing needs to be done here since the chart is already responsive
+        this.$el.css({
+            width: width,
+            height: height
+        });
+        this.logger.debug('Widget is resizing...');
+    };
+
+    // Adding/Removing/Updating items
+    PlotlyGraphWidget.prototype.addNode = function (desc) {
+        if (desc) {
+            this.plotsData[desc.id] = desc;
+            this.refreshChart();
+        }
+    };
+
+    PlotlyGraphWidget.prototype.removeNode = function (id) {
+        delete this.plotsData[id];
+        this.refreshChart();
+    };
+
+    PlotlyGraphWidget.prototype.updateNode = function (desc) {
+        if (desc) {
+            this.plotsData[desc.id] = desc;
+            this.refreshChart();
+        }
+    };
+
+    PlotlyGraphWidget.prototype.createOrUpdateChart = function () {
+        if (Object.keys(this.plotsData).length === 0) {
+            this.deleteChart();
+        } else {
+            let plotlyJSON = Object.keys(this.plotsData).map(id => this.plotsData[id]);
+            console.log(plotlyJSON);
+            if (!this.created) {
+                Plotly.newPlot(this.$el[0], plotlyJSON[0]);
+                this.created = true;
+            } else {
+                Plotly.react(this.$el[0], plotlyJSON[0]);
+            }
+        }
+    };
+
+    PlotlyGraphWidget.prototype.refreshChart = _.debounce(PlotlyGraphWidget.prototype.createOrUpdateChart, 50);
+
+    PlotlyGraphWidget.prototype.deleteChart = function () {
+        this.plotsData = {};
+        if (this.created) {
+            Plotly.purge(this.$el[0]);
+        }
+        this.created = false;
+    };
+
+    /* * * * * * * * Visualizer life cycle callbacks * * * * * * * */
+    PlotlyGraphWidget.prototype.destroy = function () {
+        Plotly.purge(this.$el[0]);
+    };
+
+    PlotlyGraphWidget.prototype.onActivate = function () {
+        this.logger.debug('PlotlyGraphWidget has been activated');
+    };
+
+    PlotlyGraphWidget.prototype.onDeactivate = function () {
+        this.logger.debug('PlotlyGraphWidget has been deactivated');
+    };
+
+    return PlotlyGraphWidget;
+});

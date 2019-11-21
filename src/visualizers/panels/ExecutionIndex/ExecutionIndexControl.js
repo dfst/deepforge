@@ -4,11 +4,11 @@
 define([
     'js/Constants',
     'deepforge/utils',
-    'deepforge/viz/GraphDescExtractor'
+    'deepforge/viz/PlotlyDescExtractor'
 ], function (
     CONSTANTS,
     utils,
-    GraphDescExtractor
+    PlotlyDescExtractor
 ) {
 
     'use strict';
@@ -30,7 +30,8 @@ define([
         this._graphsForExecution = {};
         this._graphToExec = {};
         this._pipelineNames = {};
-        this._graphDescExtractor = new GraphDescExtractor(this._client);
+        this._currentPlotsDataId = null;
+        this._plotlyDescExtractor = new PlotlyDescExtractor(this._client);
         this.abbrToId = {};
         this.abbrFor = {};
 
@@ -40,42 +41,86 @@ define([
     };
 
     ExecutionIndexControl.prototype._initWidgetEventHandlers = function () {
-        this._widget.setExecutionDisplayed = this.setExecutionDisplayed.bind(this);
+        this._widget.setDisplayedExecutions = this.setDisplayedExecutions.bind(this);
     };
 
-    ExecutionIndexControl.prototype.setExecutionDisplayed = function (id, bool) {
-        var graphs = this._graphsForExecution[id] || [],
-            otherGraphs,
-            wasMultiGraph = this.displayedExecCount() > 1,
-            isMultiGraph;
+    ExecutionIndexControl.prototype.setDisplayedExecutions = function (beforeClickIds, afterClickIds) {
+        let addedExecutions = afterClickIds.filter(id => !beforeClickIds.includes(id));
+        let removedExecutions = beforeClickIds.filter(id => !afterClickIds.includes(id));
+        let added = addedExecutions.length > 0;
+        let updatedExecutions = added ? addedExecutions : removedExecutions;
+        this._updateGraphData(updatedExecutions, added);
+    };
 
-        this._logger.info(`setting execution ${id} to ${bool ? 'displayed' : 'hidden'}`);
+    ExecutionIndexControl.prototype._updateGraphData = function (id, bool) {
         this.displayedExecutions[id] = bool;
-        // If we just crossed the multi line threshold, then update all the lines
-        isMultiGraph = this.displayedExecCount() > 1;
-        if (isMultiGraph !== wasMultiGraph) {
-            // Refresh the other graphs visible
-            otherGraphs = Object.keys(this.displayedExecutions)
-                .filter(eId => this.displayedExecutions[eId] && (eId !== id))
-                .map(id => this._graphsForExecution[id] || [])
-                .reduce((l1, l2) => l1.concat(l2), []);
-            this._updateGraphs(otherGraphs, false);
-            this._updateGraphs(otherGraphs, true);
+        let displayedGraphIds = Object.keys(this.displayedExecutions)
+            .filter((id) => !!this.displayedExecutions[id]);
+        if (this._currentPlotsDataId) {
+            this._widget.removeNode(this._currentPlotsDataId);
         }
-
-        this._updateGraphs(graphs, bool);
+        if ( this.displayedExecCount() > 0) {
+            this._consolidateGraphData(displayedGraphIds);
+        }
     };
 
-    ExecutionIndexControl.prototype._updateGraphs = function (graphs, added) {
-        var action = added ? 'addNode' : 'removeNode';
-        // If removing, just get the ids
-        graphs = !added ? graphs : graphs.map(graph => this._getObjectDescriptor(graph))
-            .filter(graph => !!graph);
+    ExecutionIndexControl.prototype._consolidateGraphData = function (graphExecIDs) {
+        let graphIds = graphExecIDs.map(execId => this._graphsForExecution[execId]);
+        let graphDescs = graphIds.map(id => this._getObjectDescriptor(id));
+        let consolidatedDesc = this._combineGraphDesc(graphDescs);
+        this._currentPlotsDataId = consolidatedDesc.id;
+        let plotlyJSON = this._plotlyDescExtractor.descToPlotlyJSON(consolidatedDesc);
+        plotlyJSON.type = 'graph';
+        this._widget.addNode(plotlyJSON);
+    };
 
-        // update the given lines
-        for (var i = graphs.length; i--;) {
-            this._widget[action](graphs[i]);
+    ExecutionIndexControl.prototype._combineGraphDesc = function (graphDescs) {
+        const isMultiGraph = this.displayedExecCount() > 1;
+        if (!isMultiGraph) {
+            return graphDescs[0];
+        } else {
+            let consolidatedDesc = null;
+
+            graphDescs.forEach((desc) => {
+                if (!consolidatedDesc) {
+                    consolidatedDesc = JSON.parse(JSON.stringify(desc));
+                    consolidatedDesc.title = consolidatedDesc.title || `Graph`;
+                } else {
+                    consolidatedDesc.id += desc.id;
+                    consolidatedDesc.execId += ` vs ${desc.execId}`;
+                    consolidatedDesc.graphId += ` vs ${appendStringWithAbbr(desc.execId, desc.abbr)}`;
+                    consolidatedDesc.title +=
+                        ` vs ${appendStringWithAbbr(desc.title || 'Graph', desc.abbr)}`;
+                    this._combineSubGraphsDesc(consolidatedDesc, desc.subGraphs, desc.abbr);
+                }
+            });
+            return consolidatedDesc;
         }
+    };
+
+    ExecutionIndexControl.prototype._combineSubGraphsDesc = function(consolidatedDesc, subGraphs, abbr){
+        let currentSubGraph;
+        for(let i = 0; i < consolidatedDesc.subGraphs.length; i++){
+            if(!subGraphs[i]) break;
+            currentSubGraph = consolidatedDesc.subGraphs[i];
+            currentSubGraph.title = currentSubGraph.title || `Subgraph${i+1}`;
+            currentSubGraph.title += ` vs. ${subGraphs[i].title || `Subgraph${i+1}`}`;
+            subGraphs[i].lines.forEach((line) => {
+                let lineClone = JSON.parse(JSON.stringify(line));
+                lineClone.label = (lineClone.label || `line${index}`) + ` (${abbr})`;
+                currentSubGraph.lines.push(lineClone);
+            });
+        }
+        // Check if there are more subgraphs
+        let extraSubGraphIdx = consolidatedDesc.subGraphs.length;
+        while(extraSubGraphIdx < subGraphs.length){
+            consolidatedDesc.subGraphs.push(JSON.parse(JSON.stringify(subGraphs[extraSubGraphIdx])));
+            extraSubGraphIdx++;
+        }
+    };
+
+    const appendStringWithAbbr = function (str, abbr) {
+        return `${str} ( ${abbr} )`;
     };
 
     ExecutionIndexControl.prototype.clearTerritory = function () {
@@ -134,7 +179,6 @@ define([
     // This next function retrieves the relevant node information for the widget
     ExecutionIndexControl.prototype._getObjectDescriptor = function (nodeId) {
         var node = this._client.getNode(nodeId),
-            childIds,
             desc,
             base,
             type;
@@ -184,19 +228,16 @@ define([
 
     ExecutionIndexControl.prototype.getGraphDesc = function (graphNode) {
         let id = graphNode.getId();
-        let desc = this._graphDescExtractor.getGraphDesc(graphNode);
+        let desc = this._plotlyDescExtractor.getGraphDesc(graphNode);
 
-        if(!this._graphToExec[id]){
-            if(!this._graphsForExecution[desc.execId]){
-                this._graphsForExecution[desc.execId] = [];
-            }
-            this._graphsForExecution[desc.execId].push(id);
+        if (!this._graphToExec[id]) {
+            this._graphsForExecution[desc.execId] = id;
             this._graphToExec[id] = desc.execId;
         }
         let displayedCnt = this.displayedExecCount(),
             execAbbr;
 
-        if(displayedCnt > 1) {
+        if (displayedCnt > 1) {
             execAbbr = this.abbrFor[desc.execId] || this._getObjectDescriptor(desc.execId).abbr;
             desc.name = `${desc.name} (${execAbbr})`;
             desc.abbr = execAbbr;
@@ -280,12 +321,7 @@ define([
 
         if (execId) {  // it is a graph
             delete this._graphToExec[id];
-            for (var k = this._graphsForExecution[execId].length; k--;) {
-                if (this._graphsForExecution[execId][k] === id) {
-                    this._graphsForExecution[execId].splice(k, 1);
-                    break;
-                }
-            }
+            delete this._graphsForExecution[execId];
         }
         if (this.abbrFor[id]) {
             abbr = this.abbrFor[id];
