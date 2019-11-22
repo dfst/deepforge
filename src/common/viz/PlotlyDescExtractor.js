@@ -1,6 +1,4 @@
-/*globals define, WebGMEGlobal*/
-/*eslint browser: true*/
-
+/*globals define*/
 define([], function () {
     const PlotlyDescExtractor = function (client) {
         this._client = client;
