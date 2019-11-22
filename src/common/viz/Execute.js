@@ -53,6 +53,8 @@ define([
 
         const configDialog = new ConfigDialog(this.client, this._currentNodeId);
         const metadata = JSON.parse(JSON.stringify(WebGMEGlobal.allPluginsMetadata[pluginId]));
+        const computeMetadata = Compute.getAvailableBackends().map(id => Compute.getMetadata(id));
+        const storageMetadata = Storage.getAvailableBackends().map(id => Storage.getStorageMetadata(id));
         metadata.configStructure.unshift({
             name: 'basicHeader',
             displayName: 'Basic Options',
@@ -69,8 +71,7 @@ define([
             description: 'Computational resources to use for execution.',
             valueType: 'dict',
             value: Compute.getBackend(Compute.getAvailableBackends()[0]).name,
-            valueItems: Compute.getAvailableBackends()
-                .map(id => Compute.getMetadata(id)),
+            valueItems: computeMetadata,
         });
 
         metadata.configStructure.push({
@@ -84,12 +85,17 @@ define([
             description: 'Location to store intermediate/generated data.',
             valueType: 'dict',
             value: Storage.getBackend(Storage.getAvailableBackends()[0]).name,
-            valueItems: Storage.getAvailableBackends()
-                .map(id => Storage.getStorageMetadata(id)),
+            valueItems: storageMetadata,
         });
 
         const allConfigs = await configDialog.show(metadata);
         context.pluginConfig = allConfigs[pluginId];
+        context.pluginConfig.storage.id = storageMetadata
+            .find(metadata => metadata.name === allConfigs[pluginId].storage.name)
+            .id;
+        context.pluginConfig.compute.id = computeMetadata
+            .find(metadata => metadata.name === allConfigs[pluginId].compute.name)
+            .id;
 
         const onPluginInitiated = (sender, event) => {
             this.client.removeEventListener(this._client.CONSTANTS.PLUGIN_INITIATED, onPluginInitiated);

@@ -30,6 +30,7 @@
     "lodash.template": "^4.4.0",
     "minimatch": "^3.0.4",
     "mongodb": "^2.2.10",
+    "node-fetch": "^2.6.0",
     "npm": "^4.0.5",
     "q": "1.4.1",
     "rimraf": "^2.4.0",

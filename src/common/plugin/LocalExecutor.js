@@ -2,184 +2,107 @@
 // This is an 'executor' containing the implementations of all local operations
 // These are all primitives in DeepForge
 define([
-    'deepforge/Constants'
+    'deepforge/Constants',
 ], function(
-    CONSTANTS
+    CONSTANTS,
 ) {
     'use strict';
     var LocalExecutor = function() {
     };
 
-    LocalExecutor.prototype[CONSTANTS.OP.INPUT] = function(node) {
-        // Get the hash from the output node
-        var hash;
-        return this.core.loadChildren(node)
-            .then(cntrs => {
-                // Get the output container and load it's children
-                var output = cntrs
-                    .find(cntr => {
-                        var metaNode = this.core.getMetaType(cntr),
-                            metaName = this.getAttribute(metaNode, 'name');
-                        return metaName === 'Outputs';
-                    });
-                return this.core.loadChildren(output);
-            })
-            .then(dataNodes => {
-                hash = this.getAttribute(dataNodes[0], 'data');
-                return this.getOutputs(node);
-            })
-            .then(outputTuples => {
-                var outputs = outputTuples.map(tuple => tuple[2]),
-                    paths;
+    LocalExecutor.prototype[CONSTANTS.OP.INPUT] = async function(node) {
+        // Get the dataInfo for the output node
+        const outputContainer = (await this.core.loadChildren(node))
+            .find(cntr => this.isMetaTypeOf(cntr, this.META.Outputs));
 
-                paths = outputs.map(output => this.core.getPath(output));
-                // Get the 'data' hash and store it in the output data ports
-                this.logger.info(`Loading blob data (${hash}) to ${paths.map(p => `"${p}"`)}`);
-                outputs.forEach(output => this.core.setAttribute(output, 'data', hash));
+        const jobLogger = new JobLogger(this.core, this.core.getParent(node));
+        jobLogger.log('Passing data reference to the subsequent jobs.');
+        const dataNodes = await this.core.loadChildren(outputContainer);
+        const dataInfo = this.core.getAttribute(dataNodes[0], 'data');
 
-                this.onOperationComplete(node);
+        // Pass the dataInfo to the next nodes
+        const outputs = (await this.getOutputs(node))
+            .map(tuple => {
+                const [/*name*/, /*type*/, node] = tuple;
+                return node;
             });
+
+        outputs.forEach(output => this.core.setAttribute(output, 'data', dataInfo));
+        jobLogger.append('Operation complete.');
     };
 
-    LocalExecutor.prototype.ArtifactFinder = function(node) {
-        // Check the save dir for a node with the given name
-        // that has the given type
-        var hash,
-            typeId = this.core.getPointerPath(node, 'type'),
-            type,
-            artifactName = this.getAttribute(node, 'artifactName');
+    LocalExecutor.prototype._getSaveDir = async function () {
+        const children = await this.core.loadChildren(this.rootNode);
+        const dataPath = this.core.getPath(this.META.Data);
 
-        return this.core.loadByPath(this.rootNode, typeId)
-            .then(_type => {
-                type = _type;
-                return this._getSaveDir();
-            })
-            .then(saveDir => this.core.loadChildren(saveDir))
-            .then(artifacts => {
-                return artifacts.find(artifact =>
-                    this.getAttribute(artifact, 'name') === artifactName &&
-                        this.isMetaTypeOf(artifact, type));
-            })
-            .then(matchingArtifact => {
-                hash = matchingArtifact && this.getAttribute(matchingArtifact, 'data');
-                // If no hash, just continue (the subsequent ops will receive 'nil')
-                if (!hash) {
-                    return this.onOperationComplete(node);
-                } else {
-                    return this.getOutputs(node)
-                        .then(outputPairs => {
-                            var outputs = outputPairs.map(pair => pair[2]);
-                            // Get the 'data' hash and store it in the output data ports
-                            outputs.forEach(output => this.setAttribute(output, 'data', hash));
+        // Find a node in the root that can contain data nodes
+        const containers = children.filter(child => {
+            var metarule = this.core.getChildrenMeta(child);
+            return metarule && metarule[dataPath];
+        });
 
-                            this.onOperationComplete(node);
-                        });
-                }
-            });
+        const saveDir = containers.find(c =>
+            this.core.getAttribute(c, 'name').toLowerCase().includes('artifacts')
+        ) || containers[0];
+
+        return saveDir || this.rootNode;  // default to rootNode
     };
 
-    LocalExecutor.prototype._getSaveDir = function () {
-        return this.core.loadChildren(this.rootNode)
-            .then(children => {
-                var execPath = this.core.getPath(this.META.Data),
-                    containers,
-                    saveDir;
+    LocalExecutor.prototype[CONSTANTS.OP.OUTPUT] = async function(node) {
+        const artifactsDir = await this._getSaveDir();
+        const artifacts = await this.core.loadChildren(artifactsDir);
+        const currNameHashPairs = artifacts
+            .map(node => [
+                this.core.getAttribute(node, 'name'),
+                this.core.getAttribute(node, 'data')
+            ]);
+        const inputs = await this.getInputs(node);
+        const ids = inputs.map(i => this.core.getPath(i[2]));
+        const incomingData = Object.values(this.nodes)
+            .filter(node => this.isMetaTypeOf(node, this.META.Transporter))
+            .filter(node => ids.includes(this.core.getPointerPath(node, 'dst')))
+            .map(node => this.core.getPointerPath(node, 'src'))
+            .map(id => this.nodes[id]);
 
-                // Find a node in the root that can contain only executions
-                containers = children.filter(child => {
-                    var metarule = this.core.getChildrenMeta(child);
-                    return metarule && metarule[execPath];
-                });
+        // Remove nodes that already exist
+        const dataNodes = incomingData.filter(dataNode => {
+            const hash = this.core.getAttribute(dataNode, 'data');
+            const name = this.core.getOwnAttribute(node, 'saveName') ||
+                    this.core.getAttribute(dataNode, 'name');
 
-                if (containers.length > 1) {
-                    saveDir = containers.find(c =>
-                        this.getAttribute(c, 'name').toLowerCase().indexOf('artifacts') > -1
-                    ) || containers[0];
-                } else {
-                    [saveDir] = containers;
-                }
+            return !(currNameHashPairs
+                .find(pair => pair[0] === name && pair[1] === hash));
+        });
 
-                return saveDir || this.rootNode;  // default to rootNode
-            });
-    };
+        const jobLogger = new JobLogger(this.core, this.core.getParent(node));
+        jobLogger.log('About to save output artifacts.');
+        const saveDir = `${this.projectId}/artifacts/`;
+        const storage = await this.getStorageClient();
+        jobLogger.append(`Saving output data to ${storage.name}`);
 
-    LocalExecutor.prototype[CONSTANTS.OP.OUTPUT] = function(node) {
-        var parentNode,
-            currNameHashPairs;
-        
-        // Get the input node
-        this.logger.info('Calling save operation!');
-        return this._getSaveDir()
-            .then(_saveDir => {
-                parentNode = _saveDir;
-                return this.core.loadChildren(_saveDir);
-            })
-            .then(artifacts => {
-                currNameHashPairs = artifacts
-                    .map(node => [
-                        this.getAttribute(node, 'name'),
-                        this.getAttribute(node, 'data')
-                    ]);
-                return this.getInputs(node);
-            })
-            .then(inputs => {
-                var ids = inputs.map(i => this.core.getPath(i[2])),
-                    allDataNodes,
-                    dataNodes;
+        const createParams = {base: this.META.Data, parent: artifactsDir};
+        for (let i = dataNodes.length; i--;) {
+            const artifact = this.core.createNode(createParams);
+            const name = this.core.getOwnAttribute(node, 'saveName') ||
+                this.core.getAttribute(dataNodes[i], 'name');
+            const createdAt = Date.now();
+            const originalData = JSON.parse(this.core.getAttribute(dataNodes[i], 'data'));
+            const userAsset = await storage.copy(originalData, saveDir + name);
 
-                allDataNodes = Object.keys(this.nodes)
-                    .map(id => this.nodes[id])
-                    .filter(node => this.isMetaTypeOf(node, this.META.Transporter))
-                    .filter(node => 
-                        ids.indexOf(this.core.getPointerPath(node, 'dst')) > -1
-                    )
-                    .map(node => this.core.getPointerPath(node, 'src'))
-                    .map(id => this.nodes[id]);
+            this.core.setAttribute(artifact, 'data', JSON.stringify(userAsset));
+            this.core.setAttribute(artifact, 'name', name);
+            this.core.setAttribute(artifact, 'createdAt', createdAt);
+            this.core.setPointer(artifact, 'origin', inputs[0][2]);
+        }
 
-                // Remove nodes that already exist
-                dataNodes = allDataNodes.filter(dataNode => {
-                    var hash = this.getAttribute(dataNode, 'data'),
-                        name = this.core.getOwnAttribute(node, 'saveName') ||
-                            this.getAttribute(dataNode, 'name');
-
-                    return !(currNameHashPairs
-                        .find(pair => pair[0] === name && pair[1] === hash));
-                });
-
-                // get the input node
-                if (dataNodes.length !== 0) {
-                    var newNodes = this.core.copyNodes(dataNodes, parentNode),
-                        newName = this.core.getOwnAttribute(node, 'saveName'),
-                        createdAt = Date.now();
-
-                    newNodes.forEach(newNode => {
-                        if (newName) {
-                            this.setAttribute(newNode, 'name', newName);
-                        }
-                        this.setAttribute(newNode, 'createdAt', createdAt);
-                        this.setPointer(newNode, 'origin', inputs[0][2]);
-                    });
-
-                    var hashes = dataNodes.map(n => this.getAttribute(n, 'data'));
-                    this.logger.info(`saving hashes: ${hashes.map(h => `"${h}"`)}`);
-                } else if (allDataNodes.length === 0) {
-                    this.logger.warn('No data nodes found!');
-                } else {
-                    this.logger.info('Using cached artifact(s)');
-                }
-
-                this.onOperationComplete(node);
-            });
+        this.logger.info(`Saved ${dataNodes.length} artifacts in ${this.projectId}.`);
+        jobLogger.append(`Saving output data to ${storage.name}`);
     };
 
     // Helper methods
     LocalExecutor.prototype.getLocalOperationType = function(node) {
         for (let i = LocalExecutor.OPERATIONS.length; i--;) {
             const type = LocalExecutor.OPERATIONS[i];
-            if (!this.META[type]) {
-                this.logger.warn(`Missing local operation: ${type}`);
-                continue;
-            }
             if (this.isMetaTypeOf(node, this.META[type])) {
                 return type;
             }
@@ -195,5 +118,21 @@ define([
         .filter(name => name.indexOf('_') !== 0)
         .filter(name => name !== 'isLocalOperation' && name !== 'getLocalOperationType');
     
+    class JobLogger{
+        constructor(core, node) {
+            this.core = core;
+            this.job = node;
+        }
+
+        append(text) {
+            const stdout = this.core.getAttribute(this.job, 'stdout') + text + '\n';
+            this.core.setAttribute(this.job, 'stdout', stdout);
+        }
+
+        log(text) {
+            this.core.setAttribute(this.job, 'stdout', text + '\n');
+        }
+    }
+
     return LocalExecutor;
 });

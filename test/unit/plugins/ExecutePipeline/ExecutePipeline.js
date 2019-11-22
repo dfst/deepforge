@@ -154,8 +154,8 @@ describe('ExecutePipeline', function () {
         //  - no plugin is running
         //  - on origin branch
         var resumeScenario = function(runId, gmeStatus, pulse, originBranch, shouldResume, done) {
-            plugin.setAttribute(node, 'runId', runId);
-            plugin.setAttribute(node, 'status', gmeStatus);
+            plugin.core.setAttribute(node, 'runId', runId);
+            plugin.core.setAttribute(node, 'status', gmeStatus);
             // Mocks:
             //  - prepare should basically nop
             //  - Should call 'resumeJob' or 'executeJob'

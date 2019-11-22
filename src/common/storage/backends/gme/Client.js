@@ -37,6 +37,9 @@ define([
         return this.createDataInfo(hash);
     };
 
+    GMEStorage.prototype.deleteDir =
+    GMEStorage.prototype.deleteFile = async function() {};
+
     GMEStorage.prototype.getMetadata = async function(dataInfo) {
         const {data} = dataInfo;
         return await this.blobClient.getMetadata(data);

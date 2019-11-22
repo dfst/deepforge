@@ -15,7 +15,7 @@ define([
         this.plotLines = {};
     };
 
-    // I think I should convert these to just a single 'update graph' command
+    // TODO: Add tests
     ExecuteJob.prototype[CONSTANTS.PLOT_UPDATE] = async function (job, state) {
         const jobId = this.core.getPath(job);
         // Check if the graph already exists
@@ -127,14 +127,14 @@ define([
         var name = Array.prototype.slice.call(arguments, 3).join(' '),
             imageNode = this._getImageNode(job, imgId, name);
 
-        this.setAttribute(imageNode, 'data', hash);
+        this.core.setAttribute(imageNode, 'data', hash);
     };
 
     ExecuteJob.prototype[CONSTANTS.IMAGE.NAME] = function (job, imgId) {
         var name = Array.prototype.slice.call(arguments, 2).join(' '),
             imageNode = this._getImageNode(job, imgId, name);
 
-        this.setAttribute(imageNode, 'name', name);
+        this.core.setAttribute(imageNode, 'name', name);
     };
 
     ExecuteJob.prototype._getImageNode = function (job, imgId, name) {
@@ -148,9 +148,11 @@ define([
             imageNode = this._getExistingMetadata(jobId, 'Image', name);
             if (!imageNode) {
                 this.logger.info(`Creating image ${id} named ${name}`);
-                imageNode = this.createNode('Image', job);
-                this.setAttribute(imageNode, 'name', name);
-                this.createIdToMetadataId[imageNode] = id;
+                imageNode = this.core.createNode({
+                    base: this.META.Image,
+                    parent: job,
+                });
+                this.core.setAttribute(imageNode, 'name', name);
             }
             this._metadata[id] = imageNode;
         }
@@ -179,7 +181,7 @@ define([
                     if (this.isMetaTypeOf(child, this.META.Metadata)) {
                         id = this.core.getPath(child);
                         base = this.core.getBase(child);
-                        type = this.getAttribute(base, 'name');
+                        type = this.core.getAttribute(base, 'name');
 
                         this._markForDeletion[nodeId][id] = child;
                         // namespace by metadata type
@@ -198,29 +200,30 @@ define([
                 // make the deletion ids relative to the job node
                 this.logger.debug(`About to delete ${idsToDelete.length}: ${idsToDelete.join(', ')}`);
                 for (i = idsToDelete.length; i--;) {
-                    this.deleteNode(idsToDelete[i]);
+                    this.core.deleteNode(idsToDelete[i]);
                 }
             });
     };
 
-    ExecuteJob.prototype.clearOldMetadata = function (job) {
-        var nodeId = this.core.getPath(job),
-            nodeIds,
-            node;
+    ExecuteJob.prototype.clearOldMetadata = async function (job) {
+        const nodeId = this.core.getPath(job);
+        const node = await this.getOperation(job);
 
-        // Remove created nodes left over from resumed job
-        this.createdMetadataIds[nodeId].forEach(id => delete this._markForDeletion[nodeId][id]);
-        nodeIds = Object.keys(this._markForDeletion[nodeId]);
-        this.logger.debug(`About to delete ${nodeIds.length}: ${nodeIds.join(', ')}`);
-        for (var i = nodeIds.length; i--;) {
-            node = this._markForDeletion[nodeId][nodeIds[i]];
-            this.deleteNode(this.core.getPath(node));
+        if (!this.isLocalOperation(node)) {
+            // Remove created nodes left over from resumed job
+            this.createdMetadataIds[nodeId].forEach(id => delete this._markForDeletion[nodeId][id]);
+            const nodeIds = Object.keys(this._markForDeletion[nodeId]);
+            this.logger.debug(`About to delete ${nodeIds.length}: ${nodeIds.join(', ')}`);
+            for (var i = nodeIds.length; i--;) {
+                const node = this._markForDeletion[nodeId][nodeIds[i]];
+                this.core.deleteNode(this.core.getPath(node));
+            }
+            delete this.lastAppliedCmd[nodeId];
+            delete this.createdMetadataIds[nodeId];
+            delete this._markForDeletion[nodeId];
         }
-        delete this.lastAppliedCmd[nodeId];
-        delete this.createdMetadataIds[nodeId];
-        delete this._markForDeletion[nodeId];
 
-        this.delAttribute(job, 'jobInfo');
+        this.core.delAttribute(job, 'jobInfo');
     };
 
     ExecuteJob.prototype.resultMsg = function(msg) {
@@ -229,21 +232,14 @@ define([
     };
 
     ExecuteJob.prototype.getExistingMetadataById = function (job, type, id) {
-        const createId = Object.keys(this.createIdToMetadataId)
-            .find(createId => this.createIdToMetadataId[createId] === id);
-
-        if (createId) {  // on the queue to be created
-            return createId;
-        }
-
-        if (this._metadata[id]) {  // already created
+        if (this._metadata[id]) {
             return this._metadata[id];
         }
 
-        return this._getExistingMetadata( // exists from prev run
+        return this._getExistingMetadata(  // exists from prev run
             this.core.getPath(job),
             type,
-            node => this.getAttribute(node, 'id') === id
+            node => this.core.getAttribute(node, 'id') === id
         );
     };
 
@@ -300,6 +296,12 @@ define([
             stdout: result.join('\n'),
             hasMetadata: hasMetadata
         };
+    };
+
+    ExecuteJob.prototype.onNodeCreated = async function (tmpId, node) {
+        const id = this.createIdToMetadataId[tmpId];
+        delete this.createIdToMetadataId[tmpId];
+        this._metadata[id] = node;
     };
 
     return ExecuteJob;

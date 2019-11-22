@@ -1,6 +1,7 @@
 /*globals define*/
 // TODO: Show an error if not running on the server...
 define([
+    'common/util/assert',
     '../ComputeClient',
     '../JobResults',
     'blob/BlobClient',
@@ -12,6 +13,7 @@ define([
     'os',
     'path',
 ], function(
+    assert,
     ComputeClient,
     JobResults,
     BlobClient,
@@ -40,15 +42,15 @@ define([
     ensureHasUnzip();
     const UNZIP_EXE = '/usr/bin/unzip';  // FIXME: more platform support
     const UNZIP_ARGS = ['-o'];  // FIXME: more platform support
-    const PROJECT_ROOT = path.join(path.dirname(module.uri), '..', '..', '..', '..', '..');
-    const NODE_MODULES = path.join(PROJECT_ROOT, 'node_modules');  // TODO
+    const DEEPFORGE_ROOT = path.join(path.dirname(module.uri), '..', '..', '..', '..', '..');
+    const NODE_MODULES = path.join(DEEPFORGE_ROOT, 'node_modules');
     const symlink = promisify(fs.symlink);
     const touch = async name => await closeFile(await openFile(name, 'w'));
 
     const LocalExecutor = function(/*logger*/) {
         ComputeClient.apply(this, arguments);
 
-        const configPath = path.join(PROJECT_ROOT, 'config');
+        const configPath = path.join(DEEPFORGE_ROOT, 'config');
         const gmeConfig = require.nodeRequire(configPath);
         this.completedJobs = {};
         this.jobQueue = [];
@@ -91,12 +93,42 @@ define([
         }
     };
 
-    LocalExecutor.prototype.getConsoleOutput = async function(hash) {
-        const filename = path.join(this._getWorkingDir(hash), 'job_stdout.txt');
-        return await readFile(filename, 'utf8');
+    LocalExecutor.prototype.getConsoleOutput = async function(job) {
+        const status = this.getStatus(job);
+        const isComplete = this.isFinishedStatus(status);
+
+        if (isComplete) {
+            const mdHash = (await this._getOutputHashes(job)).stdout;
+            const hash = await this._getContentHash(mdHash, 'job_stdout.txt');
+            assert(hash, 'Console output data not found.');
+            return await this.blobClient.getObjectAsString(hash);
+        } else {
+            const {hash} = job;
+            const filename = path.join(this._getWorkingDir(hash), 'job_stdout.txt');
+            return await readFile(filename, 'utf8');
+        }
     };
 
-    LocalExecutor.prototype.getOutputHashes = async function(jobInfo) {
+    LocalExecutor.prototype.getResultsInfo = async function(job) {
+        const mdHash = (await this._getOutputHashes(job)).results;
+        const hash = await this._getContentHash(mdHash, 'results.json');
+        assert(hash, 'Metadata about result types not found.');
+        return await this.blobClient.getObjectAsJSON(hash);
+    };
+
+    LocalExecutor.prototype._getContentHash = async function (artifactHash, fileName) {
+        const artifact = await this.blobClient.getArtifact(artifactHash);
+        const contents = artifact.descriptor.content;
+
+        return contents[fileName] && contents[fileName].content;
+    };
+
+    LocalExecutor.prototype.getDebugFilesHash = async function(job) {
+        const hashes = await this._getOutputHashes(job);
+        return hashes['debug-files'];
+    };
+
+    LocalExecutor.prototype._getOutputHashes = async function(jobInfo) {
         const {hash} = jobInfo;
 
         if (this.completedJobs[hash]) {
@@ -160,15 +192,20 @@ define([
         // Spin up a subprocess
         const config = JSON.parse(await readFile(tmpdir.replace(path.sep, '/') + '/executor_config.json', 'utf8'));
 
-        const env = {cwd: tmpdir};
+        const options = {
+            cwd: tmpdir,
+            env: {DEEPFORGE_ROOT}
+        };
         this.logger.info(`Running ${config.cmd} ${config.args.join(' ')}`);
-        this.subprocess = spawn(config.cmd, config.args, env);
+        this.subprocess = spawn(config.cmd, config.args, options);
         this.emit('update', jobInfo.hash, this.RUNNING);
         this.subprocess.stdout.on('data', data => this.onConsoleOutput(tmpdir, hash, data));
+        this.subprocess.stderr.on('data', data => this.onConsoleOutput(tmpdir, hash, data));
 
         this.subprocess.on('close', async code => {
             const status = this.canceled ? this.CANCELED :
                 (code !== 0 ? this.FAILED : this.SUCCESS);
+
             const jobResults = new JobResults(status);
             this.canceled = false;
 
@@ -180,7 +217,6 @@ define([
     LocalExecutor.prototype.onConsoleOutput = async function(workdir, hash, data) {
         const filename = path.join(workdir, 'job_stdout.txt');
         appendFile(filename, data);
-        this.logger.info('stdout:', data);
         this.emit('data', hash, data);
     };
 

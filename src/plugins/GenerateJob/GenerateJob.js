@@ -119,10 +119,11 @@ define([
         ].join('\n');
 
         const assetPaths = files.getUserAssetPaths();
+        const configs = this.getAllStorageConfigs();
         for (let i = assetPaths.length; i--;) {
             const dataPath = assetPaths[i];
             const dataInfo = files.getUserAsset(dataPath);
-            const url = await Storage.getDownloadURL(dataInfo, this.logger);
+            const url = await Storage.getDownloadURL(dataInfo, this.logger, configs);
             runsh += `wget $DEEPFORGE_URL${url} -O ${dataPath}\n`;
         }
 
@@ -148,7 +149,6 @@ define([
                 };
             });
 
-        const name = this.getAttribute(node, 'name');
         outputs.push(
             {
                 name: 'stdout',
@@ -159,7 +159,7 @@ define([
                 resultPatterns: ['results.json']
             },
             {
-                name: name + '-all-files',
+                name: 'debug-files',
                 resultPatterns: fileList
             }
         );
@@ -282,6 +282,20 @@ define([
             });
     };
 
+    GenerateJob.prototype.getStorageConfig = function () {
+        const storage = this.getCurrentConfig().storage || {};
+        storage.id = storage.id || 'gme';
+        storage.config = storage.config || {};
+        return storage;
+    };
+
+    GenerateJob.prototype.getAllStorageConfigs = function () {
+        const storage = this.getStorageConfig();
+        const configs = {};
+        configs[storage.id] = storage.config;
+        return configs;
+    };
+
     GenerateJob.prototype.createInputs = async function (node, files) {
         this.logger.info('Retrieving inputs and deserialize fns...');
         const allInputs = await this.getInputs(node);
@@ -293,16 +307,18 @@ define([
         const inputs = allInputs
             .filter(pair => !!this.getAttribute(pair[2], 'data'));  // remove empty inputs
 
-        const storage = this.getCurrentConfig().storage || {};
-        storage.id = storage.id || 'gme';
-        storage.config = storage.config || {};
+        const storage = this.getStorageConfig();
+        const jobId = this.core.getPath(this.activeNode).replace(/\//g, '_');
+        const storageDir = `${this.projectId}/executions/${jobId}/`;
 
         const startJS = _.template(Templates.START)({
+            storageDir,
             CONSTANTS,
             storageId: storage.id,
             inputs: inputs.map(pair => pair[0]),
         });
-        files.addFile('storage-config.json', JSON.stringify(storage.config));
+        const configs = this.getAllStorageConfigs();
+        files.addFile('storage-config.json', JSON.stringify(configs));
         files.addFile('start.js', startJS);
         files.addFile('backend_deepforge.py', Templates.MATPLOTLIB_BACKEND);
 

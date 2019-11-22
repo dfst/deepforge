@@ -69,7 +69,7 @@ define([
             }
             await artifact.addObjectHashes(objectHashes);
         }
-        await artifact.addFiles(this._files);
+        await artifact.addFilesAsSoftLinks(this._files);
         return await artifact.save();
     };
 

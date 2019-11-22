@@ -15,10 +15,6 @@ define([
     };
 
     StorageBackend.prototype.getClient = async function(logger, config) {
-        //if (require.isBrowser) {
-            //throw new Error('Storage clients cannot be loaded in the browser.');
-        //}
-
         const Client = await this.require(`deepforge/storage/backends/${this.id}/${this.clientPath}`);
         return new Client(this.id, this.name, logger, config);
     };

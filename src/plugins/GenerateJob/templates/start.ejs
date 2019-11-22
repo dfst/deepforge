@@ -9,6 +9,7 @@ const COMMAND_PREFIX = '<%= CONSTANTS.START_CMD %>';
 const IMAGE = '<%= CONSTANTS.IMAGE.PREFIX %>';
 const log = console.error;
 const logger = {};
+const StorageInfo = require('./storage-config.json');
 
 // Create the stderr only logger
 ['error', 'warn', 'info', 'log', 'debug'].forEach(method => logger[method] = log);
@@ -176,31 +177,30 @@ requirejs([
 
     var getData = async function(ipath, dataInfo) {
         // Download the data and put it in the given path
-        var deferred = Q.defer(),
-            inputName = ipath.split('/')[1],
-            cachePath = await dataCachePath(dataInfo);
+        const deferred = Q.defer();
+        const inputName = ipath.split('/')[1];
+        const cachePath = await dataCachePath(dataInfo);
 
         
         logger.debug(`retrieving ${ipath}`);
-        fs.lstat(cachePath, (err, cacheStats) => {
+        fs.lstat(cachePath, async (err, cacheStats) => {
             // Check if the data exists in the cache
             if (!err && cacheStats.isFile()) {
             logger.info(`${inputName} already cached. Skipping retrieval from blob`);
                 return symlink(cachePath, ipath).then(deferred.resolve);
             }
 
-            createCacheDir(cachePath)
-                .then(() => Storage.getFile(dataInfo, logger))
-                .then(buffer => fs.writeFile(cachePath, buffer, (err, result) => {
-                    if (err) {
-                        logger.error('Retrieving ' + ipath + ' failed!');
-                        return deferred.reject(`Could not write to ${ipath}: ${err}`);
-                    }
-                    // Create the symlink
-                    logger.info('Retrieved ' + ipath);
-                    return symlink(cachePath, ipath).then(deferred.resolve);
-                }))
-                .catch(err => deferred.reject(`Could not retrieve "${inputName}" (${err})`));
+            await createCacheDir(cachePath);
+            const buffer = await Storage.getFile(dataInfo, logger, StorageInfo);
+            fs.writeFile(cachePath, buffer, (err, result) => {
+                if (err) {
+                    logger.error('Retrieving ' + ipath + ' failed!');
+                    return deferred.reject(`Could not write to ${ipath}: ${err}`);
+                }
+                // Create the symlink
+                logger.info('Retrieved ' + ipath);
+                return symlink(cachePath, ipath).then(deferred.resolve);
+            })
         });
 
         return deferred.promise;
@@ -263,23 +263,13 @@ requirejs([
             job.stdout.on('data', onStdout);
             job.stderr.on('data', onStderr);
             job.on('close', async code => {
-                exitCode = code;
                 log('script finished w/ exit code:', code);
-                if (exitCode === 0) {
-                    const results = require('./result-types.json');
-                    const STORAGE_ID = '<%= storageId %>';
-                    const config = require('./storage-config.json');
-                    const client = await Storage.getBackend(STORAGE_ID).getClient(logger, config);
-                    const outputNames = Object.keys(results);
-
-                    for (let i = outputNames.length; i--;) {
-                        const filename = outputNames[i];
-                        const contents = fs.readFileSync(`outputs/${filename}`);
-                        const dataInfo = await client.putFile(filename, contents);
-                        const type = results[filename];
-                        results[filename] = {type, dataInfo};
-                    }
-                    fs.writeFileSync('results.json', JSON.stringify(results));
+                try {
+                    exitCode = code;
+                    await uploadOutputData(code);
+                } catch (err) {
+                    exitCode = 1;
+                    onStderr(err.message);
                 }
                 checkFinished();
             });
@@ -288,6 +278,28 @@ requirejs([
             console.log(`Data retrieval failed: ${err}`);
             process.exit(1);
         });
+
+    async function uploadOutputData(code) {
+        if (exitCode === 0) {
+            const results = require('./result-types.json');
+            const STORAGE_ID = '<%= storageId %>';
+            const config = StorageInfo[STORAGE_ID];
+            const client = await Storage.getBackend(STORAGE_ID).getClient(logger, config);
+            const outputNames = Object.keys(results);
+            const storageDir = '<%= storageDir %>';
+
+            for (let i = outputNames.length; i--;) {
+                const filename = outputNames[i];
+                const storagePath = `${storageDir}/${filename}`;
+                const contents = fs.readFileSync(`outputs/${filename}`);
+                const dataInfo = await client.putFile(storagePath, contents);
+                const type = results[filename];
+                results[filename] = {type, dataInfo};
+            }
+
+            fs.writeFileSync('results.json', JSON.stringify(results));
+        }
+    }
 
     function symlink(target, src) {
         var deferred = Q.defer(),

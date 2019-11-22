@@ -164,9 +164,7 @@ define([
             name,
             i = 2;
 
-        basename = basename
-            .replace(/^\s*/, '')
-            .replace(/\s*$/, '')
+        basename = basename.trim()
             .replace(/[^\da-zA-Z_]/g, '_');
         name = basename;
 
