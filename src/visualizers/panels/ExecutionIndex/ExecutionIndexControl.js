@@ -35,7 +35,6 @@ define([
         this.abbrFor = {};
 
         this._initWidgetEventHandlers();
-        this._widget._deleteExecution = this._deleteExecution.bind(this);
 
         this._logger.debug('ctor finished');
     };
@@ -43,7 +42,6 @@ define([
     _.extend(ExecutionIndexControl.prototype, Execute.prototype);
 
     ExecutionIndexControl.prototype._deleteExecution = function (id) {
-        console.log(id);
         let node = this._client.getNode(id),
             name = '';
         if (node) {
@@ -52,7 +50,6 @@ define([
 
         this._client.startTransaction(`Deleted ${name} (${id}) execution.`);
         if (this.isRunning(node)) {
-            console.log(node);
             this.stopExecution(id);
         }
         this._client.deleteNode(id);
