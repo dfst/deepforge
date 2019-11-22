@@ -151,7 +151,7 @@ define([
             .text(desc.name);
 
         deleteBtn = $('<a>', {
-            class: 'glyphicon glyphicon-trash delete-exec',
+            class: 'glyphicon glyphicon-remove delete-exec',
             'data-id': desc.id
         });
 
