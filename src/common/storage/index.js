@@ -11,8 +11,9 @@ define([
     gme,
 ) {
     const Storage = {};
-    const StorageMetadata = {gme};
-    StorageMetadata['sciserver-files'] = sciserverFiles;
+    const StorageMetadata = {};
+    StorageMetadata['sciserver-files'] = JSON.parse(sciserverFiles);
+    StorageMetadata['gme'] = JSON.parse(gme);
     const STORAGE_BACKENDS = Object.keys(StorageMetadata);
 
     Storage.getComponentId = function() {
