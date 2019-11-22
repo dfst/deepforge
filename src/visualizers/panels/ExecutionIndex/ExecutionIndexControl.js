@@ -3,10 +3,12 @@
 
 define([
     'js/Constants',
-    'deepforge/utils'
+    'deepforge/utils',
+    'deepforge/viz/Execute'
 ], function (
     CONSTANTS,
-    utils
+    utils,
+    Execute
 ) {
 
     'use strict';
@@ -16,8 +18,8 @@ define([
     ExecutionIndexControl = function (options) {
 
         this._logger = options.logger.fork('Control');
-
         this._client = options.client;
+        Execute.call(this, this._client, this._logger);
         this._embedded = options.embedded;
 
         // Initialize core collections and variables
@@ -33,12 +35,33 @@ define([
         this.abbrFor = {};
 
         this._initWidgetEventHandlers();
+        this._widget._deleteExecution = this._deleteExecution.bind(this);
 
         this._logger.debug('ctor finished');
     };
 
+    _.extend(ExecutionIndexControl.prototype, Execute.prototype);
+
+    ExecutionIndexControl.prototype._deleteExecution = function (id) {
+        console.log(id);
+        let node = this._client.getNode(id),
+            name = '';
+        if (node) {
+            name = node.getAttribute('name');
+        }
+
+        this._client.startTransaction(`Deleted ${name} (${id}) execution.`);
+        if (this.isRunning(node)) {
+            console.log(node);
+            this.stopExecution(id);
+        }
+        this._client.deleteNode(id);
+        this._client.completeTransaction();
+    };
+
     ExecutionIndexControl.prototype._initWidgetEventHandlers = function () {
         this._widget.setExecutionDisplayed = this.setExecutionDisplayed.bind(this);
+        this._widget._deleteExecution = this._deleteExecution.bind(this);
     };
 
     ExecutionIndexControl.prototype.setExecutionDisplayed = function (id, bool) {
@@ -110,7 +133,7 @@ define([
         }
     };
 
-    ExecutionIndexControl.prototype.getUniqAbbreviation = function(desc) {
+    ExecutionIndexControl.prototype.getUniqAbbreviation = function (desc) {
         // Get a unique abbreviation for the given execution
         var base = utils.abbr(desc.name).toLowerCase(),
             abbr = base,
@@ -242,17 +265,17 @@ define([
             event = events[i];
             switch (event.etype) {
 
-            case CONSTANTS.TERRITORY_EVENT_LOAD:
-                this._onLoad(event.eid);
-                break;
-            case CONSTANTS.TERRITORY_EVENT_UPDATE:
-                this._onUpdate(event.eid);
-                break;
-            case CONSTANTS.TERRITORY_EVENT_UNLOAD:
-                this._onUnload(event.eid);
-                break;
-            default:
-                break;
+                case CONSTANTS.TERRITORY_EVENT_LOAD:
+                    this._onLoad(event.eid);
+                    break;
+                case CONSTANTS.TERRITORY_EVENT_UPDATE:
+                    this._onUpdate(event.eid);
+                    break;
+                case CONSTANTS.TERRITORY_EVENT_UNLOAD:
+                    this._onUnload(event.eid);
+                    break;
+                default:
+                    break;
             }
         }
 

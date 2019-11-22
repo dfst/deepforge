@@ -44,6 +44,7 @@ define([
         this.$table = $(TableHtml);
         this.$table.on('click', '.exec-row', event => this.onExecutionClicked(event));
         this.$table.on('click', '.node-nav', event => this.navToNode(event));
+        this.$table.on('click', '.delete-exec', event => this.onExecutionDelete(event));
         this.$left.append(this.$table);
         this.$execList = this.$table.find('.execs-content');
 
@@ -60,6 +61,14 @@ define([
             event.stopPropagation();
         }
         this.logger.warn('No node id found for node-nav!');
+    };
+
+    ExecutionIndexWidget.prototype.onExecutionDelete = function (event) {
+        let target = event.target,
+            id = target.getAttribute('data-id');
+
+        if(id)
+            this._deleteExecution(id);
     };
 
     ExecutionIndexWidget.prototype.onExecutionClicked = function (event) {
@@ -86,15 +95,15 @@ define([
 
     ExecutionIndexWidget.prototype.onWidgetContainerResize = function (width, height) {
         this.$left.css({
-            width: width/2,
+            width: width / 2,
             height: height
         });
         this.$right.css({
-            left: width/2,
-            width: width/2,
+            left: width / 2,
+            width: width / 2,
             height: height
         });
-        this.lineGraph.onWidgetContainerResize(width/2, height);
+        this.lineGraph.onWidgetContainerResize(width / 2, height);
         this.logger.debug('Widget is resizing...');
     };
 
@@ -130,6 +139,7 @@ define([
             pipeline,
             name,
             duration = $('<div>'),
+            deleteBtn,
             td;
 
         pipeline = $('<a>', {
@@ -140,12 +150,18 @@ define([
         name = $('<a>', {class: 'node-nav', 'data-id': desc.id})
             .text(desc.name);
 
+        deleteBtn = $('<a>', {
+            class: 'glyphicon glyphicon-trash delete-exec',
+            'data-id': desc.id
+        });
+
         fields = [
             checkBox,
             name,
             Utils.getDisplayTime(desc.originTime),
             pipeline,
-            duration
+            duration,
+            deleteBtn
         ];
 
         for (var i = 0; i < fields.length; i++) {
@@ -169,7 +185,8 @@ define([
             $checkbox: checkBox[0],
             $pipeline: pipeline,
             $duration: duration,
-            $name: name
+            $name: name,
+            $deleteBtn: deleteBtn
         };
         this.updateTime(desc.id, true);
     };
@@ -205,7 +222,7 @@ define([
         for (var i = nodeIds.length; i--;) {
             updated = this.updateTime(nodeIds[i]) || updated;
         }
-        
+
         if (updated) {  // if there are still nodes, call again!
             setTimeout(this.updateTimes.bind(this), 1000);
         }
@@ -234,7 +251,7 @@ define([
             this.defaultSelection = desc.id;
             this.setSelect(desc.id, true);
         }
-        
+
     };
 
     ExecutionIndexWidget.prototype.toggleAbbreviations = function (show, ids) {
