@@ -448,13 +448,13 @@ define([
             if (!isDeleted) {
 
                 this.logger.debug(`Pipeline "${name}" complete!`);
-                this.setAttribute(this.activeNode, 'endTime', Date.now());
-                this.setAttribute(this.activeNode, 'status',
+                this.core.setAttribute(this.activeNode, 'endTime', Date.now());
+                this.core.setAttribute(this.activeNode, 'status',
                     (this.pipelineError ? 'failed' :
                         (this.canceled ? 'canceled' : 'success')
                     )
                 );
-                this.delAttribute(this.activeNode, 'executionId');
+                this.core.delAttribute(this.activeNode, 'executionId');
 
                 this._finished = true;
                 this.resultMsg(msg);
