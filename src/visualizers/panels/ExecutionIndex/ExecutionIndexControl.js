@@ -107,7 +107,7 @@ define([
             currentSubGraph = consolidatedDesc.subGraphs[i];
             currentSubGraph.title = currentSubGraph.title || `Subgraph${i+1}`;
             currentSubGraph.title += ` vs. ${subGraphs[i].title || `Subgraph${i+1}`}`;
-            subGraphs[i].lines.forEach((line) => {
+            subGraphs[i].lines.forEach((line, index) => {
                 let lineClone = JSON.parse(JSON.stringify(line));
                 lineClone.label = (lineClone.label || `line${index}`) + ` (${abbr})`;
                 currentSubGraph.lines.push(lineClone);

@@ -1,4 +1,4 @@
-/*globals define, WebGMEGlobal, _*/
+/*globals define, _*/
 define(['./lib/plotly.min',], function (Plotly) {
     'use strict';
 

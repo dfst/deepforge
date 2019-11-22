@@ -188,12 +188,11 @@ define([], function () {
                 y: points[1],
                 name: line.label,
                 type: TraceTypes.SCATTER,
-                mode: line.marker ? "line+marker" : "line",
+                mode: line.marker ? 'line+marker' : 'line',
                 line: {
                     width: line.lineWidth ? line.lineWidth : 3,
                     color: line.color
                 },
-
             };
             if (index !== 0) {
                 traceData.xaxis = `x${index + 1}`;
@@ -207,14 +206,11 @@ define([], function () {
     const addAxesLabels = function (subGraphs) {
         let axesData = {};
         subGraphs.forEach((subGraph, index) => {
-            let xAxisName;
-            let yAxisName;
+            let xAxisName = `xaxis${index + 1}`;
+            let yAxisName = `yaxis${index + 1}`;
             if (index === 0) {
                 xAxisName = 'xaxis';
                 yAxisName = 'yaxis';
-            } else {
-                xAxisName = `xaxis${index + 1}`;
-                yAxisName = `yaxis${index + 1}`;
             }
             axesData[xAxisName] = {
                 title: {
@@ -222,9 +218,7 @@ define([], function () {
                     color: '#7f7f7f',
                     standoff: 0
                 }
-
             };
-
             axesData[yAxisName] = {
                 title: {
                     text: subGraph.ylabel,

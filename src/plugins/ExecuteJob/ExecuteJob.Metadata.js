@@ -1,5 +1,5 @@
 /*globals define*/
-"use strict";
+'use strict';
 define([
     'deepforge/Constants'
 ], function(
