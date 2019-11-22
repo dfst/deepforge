@@ -111,8 +111,8 @@ define([], function () {
             Object.keys(axesData).forEach((axis) => {
                 plotlyJSON.layout[axis] = axesData[axis];
             });
+            plotlyJSON.id = desc.id;
         }
-        plotlyJSON.id = desc.id;
         return plotlyJSON;
     };
 

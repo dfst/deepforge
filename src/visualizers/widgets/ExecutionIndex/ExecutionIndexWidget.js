@@ -50,7 +50,7 @@ define([
         this.$execList = this.$table.find('.execs-content');
 
         // Create the graph in the right half
-        this.lineGraph = new PlotlyGraphWidget(this.logger, this.$right);
+        this.plotlyGraph = new PlotlyGraphWidget(this.logger, this.$right);
         this.defaultSelection = null;
         this.hasRunning = false;
     };
@@ -96,7 +96,7 @@ define([
             width: width / 2,
             height: height
         });
-        this.lineGraph.onWidgetContainerResize(width / 2, height);
+        this.plotlyGraph.onWidgetContainerResize(width / 2, height);
         this.logger.debug('Widget is resizing...');
     };
 
@@ -110,9 +110,9 @@ define([
             this.updateSelected(desc);
         } else if (desc.type === 'line') {
             desc.type = 'line';
-            this.lineGraph.addNode(desc);
+            this.plotlyGraph.addNode(desc);
         } else if (desc.type === 'graph') {
-            this.lineGraph.addNode(desc);
+            this.plotlyGraph.addNode(desc);
         }
 
         if (isFirstNode) {
@@ -223,7 +223,7 @@ define([
         }
         delete this.nodes[id];
 
-        this.lineGraph.removeNode(id);  // 'nop' if node is not line
+        this.plotlyGraph.removeNode(id);  // 'nop' if node is not line
     };
 
     ExecutionIndexWidget.prototype.updateSelected = function (desc) {
@@ -302,10 +302,8 @@ define([
 
             node.statusClass = Utils.ClassForJobStatus[desc.status];
             node.desc = desc;
-        } else if (desc.type === 'line') {
-            this.lineGraph.updateNode(desc);
         } else if (desc.type === 'graph') {
-            this.lineGraph.updateNode(desc);
+            this.plotlyGraph.updateNode(desc);
         }
     };
 

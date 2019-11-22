@@ -55,13 +55,13 @@ define(['./lib/plotly.min',], function (Plotly) {
         if (Object.keys(this.plotsData).length === 0) {
             this.deleteChart();
         } else {
-            let plotlyJSON = Object.keys(this.plotsData).map(id => this.plotsData[id]);
-            console.log(plotlyJSON);
-            if (!this.created) {
-                Plotly.newPlot(this.$el[0], plotlyJSON[0]);
+            let plotlyJSON = Object.keys(this.plotsData)
+                .map(id => this.plotsData[id]);
+            if (!this.created && !_.isEmpty(...plotlyJSON)) {
+                Plotly.newPlot(this.$el[0], ...plotlyJSON);
                 this.created = true;
-            } else {
-                Plotly.react(this.$el[0], plotlyJSON[0]);
+            } else if(!_.isEmpty(...plotlyJSON)) {
+                Plotly.react(this.$el[0], ...plotlyJSON);
             }
         }
     };

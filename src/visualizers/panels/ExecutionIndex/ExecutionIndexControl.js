@@ -49,29 +49,31 @@ define([
         let removedExecutions = beforeClickIds.filter(id => !afterClickIds.includes(id));
         let added = addedExecutions.length > 0;
         let updatedExecutions = added ? addedExecutions : removedExecutions;
-        this._updateGraphData(updatedExecutions, added);
+        this._updateGraphData(...updatedExecutions, added);
     };
 
     ExecutionIndexControl.prototype._updateGraphData = function (id, bool) {
         this.displayedExecutions[id] = bool;
-        let displayedGraphIds = Object.keys(this.displayedExecutions)
+        let displayedGraphExecIds = Object.keys(this.displayedExecutions)
             .filter((id) => !!this.displayedExecutions[id]);
         if (this._currentPlotsDataId) {
             this._widget.removeNode(this._currentPlotsDataId);
         }
         if ( this.displayedExecCount() > 0) {
-            this._consolidateGraphData(displayedGraphIds);
+            this._consolidateGraphData(displayedGraphExecIds);
         }
     };
 
     ExecutionIndexControl.prototype._consolidateGraphData = function (graphExecIDs) {
         let graphIds = graphExecIDs.map(execId => this._graphsForExecution[execId]);
-        let graphDescs = graphIds.map(id => this._getObjectDescriptor(id));
-        let consolidatedDesc = this._combineGraphDesc(graphDescs);
-        this._currentPlotsDataId = consolidatedDesc.id;
-        let plotlyJSON = this._plotlyDescExtractor.descToPlotlyJSON(consolidatedDesc);
-        plotlyJSON.type = 'graph';
-        this._widget.addNode(plotlyJSON);
+        let graphDescs = graphIds.map(id => this._getObjectDescriptor(id)).filter(desc => !!desc);
+        if(graphDescs.length > 0){
+            let consolidatedDesc = this._combineGraphDesc(graphDescs);
+            this._currentPlotsDataId = consolidatedDesc.id;
+            let plotlyJSON = this._plotlyDescExtractor.descToPlotlyJSON(consolidatedDesc);
+            plotlyJSON.type = 'graph';
+            this._widget.addNode(plotlyJSON);
+        }
     };
 
     ExecutionIndexControl.prototype._combineGraphDesc = function (graphDescs) {
@@ -213,7 +215,8 @@ define([
                 this._pipelineNames[desc.id] = desc.name;
             } else if (type === 'Graph') {
                 desc = this.getGraphDesc(node);
-            } else if (type === 'SubGraph') {
+            }
+            else if (type === 'SubGraph') {
                 const graphNodeId = node.getParentId();
                 let graphNode = this._client.getNode(graphNodeId);
                 desc = this.getGraphDesc(graphNode);
@@ -285,7 +288,7 @@ define([
         } else if (desc.type === 'Pipeline') {
             this.updatePipelineNames(desc);
         } else if (desc.type === 'graph' && this.isGraphDisplayed(desc)) {
-            this._widget.addNode(desc);
+            this._updateGraphData(desc.execId, true);
         }
     };
 
@@ -294,7 +297,7 @@ define([
         if (desc.type === 'Execution') {
             this._widget.updateNode(desc);
         } else if (desc.type === 'graph' && this.isGraphDisplayed(desc)) {
-            this._widget.updateNode(desc);
+            this._updateGraphData(desc.execId, true);
         } else if (desc.type === 'Pipeline') {
             this.updatePipelineNames(desc);
         }
