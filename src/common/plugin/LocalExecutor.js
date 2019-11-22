@@ -16,7 +16,7 @@ define([
             .find(cntr => this.isMetaTypeOf(cntr, this.META.Outputs));
 
         const jobLogger = new JobLogger(this.core, this.core.getParent(node));
-        jobLogger.log(`Passing data reference to the ${outputs.length} subsequent jobs.`);
+        jobLogger.log('Passing data reference to the subsequent jobs.');
         const dataNodes = await this.core.loadChildren(outputContainer);
         const dataInfo = this.core.getAttribute(dataNodes[0], 'data');
 
