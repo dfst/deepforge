@@ -2,22 +2,19 @@
 define([
     '../StorageClient',
     'blob/BlobClient',
-    'module',
+    'deepforge/gmeConfig',
 ], function(
     StorageClient,
     BlobClient,
-    module,
+    gmeConfig,
 ) {
+
     const GMEStorage = function(/*name, logger*/) {
         StorageClient.apply(this, arguments);
         const params = {
             logger: this.logger.fork('BlobClient')
         };
         if (!require.isBrowser) {
-            const path = require.nodeRequire('path');
-            const PROJECT_ROOT = path.join(path.dirname(module.uri), '..', '..', '..', '..', '..');
-            const configPath = path.join(PROJECT_ROOT, 'config');
-            const gmeConfig = require.nodeRequire(configPath);
             params.server = '127.0.0.1';
             params.serverPort = gmeConfig.server.port;
             params.httpsecure = false;

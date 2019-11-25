@@ -311,15 +311,16 @@ define([
         const jobId = this.core.getPath(this.activeNode).replace(/\//g, '_');
         const storageDir = `${this.projectId}/executions/${jobId}/`;
 
-        const startJS = _.template(Templates.START)({
-            storageDir,
-            CONSTANTS,
-            storageId: storage.id,
-            inputs: inputs.map(pair => pair[0]),
-        });
-        const configs = this.getAllStorageConfigs();
-        files.addFile('storage-config.json', JSON.stringify(configs));
-        files.addFile('start.js', startJS);
+        const configs = {
+            storage: {
+                id: storage.id,
+                dir: storageDir,
+            },
+            storageConfigs: this.getAllStorageConfigs(),
+        };
+        files.addFile('config.json', JSON.stringify(configs));
+        files.addFile('start.js', Templates.START);
+        files.addFile('utils.build.js', Templates.UTILS);
         files.addFile('backend_deepforge.py', Templates.MATPLOTLIB_BACKEND);
 
         inputs.forEach(pair => {

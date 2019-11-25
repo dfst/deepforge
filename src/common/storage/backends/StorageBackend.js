@@ -1,10 +1,6 @@
 /* globals define */
 define([
-    'module',
-    'q',
 ], function(
-    module,
-    Q,
 ) {
 
     const StorageBackend = function(id, metadata) {
@@ -20,9 +16,9 @@ define([
     };
 
     StorageBackend.prototype.require = function(path) {  // helper for loading async
-        const deferred = Q.defer();
-        require([path], deferred.resolve, deferred.reject);
-        return deferred.promise;
+        return new Promise((resolve, reject) =>
+            require([path], resolve, reject)
+        );
     };
 
     return StorageBackend;
