@@ -36,3 +36,4 @@ exclude_paths:
 - src/visualizers/widgets/PipelineIndex/styles/PipelineIndex.css
 - src/visualizers/widgets/LineGraph/lib/
 - src/visualizers/widgets/PipelineEditor/klay.js
+- src/plugins/GenerateJob/templates/utils.build.js
