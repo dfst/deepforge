@@ -2325,8 +2325,6 @@ define('deepforge/storage/index',['module', './backends/StorageBackend', 'text!d
       ComponentSettings.resolveWithWebGMEGlobal(settings, this.getComponentId());
     } else {
       // Running in NodeJS
-      console.log('>>> about to get the components.js');
-
       var path = require('path');
 
       var dirname = path.dirname(module.uri);
@@ -2826,6 +2824,8 @@ var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefau
 
 var _regenerator = _interopRequireDefault(require("@babel/runtime/regenerator"));
 
+var _slicedToArray2 = _interopRequireDefault(require("@babel/runtime/helpers/slicedToArray"));
+
 /* globals define */
 define('deepforge/storage/backends/gme/Client',['../StorageClient', 'blob/BlobClient', 'deepforge/gmeConfig'], function (StorageClient, BlobClient, gmeConfig) {
   var GMEStorage = function GMEStorage()
@@ -2837,15 +2837,26 @@ define('deepforge/storage/backends/gme/Client',['../StorageClient', 'blob/BlobCl
     };
 
     if (!require.isBrowser) {
-      params.server = '127.0.0.1';
-      params.serverPort = gmeConfig.server.port;
-      params.httpsecure = false;
+      var _this$getServerURL = this.getServerURL(),
+          _this$getServerURL2 = (0, _slicedToArray2["default"])(_this$getServerURL, 2),
+          url = _this$getServerURL2[0],
+          isHttps = _this$getServerURL2[1];
+
+      params.server = url.split(':')[0];
+      params.serverPort = +url.split(':').pop();
+      params.httpsecure = isHttps;
     }
 
     this.blobClient = new BlobClient(params);
   };
 
   GMEStorage.prototype = Object.create(StorageClient.prototype);
+
+  GMEStorage.prototype.getServerURL = function () {
+    var port = gmeConfig.server.port;
+    var url = process.env.DEEPFORGE_URL || "127.0.0.1:".concat(port);
+    return [url.replace(/^https?:\/\//, ''), url.startsWith('https')];
+  };
 
   GMEStorage.prototype.getFile = function _callee(dataInfo) {
     var data;
