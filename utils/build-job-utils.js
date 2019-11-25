@@ -1,13 +1,3 @@
-/*globals*/
-/*jshint node:true, camelcase:false*/
-/**
- *
- *
- * node ./utils/build/dist/build.js
- *
- *
- * @author pmeijer / https://github.com/pmeijer
- */
 'use strict';
 
 const rm_rf = require('rimraf');
@@ -101,15 +91,12 @@ async function prepare() {
 }
 
 async function doBuilds() {
-    var start = Date.now();
-
     function callOptimizer(theConfig) {
         return new Promise((res, rej) => requirejs.optimize(theConfig, res, rej));
     }
 
     const {config, configFile} = await prepare();
     const result = await callOptimizer(config);
-    console.log('Build time', (Date.now() - start) / 1000, 's');
     await cleanUp(configFile);
     return result;
 }
@@ -124,7 +111,9 @@ if (require.main === module) {
 }
 async function runMain() {
     const data = await doBuilds();
+    /* eslint-disable no-console*/
     console.log(data);
+    /* eslint-enable no-console*/
 }
 
 module.exports = doBuilds;

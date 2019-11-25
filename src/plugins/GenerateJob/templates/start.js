@@ -1,3 +1,4 @@
+/* eslint-disable no-console*/
 // A wrapper for the worker script which:
 //   - merges stdout, stderr
 //   - receives some commands and uploads intermediate data
