@@ -33,7 +33,7 @@ define(['./lib/plotly.min',], function (Plotly) {
         }
     };
 
-    PlotlyGraphWidget.prototype.removeNode = function (id) {
+    PlotlyGraphWidget.prototype.removeNode = function () {
         this.plotsData = null;
         this.refreshChart();
     };
