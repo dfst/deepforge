@@ -209,9 +209,8 @@ define([
         return JSON.parse(text);
     };
 
-    SciServerClient.prototype.getDebugFilesHash = async function(/*jobInfo*/) {
-        // TODO: Get the hash for the debug files...
-        return '';
+    SciServerClient.prototype.getDebugFilesHash = async function(jobInfo) {
+        return jobInfo.hash;
     };
 
     SciServerClient.prototype.getStatus = async function(jobInfo) {
