@@ -259,7 +259,6 @@ define([
             isChecked;
 
         this.nodes[id].$checkbox.checked = checked;
-        let checkedExecutionsBeforeClick = this.checkedIds.slice(0);
 
         // If multiple are checked, display the abbreviation
         if (checked) {
@@ -270,7 +269,7 @@ define([
                 this.checkedIds.splice(k, 1);
             }
         }
-        let checkedExecutionsAfterClick = this.checkedIds.slice(0);
+        let checkedExecutions = this.checkedIds.slice(0);
 
         isChecked = this.checkedIds.length > 1;
         if (isChecked !== wasChecked) {
@@ -282,7 +281,7 @@ define([
             this.toggleAbbreviations(checked, [id]);
         }
 
-        this.setDisplayedExecutions(checkedExecutionsBeforeClick, checkedExecutionsAfterClick);
+        this.setDisplayedExecutions(checkedExecutions);
     };
 
     ExecutionIndexWidget.prototype.updateNode = function (desc) {

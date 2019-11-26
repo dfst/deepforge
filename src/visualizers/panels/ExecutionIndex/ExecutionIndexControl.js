@@ -26,7 +26,7 @@ define([
         this._widget = options.widget;
 
         this._currentNodeId = null;
-        this.displayedExecutions = {};
+        this.displayedExecutions = [];
         this._graphsForExecution = {};
         this._graphToExec = {};
         this._pipelineNames = {};
@@ -43,19 +43,14 @@ define([
         this._widget.setDisplayedExecutions = this.setDisplayedExecutions.bind(this);
     };
 
-    ExecutionIndexControl.prototype.setDisplayedExecutions = function (beforeClickIds, afterClickIds) {
-        afterClickIds.filter(id => !beforeClickIds.includes(id))
-            .forEach((id) => this.displayedExecutions[id] = true);
-        beforeClickIds.filter(id => !afterClickIds.includes(id))
-            .forEach((id) => this.displayedExecutions[id] = false);
+    ExecutionIndexControl.prototype.setDisplayedExecutions = function (displayedIds) {
+        this.displayedExecutions = displayedIds;
         this._updateGraphWidget();
     };
 
     ExecutionIndexControl.prototype._updateGraphWidget = function () {
         const action = this.displayedExecCount() === 0 ? 'addNode' : 'updateNode';
-        let displayedGraphExecIds = Object.keys(this.displayedExecutions)
-            .filter((id) => !!this.displayedExecutions[id]);
-        let plotlyJSON = this._consolidateGraphData(displayedGraphExecIds);
+        let plotlyJSON = this._consolidateGraphData(this.displayedExecutions);
         if (plotlyJSON) {
             this._widget[action](plotlyJSON);
         }
@@ -349,13 +344,11 @@ define([
 
     ExecutionIndexControl.prototype.isGraphDisplayed = function (graph) {
         // lines are only displayed if their execution is checked
-        return this.displayedExecutions[graph.execId];
+        return this.displayedExecutions.indexOf(graph.execId) !== -1;
     };
 
     ExecutionIndexControl.prototype.displayedExecCount = function () {
-        return Object.keys(this.displayedExecutions)
-            .map(id => this.displayedExecutions[id])
-            .filter(shown => shown).length;
+        return this.displayedExecutions.length;
     };
 
     ExecutionIndexControl.prototype._stateActiveObjectChanged = function (model, activeObjectId) {

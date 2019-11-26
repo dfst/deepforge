@@ -10,7 +10,7 @@ define(['./lib/plotly.min',], function (Plotly) {
         this.$el.css('overflow', 'auto');
         this.$el.addClass(WIDGET_CLASS);
         this.nodes = {};
-        this.plotsData = null;
+        this.plotlyJSON = null;
         this.layout = {};
         this.created = false;
         this.logger.debug('ctor finished');
@@ -28,32 +28,32 @@ define(['./lib/plotly.min',], function (Plotly) {
     // Adding/Removing/Updating items
     PlotlyGraphWidget.prototype.addNode = function (desc) {
         if (desc) {
-            this.plotsData = desc;
+            this.plotlyJSON = desc;
             this.refreshChart();
         }
     };
 
     PlotlyGraphWidget.prototype.removeNode = function () {
-        this.plotsData = null;
+        this.plotlyJSON = null;
         this.refreshChart();
     };
 
     PlotlyGraphWidget.prototype.updateNode = function (desc) {
         if (desc) {
-            this.plotsData = desc;
+            this.plotlyJSON = desc;
             this.refreshChart();
         }
     };
 
     PlotlyGraphWidget.prototype.createOrUpdateChart = function () {
-        if (!this.plotsData) {
+        if (!this.plotlyJSON) {
             this.deleteChart();
         } else {
-            if (!this.created && !_.isEmpty(this.plotsData)) {
-                Plotly.newPlot(this.$el[0], this.plotsData);
+            if (!this.created && !_.isEmpty(this.plotlyJSON)) {
+                Plotly.newPlot(this.$el[0], this.plotlyJSON);
                 this.created = true;
-            } else if(!_.isEmpty(this.plotsData)) {
-                Plotly.react(this.$el[0], this.plotsData);
+            } else if(!_.isEmpty(this.plotlyJSON)) {
+                Plotly.react(this.$el[0], this.plotlyJSON);
             }
         }
     };
@@ -61,7 +61,7 @@ define(['./lib/plotly.min',], function (Plotly) {
     PlotlyGraphWidget.prototype.refreshChart = _.debounce(PlotlyGraphWidget.prototype.createOrUpdateChart, 50);
 
     PlotlyGraphWidget.prototype.deleteChart = function () {
-        this.plotsData = null;
+        this.plotlyJSON = null;
         if (this.created) {
             Plotly.purge(this.$el[0]);
         }
