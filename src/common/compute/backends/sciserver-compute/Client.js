@@ -29,7 +29,6 @@ define([
         this.token = config.token;
         this.volume = config.volume;
         this.computeDomain = config.computeDomain;
-        this.token = '9876c76a742c4f2ebcf4c681630bb6f4';  // FIXME
 
         const gmeConfig = require.nodeRequire(GME_CONFIG_PATH);
         this.previousJobState = {};
