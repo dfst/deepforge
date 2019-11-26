@@ -597,7 +597,7 @@ define([
 
         if (status === this.compute.SUCCESS || status === this.compute.FAILED) {
             const execFilesHash = await this.compute.getDebugFilesHash(jobInfo);
-            assert(execFilesHash, `Debug files not found for ${name}`);
+            assert(execFilesHash !== undefined, `Debug files not found for ${name}`);
             this.core.setAttribute(job, 'execFiles', execFilesHash);
 
             const opName = this.core.getAttribute(op, 'name');
