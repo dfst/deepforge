@@ -10,17 +10,11 @@ define(['./lib/plotly.min',], function (Plotly) {
         this.$el.css('overflow', 'auto');
         this.$el.addClass(WIDGET_CLASS);
         this.nodes = {};
-        this.plotsData = {};
+        this.plotsData = null;
         this.layout = {};
         this.created = false;
-        this._initialize();
         this.logger.debug('ctor finished');
     }
-
-    PlotlyGraphWidget.prototype._initialize = function () {
-        this.created = false;
-    };
-
 
     PlotlyGraphWidget.prototype.onWidgetContainerResize = function (width, height) {
         // Nothing needs to be done here since the chart is already responsive
@@ -34,34 +28,32 @@ define(['./lib/plotly.min',], function (Plotly) {
     // Adding/Removing/Updating items
     PlotlyGraphWidget.prototype.addNode = function (desc) {
         if (desc) {
-            this.plotsData[desc.id] = desc;
+            this.plotsData = desc;
             this.refreshChart();
         }
     };
 
     PlotlyGraphWidget.prototype.removeNode = function (id) {
-        delete this.plotsData[id];
+        this.plotsData = null;
         this.refreshChart();
     };
 
     PlotlyGraphWidget.prototype.updateNode = function (desc) {
         if (desc) {
-            this.plotsData[desc.id] = desc;
+            this.plotsData = desc;
             this.refreshChart();
         }
     };
 
     PlotlyGraphWidget.prototype.createOrUpdateChart = function () {
-        if (Object.keys(this.plotsData).length === 0) {
+        if (!this.plotsData) {
             this.deleteChart();
         } else {
-            let plotlyJSON = Object.keys(this.plotsData)
-                .map(id => this.plotsData[id]);
-            if (!this.created && !_.isEmpty(...plotlyJSON)) {
-                Plotly.newPlot(this.$el[0], ...plotlyJSON);
+            if (!this.created && !_.isEmpty(this.plotsData)) {
+                Plotly.newPlot(this.$el[0], this.plotsData);
                 this.created = true;
-            } else if(!_.isEmpty(...plotlyJSON)) {
-                Plotly.react(this.$el[0], ...plotlyJSON);
+            } else if(!_.isEmpty(this.plotsData)) {
+                Plotly.react(this.$el[0], this.plotsData);
             }
         }
     };
@@ -69,7 +61,7 @@ define(['./lib/plotly.min',], function (Plotly) {
     PlotlyGraphWidget.prototype.refreshChart = _.debounce(PlotlyGraphWidget.prototype.createOrUpdateChart, 50);
 
     PlotlyGraphWidget.prototype.deleteChart = function () {
-        this.plotsData = {};
+        this.plotsData = null;
         if (this.created) {
             Plotly.purge(this.$el[0]);
         }

@@ -17,7 +17,7 @@ define([
     'use strict';
 
     function PlotlyGraphPanel(layoutManager, params) {
-        var options = {};
+        let options = {};
         //set properties from options
         options[PanelBaseWithHeader.OPTIONS.LOGGER_INSTANCE_NAME] = 'PlotlyGraphPanel';
         options[PanelBaseWithHeader.OPTIONS.FLOATING_TITLE] = true;
@@ -39,7 +39,7 @@ define([
     _.extend(PlotlyGraphPanel.prototype, IActivePanel.prototype);
 
     PlotlyGraphPanel.prototype._initialize = function () {
-        var self = this;
+        let self = this;
 
         //set Widget title
         this.setTitle('');

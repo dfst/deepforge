@@ -30,7 +30,6 @@ define([
         this._graphsForExecution = {};
         this._graphToExec = {};
         this._pipelineNames = {};
-        this._currentPlotsDataId = null;
         this._plotlyDescExtractor = new PlotlyDescExtractor(this._client);
         this.abbrToId = {};
         this.abbrFor = {};
@@ -45,40 +44,41 @@ define([
     };
 
     ExecutionIndexControl.prototype.setDisplayedExecutions = function (beforeClickIds, afterClickIds) {
-        let addedExecutions = afterClickIds.filter(id => !beforeClickIds.includes(id));
-        let removedExecutions = beforeClickIds.filter(id => !afterClickIds.includes(id));
-        let added = addedExecutions.length > 0;
-        let updatedExecutions = added ? addedExecutions : removedExecutions;
-        this._updateGraphData(...updatedExecutions, added);
+        afterClickIds.filter(id => !beforeClickIds.includes(id))
+            .forEach((id) => this.displayedExecutions[id] = true);
+        beforeClickIds.filter(id => !afterClickIds.includes(id))
+            .forEach((id) => this.displayedExecutions[id] = false);
+        this._updateGraphWidget();
     };
 
-    ExecutionIndexControl.prototype._updateGraphData = function (id, bool) {
-        this.displayedExecutions[id] = bool;
+    ExecutionIndexControl.prototype._updateGraphWidget = function () {
+        const action = this.displayedExecCount() === 0 ? 'addNode' : 'updateNode';
         let displayedGraphExecIds = Object.keys(this.displayedExecutions)
             .filter((id) => !!this.displayedExecutions[id]);
-        if (this._currentPlotsDataId) {
-            this._widget.removeNode(this._currentPlotsDataId);
+        let plotlyJSON = this._consolidateGraphData(displayedGraphExecIds);
+        if (plotlyJSON) {
+            this._widget[action](plotlyJSON);
         }
-        if ( this.displayedExecCount() > 0) {
-            this._consolidateGraphData(displayedGraphExecIds);
+        if (this.displayedExecCount() === 0) {
+            this._widget.removeNode();
         }
     };
 
     ExecutionIndexControl.prototype._consolidateGraphData = function (graphExecIDs) {
         let graphIds = graphExecIDs.map(execId => this._graphsForExecution[execId]);
         let graphDescs = graphIds.map(id => this._getObjectDescriptor(id)).filter(desc => !!desc);
-        if(graphDescs.length > 0){
+        if (graphDescs.length > 0) {
             let consolidatedDesc = this._combineGraphDesc(graphDescs);
-            this._currentPlotsDataId = consolidatedDesc.id;
             let plotlyJSON = this._plotlyDescExtractor.descToPlotlyJSON(consolidatedDesc);
             plotlyJSON.type = 'graph';
-            this._widget.addNode(plotlyJSON);
+            return plotlyJSON;
         }
     };
 
     ExecutionIndexControl.prototype._combineGraphDesc = function (graphDescs) {
         const isMultiGraph = this.displayedExecCount() > 1;
         if (!isMultiGraph) {
+            setDisplayTitle(graphDescs[0]);
             return graphDescs[0];
         } else {
             let consolidatedDesc = null;
@@ -86,13 +86,13 @@ define([
             graphDescs.forEach((desc) => {
                 if (!consolidatedDesc) {
                     consolidatedDesc = JSON.parse(JSON.stringify(desc));
-                    consolidatedDesc.title = consolidatedDesc.title || `Graph`;
+                    setDisplayTitle(consolidatedDesc, true);
                 } else {
+                    setDisplayTitle(desc, true);
                     consolidatedDesc.id += desc.id;
                     consolidatedDesc.execId += ` vs ${desc.execId}`;
-                    consolidatedDesc.graphId += ` vs ${appendStringWithAbbr(desc.execId, desc.abbr)}`;
-                    consolidatedDesc.title +=
-                        ` vs ${appendStringWithAbbr(desc.title || 'Graph', desc.abbr)}`;
+                    consolidatedDesc.graphId += ` vs ${desc.graphId}`;
+                    consolidatedDesc.title += ` vs ${desc.title}`;
                     this._combineSubGraphsDesc(consolidatedDesc, desc.subGraphs, desc.abbr);
                 }
             });
@@ -100,13 +100,20 @@ define([
         }
     };
 
-    ExecutionIndexControl.prototype._combineSubGraphsDesc = function(consolidatedDesc, subGraphs, abbr){
+    ExecutionIndexControl.prototype._combineSubGraphsDesc = function (consolidatedDesc, subGraphs, abbr) {
         let currentSubGraph;
-        for(let i = 0; i < consolidatedDesc.subGraphs.length; i++){
-            if(!subGraphs[i]) break;
+        for (let i = 0; i < consolidatedDesc.subGraphs.length; i++) {
+            if (!subGraphs[i]) break;
+
+            subGraphs[i].abbr = abbr;
+            setDisplayTitle(subGraphs[i], true);
+
             currentSubGraph = consolidatedDesc.subGraphs[i];
-            currentSubGraph.title = currentSubGraph.title || `Subgraph${i+1}`;
-            currentSubGraph.title += ` vs. ${subGraphs[i].title || `Subgraph${i+1}`}`;
+            currentSubGraph.abbr = abbr;
+            setDisplayTitle(currentSubGraph, true);
+            currentSubGraph.title += ` vs. ${subGraphs[i].title}`;
+
+
             subGraphs[i].lines.forEach((line, index) => {
                 let lineClone = JSON.parse(JSON.stringify(line));
                 lineClone.label = (lineClone.label || `line${index}`) + ` (${abbr})`;
@@ -115,14 +122,21 @@ define([
         }
         // Check if there are more subgraphs
         let extraSubGraphIdx = consolidatedDesc.subGraphs.length;
-        while(extraSubGraphIdx < subGraphs.length){
+        while (extraSubGraphIdx < subGraphs.length) {
+            subGraphs[extraSubGraphIdx].abbr = abbr;
+            setDisplayTitle(subGraphs[extraSubGraphIdx], true);
             consolidatedDesc.subGraphs.push(JSON.parse(JSON.stringify(subGraphs[extraSubGraphIdx])));
             extraSubGraphIdx++;
         }
     };
 
-    const appendStringWithAbbr = function (str, abbr) {
-        return `${str} ( ${abbr} )`;
+    const setDisplayTitle = function (desc, includeAbbr = false) {
+        if (!desc.title) {
+            desc.title = desc.type;
+        }
+        if (includeAbbr) {
+            desc.title = `${desc.title} ( ${desc.abbr} )`;
+        }
     };
 
     ExecutionIndexControl.prototype.clearTerritory = function () {
@@ -215,8 +229,7 @@ define([
                 this._pipelineNames[desc.id] = desc.name;
             } else if (type === 'Graph') {
                 desc = this.getGraphDesc(node);
-            }
-            else if (type === 'SubGraph') {
+            } else if (type === 'SubGraph') {
                 const graphNodeId = node.getParentId();
                 let graphNode = this._client.getNode(graphNodeId);
                 desc = this.getGraphDesc(graphNode);
@@ -288,7 +301,7 @@ define([
         } else if (desc.type === 'Pipeline') {
             this.updatePipelineNames(desc);
         } else if (desc.type === 'graph' && this.isGraphDisplayed(desc)) {
-            this._updateGraphData(desc.execId, true);
+            this._updateGraphWidget(desc.execId, true);
         }
     };
 
@@ -297,7 +310,7 @@ define([
         if (desc.type === 'Execution') {
             this._widget.updateNode(desc);
         } else if (desc.type === 'graph' && this.isGraphDisplayed(desc)) {
-            this._updateGraphData(desc.execId, true);
+            this._updateGraphWidget(desc.execId, true);
         } else if (desc.type === 'Pipeline') {
             this.updatePipelineNames(desc);
         }

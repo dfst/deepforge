@@ -92,7 +92,7 @@ define([
 
     /* * * * * * * * Node Event Handling * * * * * * * */
     PlotlyGraphControl.prototype._eventCallback = function (events) {
-        var i = events ? events.length : 0,
+        let i = events ? events.length : 0,
             event;
 
         this._logger.debug('_eventCallback \'' + i + '\' items');
@@ -119,12 +119,12 @@ define([
     };
 
     PlotlyGraphControl.prototype._onLoad = function (gmeId) {
-        var description = this._getObjectDescriptor(gmeId);
+        let description = this._getObjectDescriptor(gmeId);
         this._widget.addNode(description);
     };
 
     PlotlyGraphControl.prototype._onUpdate = function (gmeId) {
-        var description = this._getObjectDescriptor(gmeId);
+        let description = this._getObjectDescriptor(gmeId);
         this._widget.updateNode(description);
     };
 

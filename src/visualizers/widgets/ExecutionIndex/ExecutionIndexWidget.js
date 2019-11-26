@@ -282,7 +282,6 @@ define([
             this.toggleAbbreviations(checked, [id]);
         }
 
-        // this.setExecutionDisplayed([id], checked);
         this.setDisplayedExecutions(checkedExecutionsBeforeClick, checkedExecutionsAfterClick);
     };
 

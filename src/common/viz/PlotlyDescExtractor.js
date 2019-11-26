@@ -17,12 +17,11 @@ define([], function () {
             name: node.getAttribute('name'),
             graphId: node.getAttribute('id'),
             title: node.getAttribute('title'),
-            subGraphs: []
         };
         let subGraphNodeIds = node.getChildrenIds();
-        subGraphNodeIds.forEach((subGraphNodeId) => {
+        desc.subGraphs = subGraphNodeIds.map((subGraphNodeId) => {
             let subGraphNode = this._client.getNode(subGraphNodeId);
-            desc.subGraphs.push(this.getSubGraphDesc(subGraphNode));
+            return this.getSubGraphDesc(subGraphNode);
         });
         desc.subGraphs.sort(this.compareSubgraphIDs);
         return desc;
@@ -47,19 +46,18 @@ define([], function () {
             ylim: node.getAttribute('ylim'),
             xlabel: node.getAttribute('xlabel'),
             ylabel: node.getAttribute('ylabel'),
-            lines: []
         };
 
         const lineIds = node.getChildrenIds();
-        lineIds.forEach((lineId) => {
+        desc.lines = lineIds.map((lineId) => {
             let lineNode = this._client.getNode(lineId);
-            desc.lines.push(this.getLineDesc(lineNode));
+            return this.getLineDesc(lineNode);
         });
         return desc;
     };
 
     PlotlyDescExtractor.prototype.getLineDesc = function (node) {
-        var id = node.getId(),
+        let id = node.getId(),
             subGraphId = node.getParentId(),
             graphId = this._client.getNode(subGraphId).getParentId(),
             jobId = this._client.getNode(graphId).getParentId(),
@@ -70,11 +68,8 @@ define([], function () {
         points = node.getAttribute('points').split(';')
             .filter(data => !!data)  // remove any ''
             .map(pair => {
-                var nums = pair.split(',').map(num => parseFloat(num));
-                return {
-                    x: nums[0],
-                    y: nums[1]
-                };
+                const [x, y] = pair.split(',').map(num => parseFloat(num));
+                return {x, y};
             });
         desc = {
             id: id,
