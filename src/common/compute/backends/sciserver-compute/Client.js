@@ -269,8 +269,8 @@ define([
 
     SciServerClient.STATUSES = [
         ComputeClient.prototype.QUEUED,
-        ComputeClient.prototype.PENDING,
-        ComputeClient.prototype.PENDING,
+        ComputeClient.prototype.QUEUED,
+        ComputeClient.prototype.QUEUED,
         ComputeClient.prototype.RUNNING,
         ComputeClient.prototype.RUNNING,
         ComputeClient.prototype.SUCCESS,
