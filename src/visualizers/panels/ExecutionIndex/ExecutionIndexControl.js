@@ -49,12 +49,11 @@ define([
     };
 
     ExecutionIndexControl.prototype._updateGraphWidget = function () {
-        const action = this.displayedExecCount() === 0 ? 'addNode' : 'updateNode';
-        let plotlyJSON = this._consolidateGraphData(this.displayedExecutions);
-        if (plotlyJSON) {
-            this._widget[action](plotlyJSON);
+        if (this.displayedExecCount() > 0) {
+            const plotlyJSON = this._consolidateGraphData(this.displayedExecutions);
+            this._widget.updateNode(plotlyJSON);
         }
-        if (this.displayedExecCount() === 0) {
+        else {
             this._widget.removeNode();
         }
     };
@@ -73,7 +72,6 @@ define([
     ExecutionIndexControl.prototype._combineGraphDesc = function (graphDescs) {
         const isMultiGraph = this.displayedExecCount() > 1;
         if (!isMultiGraph) {
-            setDisplayTitle(graphDescs[0]);
             return graphDescs[0];
         } else {
             let consolidatedDesc = null;
@@ -81,13 +79,17 @@ define([
             graphDescs.forEach((desc) => {
                 if (!consolidatedDesc) {
                     consolidatedDesc = JSON.parse(JSON.stringify(desc));
-                    setDisplayTitle(consolidatedDesc, true);
+                    consolidatedDesc.subGraphs
+                        .forEach((subGraph) =>{
+                           subGraph.abbr = desc.abbr;
+                           subGraph.title = getDisplayTitle(subGraph, true);
+                        });
+                    consolidatedDesc.title = getDisplayTitle(consolidatedDesc, true);
                 } else {
-                    setDisplayTitle(desc, true);
                     consolidatedDesc.id += desc.id;
                     consolidatedDesc.execId += ` vs ${desc.execId}`;
                     consolidatedDesc.graphId += ` vs ${desc.graphId}`;
-                    consolidatedDesc.title += ` vs ${desc.title}`;
+                    consolidatedDesc.title += ` vs ${ getDisplayTitle(desc, true) }`;
                     this._combineSubGraphsDesc(consolidatedDesc, desc.subGraphs, desc.abbr);
                 }
             });
@@ -99,14 +101,10 @@ define([
         let currentSubGraph;
         for (let i = 0; i < consolidatedDesc.subGraphs.length; i++) {
             if (!subGraphs[i]) break;
+            currentSubGraph = consolidatedDesc.subGraphs[i];
 
             subGraphs[i].abbr = abbr;
-            setDisplayTitle(subGraphs[i], true);
-
-            currentSubGraph = consolidatedDesc.subGraphs[i];
-            currentSubGraph.abbr = abbr;
-            setDisplayTitle(currentSubGraph, true);
-            currentSubGraph.title += ` vs. ${subGraphs[i].title}`;
+            currentSubGraph.title += ` vs. ${getDisplayTitle(subGraphs[i], true)}`;
 
 
             subGraphs[i].lines.forEach((line, index) => {
@@ -119,19 +117,20 @@ define([
         let extraSubGraphIdx = consolidatedDesc.subGraphs.length;
         while (extraSubGraphIdx < subGraphs.length) {
             subGraphs[extraSubGraphIdx].abbr = abbr;
-            setDisplayTitle(subGraphs[extraSubGraphIdx], true);
-            consolidatedDesc.subGraphs.push(JSON.parse(JSON.stringify(subGraphs[extraSubGraphIdx])));
+            const clonedSubgraph = JSON.parse(JSON.stringify(subGraphs[extraSubGraphIdx]));
+            clonedSubgraph.title = getDisplayTitle(clonedSubgraph, true);
+            consolidatedDesc.subGraphs.push(clonedSubgraph);
             extraSubGraphIdx++;
         }
     };
 
-    const setDisplayTitle = function (desc, includeAbbr = false) {
-        if (!desc.title) {
-            desc.title = desc.type;
-        }
+    const getDisplayTitle = function (desc, includeAbbr = false) {
+        let title = desc.title || desc.type;
+
         if (includeAbbr) {
-            desc.title = `${desc.title} ( ${desc.abbr} )`;
+            title = `${title} ( ${desc.abbr} )`;
         }
+        return title;
     };
 
     ExecutionIndexControl.prototype.clearTerritory = function () {
@@ -344,7 +343,7 @@ define([
 
     ExecutionIndexControl.prototype.isGraphDisplayed = function (graph) {
         // lines are only displayed if their execution is checked
-        return this.displayedExecutions.indexOf(graph.execId) !== -1;
+        return this.displayedExecutions.includes(graph.execId);
     };
 
     ExecutionIndexControl.prototype.displayedExecCount = function () {
