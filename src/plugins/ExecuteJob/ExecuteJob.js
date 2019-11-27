@@ -154,7 +154,7 @@ define([
     ExecuteJob.prototype.configureCompute = async function () {
         const config = this.getCurrentConfig();
         const backend = Compute.getBackend(config.compute.id);
-        this.compute = backend.getClient(this.logger, config.compute.config);
+        this.compute = backend.getClient(this.logger, this.blobClient, config.compute.config);
         this.compute.on(
             'data',
             (id, data) => {

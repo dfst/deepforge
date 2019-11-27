@@ -1,7 +1,8 @@
 /* globals define */
 define([], function() {
-    const ComputeClient = function(logger) {
+    const ComputeClient = function(logger, blobClient) {
         this.logger = logger.fork('compute');
+        this.blobClient = blobClient;
         this._events = {};
     };
 

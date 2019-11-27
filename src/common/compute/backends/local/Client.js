@@ -4,7 +4,6 @@ define([
     'common/util/assert',
     '../ComputeClient',
     '../JobResults',
-    'blob/BlobClient',
     'child_process',
     'minimatch',
     'module',
@@ -16,7 +15,6 @@ define([
     assert,
     ComputeClient,
     JobResults,
-    BlobClient,
     childProcess,
     minimatch,
     module,
@@ -47,22 +45,14 @@ define([
     const symlink = promisify(fs.symlink);
     const touch = async name => await closeFile(await openFile(name, 'w'));
 
-    const LocalExecutor = function(/*logger*/) {
+    const LocalExecutor = function() {
         ComputeClient.apply(this, arguments);
 
-        const configPath = path.join(DEEPFORGE_ROOT, 'config');
-        const gmeConfig = require.nodeRequire(configPath);
         this.completedJobs = {};
         this.jobQueue = [];
         this.currentJob = null;
         this.subprocess = null;
         this.canceled = false;
-        this.blobClient = new BlobClient({
-            server: '127.0.0.1',
-            serverPort: gmeConfig.server.port,
-            httpsecure: false,
-            logger: this.logger.fork('BlobClient')
-        });
     };
 
     LocalExecutor.prototype = Object.create(ComputeClient.prototype);
