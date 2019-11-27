@@ -1,4 +1,4 @@
-/*globals define, _*/
+/*globals define, _, $*/
 define(['./lib/plotly.min',], function (Plotly) {
     'use strict';
 
