@@ -3,7 +3,6 @@ define([
     '../ComputeClient',
     '../JobResults',
     'deepforge/storage/index',
-    'blob/BlobClient',
     'common/util/assert',
     'module',
     'path',
@@ -13,7 +12,6 @@ define([
     ComputeClient,
     JobResults,
     Storage,
-    BlobClient,
     assert,
     module,
     path,
@@ -22,23 +20,13 @@ define([
 ) {
     const Headers = fetch.Headers;
     const POLL_INTERVAL = 1000;
-    const DEEPFORGE_ROOT = path.join(path.dirname(module.uri), '..', '..', '..', '..', '..');
-    const GME_CONFIG_PATH = path.join(DEEPFORGE_ROOT, 'config');
-    const SciServerClient = function(logger, config) {
+    const SciServerClient = function(logger, blobClient, config) {
         ComputeClient.apply(this, arguments);
         this.token = config.token;
         this.volume = config.volume;
         this.computeDomain = config.computeDomain;
-
-        const gmeConfig = require.nodeRequire(GME_CONFIG_PATH);
         this.previousJobState = {};
         this.consoleOutputLen = {};
-        this.blobClient = new BlobClient({
-            server: '127.0.0.1',
-            serverPort: gmeConfig.server.port,
-            httpsecure: false,
-            logger: this.logger.fork('BlobClient')
-        });
     };
 
     SciServerClient.prototype = Object.create(ComputeClient.prototype);

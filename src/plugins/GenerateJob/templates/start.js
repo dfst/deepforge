@@ -4,6 +4,8 @@
 //   - receives some commands and uploads intermediate data
 const spawn = require('child_process').spawn;
 const fs = require('fs');
+const {promisify} = require('util');
+const mkdir = promisify(fs.mkdir);
 const rm_rf = require('rimraf');
 const path = require('path');
 const Config = require('./config.json');
@@ -64,27 +66,18 @@ requirejs([
 
 
     var makeIfNeeded = async function(dir) {
-        const deferred = defer();
-
         log(`makeIfNeeded: ${JSON.stringify(dir)}`);
         if (path.dirname(dir) !== dir) {
             await makeIfNeeded(path.dirname(dir));
         }
 
-        fs.lstat(dir, (err, stat) => {
-            if (err || !stat.isDirectory()) {
-                fs.mkdir(dir, err => {
-                    if (err) {
-                        return deferred.reject(err);
-                    }
-                    deferred.resolve();
-                });
-            } else {
-                deferred.resolve();
+        try {
+            await mkdir(dir);
+        } catch (err) {
+            if (err.code !== 'EEXIST') {
+                throw err;
             }
-        });
-
-        return deferred.promise;
+        }
     };
 
     var blobClient = new BlobClient({

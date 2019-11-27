@@ -1,7 +1,6 @@
 /* globals define */
 define([
     '../ComputeClient',
-    'blob/BlobClient',
     '../JobResults',
     './ExecutorHelper',
     'executor/ExecutorClient',
@@ -10,7 +9,6 @@ define([
     'module',
 ], function(
     ComputeClient,
-    BlobClient,
     JobResults,
     ExecutorHelper,
     ExecutorClient,
@@ -29,12 +27,6 @@ define([
             logger: this.logger,
             serverPort: gmeConfig.server.port,
             httpsecure: false
-        });
-        this.blobClient = new BlobClient({
-            server: '127.0.0.1',
-            serverPort: gmeConfig.server.port,
-            httpsecure: false,
-            logger: this.logger.fork('BlobClient')
         });
     };
     GMEExecutor.prototype = Object.create(ComputeClient.prototype);
@@ -117,10 +109,10 @@ define([
     };
 
     GMEExecutor.prototype.checkExecutionEnv = async function () {
-        this.logger.info(`Checking execution environment`);
+        this.logger.info('Checking execution environment');
         const workers = await ExecutorHelper.getWorkers();
         if (workers.length === 0) {
-            this.logger.info(`Cannot execute job(s): No connected workers`);
+            this.logger.info('Cannot execute job(s): No connected workers');
             throw new Error('No connected workers');
         }
     };
