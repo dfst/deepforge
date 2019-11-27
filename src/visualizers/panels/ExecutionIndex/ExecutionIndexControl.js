@@ -52,8 +52,7 @@ define([
         if (this.displayedExecCount() > 0) {
             const plotlyJSON = this._consolidateGraphData(this.displayedExecutions);
             this._widget.updateNode(plotlyJSON);
-        }
-        else {
+        } else {
             this._widget.removeNode();
         }
     };
@@ -79,17 +78,16 @@ define([
             graphDescs.forEach((desc) => {
                 if (!consolidatedDesc) {
                     consolidatedDesc = JSON.parse(JSON.stringify(desc));
-                    consolidatedDesc.subGraphs
-                        .forEach((subGraph) =>{
-                           subGraph.abbr = desc.abbr;
-                           subGraph.title = getDisplayTitle(subGraph, true);
-                        });
+                    consolidatedDesc.subGraphs.forEach((subGraph) =>{
+                        subGraph.abbr = desc.abbr;
+                        subGraph.title = getDisplayTitle(subGraph, true);
+                    });
                     consolidatedDesc.title = getDisplayTitle(consolidatedDesc, true);
                 } else {
                     consolidatedDesc.id += desc.id;
                     consolidatedDesc.execId += ` vs ${desc.execId}`;
                     consolidatedDesc.graphId += ` vs ${desc.graphId}`;
-                    consolidatedDesc.title += ` vs ${ getDisplayTitle(desc, true) }`;
+                    consolidatedDesc.title += ` vs ${getDisplayTitle(desc, true)}`;
                     this._combineSubGraphsDesc(consolidatedDesc, desc.subGraphs, desc.abbr);
                 }
             });
@@ -128,7 +126,7 @@ define([
         let title = desc.title || desc.type;
 
         if (includeAbbr) {
-            title = `${title} ( ${desc.abbr} )`;
+            title = `${title} (${desc.abbr})`;
         }
         return title;
     };
