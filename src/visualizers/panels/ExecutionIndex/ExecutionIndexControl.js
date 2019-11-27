@@ -49,12 +49,9 @@ define([
     };
 
     ExecutionIndexControl.prototype._updateGraphWidget = function () {
-        if (this.displayedExecCount() > 0) {
-            const plotlyJSON = this._consolidateGraphData(this.displayedExecutions);
-            this._widget.updateNode(plotlyJSON);
-        } else {
-            this._widget.removeNode();
-        }
+        const plotlyJSON = this._consolidateGraphData(this.displayedExecutions);
+        if(plotlyJSON) this._widget.updateNode(plotlyJSON);
+        else this._widget.removeNode();
     };
 
     ExecutionIndexControl.prototype._consolidateGraphData = function (graphExecIDs) {
