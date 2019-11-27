@@ -78,7 +78,7 @@ define([
         jobLogger.log('About to save output artifacts.');
         const saveDir = `${this.projectId}/artifacts/`;
         const storage = await this.getStorageClient();
-        jobLogger.append(`Saving output data to ${storage.name}`);
+        jobLogger.append(`Saving output data to ${storage.name}...`);
 
         const createParams = {base: this.META.Data, parent: artifactsDir};
         for (let i = dataNodes.length; i--;) {
@@ -96,7 +96,7 @@ define([
         }
 
         this.logger.info(`Saved ${dataNodes.length} artifacts in ${this.projectId}.`);
-        jobLogger.append(`Saving output data to ${storage.name}`);
+        jobLogger.append(`Saved output data to ${storage.name}`);
     };
 
     // Helper methods

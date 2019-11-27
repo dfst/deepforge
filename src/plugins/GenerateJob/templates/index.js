@@ -1,12 +1,13 @@
 /*globals define*/
 define([
-    'text!./start.ejs',
+    'text!./start.js',
     'text!./main.ejs',
     'text!./deepforge.ejs',
     'text!./backend_deepforge.py',
     'text!./deepforge__init__.py',
     'text!./serialize.ejs',
-    'text!./deserialize.ejs'
+    'text!./deserialize.ejs',
+    'text!./utils.build.js',
 ], function(
     START,
     MAIN,
@@ -14,7 +15,8 @@ define([
     MATPLOTLIB_BACKEND,
     DEEPFORGE_INIT,
     SERIALIZE,
-    DESERIALIZE
+    DESERIALIZE,
+    UTILS,
 ) {
 
     return {
@@ -24,6 +26,7 @@ define([
         DEEPFORGE_SERIALIZATION,
         MATPLOTLIB_BACKEND,
         DEEPFORGE_INIT,
-        DESERIALIZE
+        DESERIALIZE,
+        UTILS,
     };
 });

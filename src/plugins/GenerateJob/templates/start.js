@@ -1,3 +1,4 @@
+/* eslint-disable no-console*/
 // A wrapper for the worker script which:
 //   - merges stdout, stderr
 //   - receives some commands and uploads intermediate data
@@ -5,49 +6,36 @@ const spawn = require('child_process').spawn;
 const fs = require('fs');
 const rm_rf = require('rimraf');
 const path = require('path');
-const COMMAND_PREFIX = '<%= CONSTANTS.START_CMD %>';
-const IMAGE = '<%= CONSTANTS.IMAGE.PREFIX %>';
-const log = console.error;
-const logger = {};
-const StorageInfo = require('./storage-config.json');
+const Config = require('./config.json');
 
 // Create the stderr only logger
+const logger = {};
+const log = console.error;
 ['error', 'warn', 'info', 'log', 'debug'].forEach(method => logger[method] = log);
 logger.fork = () => logger;
 
 let remainingImageCount = 0;
 let exitCode;
 
-const assert = require('assert');
-const cwd = process.cwd();
-
-assert(process.env.DEEPFORGE_ROOT, 'Must have DEEPFORGE_ROOT environment variable set.');
-process.chdir(process.env.DEEPFORGE_ROOT);
-const webgme = require('webgme');
-const gmeConfig = require(process.env.DEEPFORGE_ROOT + '/config');
-webgme.addToRequireJsPaths(gmeConfig);
-process.chdir(cwd);
-
-const requirejs = webgme.requirejs;
-
+const requirejs = require('requirejs');
 requirejs([
-    'q',
-    'blob/BlobClient',
-    'deepforge/storage/index',
+    './utils.build',
 ], function(
-    Q,
-    BlobClient,
-    Storage,
+    Utils,
 ) {
-    var url = process.env.ORIGIN_URL || 'http://127.0.0.1:8888',
-        workerCacheDir = process.env.DEEPFORGE_WORKER_CACHE,
-        protocol = url.split('://').shift(),
-        address,
-        port = (url.split(':') || ['80']).pop();
 
-    process.env.MPLBACKEND = "module://backend_deepforge";
-    address = url.replace(protocol + '://', '')
+    const {BlobClient, Storage, Constants} = Utils;
+    const COMMAND_PREFIX = Constants.START_CMD;
+    const IMAGE = Constants.IMAGE.PREFIX;
+
+    process.env.MPLBACKEND = 'module://backend_deepforge';
+
+    const url = process.env.ORIGIN_URL || 'http://127.0.0.1:8888';
+    const [protocol, , port] = url.split(':');
+    const address = url.replace(protocol + '://', '')
         .replace(':' + port, '');
+
+    let workerCacheDir = process.env.DEEPFORGE_WORKER_CACHE;
 
     // Create workerCacheDir if it doesn't exist
     var prepareCache = async function() {
@@ -71,13 +59,12 @@ requirejs([
 
     var prepareInputsOutputs = function() {
         var dirs = ['artifacts', 'outputs'];
-        return Q.all(dirs.map(dir => makeIfNeeded(dir)));
+        return Promise.all(dirs.map(dir => makeIfNeeded(dir)));
     };
 
 
     var makeIfNeeded = async function(dir) {
-        var deferred = Q.defer(),
-            job;
+        const deferred = defer();
 
         log(`makeIfNeeded: ${JSON.stringify(dir)}`);
         if (path.dirname(dir) !== dir) {
@@ -85,7 +72,6 @@ requirejs([
         }
 
         fs.lstat(dir, (err, stat) => {
-
             if (err || !stat.isDirectory()) {
                 fs.mkdir(dir, err => {
                     if (err) {
@@ -97,6 +83,7 @@ requirejs([
                 deferred.resolve();
             }
         });
+
         return deferred.promise;
     };
 
@@ -138,7 +125,7 @@ requirejs([
                     log('finished uploading ' + filename + ' ' + remainingImageCount + ' remain');
                     checkFinished();
                 })
-                .fail(err => logger.error(`${filename} upload failed: ${err}`));
+                .catch(err => logger.error(`${filename} upload failed: ${err}`));
         });
     };
 
@@ -177,7 +164,7 @@ requirejs([
 
     var getData = async function(ipath, dataInfo) {
         // Download the data and put it in the given path
-        const deferred = Q.defer();
+        const deferred = defer();
         const inputName = ipath.split('/')[1];
         const cachePath = await dataCachePath(dataInfo);
 
@@ -186,13 +173,13 @@ requirejs([
         fs.lstat(cachePath, async (err, cacheStats) => {
             // Check if the data exists in the cache
             if (!err && cacheStats.isFile()) {
-            logger.info(`${inputName} already cached. Skipping retrieval from blob`);
+                logger.info(`${inputName} already cached. Skipping retrieval from blob`);
                 return symlink(cachePath, ipath).then(deferred.resolve);
             }
 
             await createCacheDir(cachePath);
-            const buffer = await Storage.getFile(dataInfo, logger, StorageInfo);
-            fs.writeFile(cachePath, buffer, (err, result) => {
+            const buffer = await Storage.getFile(dataInfo, logger, Config.storageConfigs);
+            fs.writeFile(cachePath, buffer, err => {
                 if (err) {
                     logger.error('Retrieving ' + ipath + ' failed!');
                     return deferred.reject(`Could not write to ${ipath}: ${err}`);
@@ -200,7 +187,7 @@ requirejs([
                 // Create the symlink
                 logger.info('Retrieved ' + ipath);
                 return symlink(cachePath, ipath).then(deferred.resolve);
-            })
+            });
         });
 
         return deferred.promise;
@@ -231,7 +218,7 @@ requirejs([
             if (exitCode !== null) {
                 log(`exiting w/ code ${exitCode}`);
             } else {  // exited involuntarily
-                log(`script exited involuntarily (exit code is null)`);
+                log('script exited involuntarily (exit code is null)');
                 return process.exit(1);
             }
             process.exit(exitCode);
@@ -253,10 +240,9 @@ requirejs([
         cleanup();
     });
 
-    // Request the data from the blob
     prepareCache()
         .then(prepareInputsOutputs)
-        .then(() => Q.all(inputPaths.map(ipath => getData(ipath, inputData[ipath]))))
+        .then(() => Promise.all(inputPaths.map(ipath => getData(ipath, inputData[ipath]))))
         .then(() => {
             // Run 'python main.py' and merge the stdout, stderr
             job = spawn('python', ['main.py'], {detached: true});
@@ -279,14 +265,14 @@ requirejs([
             process.exit(1);
         });
 
-    async function uploadOutputData(code) {
+    async function uploadOutputData(exitCode) {
         if (exitCode === 0) {
             const results = require('./result-types.json');
-            const STORAGE_ID = '<%= storageId %>';
-            const config = StorageInfo[STORAGE_ID];
-            const client = await Storage.getBackend(STORAGE_ID).getClient(logger, config);
+            const storageId = Config.storage.id;
+            const config = Config.storageConfigs[storageId];
+            const client = await Storage.getBackend(storageId).getClient(logger, config);
             const outputNames = Object.keys(results);
-            const storageDir = '<%= storageDir %>';
+            const storageDir = Config.storage.dir;
 
             for (let i = outputNames.length; i--;) {
                 const filename = outputNames[i];
@@ -302,7 +288,7 @@ requirejs([
     }
 
     function symlink(target, src) {
-        var deferred = Q.defer(),
+        var deferred = defer(),
             job;
 
         src = path.resolve(src);
@@ -322,6 +308,14 @@ requirejs([
             deferred.resolve();
         });
         return deferred.promise;
-    };
+    }
 
+    function defer() {
+        const deferred = {};
+        deferred.promise = new Promise((resolve, reject) => {
+            deferred.resolve = resolve;
+            deferred.reject = reject;
+        });
+        return deferred;
+    }
 });

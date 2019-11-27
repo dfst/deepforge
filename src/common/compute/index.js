@@ -1,6 +1,6 @@
 /*globals define, requirejs */
 (function() {
-    const COMPUTE_BACKENDS = ['gme', 'local'];
+    const COMPUTE_BACKENDS = ['gme', 'local', 'sciserver-compute'];
     define([
         'module',
         'deepforge/compute/backends/ComputeBackend',
