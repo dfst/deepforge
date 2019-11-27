@@ -267,6 +267,9 @@ class FigureCanvasTemplate(FigureCanvasBase):
             axes_data['xlim'] = axes.get_xlim()
             axes_data['ylim'] = axes.get_ylim()
             axes_data['lines'] = []
+            axes_data['images'] = []
+
+            # Line Data
             for i, line in enumerate(axes.lines):
                 lineDict = {}
                 lineDict['points'] = line.get_xydata().tolist()
@@ -280,6 +283,18 @@ class FigureCanvasTemplate(FigureCanvasBase):
                     lineDict['label'] = line.get_label()
 
                 axes_data['lines'].append(lineDict)
+
+            # Image data
+            for i, image in enumerate(axes.images):
+                imageDict = {}
+                properties_dict = image.properties()
+                imageDict['height'] = properties_dict['size'][0]
+                imageDict['width'] = properties_dict['size'][1]
+                imageDict['visible'] = properties_dict['visible']
+                imageDict['rgbaMatrix'] = properties_dict['array'].data.tolist()
+
+                axes_data['images'].append(imageDict)
+
             state['axes'].append(axes_data)
         return state
 
