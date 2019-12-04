@@ -3,65 +3,67 @@
 
 describe('ExecutePipeline', function () {
     this.timeout(5000);
-    var testFixture = require('../../../globals'),
-        path = testFixture.path,
-        gmeConfig = testFixture.getGmeConfig(),
-        expect = testFixture.expect,
-        Q = testFixture.Q,
-        PULSE = require('../../../../src/common/Constants').PULSE,
-        logger = testFixture.logger.fork('ExecutePipeline'),
-        PluginCliManager = testFixture.WebGME.PluginCliManager,
-        manager = new PluginCliManager(null, logger, gmeConfig),
-        projectName = 'testProject',
-        pluginName = 'ExecutePipeline',
-        project,
+    const {promisify} = require('util');
+    const testFixture = require('../../../globals');
+    const {path, expect} = testFixture;
+    const gmeConfig = testFixture.getGmeConfig();
+    const PULSE = require('../../../../src/common/Constants').PULSE;
+    const logger = testFixture.logger.fork('ExecutePipeline');
+    const PluginNodeManager = require('webgme-engine/src/plugin/nodemanager');
+    const manager = new PluginNodeManager(null, null, logger, gmeConfig);
+    const assert = require('assert');
+
+    const projectName = 'testProject';
+    const pluginName = 'ExecutePipeline';
+    let project,
         gmeAuth,
         storage,
         plugin,
         node,
-        //server,
         commitHash,
-        nopPromise = () => {
-            return Q();
+        nopPromise = () => Promise.resolve();
+
+    manager.executePlugin = promisify(manager.executePlugin);
+    manager.runPluginMain = promisify(manager.runPluginMain);
+
+    const Pipeline = {};
+    Pipeline.HelloWorld = '/f/h';
+    Pipeline.SimpleIO = '/f/x';
+    Pipeline.ComplexPipeline = '/f/3';
+    Pipeline.ExportPlugin = '/f/s';
+
+    const server = new testFixture.WebGME.standaloneServer(gmeConfig);
+    server.start = promisify(server.start);
+    server.stop = promisify(server.stop);
+
+    before(async function () {
+        gmeAuth = await testFixture.clearDBAndGetGMEAuth(gmeConfig, projectName);
+        // This uses in memory storage. Use testFixture.getMongoStorage to persist test to database.
+        storage = testFixture.getMemoryStorage(logger, gmeConfig, gmeAuth);
+        await storage.openDatabase();
+        const importParam = {
+            projectSeed: path.join(testFixture.DF_SEED_DIR, 'devProject', 'devProject.webgmex'),
+            projectName: projectName,
+            branchName: 'master',
+            logger: logger,
+            gmeConfig: gmeConfig
         };
 
-    before(function (done) {
-        testFixture.clearDBAndGetGMEAuth(gmeConfig, projectName)
-            .then(function (gmeAuth_) {
-                gmeAuth = gmeAuth_;
-                // This uses in memory storage. Use testFixture.getMongoStorage to persist test to database.
-                storage = testFixture.getMemoryStorage(logger, gmeConfig, gmeAuth);
-                return storage.openDatabase();
-            })
-            .then(function () {
-                var importParam = {
-                    projectSeed: path.join(testFixture.DF_SEED_DIR, 'devProject', 'devProject.webgmex'),
-                    projectName: projectName,
-                    branchName: 'master',
-                    logger: logger,
-                    gmeConfig: gmeConfig
-                };
+        const result = await testFixture.importProject(storage, importParam);
+        project = result.project;
+        commitHash = result.commitHash;
 
-                return testFixture.importProject(storage, importParam);
-            })
-            .then(function (importResult) {
-                project = importResult.project;
-                commitHash = importResult.commitHash;
-                return project.createBranch('test', commitHash);
-            })
-            .nodeify(done);
+        await project.createBranch('test', commitHash);
+        await server.start();
     });
 
-    after(function (done) {
-        //server.kill('SIGINT');  // not killing process...
-        storage.closeDatabase()
-            .then(function () {
-                return gmeAuth.unload();
-            })
-            .nodeify(done);
+    after(async function () {
+        await storage.closeDatabase();
+        await gmeAuth.unload();
+        await server.stop();
     });
 
-    it.skip('should execute single job', function (done) {
+    it.skip('should execute single job', async function () {
         const config = {compute: {id: 'gme'}};
         const context = {
             project: project,
@@ -71,20 +73,15 @@ describe('ExecutePipeline', function () {
             activeNode: '/f/5'
         };
 
-        manager.executePlugin(pluginName, config, context, function (err, pluginResult) {
-            expect(err).to.equal(null);
-            expect(typeof pluginResult).to.equal('object');
-            expect(pluginResult.success).to.equal(true);
+        const pluginResult = await manager.executePlugin(pluginName, config, context);
+        expect(typeof pluginResult).to.equal('object');
+        expect(pluginResult.success).to.equal(true);
 
-            project.getBranchHash('test')
-                .then(function (branchHash) {
-                    expect(branchHash).to.not.equal(commitHash);
-                })
-                .nodeify(done);
-        });
+        const branchHash = await project.getBranchHash('test');
+        expect(branchHash).to.not.equal(commitHash);
     });
 
-    it.skip('should run plugin w/ references', function (done) {
+    it.skip('should run plugin w/ references', async function () {
         var pluginConfig = {},
             context = {
                 project: project,
@@ -94,43 +91,29 @@ describe('ExecutePipeline', function () {
                 activeNode: '/f/G'
             };
 
-        manager.executePlugin(pluginName, pluginConfig, context, function (err, pluginResult) {
-            expect(err).to.equal(null);
-            expect(typeof pluginResult).to.equal('object');
-            expect(pluginResult.success).to.equal(true);
+        const pluginResult = await manager.executePlugin(pluginName, pluginConfig, context);
+        expect(typeof pluginResult).to.equal('object');
+        expect(pluginResult.success).to.equal(true);
 
-            project.getBranchHash('test')
-                .then(function (branchHash) {
-                    expect(branchHash).to.not.equal(commitHash);
-                })
-                .nodeify(done);
-        });
+        const branchHash = await project.getBranchHash('test');
+        expect(branchHash).to.not.equal(commitHash);
     });
 
-    var preparePlugin = function(done) {
-        const config = {compute: {id: 'gme'}};
-        const context = {
-            project: project,
-            commitHash: commitHash,
-            namespace: 'pipeline',
-            branchName: 'test',
-            activeNode: '/K/2'  // hello world job's execution
-        };
-
-        return manager.initializePlugin(pluginName)
-            .then(plugin_ => {
-                plugin = plugin_;
-                plugin.checkExecutionEnv = () => Q();
-                plugin.startExecHeartBeat = () => {};
-                plugin.executionId = Promise.resolve('some_execution_id');
-                return manager.configurePlugin(plugin, config, context);
-            })
-            .then(() => node = plugin.activeNode)
-            .nodeify(done);
-    };
-
     describe('resuming tests', function() {
-        beforeEach(preparePlugin);
+        let plugin;
+        const config = {compute: {id: 'gme'}};
+        let context = null;
+
+        beforeEach(async () => {
+            context = {
+                project: project,
+                commitHash: commitHash,
+                namespace: 'pipeline',
+                branchName: 'test',
+                activeNode: '/K/2'  // hello world job's execution
+            };
+            plugin = await preparePlugin(config, context);
+        });
 
         it('should record origin on start', function (done) {
             // Verify that the origin is recorded...
@@ -139,11 +122,11 @@ describe('ExecutePipeline', function () {
         });
 
         it('should update recorded origin on fork', function (done) {
-            var forkName = 'hello';
+            const forkName = 'hello';
             plugin.currentRunId = 'asdfa';
             plugin.originManager.fork = (hash, name) => {
-                expect(hash).to.equal(plugin.currentRunId);
-                expect(name).to.equal(forkName);
+                assert.equal(hash, plugin.currentRunId);
+                assert.equal(name, forkName);
                 done();
             };
             plugin.onSaveForked(forkName);
@@ -161,10 +144,9 @@ describe('ExecutePipeline', function () {
             //  - Should call 'resumeJob' or 'executeJob'
             //  - should return origin branch
             plugin.prepare = nopPromise;
-            plugin.pulseClient.check = () => Q().then(() => pulse);
-            plugin.originManager.getOrigin = () => Q().then(() => {
-                return originBranch && {branch: originBranch};
-            });
+            plugin.pulseClient.check = () => Promise.resolve(pulse);
+            plugin.originManager.getOrigin = () =>
+                Promise.resolve(originBranch && {branch: originBranch});
 
             plugin.pulseClient.update = nopPromise;
             plugin.resumePipeline = () => done(shouldResume ? null : 'Should not resume pipeline!');
@@ -203,4 +185,27 @@ describe('ExecutePipeline', function () {
             });
         });
     });
+
+    async function preparePlugin(config, context) {
+        plugin = await manager.initializePlugin(pluginName);
+        await manager.configurePlugin(plugin, config, context);
+
+        plugin.logManager = new LogManager();
+        plugin.originManager.record =
+        plugin.checkExecutionEnv = nopPromise;
+        plugin.updateExecHeartBeat = () => {};
+        plugin.executionId = Promise.resolve('some_execution_id');
+
+        node = plugin.activeNode;
+        return plugin;
+    }
+
+    function LogManager() {
+    }
+
+    LogManager.prototype.getMetadata =
+    LogManager.prototype.deleteLog =
+    LogManager.prototype.appendTo =
+    LogManager.prototype.getLog =
+    LogManager.prototype.fork = () => {};
 });
