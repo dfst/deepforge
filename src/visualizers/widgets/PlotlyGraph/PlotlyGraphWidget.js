@@ -13,7 +13,7 @@ define(['./lib/plotly.min',], function (Plotly) {
             .css({
                 'margin-top': this.$el.height() / 2
             });
-
+        this.$el.append(this.$defaultTextDiv);
         this.$el.css('overflow', 'auto');
         this.$el.addClass(WIDGET_CLASS);
         this.nodes = {};
@@ -21,7 +21,7 @@ define(['./lib/plotly.min',], function (Plotly) {
         this.layout = {};
         this.created = false;
         this.logger.debug('ctor finished');
-        this.toggleText();
+        this.setTextVisibility();
     }
 
     PlotlyGraphWidget.prototype.onWidgetContainerResize = function (width, height) {
@@ -40,6 +40,7 @@ define(['./lib/plotly.min',], function (Plotly) {
     PlotlyGraphWidget.prototype.addNode = function (desc) {
         if (desc) {
             this.plotlyJSON = desc;
+            this.setTextVisibility(false);
             this.refreshChart();
         }
     };
@@ -47,11 +48,13 @@ define(['./lib/plotly.min',], function (Plotly) {
     PlotlyGraphWidget.prototype.removeNode = function () {
         this.plotlyJSON = null;
         this.refreshChart();
+        this.setTextVisibility();
     };
 
     PlotlyGraphWidget.prototype.updateNode = function (desc) {
         if (desc) {
             this.plotlyJSON = desc;
+            this.setTextVisibility(false);
             this.refreshChart();
         }
     };
@@ -61,7 +64,6 @@ define(['./lib/plotly.min',], function (Plotly) {
             this.deleteChart();
         } else {
             if (!this.created && !_.isEmpty(this.plotlyJSON)) {
-                this.toggleText(false);
                 Plotly.newPlot(this.$el[0], this.plotlyJSON);
                 this.created = true;
             } else if (!_.isEmpty(this.plotlyJSON)) {
@@ -76,14 +78,13 @@ define(['./lib/plotly.min',], function (Plotly) {
         this.plotlyJSON = null;
         if (this.created) {
             Plotly.purge(this.$el[0]);
-            this.toggleText();
         }
         this.created = false;
     };
 
-    PlotlyGraphWidget.prototype.toggleText = function (append = true) {
-        if (append) this.$el.append(this.$defaultTextDiv);
-        else this.$defaultTextDiv.remove();
+    PlotlyGraphWidget.prototype.setTextVisibility = function (display = true) {
+        display = display ? 'block' : 'none';
+        this.$defaultTextDiv.css('display', display);
     };
     /* * * * * * * * Visualizer life cycle callbacks * * * * * * * */
     PlotlyGraphWidget.prototype.destroy = function () {
