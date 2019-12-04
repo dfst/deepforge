@@ -69,10 +69,6 @@ define([
         return contents[fileName] && contents[fileName].content;
     };
 
-    GMEExecutor.prototype.getDebugFilesHash = async function(job) {
-        return await this._getResultHash(job, 'debug-files');
-    };
-
     GMEExecutor.prototype.getStatus = async function(job) {
         const info = await this.executor.getInfo(job.hash);
         return this.getJobResultsFrom(info).status;

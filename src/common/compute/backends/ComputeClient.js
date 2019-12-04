@@ -18,10 +18,6 @@ define([], function() {
         unimplemented(this.logger, 'getStatus');
     };
 
-    ComputeClient.prototype.getDebugFilesHash = async function(/*jobInfo*/) {
-        unimplemented(this.logger, 'getDebugFilesHash');
-    };
-
     ComputeClient.prototype.getResultsInfo = async function(/*jobInfo*/) {
         unimplemented(this.logger, 'getResultsInfo');
     };

@@ -460,6 +460,8 @@ define([
         this._execHashToJobNode[hash] = job;
         const jobInfo = await this.compute.createJob(hash);
         this.core.setAttribute(job, 'jobInfo', JSON.stringify(jobInfo));
+        this.core.setAttribute(job, 'execFiles', hash);
+
         if (!this.currentRunId) {
             this.currentRunId = jobInfo.hash;
         }
@@ -596,10 +598,6 @@ define([
         }
 
         if (status === this.compute.SUCCESS || status === this.compute.FAILED) {
-            const execFilesHash = await this.compute.getDebugFilesHash(jobInfo);
-            assert(execFilesHash !== undefined, `Debug files not found for ${name}`);
-            this.core.setAttribute(job, 'execFiles', execFilesHash);
-
             const opName = this.core.getAttribute(op, 'name');
             const stdout = await this.compute.getConsoleOutput(jobInfo);
             const result = this.processStdout(job, stdout);
