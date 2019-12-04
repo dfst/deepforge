@@ -80,9 +80,6 @@ describe('Pipeline execution', function () {
             const config = StorageConfigs['sciserver-files'];
             const client = await Storage.getClient('sciserver-files', logger, config);
             const nop = () => {};
-            //await client.deleteDir('execution-files')
-                //.catch(nop)
-                //.then(() => client.deleteDir(project.projectId))
             await client.deleteDir(project.projectId)
                 .catch(nop);
         });
