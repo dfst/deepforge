@@ -317,6 +317,7 @@ define([
                 dir: storageDir,
             },
             storageConfigs: this.getAllStorageConfigs(),
+            HOST: process.env.DEEPFORGE_HOST || '',
         };
         files.addFile('config.json', JSON.stringify(configs));
         files.addFile('start.js', Templates.START);
