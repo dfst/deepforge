@@ -23,6 +23,7 @@ define([
     os,
     path,
 ) {
+    const STDOUT_FILE = 'stdout.txt';
     const spawn = childProcess.spawn;
     const {promisify} = require.nodeRequire('util');
     const mkdir = promisify(fs.mkdir);
@@ -48,7 +49,6 @@ define([
     const LocalExecutor = function() {
         ComputeClient.apply(this, arguments);
 
-        this.completedJobs = {};
         this.jobQueue = [];
         this.currentJob = null;
         this.subprocess = null;
@@ -76,56 +76,36 @@ define([
             return this.RUNNING;
         } else if (this.jobQueue.includes(hash)) {
             return this.QUEUED;
-        } else if (this.completedJobs[hash]) {
-            return this.completedJobs[hash].status;
         } else {
-            throw new Error('Job Not Found');
+            return await this._getJobFile(hash, 'status.txt', 'Job Not Found');
         }
     };
 
     LocalExecutor.prototype.getConsoleOutput = async function(job) {
-        const status = this.getStatus(job);
-        const isComplete = this.isFinishedStatus(status);
-
-        if (isComplete) {
-            const mdHash = (await this._getOutputHashes(job)).stdout;
-            const hash = await this._getContentHash(mdHash, 'job_stdout.txt');
-            assert(hash, 'Console output data not found.');
-            return await this.blobClient.getObjectAsString(hash);
-        } else {
-            const {hash} = job;
-            const filename = path.join(this._getWorkingDir(hash), 'job_stdout.txt');
-            return await readFile(filename, 'utf8');
-        }
+        const msg = 'Console output data not found.';
+        return await this._getJobFile(job.hash, STDOUT_FILE, msg);
     };
 
     LocalExecutor.prototype.getResultsInfo = async function(job) {
-        const mdHash = (await this._getOutputHashes(job)).results;
-        const hash = await this._getContentHash(mdHash, 'results.json');
-        assert(hash, 'Metadata about result types not found.');
-        return await this.blobClient.getObjectAsJSON(hash);
+        const msg = 'Metadata about result types not found.';
+        const resultsTxt = await this._getJobFile(job.hash, 'results.json', msg);
+        return JSON.parse(resultsTxt);
     };
 
-    LocalExecutor.prototype._getContentHash = async function (artifactHash, fileName) {
-        const artifact = await this.blobClient.getArtifact(artifactHash);
-        const contents = artifact.descriptor.content;
-
-        return contents[fileName] && contents[fileName].content;
+    LocalExecutor.prototype._getJobFile = async function(hash, name, notFoundMsg) {
+        const filename = path.join(this._getWorkingDir(hash), name);
+        try {
+            return await readFile(filename, 'utf8');
+        } catch (err) {
+            if (err.code === 'ENOENT') {
+                throw new Error(notFoundMsg);
+            }
+            throw err;
+        }
     };
 
     LocalExecutor.prototype.getDebugFilesHash = async function(job) {
-        const hashes = await this._getOutputHashes(job);
-        return hashes['debug-files'];
-    };
-
-    LocalExecutor.prototype._getOutputHashes = async function(jobInfo) {
-        const {hash} = jobInfo;
-
-        if (this.completedJobs[hash]) {
-            return this.completedJobs[hash].resultHashes;
-        } else {
-            throw new Error(`Job Not Found: ${hash}`);
-        }
+        return job.hash;
     };
 
     LocalExecutor.prototype.createJob = async function(hash) {
@@ -135,15 +115,27 @@ define([
         return {hash};
     };
 
-    LocalExecutor.prototype._onJobCompleted = function(hash, jobResults) {
+    LocalExecutor.prototype._onJobCompleted = async function(hash, jobResults) {
         if (hash === this.currentJob) {
             this.currentJob = null;
         }
 
-        this.completedJobs[hash] = jobResults;
+        const tmpdir = this._getWorkingDir(hash);
+        //await this._cleanDirectory(tmpdir);
+        await writeFile(path.join(tmpdir, 'status.txt'), jobResults.status);
+
         this.emit('update', hash, jobResults.status);
         this.emit('end', hash, jobResults);
         this._processNextJob();
+    };
+
+    LocalExecutor.prototype._cleanDirectory = async function(workdir) {
+        const SKIP_FILES = ['results.json', STDOUT_FILE];
+        const files = (await readdir(workdir))
+            .filter(name => !SKIP_FILES.includes(name))
+            .map(name => path.join(workdir, name));
+
+        return Promise.all(files.map(file => rm_rf(file)));
     };
 
     LocalExecutor.prototype._processNextJob = function() {
@@ -160,7 +152,6 @@ define([
     };
 
     LocalExecutor.prototype._createJob = async function(hash) {
-        // Create tmp directory
         const jobInfo = {hash};
         this.emit('update', jobInfo.hash, this.PENDING);
         const tmpdir = this._getWorkingDir(hash);
@@ -182,9 +173,11 @@ define([
         // Spin up a subprocess
         const config = JSON.parse(await readFile(tmpdir.replace(path.sep, '/') + '/executor_config.json', 'utf8'));
 
+        const env = process.env;
+        env.DEEPFORGE_ROOT = DEEPFORGE_ROOT;
         const options = {
             cwd: tmpdir,
-            env: {DEEPFORGE_ROOT}
+            env,
         };
         this.logger.info(`Running ${config.cmd} ${config.args.join(' ')}`);
         this.subprocess = spawn(config.cmd, config.args, options);
@@ -199,13 +192,12 @@ define([
             const jobResults = new JobResults(status);
             this.canceled = false;
 
-            await this._uploadResults(jobResults, tmpdir, config);
             this._onJobCompleted(hash, jobResults);
         });
     };
 
     LocalExecutor.prototype.onConsoleOutput = async function(workdir, hash, data) {
-        const filename = path.join(workdir, 'job_stdout.txt');
+        const filename = path.join(workdir, STDOUT_FILE);
         appendFile(filename, data);
         this.emit('data', hash, data);
     };
@@ -232,146 +224,6 @@ define([
         return files;
     };
 
-    LocalExecutor.prototype._uploadResults = async function(jobInfo, directory, executorConfig) {
-        var self = this,
-            i,
-            jointArtifact = self.blobClient.createArtifact('jobInfo_resultSuperSetHash'),
-            resultsArtifacts = [],
-            afterWalk,
-            archiveFile,
-            afterAllFilesArchived,
-            addObjectHashesAndSaveArtifact;
-
-        jobInfo.resultHashes = {};
-
-        for (i = 0; i < executorConfig.resultArtifacts.length; i += 1) {
-            resultsArtifacts.push(
-                {
-                    name: executorConfig.resultArtifacts[i].name,
-                    artifact: self.blobClient.createArtifact(executorConfig.resultArtifacts[i].name),
-                    patterns: executorConfig.resultArtifacts[i].resultPatterns instanceof Array ?
-                        executorConfig.resultArtifacts[i].resultPatterns : [],
-                    files: {}
-                }
-            );
-        }
-
-        afterWalk = function (filesToArchive) {
-            if (filesToArchive.length === 0) {
-                self.logger.info(jobInfo.hash + ' There were no files to archive..');
-            }
-
-            return Promise.all(filesToArchive.map(f => archiveFile(f.filename, f.filePath)));
-        };
-
-        archiveFile = promisify(function (filename, filePath, callback) {
-            var archiveData = function (err, data) {
-                jointArtifact.addFileAsSoftLink(filename, data, function (err, hash) {
-                    var j;
-                    if (err) {
-                        self.logger.error(jobInfo.hash + ' Failed to archive as "' + filename + '" from "' +
-                            filePath + '", err: ' + err);
-                        self.logger.error(err);
-                        callback(new Error('FAILED_TO_ARCHIVE_FILE'));
-                    } else {
-                        // Add the file-hash to the results artifacts containing the filename.
-                        for (j = 0; j < resultsArtifacts.length; j += 1) {
-                            if (resultsArtifacts[j].files[filename] === true) {
-                                resultsArtifacts[j].files[filename] = hash;
-                            }
-                        }
-                        callback(null);
-                    }
-                });
-            };
-
-            if (typeof File === 'undefined') { // nodejs doesn't have File
-                fs.readFile(filePath, function (err, data) {
-                    if (err) {
-                        self.logger.error(jobInfo.hash + ' Failed to archive as "' + filename + '" from "' + filePath +
-                            '", err: ' + err);
-                        return callback(new Error('FAILED_TO_ARCHIVE_FILE'));
-                    }
-                    archiveData(null, data);
-                });
-            } else {
-                archiveData(null, new File(filePath, filename));
-            }
-        });
-
-        afterAllFilesArchived = async function () {
-            let resultHash = null;
-            try {
-                resultHash = await jointArtifact.save();
-            } catch (err) {
-                this.logger.warn(`Failed to save joint artifact: ${err} (${jobInfo.hash})`);
-                throw new Error('FAILED_TO_SAVE_JOINT_ARTIFACT');
-            }
-
-            try {
-                await rm_rf(directory);
-            } catch (err) {
-                self.logger.error('Could not delete executor-temp file, err: ' + err);
-            }
-            jobInfo.resultSuperSetHash = resultHash;
-            return Promise.all(resultsArtifacts.map(r => addObjectHashesAndSaveArtifact(r)));
-        };
-
-        addObjectHashesAndSaveArtifact = promisify(function (resultArtifact, callback) {
-            resultArtifact.artifact.addMetadataHashes(resultArtifact.files, function (err/*, hashes*/) {
-                if (err) {
-                    self.logger.error(jobInfo.hash + ' ' + err);
-                    return callback('FAILED_TO_ADD_OBJECT_HASHES');
-                }
-                resultArtifact.artifact.save(function (err, resultHash) {
-                    if (err) {
-                        self.logger.error(jobInfo.hash + ' ' + err);
-                        return callback('FAILED_TO_SAVE_ARTIFACT');
-                    }
-                    jobInfo.resultHashes[resultArtifact.name] = resultHash;
-                    callback(null);
-                });
-            });
-        });
-
-        const allFiles = await this._getAllFiles(directory);
-
-        const filesToArchive = [];
-        let archive,
-            filename,
-            matched;
-
-        for (let i = 0; i < allFiles.length; i += 1) {
-            filename = path.relative(directory, allFiles[i]).replace(/\\/g, '/');
-            archive = false;
-            for (let a = 0; a < resultsArtifacts.length; a += 1) {
-                if (resultsArtifacts[a].patterns.length === 0) {
-                    resultsArtifacts[a].files[filename] = true;
-                    archive = true;
-                } else {
-                    for (let j = 0; j < resultsArtifacts[a].patterns.length; j += 1) {
-                        matched = minimatch(filename, resultsArtifacts[a].patterns[j]);
-                        if (matched) {
-                            resultsArtifacts[a].files[filename] = true;
-                            archive = true;
-                            break;
-                        }
-                    }
-                }
-            }
-            if (archive) {
-                filesToArchive.push({filename: filename, filePath: allFiles[i]});
-            }
-        }
-
-        try {
-            await afterWalk(filesToArchive);
-            return await afterAllFilesArchived();
-        } catch (err) {
-            jobInfo.status = err.message;
-        }
-    };
-
     LocalExecutor.prototype.prepareWorkspace = async function(hash, dirname) {
         this.logger.info('about to fetch job data');
         const content = new Buffer(new Uint8Array(await this.blobClient.getObject(hash)));  // TODO: Handle errors...
@@ -386,7 +238,7 @@ define([
         await symlink(NODE_MODULES, path.join(dirname, 'node_modules'));
 
         // Prepare for the stdout
-        await touch(path.join(dirname, 'job_stdout.txt'));
+        await touch(path.join(dirname, STDOUT_FILE));
     };
 
     async function unzip(filename, dirname) {
