@@ -104,10 +104,6 @@ define([
         }
     };
 
-    LocalExecutor.prototype.getDebugFilesHash = async function(job) {
-        return job.hash;
-    };
-
     LocalExecutor.prototype.createJob = async function(hash) {
         this.jobQueue.push(hash);
         this._processNextJob();
