@@ -3,7 +3,7 @@ services: mongodb
 addons:
     chrome: beta
 sudo: false
-script: npm run test-unit
+script: npm test
 before_install: if [[ `npm -v` != 6* ]]; then npm i -g npm@6; fi
 node_js:
   - "8"
