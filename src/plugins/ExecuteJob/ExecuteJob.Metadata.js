@@ -13,14 +13,27 @@ define([
         this.createdMetadataIds = {};
         this.subGraphs = {};
         this.plotLines = {};
+        this.images = {};
+    };
+
+    ExecuteJob.prototype.SEPARATORS = {
+        JOB_GRAPH: '/',
+        GRAPH_SUBGRAPH: '/',
+        SUBGRAPH_LINE: '/L',
+        SUBGRAPH_IMAGE: '/I'
+    };
+
+    ExecuteJob.prototype.createId = function (parentId, childRelID, sep) {
+        return parentId + sep +childRelID;
     };
 
     // TODO: Add tests
+    // TODO: Refactor this into three different functions
     ExecuteJob.prototype[CONSTANTS.PLOT_UPDATE] = async function (job, state) {
         const jobId = this.core.getPath(job);
         // Check if the graph already exists
         // use the id to look up the graph
-        let id = jobId + '/' + state.id;
+        let id = this.createId(jobId, state.id, this.SEPARATORS.JOB_GRAPH);
         let graph = this.getExistingMetadataById(job, 'Graph', id);
         if (!graph) {
             graph = this.core.createNode({
@@ -44,7 +57,7 @@ define([
         const axeses = state.axes;
         this.subGraphs[id] = [];
         axeses.forEach((axes, index) => {
-            const axesId = id + '/' + index;
+            const axesId = this.createId(id, index, this.SEPARATORS.GRAPH_SUBGRAPH);
             let axesNode = this.getExistingMetadataById(job, 'SubGraph', axesId);
             if (!axesNode) {
                 axesNode = this.core.createNode({
@@ -64,7 +77,7 @@ define([
                 const lines = axes.lines;
                 this.plotLines[axesId] = [];
                 lines.forEach((line, index) => {
-                    const lineId = axesId + '/' + index;
+                    const lineId = this.createId(axesId, index, this.SEPARATORS.SUBGRAPH_LINE);
                     let lineNode = this.getExistingMetadataById(job, 'Line', lineId);
                     if (!lineNode) {
                         lineNode = this.core.createNode({
@@ -82,6 +95,28 @@ define([
                     }
                     this._metadata[lineId] = lineNode;
                 });
+
+                const images = axes.images;
+                this.images[axesId] = [];
+                images.forEach((image, index) => {
+                    const imageId = this.createId(axesId, index, this.SEPARATORS.SUBGRAPH_IMAGE);
+                    let imageNode = this.getExistingMetadataById(job, 'Line', imageId);
+                    if(!imageNode) {
+                        imageNode = this.core.createNode({
+                            parent: axesNode,
+                            base: this.META.Image
+                        });
+                        this.logger.debug(`Created Image Node with id ${imageId}`);
+                        this.images[axesId].push(imageNode);
+                        this.core.setAttribute(imageNode, 'rgbaMatrix', image.rgbaMatrix);
+                        this.core.setAttribute(imageNode, 'height', image.height);
+                        this.core.setAttribute(imageNode, 'width', image.width);
+                        this.core.setAttribute(imageNode, 'visible', image.visible);
+                        this.core.setAttribute(imageNode, 'numChannels', image.numChannels);
+                    }
+                    this._metadata[imageId] = imageNode;
+                });
+
                 this._metadata[axesId] = axesNode;
             }
         });
@@ -196,7 +231,8 @@ define([
 
         if (!this.isLocalOperation(node)) {
             // Remove created nodes left over from resumed job
-            this.createdMetadataIds[nodeId].forEach(id => delete this._markForDeletion[nodeId][id]);
+            const createdMetadataIds = this.createdMetadataIds[nodeId] || [];
+            createdMetadataIds.forEach(id => delete this._markForDeletion[nodeId][id]);
             const nodeIds = Object.keys(this._markForDeletion[nodeId]);
             this.logger.debug(`About to delete ${nodeIds.length}: ${nodeIds.join(', ')}`);
             for (var i = nodeIds.length; i--;) {

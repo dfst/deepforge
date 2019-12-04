@@ -66,6 +66,9 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 import six
+import base64
+
+import numpy as np
 
 from matplotlib._pylab_helpers import Gcf
 from matplotlib.backend_bases import (
@@ -291,12 +294,28 @@ class FigureCanvasTemplate(FigureCanvasBase):
                 imageDict['height'] = properties_dict['size'][0]
                 imageDict['width'] = properties_dict['size'][1]
                 imageDict['visible'] = properties_dict['visible']
-                imageDict['rgbaMatrix'] = properties_dict['array'].data.tolist()
+                (imageDict['rgbaMatrix'], imageDict['numChannels']) = self.umask_b64_encode(properties_dict['array'])
 
                 axes_data['images'].append(imageDict)
 
             state['axes'].append(axes_data)
         return state
+
+    def umask_b64_encode(self, masked_array):
+        # Unmask invalid data if present
+        if masked_array.mask:
+            masked_array.fill_value = 0
+        image_array = masked_array.filled()
+        if np.all(np.where(image_array <= 1, True, False)):
+            array = (image_array * 255).astype(np.uint8)
+        else:
+            array = image_array.astype(np.uint8)
+        if not array.flags['C_CONTIGUOUS']:  # Needed for base64 encoding
+            array = array.copy(order='c')
+        if len(array.shape) == 2:  # In Case a grayscale Image
+            array = np.stack((array, array, array), axis=-1)
+        encoded_array = base64.b64encode(array)
+        return encoded_array, array.shape[-1]
 
     # You should provide a print_xxx function for every file format
     # you can write.
