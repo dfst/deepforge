@@ -47,4 +47,7 @@ testFixture.mkdir = function(dir) {
     }
 };
 
+testFixture.getStorageConfigs = require('./assets/configs/storage');
+testFixture.getComputeConfigs = require('./assets/configs/compute');
+
 module.exports = testFixture;
