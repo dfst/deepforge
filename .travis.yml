@@ -3,6 +3,8 @@ services: mongodb
 addons:
     chrome: beta
 sudo: false
+env:
+    - DEEPFORGE_HOST=127.0.0.1:8080
 script: npm test
 before_install: if [[ `npm -v` != 6* ]]; then npm i -g npm@6; fi
 node_js:
