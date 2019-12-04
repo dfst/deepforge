@@ -609,8 +609,6 @@ define([
                 const results = await this.compute.getResultsInfo(jobInfo);
                 this.onDistOperationComplete(op, results);
             } else {
-                // Download all files
-                this.result.addArtifact(execFilesHash);
                 // Parse the most precise error and present it in the toast...
                 const lastline = result.stdout.split('\n').filter(l => !!l).pop() || '';
                 if (lastline.includes('Error')) {
