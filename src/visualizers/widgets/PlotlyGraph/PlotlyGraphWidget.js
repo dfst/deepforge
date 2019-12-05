@@ -21,7 +21,7 @@ define(['./lib/plotly.min',], function (Plotly) {
         this.layout = {};
         this.created = false;
         this.logger.debug('ctor finished');
-        this.setTextVisibility();
+        this.setTextVisibility(true);
     }
 
     PlotlyGraphWidget.prototype.onWidgetContainerResize = function (width, height) {
@@ -44,7 +44,7 @@ define(['./lib/plotly.min',], function (Plotly) {
     PlotlyGraphWidget.prototype.removeNode = function () {
         this.plotlyJSON = null;
         this.refreshChart();
-        this.setTextVisibility();
+        this.setTextVisibility(true);
     };
 
     PlotlyGraphWidget.prototype.addOrUpdateNode = function (desc) {
@@ -82,7 +82,7 @@ define(['./lib/plotly.min',], function (Plotly) {
         this.created = false;
     };
 
-    PlotlyGraphWidget.prototype.setTextVisibility = function (display = true) {
+    PlotlyGraphWidget.prototype.setTextVisibility = function (display) {
         display = display ? 'block' : 'none';
         this.$defaultTextDiv.css('display', display);
     };

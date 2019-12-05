@@ -49,9 +49,10 @@ define([
     };
 
     ExecutionIndexControl.prototype._updateGraphWidget = function () {
-        if(this.displayedExecCount() > 0){
-            const plotlyJSON = this._consolidateGraphData(this.displayedExecutions);
-            if(plotlyJSON) this._widget.updateNode(plotlyJSON);
+        const plotlyJSON = this._consolidateGraphData(this.displayedExecutions);
+        const hasDisplayedMetadata = !!plotlyJSON;
+        if (hasDisplayedMetadata) {
+            this._widget.updateNode(plotlyJSON);
         } else {
             this._widget.removeNode();
         }
@@ -78,7 +79,7 @@ define([
             graphDescs.forEach((desc) => {
                 if (!consolidatedDesc) {
                     consolidatedDesc = JSON.parse(JSON.stringify(desc));
-                    consolidatedDesc.subGraphs.forEach((subGraph) =>{
+                    consolidatedDesc.subGraphs.forEach((subGraph) => {
                         subGraph.abbr = desc.abbr;
                         subGraph.title = getDisplayTitle(subGraph, true);
                     });
