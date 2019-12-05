@@ -38,11 +38,7 @@ define(['./lib/plotly.min',], function (Plotly) {
 
     // Adding/Removing/Updating items
     PlotlyGraphWidget.prototype.addNode = function (desc) {
-        if (desc) {
-            this.plotlyJSON = desc;
-            this.setTextVisibility(false);
-            this.refreshChart();
-        }
+        this.addOrUpdateNode(desc);
     };
 
     PlotlyGraphWidget.prototype.removeNode = function () {
@@ -51,12 +47,16 @@ define(['./lib/plotly.min',], function (Plotly) {
         this.setTextVisibility();
     };
 
-    PlotlyGraphWidget.prototype.updateNode = function (desc) {
+    PlotlyGraphWidget.prototype.addOrUpdateNode = function (desc) {
         if (desc) {
             this.plotlyJSON = desc;
             this.setTextVisibility(false);
             this.refreshChart();
         }
+    };
+
+    PlotlyGraphWidget.prototype.updateNode = function (desc) {
+        this.addOrUpdateNode(desc);
     };
 
     PlotlyGraphWidget.prototype.createOrUpdateChart = function () {
