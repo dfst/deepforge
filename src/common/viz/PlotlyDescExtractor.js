@@ -48,13 +48,10 @@ define([], function () {
             ylabel: node.getAttribute('ylabel'),
         };
 
-        const childIds = node.getChildrenIds();
-        desc.lines = childIds
-            .map(childId => this._client.getNode(childId))
-            .filter((node) => node.getValidAttributeNames().includes('points'))
+        const children = node.getChildrenIds().map(id => this._client.getNode(id));
+        desc.lines = children.filter((node) => node.getValidAttributeNames().includes('points'))
             .map(lineNode => this.getLineDesc(lineNode));
-        desc.images = childIds.map(childId => this._client.getNode(childId))
-            .filter((node) => node.getValidAttributeNames().includes('rgbaMatrix'))
+        desc.images = children.filter(node => node.getValidAttributeNames().includes('rgbaMatrix'))
             .map(imageNode => this.getImageDesc(imageNode));
         return desc;
     };
@@ -285,7 +282,7 @@ define([], function () {
                     standoff: 0
                 }
             };
-            if(subGraph.images.length >= 1){
+            if (subGraph.images.length >= 1) {
                 axesData[xAxisName].visible = false;
                 axesData[yAxisName].visible = false;
             }
