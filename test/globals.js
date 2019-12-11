@@ -50,4 +50,14 @@ testFixture.mkdir = function(dir) {
 testFixture.getStorageConfigs = require('./assets/configs/storage');
 testFixture.getComputeConfigs = require('./assets/configs/compute');
 
+testFixture.sleep = function(duration) {
+    return new Promise(resolve => setTimeout(resolve, duration));
+};
+
+testFixture.waitUntil = async function(condFn) {
+    while (!condFn()) {
+        await testFixture.sleep(10);
+    }
+};
+
 module.exports = testFixture;
