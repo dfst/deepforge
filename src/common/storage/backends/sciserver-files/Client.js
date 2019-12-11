@@ -71,18 +71,6 @@ define([
         return data.url;
     };
 
-    SciServerFiles.prototype._stat = async function(volume, path) {
-        const fullpath = volume + '/' + path;
-        const url = `1/metadata/sandbox/${fullpath}?list=True&path=${fullpath}`;
-        const headers = new Headers();
-        headers.append('Content-Type', 'application/xml');
-        const response = await this.fetch(url);
-        if (response.status === 404) {
-            return null;
-        }
-        return await response.json();
-    };
-
     SciServerFiles.prototype.fetch = async function(url, opts={}) {
         url = BASE_URL + url;
         opts.headers = opts.headers || new Headers();
@@ -92,8 +80,8 @@ define([
         if (status === 400) {
             throw new Error('Received "Bad Request" from SciServer. Is the token invalid?');
         } else if (status > 399) {
-            const contents = await response.json();
-            throw new Error(`SciServer Files request failed: ${contents.error}`);
+            const contents = await response.text();
+            throw new Error(`SciServer Files request failed: ${contents}`);
         }
         return response;
     };
