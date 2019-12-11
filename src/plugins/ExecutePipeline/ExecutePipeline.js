@@ -406,18 +406,12 @@ define([
     ExecutePipeline.prototype.onOperationCanceled = function(op) {
         var job = this.core.getParent(op);
         this.core.setAttribute(job, 'status', 'canceled');
-        this.runningJobs--;
         this.logger.debug(`${this.core.getAttribute(job, 'name')} has been canceled`);
         this.onPipelineComplete();
     };
 
     ExecutePipeline.prototype.onPipelineComplete = async function(err) {
         const name = this.core.getAttribute(this.activeNode, 'name');
-
-        if (err) {
-            this.runningJobs--;
-        }
-
         this.pipelineError = this.pipelineError || err;
 
         this.logger.debug(`${this.runningJobs} remaining jobs`);
@@ -525,6 +519,11 @@ define([
         return readyOps.length;
     };
 
+    ExecutePipeline.prototype.onOperationEnd = function() {
+        this.runningJobs--;
+        return ExecuteJob.prototype.onOperationEnd.apply(this, arguments);
+    };
+
     ExecutePipeline.prototype.onOperationComplete = async function (opNode) {
         const name = this.core.getAttribute(opNode, 'name');
         const jobNode = this.core.getParent(opNode);
@@ -532,7 +531,6 @@ define([
 
         // Set the operation to 'success'!
         this.clearOldMetadata(jobNode);
-        this.runningJobs--;
         this.core.setAttribute(jobNode, 'status', 'success');
         this.logger.info(`Setting ${jobId} status to "success"`);
         this.logger.info(`There are now ${this.runningJobs} running jobs`);
