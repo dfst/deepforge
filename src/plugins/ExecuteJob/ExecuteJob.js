@@ -219,6 +219,7 @@ define([
     ExecuteJob.prototype.onAbort =
     ExecuteJob.prototype.onUserCancelDetected = function () {
         this.logger.info('Received Abort. Canceling jobs.');
+        this.canceled = true;
         this.runningJobHashes
             .map(hash => this.getNodeForJobId(hash))
             .map(node => JSON.parse(this.core.getAttribute(node, 'jobInfo')))
@@ -589,6 +590,10 @@ define([
     ExecuteJob.prototype.onOperationEnd = async function (hash) {
         // Record that the job hash is no longer running
         const job = this.getNodeForJobId(hash);
+        if (job === null) {
+            assert(this.canceled, `Cannot find node for job ID in running pipeline: ${hash}`);
+            return;
+        }
         const op = await this.getOperation(job);
         const name = this.core.getAttribute(job, 'name');
         const jobId = this.core.getPath(job);
@@ -601,7 +606,6 @@ define([
         if (status === this.compute.CANCELED) {
             // If it was canceled, the pipeline has been stopped
             this.logger.debug(`"${name}" has been CANCELED!`);
-            this.canceled = true;
             const stdout = await this.logManager.getLog(jobId);
             this.core.setAttribute(job, 'stdout', stdout);
             return this.onOperationCanceled(op);
