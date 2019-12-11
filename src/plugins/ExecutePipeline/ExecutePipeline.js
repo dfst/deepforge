@@ -106,7 +106,7 @@ define([
             return callback(new Error('Incorrect namespace. Expected to be executed in the "pipeline" namespace'));
         }
 
-        this.configureCompute();
+        this.initializeComputeClient();
         this.initRun();
 
         if (this.core.isTypeOf(this.activeNode, this.META.Pipeline)) {

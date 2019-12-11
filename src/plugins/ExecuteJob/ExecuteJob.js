@@ -129,7 +129,7 @@ define([
         this.currentForkName = null;
         this.forkNameBase = this.core.getAttribute(this.activeNode, 'name');
         const isResuming = await this.isResuming(this.activeNode);
-        this.configureCompute();
+        this.initializeComputeClient();
         await this.prepare(isResuming);
 
         if (isResuming) {
@@ -151,11 +151,19 @@ define([
         }
     };
 
-    ExecuteJob.prototype.configureCompute = async function () {
+    ExecuteJob.prototype.initializeComputeClient = function () {
+        this.compute = this.createComputeClient();
+        this.configureCompute(this.compute);
+    };
+
+    ExecuteJob.prototype.createComputeClient = function () {
         const config = this.getCurrentConfig();
         const backend = Compute.getBackend(config.compute.id);
-        this.compute = backend.getClient(this.logger, this.blobClient, config.compute.config);
-        this.compute.on(
+        return backend.getClient(this.logger, this.blobClient, config.compute.config);
+    };
+
+    ExecuteJob.prototype.configureCompute = function (compute) {
+        compute.on(
             'data',
             (id, data) => {
                 const job = this.getNodeForJobId(id);
@@ -163,7 +171,7 @@ define([
             }
         );
 
-        this.compute.on('update', async (jobId, status) => {
+        compute.on('update', async (jobId, status) => {
             try {
                 await this.onUpdate(jobId, status);
             } catch (err) {
@@ -172,7 +180,7 @@ define([
             }
         });
 
-        this.compute.on('end',
+        compute.on('end',
             async (id/*, info*/) => {
                 try {
                     await this.onOperationEnd(id);
