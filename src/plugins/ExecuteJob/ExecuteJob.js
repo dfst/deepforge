@@ -163,20 +163,22 @@ define([
             }
         );
 
-        this.compute.on('update', (jobId, status) => {
+        this.compute.on('update', async (jobId, status) => {
             try {
-                this.onUpdate(jobId, status);
+                await this.onUpdate(jobId, status);
             } catch (err) {
                 this.logger.error(`Error when processing operation update: ${err}`);
+                throw err;
             }
         });
 
         this.compute.on('end',
-            (id/*, info*/) => {
+            async (id/*, info*/) => {
                 try {
-                    this.onOperationEnd(id);
+                    await this.onOperationEnd(id);
                 } catch (err) {
                     this.logger.error(`Error when processing operation end: ${err}`);
+                    throw err;
                 }
             }
         );
