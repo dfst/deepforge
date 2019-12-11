@@ -129,7 +129,7 @@ define([
         this.currentForkName = null;
         this.forkNameBase = this.core.getAttribute(this.activeNode, 'name');
         const isResuming = await this.isResuming(this.activeNode);
-        this.configureCompute();
+        this.initializeComputeClient();
         await this.prepare(isResuming);
 
         if (isResuming) {
@@ -151,11 +151,19 @@ define([
         }
     };
 
-    ExecuteJob.prototype.configureCompute = async function () {
+    ExecuteJob.prototype.initializeComputeClient = function () {
+        this.compute = this.createComputeClient();
+        this.configureCompute(this.compute);
+    };
+
+    ExecuteJob.prototype.createComputeClient = function () {
         const config = this.getCurrentConfig();
         const backend = Compute.getBackend(config.compute.id);
-        this.compute = backend.getClient(this.logger, config.compute.config);
-        this.compute.on(
+        return backend.getClient(this.logger, this.blobClient, config.compute.config);
+    };
+
+    ExecuteJob.prototype.configureCompute = function (compute) {
+        compute.on(
             'data',
             (id, data) => {
                 const job = this.getNodeForJobId(id);
@@ -163,20 +171,22 @@ define([
             }
         );
 
-        this.compute.on('update', (jobId, status) => {
+        compute.on('update', async (jobId, status) => {
             try {
-                this.onUpdate(jobId, status);
+                await this.onUpdate(jobId, status);
             } catch (err) {
                 this.logger.error(`Error when processing operation update: ${err}`);
+                throw err;
             }
         });
 
-        this.compute.on('end',
-            (id/*, info*/) => {
+        compute.on('end',
+            async (id/*, info*/) => {
                 try {
-                    this.onOperationEnd(id);
+                    await this.onOperationEnd(id);
                 } catch (err) {
                     this.logger.error(`Error when processing operation end: ${err}`);
+                    throw err;
                 }
             }
         );
@@ -460,6 +470,8 @@ define([
         this._execHashToJobNode[hash] = job;
         const jobInfo = await this.compute.createJob(hash);
         this.core.setAttribute(job, 'jobInfo', JSON.stringify(jobInfo));
+        this.core.setAttribute(job, 'execFiles', hash);
+
         if (!this.currentRunId) {
             this.currentRunId = jobInfo.hash;
         }
@@ -596,10 +608,6 @@ define([
         }
 
         if (status === this.compute.SUCCESS || status === this.compute.FAILED) {
-            const execFilesHash = await this.compute.getDebugFilesHash(jobInfo);
-            assert(execFilesHash, `Debug files not found for ${name}`);
-            this.core.setAttribute(job, 'execFiles', execFilesHash);
-
             const opName = this.core.getAttribute(op, 'name');
             const stdout = await this.compute.getConsoleOutput(jobInfo);
             const result = this.processStdout(job, stdout);
@@ -611,8 +619,6 @@ define([
                 const results = await this.compute.getResultsInfo(jobInfo);
                 this.onDistOperationComplete(op, results);
             } else {
-                // Download all files
-                this.result.addArtifact(execFilesHash);
                 // Parse the most precise error and present it in the toast...
                 const lastline = result.stdout.split('\n').filter(l => !!l).pop() || '';
                 if (lastline.includes('Error')) {

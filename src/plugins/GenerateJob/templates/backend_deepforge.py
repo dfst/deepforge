@@ -71,6 +71,7 @@ from matplotlib._pylab_helpers import Gcf
 from matplotlib.backend_bases import (
      FigureCanvasBase, FigureManagerBase, GraphicsContextBase, RendererBase)
 from matplotlib.figure import Figure
+from matplotlib.colors import to_hex
 
 import simplejson as json
 
@@ -250,33 +251,36 @@ class FigureCanvasTemplate(FigureCanvasBase):
 
     def figure_to_state(self):
         figure = self.figure
-
         state = {}
         state['id'] = self.manager.num
-        #state['title'] = self.manager.num
+        state['title'] = ''
+        if self.figure._suptitle:
+            state['title'] = self.figure._suptitle.get_text()
 
         state['axes'] = []
-
         # Get the data points
         for axes in figure.get_axes():
             axes_data = {}
             axes_data['title'] = axes.get_title()
             axes_data['xlabel'] = axes.get_xlabel()
             axes_data['ylabel'] = axes.get_ylabel()
+            axes_data['xlim'] = axes.get_xlim()
+            axes_data['ylim'] = axes.get_ylim()
             axes_data['lines'] = []
             for i, line in enumerate(axes.lines):
                 lineDict = {}
                 lineDict['points'] = line.get_xydata().tolist()
-
                 lineDict['label'] = ''
+                lineDict['color'] = to_hex(line.get_color())
+                lineDict['marker'] = line.get_marker()
+                lineDict['lineStyle'] = line.get_ls()
+                lineDict['lineWidth'] = line.get_lw()
                 default_label = ('_line' + str(i))
                 if line.get_label() != default_label:
                     lineDict['label'] = line.get_label()
 
                 axes_data['lines'].append(lineDict)
-
             state['axes'].append(axes_data)
-
         return state
 
     # You should provide a print_xxx function for every file format

@@ -256,6 +256,13 @@
         "panel": "src/visualizers/panels/TabbedTextEditor",
         "secondary": false,
         "widget": "src/visualizers/widgets/TabbedTextEditor"
+      },
+      "PlotlyGraph": {
+        "src": "panels/PlotlyGraph/PlotlyGraphPanel",
+        "title": "PlotlyGraph",
+        "panel": "src/visualizers/panels/PlotlyGraph",
+        "secondary": false,
+        "widget": "src/visualizers/widgets/PlotlyGraph"
       }
     },
     "addons": {},

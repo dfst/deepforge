@@ -1,0 +1,16 @@
+/* globals define */
+define([
+    'blob/BlobClient',
+    'deepforge/storage/index',
+    'deepforge/Constants',
+    'client/logger',
+    <% files.forEach(function(file) { %>'<%= file %>',
+    <% }); %>
+], function(
+    BlobClient,
+    Storage,
+    Constants,
+    Logger,
+) {
+    return {BlobClient, Storage, Constants, Logger};
+});

@@ -265,20 +265,23 @@ define([
             valueType: 'section'
         });
 
+        const storageMetadata = Storage.getAvailableBackends().map(id => Storage.getStorageMetadata(id));
         metadata.configStructure.push({
             name: 'storage',
             displayName: 'Storage',
             description: 'Location to store intermediate/generated data.',
             valueType: 'dict',
             value: Storage.getBackend(Storage.getAvailableBackends()[0]).name,
-            valueItems: Storage.getAvailableBackends()
-                .map(id => Storage.getStorageMetadata(id)),
+            valueItems: storageMetadata,
         });
 
         const configDialog = new ConfigDialog(client);
         const allConfigs = await configDialog.show(metadata);
         const context = client.getCurrentPluginContext(UPLOAD_PLUGIN);
         context.pluginConfig = allConfigs[UPLOAD_PLUGIN];
+        context.pluginConfig.storage.id = storageMetadata
+            .find(metadata => metadata.name === context.pluginConfig.storage.name)
+            .id;
         return await Q.ninvoke(client, 'runBrowserPlugin', UPLOAD_PLUGIN, context);
     };
 

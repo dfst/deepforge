@@ -1,68 +1,120 @@
 /*globals define*/
+'use strict';
 define([
     'deepforge/Constants'
-], function(
+], function (
     CONSTANTS
 ) {
 
-    var ExecuteJob = function() {
+    var ExecuteJob = function () {
         this._metadata = {};
         this._markForDeletion = {};  // id -> node
         this._oldMetadataByName = {};  // name -> id
         this.createdMetadataIds = {};
-        this.createIdToMetadataId = {};
+        this.subGraphs = {};
+        this.plotLines = {};
     };
 
     // TODO: Add tests
     ExecuteJob.prototype[CONSTANTS.PLOT_UPDATE] = async function (job, state) {
         const jobId = this.core.getPath(job);
-
         // Check if the graph already exists
         // use the id to look up the graph
         let id = jobId + '/' + state.id;
         let graph = this.getExistingMetadataById(job, 'Graph', id);
         if (!graph) {
             graph = this.core.createNode({
-                base: this.META.Graph,
-                parent: job
+                parent: job,
+                base: this.META.Graph
             });
             this.core.setAttribute(graph, 'id', id);
-            this._metadata[id] = graph;
+            this.core.setAttribute(graph, 'title', state.title);
+            this.logger.info(`Adding graph titled ${state.title}`);
         }
+        this._metadata[id] = graph;
+
+        const subGraphs = await this.core.loadChildren(graph);
+        subGraphs.forEach(subGraph => this.core.deleteNode(this.core.getPath(subGraph)));
+
+        if (this.subGraphs[id])
+            this.subGraphs[id].forEach(subGraphId => this._deleteByMetaDataId(subGraphId));
 
         // Apply whatever updates are needed
-        // Set the plot title
-        // Only support a single axes for now
-        const axes = state.axes[0];
-        this.core.setAttribute(graph, 'name', axes.title);
-        this.core.setAttribute(graph, 'xlabel', axes.xlabel);
-        this.core.setAttribute(graph, 'ylabel', axes.ylabel);
-        this.logger.info(`Updating graph named ${axes.title}`);
+        // Set the sub-plot title (axes => SubGraph)
+        const axeses = state.axes;
+        this.subGraphs[id] = [];
+        axeses.forEach((axes, index) => {
+            const axesId = id + '/' + index;
+            let axesNode = this.getExistingMetadataById(job, 'SubGraph', axesId);
+            if (!axesNode) {
+                axesNode = this.core.createNode({
+                    parent: graph,
+                    base: this.META.SubGraph
+                });
+                this.subGraphs[id].push(axesId);
+                this.core.setAttribute(axesNode, 'title', axes.title);
+                this.core.setAttribute(axesNode, 'xlabel', axes.xlabel);
+                this.core.setAttribute(axesNode, 'ylabel', axes.ylabel);
+                this.core.setAttribute(axesNode, 'xlim', axes.xlim);
+                this.core.setAttribute(axesNode, 'ylim', axes.ylim);
+                this.core.setAttribute(axesNode, 'id', axesId);
+                this.logger.info(`Adding subgraph with title ${axes.title}`);
 
-        const children = await this.core.loadChildren(graph);
-        children.forEach(node => this.core.deleteNode(node));
-
-        // Update the points for each of the lines 
-        axes.lines.forEach((line, index) => {
-            let node = this.core.createNode({
-                base: this.META.Line,
-                parent: graph,
-            });
-
-            this.core.setAttribute(node, 'name', line.label || `line ${index+1}`);
-            let points = line.points.map(pts => pts.join(',')).join(';');
-            this.core.setAttribute(node, 'points', points);
+                // Now check for line Nodes
+                const lines = axes.lines;
+                this.plotLines[axesId] = [];
+                lines.forEach((line, index) => {
+                    const lineId = axesId + '/' + index;
+                    let lineNode = this.getExistingMetadataById(job, 'Line', lineId);
+                    if (!lineNode) {
+                        lineNode = this.core.createNode({
+                            parent: axesNode,
+                            base: this.META.Line
+                        });
+                        this.plotLines[axesId].push(lineId);
+                        this.core.setAttribute(lineNode, 'color', line.color);
+                        this.core.setAttribute(lineNode, 'label', line.label || `line ${index + 1}`);
+                        this.core.setAttribute(lineNode, 'lineStyle', line.lineStyle);
+                        this.core.setAttribute(lineNode, 'marker', line.marker);
+                        let points = line.points.map(pts => pts.join(',')).join(';');
+                        this.core.setAttribute(lineNode, 'points', points);
+                        this.core.setAttribute(lineNode, 'lineWidth', line.lineWidth);
+                    }
+                    this._metadata[lineId] = lineNode;
+                });
+                this._metadata[axesId] = axesNode;
+            }
         });
     };
 
-    ExecuteJob.prototype[CONSTANTS.IMAGE.BASIC] =
-    ExecuteJob.prototype[CONSTANTS.IMAGE.UPDATE] =
-    ExecuteJob.prototype[CONSTANTS.IMAGE.CREATE] = function (job, hash, imgId) {
-        var name = Array.prototype.slice.call(arguments, 3).join(' '),
-            imageNode = this._getImageNode(job, imgId, name);
-
-        this.core.setAttribute(imageNode, 'data', hash);
+    ExecuteJob.prototype._deleteByMetaDataId = function (id) {
+        if (this._metadata[id]) {
+            const nodeId = this.core.getPath(this._metadata[id]);
+            this.deleteNode(nodeId);
+        }
     };
+
+    ExecuteJob.prototype[CONSTANTS.GRAPH_CREATE_LINE] = function (job, graphId, id) {
+        var jobId = this.core.getPath(job),
+            graph = this._metadata[jobId + '/' + graphId],
+            name = Array.prototype.slice.call(arguments, 3).join(' '),
+            line;
+
+        // Create a 'line' node in the given Graph metadata node
+        name = name.replace(/\s+$/, '');
+        line = this.createNode('Line', graph);
+        this.core.setAttribute(line, 'name', name);
+        this._metadata[jobId + '/' + id] = line;
+    };
+
+    ExecuteJob.prototype[CONSTANTS.IMAGE.BASIC] =
+        ExecuteJob.prototype[CONSTANTS.IMAGE.UPDATE] =
+            ExecuteJob.prototype[CONSTANTS.IMAGE.CREATE] = function (job, hash, imgId) {
+                var name = Array.prototype.slice.call(arguments, 3).join(' '),
+                    imageNode = this._getImageNode(job, imgId, name);
+
+                this.core.setAttribute(imageNode, 'data', hash);
+            };
 
     ExecuteJob.prototype[CONSTANTS.IMAGE.NAME] = function (job, imgId) {
         var name = Array.prototype.slice.call(arguments, 2).join(' '),
@@ -104,7 +156,6 @@ define([
 
         // If we are resuming the pipeline, we will not be deleting any metadata
         this.lastAppliedCmd[nodeId] = 0;
-        this.createdMetadataIds[nodeId] = [];
         this._oldMetadataByName[nodeId] = {};
         this._markForDeletion[nodeId] = {};
         return this.core.loadChildren(job)
@@ -145,7 +196,8 @@ define([
 
         if (!this.isLocalOperation(node)) {
             // Remove created nodes left over from resumed job
-            this.createdMetadataIds[nodeId].forEach(id => delete this._markForDeletion[nodeId][id]);
+            const metadataIds = this.createdMetadataIds[nodeId] || [];
+            metadataIds.forEach(id => delete this._markForDeletion[nodeId][id]);
             const nodeIds = Object.keys(this._markForDeletion[nodeId]);
             this.logger.debug(`About to delete ${nodeIds.length}: ${nodeIds.join(', ')}`);
             for (var i = nodeIds.length; i--;) {
@@ -160,7 +212,7 @@ define([
         this.core.delAttribute(job, 'jobInfo');
     };
 
-    ExecuteJob.prototype.resultMsg = function(msg) {
+    ExecuteJob.prototype.resultMsg = function (msg) {
         this.sendNotification(msg);
         this.createMessage(null, msg);
     };
@@ -203,7 +255,7 @@ define([
             content,
             cmd;
 
-        for (var i = 0; i < lines.length; i++) {
+        for (let i = 0; i < lines.length; i++) {
             // Check for a deepforge command
             if (lines[i].indexOf(CONSTANTS.START_CMD) !== -1) {
                 matches = lines[i].replace(ansiRegex, '').match(trimStartRegex);
@@ -230,12 +282,6 @@ define([
             stdout: result.join('\n'),
             hasMetadata: hasMetadata
         };
-    };
-
-    ExecuteJob.prototype.onNodeCreated = async function (tmpId, node) {
-        const id = this.createIdToMetadataId[tmpId];
-        delete this.createIdToMetadataId[tmpId];
-        this._metadata[id] = node;
     };
 
     return ExecuteJob;

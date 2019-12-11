@@ -106,7 +106,7 @@ define([
             return callback(new Error('Incorrect namespace. Expected to be executed in the "pipeline" namespace'));
         }
 
-        this.configureCompute();
+        this.initializeComputeClient();
         this.initRun();
 
         if (this.core.isTypeOf(this.activeNode, this.META.Pipeline)) {
@@ -448,13 +448,13 @@ define([
             if (!isDeleted) {
 
                 this.logger.debug(`Pipeline "${name}" complete!`);
-                this.setAttribute(this.activeNode, 'endTime', Date.now());
-                this.setAttribute(this.activeNode, 'status',
+                this.core.setAttribute(this.activeNode, 'endTime', Date.now());
+                this.core.setAttribute(this.activeNode, 'status',
                     (this.pipelineError ? 'failed' :
                         (this.canceled ? 'canceled' : 'success')
                     )
                 );
-                this.delAttribute(this.activeNode, 'executionId');
+                this.core.delAttribute(this.activeNode, 'executionId');
 
                 this._finished = true;
                 this.resultMsg(msg);
