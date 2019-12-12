@@ -69,8 +69,9 @@ define([
         let target = event.target,
             id = target.getAttribute('data-id');
 
-        if(id)
-            this._deleteExecution(id);
+        if(id){
+            this.deleteExecution(id);
+        }
     };
 
     ExecutionIndexWidget.prototype.onExecutionClicked = function (event) {

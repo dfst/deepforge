@@ -60,7 +60,7 @@ define([
 
     ExecutionIndexControl.prototype._initWidgetEventHandlers = function () {
         this._widget.setDisplayedExecutions = this.setDisplayedExecutions.bind(this);
-        this._widget._deleteExecution = this._deleteExecution.bind(this);
+        this._widget.deleteExecution = this._deleteExecution.bind(this);
     };
 
     ExecutionIndexControl.prototype.setDisplayedExecutions = function (displayedIds) {
