@@ -18,10 +18,6 @@ define([], function() {
         unimplemented(this.logger, 'getStatus');
     };
 
-    ComputeClient.prototype.getDebugFilesHash = async function(/*jobInfo*/) {
-        unimplemented(this.logger, 'getDebugFilesHash');
-    };
-
     ComputeClient.prototype.getResultsInfo = async function(/*jobInfo*/) {
         unimplemented(this.logger, 'getResultsInfo');
     };
@@ -44,7 +40,7 @@ define([], function() {
     ComputeClient.prototype.emit = function(ev) {
         const args = Array.prototype.slice.call(arguments, 1);
         const handlers = this._events[ev] || [];
-        handlers.forEach(fn => fn.apply(this, args));
+        return Promise.all(handlers.map(fn => fn.apply(this, args)));
     };
 
     ComputeClient.prototype.QUEUED = 'queued';

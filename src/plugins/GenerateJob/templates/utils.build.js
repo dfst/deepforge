@@ -2854,7 +2854,7 @@ define('deepforge/storage/backends/gme/Client',['../StorageClient', 'blob/BlobCl
 
   GMEStorage.prototype.getServerURL = function () {
     var port = gmeConfig.server.port;
-    var url = process.env.DEEPFORGE_URL || "127.0.0.1:".concat(port);
+    var url = process.env.DEEPFORGE_HOST || "127.0.0.1:".concat(port);
     return [url.replace(/^https?:\/\//, ''), url.startsWith('https')];
   };
 

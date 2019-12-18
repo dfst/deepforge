@@ -9,6 +9,7 @@ const mkdir = promisify(fs.mkdir);
 const rm_rf = require('rimraf');
 const path = require('path');
 const Config = require('./config.json');
+process.env.DEEPFORGE_HOST = Config.HOST;
 
 // Create the stderr only logger
 const logger = {};
@@ -32,7 +33,7 @@ requirejs([
 
     process.env.MPLBACKEND = 'module://backend_deepforge';
 
-    const url = process.env.ORIGIN_URL || 'http://127.0.0.1:8888';
+    const url = process.env.DEEPFORGE_HOST || 'http://127.0.0.1:8888';
     const [protocol, , port] = url.split(':');
     const address = url.replace(protocol + '://', '')
         .replace(':' + port, '');

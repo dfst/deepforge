@@ -4,11 +4,13 @@
 define([
     'js/Constants',
     'deepforge/utils',
-    'deepforge/viz/PlotlyDescExtractor'
+    'deepforge/viz/Execute',
+    'deepforge/viz/PlotlyDescExtractor',
 ], function (
     CONSTANTS,
     utils,
-    PlotlyDescExtractor
+    Execute,
+    PlotlyDescExtractor,
 ) {
 
     'use strict';
@@ -18,8 +20,8 @@ define([
     ExecutionIndexControl = function (options) {
 
         this._logger = options.logger.fork('Control');
-
         this._client = options.client;
+        Execute.call(this, this._client, this._logger);
         this._embedded = options.embedded;
 
         // Initialize core collections and variables
@@ -39,8 +41,26 @@ define([
         this._logger.debug('ctor finished');
     };
 
+    ExecutionIndexControl.prototype = Object.create(Execute.prototype);
+
+    ExecutionIndexControl.prototype._deleteExecution = function (id) {
+        let node = this._client.getNode(id),
+            name = '';
+        if (node) {
+            name = node.getAttribute('name');
+        }
+
+        this._client.startTransaction(`Deleted ${name} (${id}) execution.`);
+        if (this.isRunning(node)) {
+            this.stopExecution(id);
+        }
+        this._client.deleteNode(id);
+        this._client.completeTransaction();
+    };
+
     ExecutionIndexControl.prototype._initWidgetEventHandlers = function () {
         this._widget.setDisplayedExecutions = this.setDisplayedExecutions.bind(this);
+        this._widget.deleteExecution = this._deleteExecution.bind(this);
     };
 
     ExecutionIndexControl.prototype.setDisplayedExecutions = function (displayedIds) {
@@ -49,8 +69,9 @@ define([
     };
 
     ExecutionIndexControl.prototype._updateGraphWidget = function () {
-        if (this.displayedExecCount() > 0) {
-            const plotlyJSON = this._consolidateGraphData(this.displayedExecutions);
+        const plotlyJSON = this._consolidateGraphData(this.displayedExecutions);
+        const hasDisplayedMetadata = !!plotlyJSON;
+        if (hasDisplayedMetadata) {
             this._widget.updateNode(plotlyJSON);
         } else {
             this._widget.removeNode();

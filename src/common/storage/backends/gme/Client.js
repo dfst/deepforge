@@ -15,14 +15,21 @@ define([
             logger: this.logger.fork('BlobClient')
         };
         if (!require.isBrowser) {
-            params.server = '127.0.0.1';
-            params.serverPort = gmeConfig.server.port;
-            params.httpsecure = false;
+            const [url, isHttps] = this.getServerURL();
+            params.server = url.split(':')[0];
+            params.serverPort = +(url.split(':').pop());
+            params.httpsecure = isHttps;
         }
         this.blobClient = new BlobClient(params);
     };
 
     GMEStorage.prototype = Object.create(StorageClient.prototype);
+
+    GMEStorage.prototype.getServerURL = function() {
+        const {port} = gmeConfig.server;
+        const url = process.env.DEEPFORGE_HOST || `127.0.0.1:${port}`;
+        return [url.replace(/^https?:\/\//, ''), url.startsWith('https')];
+    };
 
     GMEStorage.prototype.getFile = async function(dataInfo) {
         const {data} = dataInfo;

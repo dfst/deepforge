@@ -46,6 +46,7 @@ define([
         this.$table = $(TableHtml);
         this.$table.on('click', '.exec-row', event => this.onExecutionClicked(event));
         this.$table.on('click', '.node-nav', event => this.navToNode(event));
+        this.$table.on('click', '.delete-exec', event => this.onExecutionDelete(event));
         this.$left.append(this.$table);
         this.$execList = this.$table.find('.execs-content');
 
@@ -62,6 +63,15 @@ define([
             event.stopPropagation();
         }
         this.logger.warn('No node id found for node-nav!');
+    };
+
+    ExecutionIndexWidget.prototype.onExecutionDelete = function (event) {
+        let target = event.target,
+            id = target.getAttribute('data-id');
+
+        if(id){
+            this.deleteExecution(id);
+        }
     };
 
     ExecutionIndexWidget.prototype.onExecutionClicked = function (event) {
@@ -134,6 +144,7 @@ define([
             pipeline,
             name,
             duration = $('<div>'),
+            deleteBtn,
             td;
 
         pipeline = $('<a>', {
@@ -144,12 +155,18 @@ define([
         name = $('<a>', {class: 'node-nav', 'data-id': desc.id})
             .text(desc.name);
 
+        deleteBtn = $('<a>', {
+            class: 'glyphicon glyphicon-remove delete-exec',
+            'data-id': desc.id
+        });
+
         fields = [
             checkBox,
             name,
             Utils.getDisplayTime(desc.originTime),
             pipeline,
-            duration
+            duration,
+            deleteBtn
         ];
 
         for (var i = 0; i < fields.length; i++) {
@@ -173,7 +190,8 @@ define([
             $checkbox: checkBox[0],
             $pipeline: pipeline,
             $duration: duration,
-            $name: name
+            $name: name,
+            $deleteBtn: deleteBtn
         };
         this.updateTime(desc.id, true);
     };

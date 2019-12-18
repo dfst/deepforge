@@ -1,4 +1,4 @@
-/*globals define, _*/
+/*globals define, _, $*/
 define(['./lib/plotly.min',], function (Plotly) {
     'use strict';
 
@@ -7,6 +7,13 @@ define(['./lib/plotly.min',], function (Plotly) {
     function PlotlyGraphWidget(logger, container) {
         this.logger = logger.fork('widget');
         this.$el = container;
+        this.$defaultTextDiv = $('<div>', {
+            class: 'h2 center'
+        }).text('No Data Available.')
+            .css({
+                'margin-top': this.$el.height() / 2
+            });
+        this.$el.append(this.$defaultTextDiv);
         this.$el.css('overflow', 'auto');
         this.$el.addClass(WIDGET_CLASS);
         this.nodes = {};
@@ -14,6 +21,7 @@ define(['./lib/plotly.min',], function (Plotly) {
         this.layout = {};
         this.created = false;
         this.logger.debug('ctor finished');
+        this.setTextVisibility(true);
     }
 
     PlotlyGraphWidget.prototype.onWidgetContainerResize = function (width, height) {
@@ -22,27 +30,33 @@ define(['./lib/plotly.min',], function (Plotly) {
             width: width,
             height: height
         });
+        this.$defaultTextDiv.css({
+            'margin-top': height / 2
+        });
         this.logger.debug('Widget is resizing...');
     };
 
     // Adding/Removing/Updating items
     PlotlyGraphWidget.prototype.addNode = function (desc) {
-        if (desc) {
-            this.plotlyJSON = desc;
-            this.refreshChart();
-        }
+        this.addOrUpdateNode(desc);
     };
 
     PlotlyGraphWidget.prototype.removeNode = function () {
         this.plotlyJSON = null;
         this.refreshChart();
+        this.setTextVisibility(true);
+    };
+
+    PlotlyGraphWidget.prototype.addOrUpdateNode = function (desc) {
+        if (desc) {
+            this.plotlyJSON = desc;
+            this.setTextVisibility(false);
+            this.refreshChart();
+        }
     };
 
     PlotlyGraphWidget.prototype.updateNode = function (desc) {
-        if (desc) {
-            this.plotlyJSON = desc;
-            this.refreshChart();
-        }
+        this.addOrUpdateNode(desc);
     };
 
     PlotlyGraphWidget.prototype.createOrUpdateChart = function () {
@@ -52,6 +66,7 @@ define(['./lib/plotly.min',], function (Plotly) {
             if (!this.created && !_.isEmpty(this.plotlyJSON)) {
                 Plotly.newPlot(this.$el[0], this.plotlyJSON);
                 this.created = true;
+
             } else if(!_.isEmpty(this.plotlyJSON)) {
                 // Currently in plotly, ImageTraces have no react support
                 // This will be updated when there's additional support
@@ -71,6 +86,10 @@ define(['./lib/plotly.min',], function (Plotly) {
         this.created = false;
     };
 
+    PlotlyGraphWidget.prototype.setTextVisibility = function (display) {
+        display = display ? 'block' : 'none';
+        this.$defaultTextDiv.css('display', display);
+    };
     /* * * * * * * * Visualizer life cycle callbacks * * * * * * * */
     PlotlyGraphWidget.prototype.destroy = function () {
         Plotly.purge(this.$el[0]);

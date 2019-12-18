@@ -231,8 +231,8 @@ define([
 
         if (!this.isLocalOperation(node)) {
             // Remove created nodes left over from resumed job
-            const createdMetadataIds = this.createdMetadataIds[nodeId] || [];
-            createdMetadataIds.forEach(id => delete this._markForDeletion[nodeId][id]);
+            const metadataIds = this.createdMetadataIds[nodeId] || [];
+            metadataIds.forEach(id => delete this._markForDeletion[nodeId][id]);
             const nodeIds = Object.keys(this._markForDeletion[nodeId]);
             this.logger.debug(`About to delete ${nodeIds.length}: ${nodeIds.join(', ')}`);
             for (var i = nodeIds.length; i--;) {

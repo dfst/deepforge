@@ -197,10 +197,6 @@ define([
         return JSON.parse(text);
     };
 
-    SciServerClient.prototype.getDebugFilesHash = async function(jobInfo) {
-        return jobInfo.hash;
-    };
-
     SciServerClient.prototype.getStatus = async function(jobInfo) {
         const results = await this.getJobResults(jobInfo);
         return results && results.status;

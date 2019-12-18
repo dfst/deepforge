@@ -1,9 +1,12 @@
-language: node_js
+language: python
 services: mongodb
 addons:
     chrome: beta
 sudo: false
-script: npm run test-unit
-before_install: if [[ `npm -v` != 6* ]]; then npm i -g npm@6; fi
-node_js:
-  - "8"
+env:
+    - DEEPFORGE_HOST=127.0.0.1:8080
+script: npm test
+before_install: nvm install 8; if [[ `npm -v` != 6* ]]; then npm i -g npm@6; fi
+install: npm install
+python:
+  - 3.5

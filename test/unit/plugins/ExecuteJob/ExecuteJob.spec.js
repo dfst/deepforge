@@ -4,9 +4,11 @@
 
 describe('ExecuteJob', function () {
     const testFixture = require('../../../globals');
+    const {Q, expect, waitUntil, requirejs} = testFixture;
+    const {promisify} = require('util');
+    const assert = require('assert');
+    const ComputeClient = requirejs('deepforge/compute/backends/ComputeClient');
     var gmeConfig = testFixture.getGmeConfig(),
-        expect = testFixture.expect,
-        Q = testFixture.Q,
         logger = testFixture.logger.fork('ExecuteJob'),
         PluginCliManager = testFixture.WebGME.PluginCliManager,
         projectName = 'testProject',
@@ -65,7 +67,7 @@ describe('ExecuteJob', function () {
     ////////// Helper Functions //////////
     var plugin,
         node,
-        preparePlugin = function(done) {
+        preparePlugin = async function() {
             const config = {compute: {id: 'gme'}};
             const context = {
                 project: project,
@@ -75,14 +77,11 @@ describe('ExecuteJob', function () {
                 activeNode: '/K/2/U'  // hello world job
             };
 
-            return manager.initializePlugin(pluginName)
-                .then(plugin_ => {
-                    plugin = plugin_;
-                    plugin.executionId = Promise.resolve('some_execution_id');
-                    return manager.configurePlugin(plugin, config, context);
-                })
-                .then(() => node = plugin.activeNode)
-                .nodeify(done);
+            plugin = await manager.initializePlugin(pluginName);
+            plugin.main = promisify(plugin.main);
+            plugin.executionId = Promise.resolve('some_execution_id');
+            await manager.configurePlugin(plugin, config, context);
+            node = plugin.activeNode;
         };
 
     ////////// END Helper Functions //////////
@@ -328,15 +327,48 @@ describe('ExecuteJob', function () {
     describe('resume errors', function() {
         beforeEach(preparePlugin);
 
-        it('should handle error if missing jobId', function(done) {
+        it('should handle error if missing jobId', async function() {
             // Remove jobId
             plugin.core.delAttribute(plugin.activeNode, 'jobInfo');
             plugin.startExecHeartBeat = () => {};
             plugin.isResuming = () => Q(true);
-            plugin.main(function(err) {
-                expect(err).to.not.equal(null);
-                done();
-            });
+            try {
+                await plugin.main();
+                throw new Error('No error thrown');
+            } catch (err) {
+                assert.notEqual(err.message, 'No error thrown');
+            }
         });
     });
+
+    describe('job deletion', function() {
+        beforeEach(async () => {
+            await preparePlugin();
+            plugin.startExecHeartBeat = () => {};
+        });
+
+        it('should be able to abort plugin and delete node w/o error', async () => {
+            plugin.createComputeClient = function() {
+                return new MockCompute(plugin.logger, plugin.blobClient);
+            };
+
+            plugin.main();
+            await waitUntil(() => plugin.runningJobHashes.length);
+
+            plugin.onAbort();
+            plugin.core.deleteNode(plugin.activeNode);
+            await plugin.save();
+            await plugin.compute.emit('end', plugin.compute.jobId);
+        });
+    });
+
+    class MockCompute extends ComputeClient {
+        createJob(hash) {
+            this.jobId = hash;
+            return {hash};
+        }
+
+        cancelJob(/*jobInfo*/) {
+        }
+    }
 });

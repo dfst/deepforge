@@ -66,15 +66,15 @@ define([
         const parent = await this.getArtifactsDir();
         const dataNode = this.core.createNode({base, parent});
 
-        const assetInfo = await this.transfer(hash, config.storage);
+        const name = config.name || await this.getAssetName(hash) ||
+            baseName[0].toLowerCase() + baseName.substring(1);
+
+        const assetInfo = await this.transfer(hash, config.storage, name);
         this.core.setAttribute(dataNode, 'data', JSON.stringify(assetInfo));
         this.core.setAttribute(dataNode, 'type', baseName);
         this.core.setAttribute(dataNode, 'createdAt', Date.now());
 
         try {
-            const name = config.name || await this.getAssetName(hash) ||
-                baseName[0].toLowerCase() + baseName.substring(1);
-
             this.core.setAttribute(dataNode, 'name', name);
             await this.save(`Uploaded "${name}" data`);
             this.result.setSuccess(true);
@@ -85,9 +85,8 @@ define([
 
     };
 
-    ImportArtifact.prototype.transfer = async function (hash, storage) {
-        const metadata = await this.blobClient.getMetadata(hash);
-        const filename = metadata.name;
+    ImportArtifact.prototype.transfer = async function (hash, storage, name) {
+        const filename = `${this.projectId}/artifacts/${name}`;
 
         const gmeStorageClient = await Storage.getBackend('gme').getClient(this.logger);
         const dataInfo = gmeStorageClient.createDataInfo(hash);
