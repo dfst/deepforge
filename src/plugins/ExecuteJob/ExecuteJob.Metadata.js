@@ -112,7 +112,7 @@ define([
             }
             this._metadata[imageId] = imageNode;
         });
-    }
+    };
 
     ExecuteJob.prototype._deleteByMetaDataId = function (id) {
         if (this._metadata[id]) {
@@ -141,7 +141,7 @@ define([
             this.subGraphs[id].forEach(subGraphId => this._deleteByMetaDataId(subGraphId));
         }
         return graph;
-    }
+    };
 
     ExecuteJob.prototype[CONSTANTS.GRAPH_CREATE_LINE] = function (job, graphId, id) {
         var jobId = this.core.getPath(job),
