@@ -24,33 +24,16 @@ define([
     };
 
     ExecuteJob.prototype.createId = function (parentId, childRelID, sep) {
-        return parentId + sep +childRelID;
+        return parentId + sep + childRelID;
     };
 
     // TODO: Add tests
-    // TODO: Refactor this into three different functions
     ExecuteJob.prototype[CONSTANTS.PLOT_UPDATE] = async function (job, state) {
         const jobId = this.core.getPath(job);
         // Check if the graph already exists
         // use the id to look up the graph
         let id = this.createId(jobId, state.id, this.SEPARATORS.JOB_GRAPH);
-        let graph = this.getExistingMetadataById(job, 'Graph', id);
-        if (!graph) {
-            graph = this.core.createNode({
-                parent: job,
-                base: this.META.Graph
-            });
-            this.core.setAttribute(graph, 'id', id);
-            this.core.setAttribute(graph, 'title', state.title);
-            this.logger.info(`Adding graph titled ${state.title}`);
-        }
-        this._metadata[id] = graph;
-
-        const subGraphs = await this.core.loadChildren(graph);
-        subGraphs.forEach(subGraph => this.core.deleteNode(this.core.getPath(subGraph)));
-
-        if (this.subGraphs[id])
-            this.subGraphs[id].forEach(subGraphId => this._deleteByMetaDataId(subGraphId));
+        let graph = await this.createGraphNode(job, id, state);
 
         // Apply whatever updates are needed
         // Set the sub-plot title (axes => SubGraph)
@@ -72,55 +55,64 @@ define([
                 this.core.setAttribute(axesNode, 'ylim', axes.ylim);
                 this.core.setAttribute(axesNode, 'id', axesId);
                 this.logger.info(`Adding subgraph with title ${axes.title}`);
-
-                // Now check for line Nodes
-                const lines = axes.lines;
-                this.plotLines[axesId] = [];
-                lines.forEach((line, index) => {
-                    const lineId = this.createId(axesId, index, this.SEPARATORS.SUBGRAPH_LINE);
-                    let lineNode = this.getExistingMetadataById(job, 'Line', lineId);
-                    if (!lineNode) {
-                        lineNode = this.core.createNode({
-                            parent: axesNode,
-                            base: this.META.Line
-                        });
-                        this.plotLines[axesId].push(lineId);
-                        this.core.setAttribute(lineNode, 'color', line.color);
-                        this.core.setAttribute(lineNode, 'label', line.label || `line ${index + 1}`);
-                        this.core.setAttribute(lineNode, 'lineStyle', line.lineStyle);
-                        this.core.setAttribute(lineNode, 'marker', line.marker);
-                        let points = line.points.map(pts => pts.join(',')).join(';');
-                        this.core.setAttribute(lineNode, 'points', points);
-                        this.core.setAttribute(lineNode, 'lineWidth', line.lineWidth);
-                    }
-                    this._metadata[lineId] = lineNode;
-                });
-
-                const images = axes.images;
-                this.images[axesId] = [];
-                images.forEach((image, index) => {
-                    const imageId = this.createId(axesId, index, this.SEPARATORS.SUBGRAPH_IMAGE);
-                    let imageNode = this.getExistingMetadataById(job, 'Line', imageId);
-                    if(!imageNode) {
-                        imageNode = this.core.createNode({
-                            parent: axesNode,
-                            base: this.META.Image
-                        });
-                        this.logger.debug(`Created Image Node with id ${imageId}`);
-                        this.images[axesId].push(imageNode);
-                        this.core.setAttribute(imageNode, 'rgbaMatrix', image.rgbaMatrix);
-                        this.core.setAttribute(imageNode, 'height', image.height);
-                        this.core.setAttribute(imageNode, 'width', image.width);
-                        this.core.setAttribute(imageNode, 'visible', image.visible);
-                        this.core.setAttribute(imageNode, 'numChannels', image.numChannels);
-                    }
-                    this._metadata[imageId] = imageNode;
-                });
+                // Add Lines
+                this.addAxesLines(axesNode, job, axes, axesId);
+                // Add Images
+                this.addAxesImage(axesNode, job, axes, axesId);
 
                 this._metadata[axesId] = axesNode;
             }
         });
     };
+
+    ExecuteJob.prototype.addAxesLines = function (axesNode, job, axes, axesId) {
+        // Check for line Nodes
+        const lines = axes.lines;
+        this.plotLines[axesId] = [];
+        lines.forEach((line, index) => {
+            const lineId = this.createId(axesId, index, this.SEPARATORS.SUBGRAPH_LINE);
+            let lineNode = this.getExistingMetadataById(job, 'Line', lineId);
+            if (!lineNode) {
+                lineNode = this.core.createNode({
+                    parent: axesNode,
+                    base: this.META.Line
+                });
+                this.plotLines[axesId].push(lineId);
+                this.core.setAttribute(lineNode, 'color', line.color);
+                this.core.setAttribute(lineNode, 'label', line.label || `line ${index + 1}`);
+                this.core.setAttribute(lineNode, 'lineStyle', line.lineStyle);
+                this.core.setAttribute(lineNode, 'marker', line.marker);
+                let points = line.points.map(pts => pts.join(',')).join(';');
+                this.core.setAttribute(lineNode, 'points', points);
+                this.core.setAttribute(lineNode, 'lineWidth', line.lineWidth);
+            }
+            this._metadata[lineId] = lineNode;
+        });
+    };
+
+    ExecuteJob.prototype.addAxesImage = function (axesNode, job, axes, axesId) {
+        // Check for Image Nodes
+        const images = axes.images;
+        this.images[axesId] = [];
+        images.forEach((image, index) => {
+            const imageId = this.createId(axesId, index, this.SEPARATORS.SUBGRAPH_IMAGE);
+            let imageNode = this.getExistingMetadataById(job, 'Image', imageId);
+            if (!imageNode) {
+                imageNode = this.core.createNode({
+                    parent: axesNode,
+                    base: this.META.Image
+                });
+                this.logger.debug(`Created Image Node with id ${imageId}`);
+                this.images[axesId].push(imageNode);
+                this.core.setAttribute(imageNode, 'rgbaMatrix', image.rgbaMatrix);
+                this.core.setAttribute(imageNode, 'height', image.height);
+                this.core.setAttribute(imageNode, 'width', image.width);
+                this.core.setAttribute(imageNode, 'visible', image.visible);
+                this.core.setAttribute(imageNode, 'numChannels', image.numChannels);
+            }
+            this._metadata[imageId] = imageNode;
+        });
+    }
 
     ExecuteJob.prototype._deleteByMetaDataId = function (id) {
         if (this._metadata[id]) {
@@ -128,6 +120,28 @@ define([
             this.deleteNode(nodeId);
         }
     };
+
+    ExecuteJob.prototype.createGraphNode = async function (job, id, state) {
+        let graph = this.getExistingMetadataById(job, 'Graph', id);
+        if (!graph) {
+            graph = this.core.createNode({
+                parent: job,
+                base: this.META.Graph
+            });
+            this.core.setAttribute(graph, 'id', id);
+            this.core.setAttribute(graph, 'title', state.title);
+            this.logger.info(`Adding graph titled ${state.title}`);
+        }
+        this._metadata[id] = graph;
+
+        const subGraphs = await this.core.loadChildren(graph);
+        subGraphs.forEach(subGraph => this.core.deleteNode(this.core.getPath(subGraph)));
+
+        if (this.subGraphs[id]) {
+            this.subGraphs[id].forEach(subGraphId => this._deleteByMetaDataId(subGraphId));
+        }
+        return graph;
+    }
 
     ExecuteJob.prototype[CONSTANTS.GRAPH_CREATE_LINE] = function (job, graphId, id) {
         var jobId = this.core.getPath(job),
