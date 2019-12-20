@@ -10,8 +10,7 @@ env:
 script: npm test
 before_install:
   - docker pull minio/minio
-  - docker run -d -p 9000:9000 --name minio-test -e "MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}"\
-      -e "MINIO_SECRET_KEY=${MINIO_SECRET_KEY}" minio/minio server ./data
+  - docker run -d -p 9000:9000 --name minio-test -e "MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}" -e "MINIO_SECRET_KEY=${MINIO_SECRET_KEY}" minio/minio server ./data
   - nvm install 8; if [[ `npm -v` != 6* ]]; then npm i -g npm@6; fi
 install: npm install
 python:
