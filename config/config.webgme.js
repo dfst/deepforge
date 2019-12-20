@@ -48,7 +48,7 @@ config.rest.components['ExecPulse'] = {
 };
 config.rest.components['S3StorageAPI'] = {
   src: __dirname + '/../src/routers/S3StorageAPI/S3StorageAPI.js',
-  mount: 'routers/S3StorageAPI',
+  mount: 'storage/s3',
   options: {}
 };
 

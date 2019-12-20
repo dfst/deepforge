@@ -87,6 +87,7 @@ define([
     S3Storage.prototype.getFile = async function (dataInfo) {
         const downloadURL = await this.getDownloadURL(dataInfo);
         const resObj = await this.fetch(downloadURL);
+        this.logger.debug(`Successfully downloaded artifact from S3 Storage`);
         return require.isBrowser ? await resObj.arrayBuffer() : Buffer.from(await resObj.arrayBuffer());
     };
 
