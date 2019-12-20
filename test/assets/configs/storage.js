@@ -8,11 +8,22 @@ async function getSciServerFilesConfig() {
     return {token, volume};
 }
 
-module.exports = async function() {
+function getMinioConfig() {
+    const endPoint = 'localhost';
+    const port = 9000;
+    const accessKey = process.env.MINIO_ACCESS_KEY;
+    const secretKey = process.env.MINIO_SECRET_KEY;
+    const bucketName = process.env.MINIO_BUCKET_NAME || 'deepforge';
+    const useSSL = false;
+
+    return {endPoint, port, accessKey, secretKey, bucketName, useSSL};
+}
+
+module.exports = async function () {
     const configs = {};
     configs['gme'] = {};
 
     configs['sciserver-files'] = await getSciServerFilesConfig();
-
+    configs['s3'] = getMinioConfig();
     return configs;
 };

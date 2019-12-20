@@ -9,10 +9,12 @@ var config = require('webgme/config/config.default'),
 // The paths can be loaded from the webgme-setup.json
 config.plugin.basePaths.push(__dirname + '/../src/plugins');
 config.plugin.basePaths.push(__dirname + '/../node_modules/webgme-simple-nodes/src/plugins');
+config.plugin.basePaths.push(__dirname + '/../node_modules/deepforge-keras/src/plugins');
 config.visualization.layout.basePaths.push(__dirname + '/../src/layouts');
 config.visualization.layout.basePaths.push(__dirname + '/../node_modules/webgme-chflayout/src/layouts');
 config.visualization.decoratorPaths.push(__dirname + '/../src/decorators');
 config.visualization.decoratorPaths.push(__dirname + '/../node_modules/webgme-easydag/src/decorators');
+config.visualization.decoratorPaths.push(__dirname + '/../node_modules/deepforge-keras/src/decorators');
 config.seedProjects.basePaths.push(__dirname + '/../src/seeds/devTests');
 config.seedProjects.basePaths.push(__dirname + '/../src/seeds/devUtilTests');
 config.seedProjects.basePaths.push(__dirname + '/../src/seeds/pipeline');
@@ -21,6 +23,12 @@ config.seedProjects.basePaths.push(__dirname + '/../src/seeds/project');
 config.seedProjects.basePaths.push(__dirname + '/../src/seeds/devProject');
 config.seedProjects.basePaths.push(__dirname + '/../src/seeds/minimal');
 config.seedProjects.basePaths.push(__dirname + '/../src/seeds/tests');
+config.seedProjects.basePaths.push(__dirname + '/../node_modules/deepforge-keras/src/seeds/dev');
+config.seedProjects.basePaths.push(__dirname + '/../node_modules/deepforge-keras/src/seeds/base');
+config.seedProjects.basePaths.push(__dirname + '/../node_modules/deepforge-keras/src/seeds/keras');
+config.seedProjects.basePaths.push(__dirname + '/../node_modules/deepforge-keras/src/seeds/tests');
+config.seedProjects.basePaths.push(__dirname + '/../node_modules/webgme-simple-nodes/src/seeds/ExampleModel');
+config.seedProjects.basePaths.push(__dirname + '/../node_modules/webgme-easydag/src/seeds/Example');
 
 
 
@@ -28,6 +36,7 @@ config.visualization.panelPaths.push(__dirname + '/../node_modules/webgme-fab/sr
 config.visualization.panelPaths.push(__dirname + '/../node_modules/webgme-breadcrumbheader/src/visualizers/panels');
 config.visualization.panelPaths.push(__dirname + '/../node_modules/webgme-autoviz/src/visualizers/panels');
 config.visualization.panelPaths.push(__dirname + '/../node_modules/webgme-easydag/src/visualizers/panels');
+config.visualization.panelPaths.push(__dirname + '/../node_modules/deepforge-keras/src/visualizers/panels');
 config.visualization.panelPaths.push(__dirname + '/../src/visualizers/panels');
 
 
@@ -46,20 +55,50 @@ config.rest.components['ExecPulse'] = {
   mount: 'execution/pulse',
   options: {}
 };
+config.rest.components['S3StorageAPI'] = {
+  src: __dirname + '/../src/routers/S3StorageAPI/S3StorageAPI.js',
+  mount: 'storage/s3',
+  options: {}
+};
+config.rest.components['KerasAnalysis'] = {
+  src: __dirname + '/../node_modules/deepforge-keras/src/routers/KerasAnalysis/KerasAnalysis.js',
+  mount: 'routers/KerasAnalysis',
+  options: {}
+};
 
 // Visualizer descriptors
 config.visualization.visualizerDescriptors.push(__dirname + '/../src/visualizers/Visualizers.json');
 // Add requirejs paths
 config.requirejsPaths = {
+  'KerasAnalysis': 'node_modules/deepforge-keras/src/routers/KerasAnalysis',
+  'Example': 'node_modules/webgme-easydag/src/seeds/Example',
+  'ExampleModel': 'node_modules/webgme-simple-nodes/src/seeds/ExampleModel',
+  'tests': 'node_modules/deepforge-keras/src/seeds/tests',
+  'keras': 'node_modules/deepforge-keras/src/seeds/keras',
+  'base': 'node_modules/deepforge-keras/src/seeds/base',
+  'dev': 'node_modules/deepforge-keras/src/seeds/dev',
+  'LayerDecorator': 'node_modules/deepforge-keras/src/decorators/LayerDecorator',
   'EllipseDecorator': 'node_modules/webgme-easydag/src/decorators/EllipseDecorator',
+  'GenericAttributeEditor': 'panels/GenericAttributeEditor/GenericAttributeEditorPanel',
+  'KerasArchEditor': 'panels/KerasArchEditor/KerasArchEditorPanel',
   'EasyDAG': 'panels/EasyDAG/EasyDAGPanel',
   'AutoViz': 'panels/AutoViz/AutoVizPanel',
   'BreadcrumbHeader': 'panels/BreadcrumbHeader/BreadcrumbHeaderPanel',
   'FloatingActionButton': 'panels/FloatingActionButton/FloatingActionButtonPanel',
   'CHFLayout': 'node_modules/webgme-chflayout/src/layouts/CHFLayout',
+  'MinimalExample': 'node_modules/webgme-simple-nodes/src/plugins/MinimalExample',
+  'ExamplePlugin': 'node_modules/webgme-simple-nodes/src/plugins/ExamplePlugin',
+  'ExportKeras': 'node_modules/deepforge-keras/src/plugins/ExportKeras',
+  'ValidateKeras': 'node_modules/deepforge-keras/src/plugins/ValidateKeras',
+  'GenerateKeras': 'node_modules/deepforge-keras/src/plugins/GenerateKeras',
+  'CreateKerasMeta': 'node_modules/deepforge-keras/src/plugins/CreateKerasMeta',
   'SimpleNodes': 'node_modules/webgme-simple-nodes/src/plugins/SimpleNodes',
   'panels': './src/visualizers/panels',
   'widgets': './src/visualizers/widgets',
+  'panels/GenericAttributeEditor': './node_modules/deepforge-keras/src/visualizers/panels/GenericAttributeEditor',
+  'widgets/GenericAttributeEditor': './node_modules/deepforge-keras/src/visualizers/widgets/GenericAttributeEditor',
+  'panels/KerasArchEditor': './node_modules/deepforge-keras/src/visualizers/panels/KerasArchEditor',
+  'widgets/KerasArchEditor': './node_modules/deepforge-keras/src/visualizers/widgets/KerasArchEditor',
   'panels/EasyDAG': './node_modules/webgme-easydag/src/visualizers/panels/EasyDAG',
   'widgets/EasyDAG': './node_modules/webgme-easydag/src/visualizers/widgets/EasyDAG',
   'panels/AutoViz': './node_modules/webgme-autoviz/src/visualizers/panels/AutoViz',
@@ -69,6 +108,7 @@ config.requirejsPaths = {
   'panels/FloatingActionButton': './node_modules/webgme-fab/src/visualizers/panels/FloatingActionButton',
   'widgets/FloatingActionButton': './node_modules/webgme-fab/src/visualizers/widgets/FloatingActionButton',
   'webgme-simple-nodes': './node_modules/webgme-simple-nodes/src/common',
+  'deepforge-keras': './node_modules/deepforge-keras/src/common',
   'webgme-chflayout': './node_modules/webgme-chflayout/src/common',
   'webgme-fab': './node_modules/webgme-fab/src/common',
   'webgme-breadcrumbheader': './node_modules/webgme-breadcrumbheader/src/common',

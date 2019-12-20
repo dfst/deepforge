@@ -68,7 +68,7 @@ describe('Pipeline execution', function () {
     const storageBackends = Storage.getAvailableBackends();
     const computeBackends = Compute.getAvailableBackends();
 
-    describe.only('pipelines', function() {
+    describe.only('pipelines', function () {
         let StorageConfigs, ComputeConfigs;
         before(async () => {
             this.timeout(4000);
@@ -77,10 +77,14 @@ describe('Pipeline execution', function () {
         });
 
         beforeEach(async () => {
-            const config = StorageConfigs['sciserver-files'];
-            const client = await Storage.getClient('sciserver-files', logger, config);
+            const sciServerConfig = StorageConfigs['sciserver-files'];
+            const minioConfig = StorageConfigs['s3'];
+            const sciServerClient = await Storage.getClient('sciserver-files', logger, sciServerConfig);
+            const minioClient = await Storage.getClient('s3', logger, minioConfig);
             const nop = () => {};
-            await client.deleteDir(project.projectId)
+            await sciServerClient.deleteDir(project.projectId)
+                .catch(nop);
+            await minioClient.deleteDir(project.projectId)
                 .catch(nop);
         });
 
@@ -91,7 +95,7 @@ describe('Pipeline execution', function () {
 
         Object.entries(Pipeline).forEach(entry => {
             const [name, nodeId] = entry;
-            it(`should run ${name} pipeline`, async function() {
+            it(`should run ${name} pipeline`, async function () {
                 const context = {
                     project: project,
                     commitHash: commitHash,
@@ -112,7 +116,7 @@ describe('Pipeline execution', function () {
             computeOptions.forEach(compute => {
                 const activeNode = compute === 'gme' || compute === 'local' ?
                     Pipeline.SmallPipeline : Pipeline.SimpleOutput;
-                it(`should execute on ${compute} with ${storage} storage`, async function() {
+                it(`should execute on ${compute} with ${storage} storage`, async function () {
                     this.timeout(maxDuration(compute, storage));
                     const config = {
                         storage: {
@@ -170,13 +174,13 @@ describe('Pipeline execution', function () {
 
     function maxDuration(compute) {
         const seconds = 1000;
-        const minutes = 60*seconds;
+        const minutes = 60 * seconds;
         if (compute.startsWith('sciserver')) {
-            return 5*minutes;
-        } else if (compute === 'gme'){
-            return 30*seconds;
+            return 5 * minutes;
+        } else if (compute === 'gme') {
+            return 30 * seconds;
         } else {
-            return 15*seconds;
+            return 15 * seconds;
         }
     }
 });

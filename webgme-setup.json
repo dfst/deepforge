@@ -325,6 +325,11 @@
         "src": "src/routers/ExecPulse",
         "test": "test/routers/ExecPulse",
         "mount": "execution/pulse"
+      },
+      "S3StorageAPI": {
+        "src": "src/routers/S3StorageAPI",
+        "test": "test/routers/S3StorageAPI",
+        "mount": "routers/S3StorageAPI"
       }
     }
   },
@@ -333,6 +338,30 @@
       "SimpleNodes": {
         "project": "webgme-simple-nodes",
         "path": "node_modules/webgme-simple-nodes/src/plugins/SimpleNodes"
+      },
+      "CreateKerasMeta": {
+        "project": "deepforge-keras",
+        "path": "node_modules/deepforge-keras/src/plugins/CreateKerasMeta"
+      },
+      "GenerateKeras": {
+        "project": "deepforge-keras",
+        "path": "node_modules/deepforge-keras/src/plugins/GenerateKeras"
+      },
+      "ValidateKeras": {
+        "project": "deepforge-keras",
+        "path": "node_modules/deepforge-keras/src/plugins/ValidateKeras"
+      },
+      "ExportKeras": {
+        "project": "deepforge-keras",
+        "path": "node_modules/deepforge-keras/src/plugins/ExportKeras"
+      },
+      "ExamplePlugin": {
+        "project": "webgme-simple-nodes",
+        "path": "node_modules/webgme-simple-nodes/src/plugins/ExamplePlugin"
+      },
+      "MinimalExample": {
+        "project": "webgme-simple-nodes",
+        "path": "node_modules/webgme-simple-nodes/src/plugins/MinimalExample"
       }
     },
     "layouts": {
@@ -373,6 +402,22 @@
         "secondary": false,
         "widget": "src/visualizers/widgets/EasyDAG",
         "project": "webgme-easydag"
+      },
+      "KerasArchEditor": {
+        "src": "panels/KerasArchEditor/KerasArchEditorPanel",
+        "title": "KerasArchEditor",
+        "panel": "src/visualizers/panels/KerasArchEditor",
+        "secondary": false,
+        "widget": "src/visualizers/widgets/KerasArchEditor",
+        "project": "deepforge-keras"
+      },
+      "GenericAttributeEditor": {
+        "src": "panels/GenericAttributeEditor/GenericAttributeEditorPanel",
+        "title": "GenericAttributeEditor",
+        "panel": "src/visualizers/panels/GenericAttributeEditor",
+        "secondary": false,
+        "widget": "src/visualizers/widgets/GenericAttributeEditor",
+        "project": "deepforge-keras"
       }
     },
     "addons": {},
@@ -380,9 +425,44 @@
       "EllipseDecorator": {
         "project": "webgme-easydag",
         "path": "node_modules/webgme-easydag/src/decorators/EllipseDecorator"
+      },
+      "LayerDecorator": {
+        "project": "deepforge-keras",
+        "path": "node_modules/deepforge-keras/src/decorators/LayerDecorator"
       }
     },
-    "seeds": {},
-    "routers": {}
+    "seeds": {
+      "dev": {
+        "project": "deepforge-keras",
+        "path": "node_modules/deepforge-keras/src/seeds/dev"
+      },
+      "base": {
+        "project": "deepforge-keras",
+        "path": "node_modules/deepforge-keras/src/seeds/base"
+      },
+      "keras": {
+        "project": "deepforge-keras",
+        "path": "node_modules/deepforge-keras/src/seeds/keras"
+      },
+      "tests": {
+        "project": "deepforge-keras",
+        "path": "node_modules/deepforge-keras/src/seeds/tests"
+      },
+      "ExampleModel": {
+        "project": "webgme-simple-nodes",
+        "path": "node_modules/webgme-simple-nodes/src/seeds/ExampleModel"
+      },
+      "Example": {
+        "project": "webgme-easydag",
+        "path": "node_modules/webgme-easydag/src/seeds/Example"
+      }
+    },
+    "routers": {
+      "KerasAnalysis": {
+        "project": "deepforge-keras",
+        "path": "node_modules/deepforge-keras/src/routers/KerasAnalysis",
+        "mount": "routers/KerasAnalysis"
+      }
+    }
   }
 }

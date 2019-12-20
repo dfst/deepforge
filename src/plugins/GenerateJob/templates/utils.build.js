@@ -2298,17 +2298,21 @@ define('text!deepforge/storage/backends/sciserver-files/metadata.json',[],functi
 define('text!deepforge/storage/backends/gme/metadata.json',[],function () { return '{\n    "name": "WebGME Blob Storage",\n    "configStructure": []\n}\n';});
 
 
+define('text!deepforge/storage/backends/s3/metadata.json',[],function () { return '{\n  "name": "Minio S3 Compatible Storage",\n  "configStructure": [\n    {\n      "name": "endPoint",\n      "displayName": "Endpoint URL",\n      "description": "Endpoint for the S3 Storage.",\n      "value": "",\n      "valueType": "string",\n      "readOnly": false\n    },\n    {\n      "name": "port",\n      "displayName": "PortNumber",\n      "description": "Port number for the S3 Server.",\n      "value": 9000,\n      "valueType": "number",\n      "readOnly": false\n    },\n    {\n      "name": "accessKey",\n      "displayName": "Access Key",\n      "description": "Access Key For S3 Server.",\n      "value": "",\n      "valueType": "string",\n      "readOnly": false\n    },\n    {\n      "name": "secretKey",\n      "displayName": "Secret Key",\n      "description": "Secret Key For S3 Server.",\n      "value": "",\n      "valueType": "string",\n      "readOnly": false\n    },\n    {\n      "name": "bucketName",\n      "displayName": "Bucket Name",\n      "description": "Bucket Name For S3 Server.",\n      "value": "deepforge",\n      "valueType": "string",\n      "readOnly": false\n    },\n    {\n      "name": "useSSL",\n      "displayName": "Use SSL",\n      "description": "Whether or not to use ssl",\n      "value": false,\n      "valueType": "boolean",\n      "readOnly": false\n    }\n  ]\n}\n';});
+
+
 
 var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
 
 var _regenerator = _interopRequireDefault(require("@babel/runtime/regenerator"));
 
 /*globals define, requirejs */
-define('deepforge/storage/index',['module', './backends/StorageBackend', 'text!deepforge/storage/backends/sciserver-files/metadata.json', 'text!deepforge/storage/backends/gme/metadata.json'], function (module, StorageBackend, sciserverFiles, gme) {
+define('deepforge/storage/index',['module', './backends/StorageBackend', 'text!deepforge/storage/backends/sciserver-files/metadata.json', 'text!deepforge/storage/backends/gme/metadata.json', 'text!deepforge/storage/backends/s3/metadata.json'], function (module, StorageBackend, sciserverFiles, gme, s3) {
   var Storage = {};
   var StorageMetadata = {};
   StorageMetadata['sciserver-files'] = JSON.parse(sciserverFiles);
   StorageMetadata['gme'] = JSON.parse(gme);
+  StorageMetadata['s3'] = JSON.parse(s3);
   var STORAGE_BACKENDS = Object.keys(StorageMetadata);
 
   Storage.getComponentId = function () {
@@ -2683,6 +2687,9 @@ var _regenerator = _interopRequireDefault(require("@babel/runtime/regenerator"))
 
 /* globals define, WebGMEGlobal */
 define('deepforge/storage/backends/StorageClient',['client/logger'], function (Logger) {
+  var fetch = require.isBrowser ? window.fetch : require.nodeRequire('node-fetch');
+  var Headers = require.isBrowser ? window.Headers : fetch.Headers;
+
   var StorageClient = function StorageClient(id, name, logger) {
     this.id = id;
     this.name = name;
@@ -2811,12 +2818,72 @@ define('deepforge/storage/backends/StorageClient',['client/logger'], function (L
     };
   };
 
+  StorageClient.prototype.fetch = function _callee7(url) {
+    var opts,
+        response,
+        status,
+        contents,
+        _args7 = arguments;
+    return _regenerator["default"].async(function _callee7$(_context7) {
+      while (1) {
+        switch (_context7.prev = _context7.next) {
+          case 0:
+            opts = _args7.length > 1 && _args7[1] !== undefined ? _args7[1] : {};
+            url = this.getURL(url);
+            opts.headers = opts.headers || new Headers();
+
+            if (opts.token) {
+              opts.headers.append('X-Auth-Token', this.token);
+            }
+
+            _context7.next = 6;
+            return _regenerator["default"].awrap(fetch(url, opts));
+
+          case 6:
+            response = _context7.sent;
+            status = response.status;
+
+            if (!(status === 400)) {
+              _context7.next = 12;
+              break;
+            }
+
+            throw new Error("Received \"Bad Request\" from StorageClient. Is the request invalid?");
+
+          case 12:
+            if (!(status > 399)) {
+              _context7.next = 17;
+              break;
+            }
+
+            _context7.next = 15;
+            return _regenerator["default"].awrap(response.json());
+
+          case 15:
+            contents = _context7.sent;
+            throw new Error("Files request failed: ".concat(JSON.stringify(contents)));
+
+          case 17:
+            return _context7.abrupt("return", response);
+
+          case 18:
+          case "end":
+            return _context7.stop();
+        }
+      }
+    }, null, this);
+  };
+
+  StorageClient.prototype.getURL = function (url) {
+    return url;
+  };
+
   return StorageClient;
 });
 
 
 define('deepforge/gmeConfig',[], function () {
-  return JSON.parse('{"addOn":{"enable":false,"monitorTimeout":120000,"workerUrl":null,"basePaths":["/home/brian/projektek/deepforge/node_modules/webgme/node_modules/webgme-engine/src/addon/core"]},"authentication":{"enable":false,"authorizer":{"path":"/home/brian/projektek/deepforge/node_modules/webgme/node_modules/webgme-engine/src/server/middleware/auth/defaultauthorizer","options":{}},"allowGuests":true,"allowUserRegistration":true,"registeredUsersCanCreate":true,"inferredUsersCanCreate":false,"userManagementPage":"/home/brian/projektek/deepforge/node_modules/webgme-user-management-page/src/server/usermanagement.js","guestAccount":"guest","guestCanCreate":true,"adminAccount":null,"publicOrganizations":[],"logOutUrl":"/profile/login","logInUrl":"/profile/login","salts":10,"jwt":{"expiresIn":604800,"renewBeforeExpires":3600,"cookieId":"access_token","publicKey":"/home/brian/projektek/deepforge/node_modules/webgme/node_modules/webgme-engine/src/server/middleware/auth/EXAMPLE_PUBLIC_KEY","tokenGenerator":"/home/brian/projektek/deepforge/node_modules/webgme/node_modules/webgme-engine/src/server/middleware/auth/localtokengenerator.js","algorithm":"RS256","privateKey":"/home/brian/projektek/deepforge/node_modules/webgme/node_modules/webgme-engine/src/server/middleware/auth/EXAMPLE_PRIVATE_KEY"}},"bin":{"log":{"transports":[{"transportType":"Console","options":{"level":"info","colorize":true,"timestamp":true,"prettyPrint":true,"handleExceptions":true,"depth":2}}]}},"blob":{"compressionLevel":0,"type":"FS","fsDir":"./blob-local-storage","namespace":"","s3":{"accessKeyId":"123","secretAccessKey":"abc","region":"","s3ForcePathStyle":true,"endpoint":"http://localhost:4567","sslEnabled":false}},"client":{"appDir":"/home/brian/projektek/deepforge/node_modules/webgme/src/client","appVersion":"2.38.0","faviconPath":"img/favicon.ico","pageTitle":null,"log":{"level":"debug"},"defaultConnectionRouter":"basic3","errorReporting":{"enable":false,"DSN":"","ravenOptions":null},"allowUserDefinedSVG":true},"core":{"enableCustomConstraints":false,"inverseRelationsCacheSize":2000,"overlayShardSize":10000},"debug":false,"documentEditing":{"enable":true,"disconnectTimeout":20000},"executor":{"enable":true,"nonce":null,"workerRefreshInterval":5000,"clearOutputTimeout":60000,"clearOldDataAtStartUp":false,"labelJobs":"./labelJobs.json"},"mongo":{"uri":"mongodb://127.0.0.1:27017/deepforge","options":{"w":1,"autoReconnect":true,"keepAlive":1}},"plugin":{"allowBrowserExecution":true,"allowServerExecution":true,"basePaths":["/home/brian/projektek/deepforge/node_modules/webgme/node_modules/webgme-engine/src/plugin/coreplugins","/home/brian/projektek/deepforge/config/../src/plugins","/home/brian/projektek/deepforge/config/../node_modules/webgme-simple-nodes/src/plugins"],"displayAll":false,"serverResultTimeout":60000},"requirejsPaths":{"EllipseDecorator":"node_modules/webgme-easydag/src/decorators/EllipseDecorator","EasyDAG":"panels/EasyDAG/EasyDAGPanel","AutoViz":"panels/AutoViz/AutoVizPanel","BreadcrumbHeader":"panels/BreadcrumbHeader/BreadcrumbHeaderPanel","FloatingActionButton":"panels/FloatingActionButton/FloatingActionButtonPanel","CHFLayout":"node_modules/webgme-chflayout/src/layouts/CHFLayout","SimpleNodes":"node_modules/webgme-simple-nodes/src/plugins/SimpleNodes","panels":"./src/visualizers/panels","widgets":"./src/visualizers/widgets","panels/EasyDAG":"./node_modules/webgme-easydag/src/visualizers/panels/EasyDAG","widgets/EasyDAG":"./node_modules/webgme-easydag/src/visualizers/widgets/EasyDAG","panels/AutoViz":"./node_modules/webgme-autoviz/src/visualizers/panels/AutoViz","widgets/AutoViz":"./node_modules/webgme-autoviz/src/visualizers/widgets/AutoViz","panels/BreadcrumbHeader":"./node_modules/webgme-breadcrumbheader/src/visualizers/panels/BreadcrumbHeader","widgets/BreadcrumbHeader":"./node_modules/webgme-breadcrumbheader/","panels/FloatingActionButton":"./node_modules/webgme-fab/src/visualizers/panels/FloatingActionButton","widgets/FloatingActionButton":"./node_modules/webgme-fab/src/visualizers/widgets/FloatingActionButton","webgme-simple-nodes":"./node_modules/webgme-simple-nodes/src/common","webgme-chflayout":"./node_modules/webgme-chflayout/src/common","webgme-fab":"./node_modules/webgme-fab/src/common","webgme-breadcrumbheader":"./node_modules/webgme-breadcrumbheader/src/common","webgme-autoviz":"./node_modules/webgme-autoviz/src/common","webgme-easydag":"./node_modules/webgme-easydag/src/common","deepforge":"./src/common","ace":"./src/visualizers/widgets/TextEditor/lib/ace"},"rest":{"components":{"JobLogsAPI":{"src":"/home/brian/projektek/deepforge/config/../src/routers/JobLogsAPI/JobLogsAPI.js","mount":"execution/logs","options":{}},"JobOriginAPI":{"src":"/home/brian/projektek/deepforge/config/../src/routers/JobOriginAPI/JobOriginAPI.js","mount":"job/origins","options":{}},"ExecPulse":{"src":"/home/brian/projektek/deepforge/config/../src/routers/ExecPulse/ExecPulse.js","mount":"execution/pulse","options":{}}}},"seedProjects":{"enable":true,"allowDuplication":true,"defaultProject":"project","basePaths":["src/seeds/project"],"createAtStartup":[]},"server":{"port":8888,"handle":null,"timeout":0,"workerManager":{"path":"/home/brian/projektek/deepforge/node_modules/webgme/node_modules/webgme-engine/src/server/worker/serverworkermanager","options":{}},"maxWorkers":10,"maxQueuedWorkerRequests":-1,"workerDisconnectTimeout":2000,"log":{"transports":[{"transportType":"Console","options":{"level":"info","colorize":true,"timestamp":true,"prettyPrint":true,"handleExceptions":true,"depth":2}},{"transportType":"File","options":{"name":"info-file","filename":"./server.log","level":"info","json":false}},{"transportType":"File","options":{"name":"error-file","filename":"./server-error.log","level":"error","handleExceptions":true,"json":false}}]},"extlibExcludes":["config/config..*.js$"],"behindSecureProxy":false,"bodyParser":{"json":{}}},"socketIO":{"clientOptions":{"reconnection":true,"reconnectionDelay":500,"forceNew":true},"serverOptions":{},"adapter":{"type":"Memory","options":{}}},"storage":{"cache":2000,"freezeCache":false,"broadcastProjectEvents":false,"maxEmittedCoreObjects":-1,"loadBucketSize":100,"loadBucketTimer":10,"clientCacheSize":2000,"autoMerge":{"enable":true},"keyType":"plainSHA1","database":{"type":"mongo","options":{}},"disableHashChecks":false,"requireHashesToMatch":true},"visualization":{"decoratorPaths":["/home/brian/projektek/deepforge/node_modules/webgme/src/client/decorators","/home/brian/projektek/deepforge/config/../src/decorators","/home/brian/projektek/deepforge/config/../node_modules/webgme-easydag/src/decorators"],"svgDirs":["/home/brian/projektek/deepforge/node_modules/webgme/src/client/assets/DecoratorSVG"],"visualizerDescriptors":["/home/brian/projektek/deepforge/node_modules/webgme/src/client/js/Visualizers.json","/home/brian/projektek/deepforge/config/../src/visualizers/Visualizers.json"],"panelPaths":["/home/brian/projektek/deepforge/node_modules/webgme/src/client/js/Panels","/home/brian/projektek/deepforge/config/../node_modules/webgme-fab/src/visualizers/panels","/home/brian/projektek/deepforge/config/../node_modules/webgme-breadcrumbheader/src/visualizers/panels","/home/brian/projektek/deepforge/config/../node_modules/webgme-autoviz/src/visualizers/panels","/home/brian/projektek/deepforge/config/../node_modules/webgme-easydag/src/visualizers/panels","/home/brian/projektek/deepforge/config/../src/visualizers/panels"],"layout":{"basePaths":["/home/brian/projektek/deepforge/node_modules/webgme/src/client/js/Layouts","/home/brian/projektek/deepforge/config/../src/layouts","/home/brian/projektek/deepforge/config/../node_modules/webgme-chflayout/src/layouts"]},"extraCss":["deepforge/styles/global.css"]},"webhooks":{"enable":false,"manager":"memory","defaults":{}}}');
+  return JSON.parse('{"addOn":{"enable":false,"monitorTimeout":120000,"workerUrl":null,"basePaths":["/home/catfished/deepforge-dev/deepforge/node_modules/webgme/node_modules/webgme-engine/src/addon/core"]},"authentication":{"enable":false,"authorizer":{"path":"/home/catfished/deepforge-dev/deepforge/node_modules/webgme/node_modules/webgme-engine/src/server/middleware/auth/defaultauthorizer","options":{}},"allowGuests":true,"allowUserRegistration":true,"registeredUsersCanCreate":true,"inferredUsersCanCreate":false,"userManagementPage":"/home/catfished/deepforge-dev/deepforge/node_modules/webgme-user-management-page/src/server/usermanagement.js","guestAccount":"guest","guestCanCreate":true,"adminAccount":null,"publicOrganizations":[],"logOutUrl":"/profile/login","logInUrl":"/profile/login","salts":10,"jwt":{"expiresIn":604800,"renewBeforeExpires":3600,"cookieId":"access_token","publicKey":"/home/catfished/deepforge-dev/deepforge/node_modules/webgme/node_modules/webgme-engine/src/server/middleware/auth/EXAMPLE_PUBLIC_KEY","tokenGenerator":"/home/catfished/deepforge-dev/deepforge/node_modules/webgme/node_modules/webgme-engine/src/server/middleware/auth/localtokengenerator.js","algorithm":"RS256","privateKey":"/home/catfished/deepforge-dev/deepforge/node_modules/webgme/node_modules/webgme-engine/src/server/middleware/auth/EXAMPLE_PRIVATE_KEY"}},"bin":{"log":{"transports":[{"transportType":"Console","options":{"level":"info","colorize":true,"timestamp":true,"prettyPrint":true,"handleExceptions":true,"depth":2}}]}},"blob":{"compressionLevel":0,"type":"FS","fsDir":"./blob-local-storage","namespace":"","s3":{"accessKeyId":"123","secretAccessKey":"abc","region":"","s3ForcePathStyle":true,"endpoint":"http://localhost:4567","sslEnabled":false}},"client":{"appDir":"/home/catfished/deepforge-dev/deepforge/node_modules/webgme/src/client","appVersion":"2.38.0","faviconPath":"img/favicon.ico","pageTitle":null,"log":{"level":"debug"},"defaultConnectionRouter":"basic3","errorReporting":{"enable":false,"DSN":"","ravenOptions":null},"allowUserDefinedSVG":true},"core":{"enableCustomConstraints":false,"inverseRelationsCacheSize":2000,"overlayShardSize":10000},"debug":false,"documentEditing":{"enable":true,"disconnectTimeout":20000},"executor":{"enable":true,"nonce":null,"workerRefreshInterval":5000,"clearOutputTimeout":60000,"clearOldDataAtStartUp":false,"labelJobs":"./labelJobs.json"},"mongo":{"uri":"mongodb://127.0.0.1:27017/deepforge","options":{"w":1,"autoReconnect":true,"keepAlive":1}},"plugin":{"allowBrowserExecution":true,"allowServerExecution":true,"basePaths":["/home/catfished/deepforge-dev/deepforge/node_modules/webgme/node_modules/webgme-engine/src/plugin/coreplugins","/home/catfished/deepforge-dev/deepforge/config/../src/plugins","/home/catfished/deepforge-dev/deepforge/config/../node_modules/webgme-simple-nodes/src/plugins","/home/catfished/deepforge-dev/deepforge/config/../node_modules/deepforge-keras/src/plugins"],"displayAll":false,"serverResultTimeout":60000},"requirejsPaths":{"KerasAnalysis":"node_modules/deepforge-keras/src/routers/KerasAnalysis","Example":"node_modules/webgme-easydag/src/seeds/Example","ExampleModel":"node_modules/webgme-simple-nodes/src/seeds/ExampleModel","tests":"node_modules/deepforge-keras/src/seeds/tests","keras":"node_modules/deepforge-keras/src/seeds/keras","base":"node_modules/deepforge-keras/src/seeds/base","dev":"node_modules/deepforge-keras/src/seeds/dev","LayerDecorator":"node_modules/deepforge-keras/src/decorators/LayerDecorator","EllipseDecorator":"node_modules/webgme-easydag/src/decorators/EllipseDecorator","GenericAttributeEditor":"panels/GenericAttributeEditor/GenericAttributeEditorPanel","KerasArchEditor":"panels/KerasArchEditor/KerasArchEditorPanel","EasyDAG":"panels/EasyDAG/EasyDAGPanel","AutoViz":"panels/AutoViz/AutoVizPanel","BreadcrumbHeader":"panels/BreadcrumbHeader/BreadcrumbHeaderPanel","FloatingActionButton":"panels/FloatingActionButton/FloatingActionButtonPanel","CHFLayout":"node_modules/webgme-chflayout/src/layouts/CHFLayout","MinimalExample":"node_modules/webgme-simple-nodes/src/plugins/MinimalExample","ExamplePlugin":"node_modules/webgme-simple-nodes/src/plugins/ExamplePlugin","ExportKeras":"node_modules/deepforge-keras/src/plugins/ExportKeras","ValidateKeras":"node_modules/deepforge-keras/src/plugins/ValidateKeras","GenerateKeras":"node_modules/deepforge-keras/src/plugins/GenerateKeras","CreateKerasMeta":"node_modules/deepforge-keras/src/plugins/CreateKerasMeta","SimpleNodes":"node_modules/webgme-simple-nodes/src/plugins/SimpleNodes","panels":"./src/visualizers/panels","widgets":"./src/visualizers/widgets","panels/GenericAttributeEditor":"./node_modules/deepforge-keras/src/visualizers/panels/GenericAttributeEditor","widgets/GenericAttributeEditor":"./node_modules/deepforge-keras/src/visualizers/widgets/GenericAttributeEditor","panels/KerasArchEditor":"./node_modules/deepforge-keras/src/visualizers/panels/KerasArchEditor","widgets/KerasArchEditor":"./node_modules/deepforge-keras/src/visualizers/widgets/KerasArchEditor","panels/EasyDAG":"./node_modules/webgme-easydag/src/visualizers/panels/EasyDAG","widgets/EasyDAG":"./node_modules/webgme-easydag/src/visualizers/widgets/EasyDAG","panels/AutoViz":"./node_modules/webgme-autoviz/src/visualizers/panels/AutoViz","widgets/AutoViz":"./node_modules/webgme-autoviz/src/visualizers/widgets/AutoViz","panels/BreadcrumbHeader":"./node_modules/webgme-breadcrumbheader/src/visualizers/panels/BreadcrumbHeader","widgets/BreadcrumbHeader":"./node_modules/webgme-breadcrumbheader/","panels/FloatingActionButton":"./node_modules/webgme-fab/src/visualizers/panels/FloatingActionButton","widgets/FloatingActionButton":"./node_modules/webgme-fab/src/visualizers/widgets/FloatingActionButton","webgme-simple-nodes":"./node_modules/webgme-simple-nodes/src/common","deepforge-keras":"./node_modules/deepforge-keras/src/common","webgme-chflayout":"./node_modules/webgme-chflayout/src/common","webgme-fab":"./node_modules/webgme-fab/src/common","webgme-breadcrumbheader":"./node_modules/webgme-breadcrumbheader/src/common","webgme-autoviz":"./node_modules/webgme-autoviz/src/common","webgme-easydag":"./node_modules/webgme-easydag/src/common","deepforge":"./src/common","ace":"./src/visualizers/widgets/TextEditor/lib/ace"},"rest":{"components":{"JobLogsAPI":{"src":"/home/catfished/deepforge-dev/deepforge/config/../src/routers/JobLogsAPI/JobLogsAPI.js","mount":"execution/logs","options":{}},"JobOriginAPI":{"src":"/home/catfished/deepforge-dev/deepforge/config/../src/routers/JobOriginAPI/JobOriginAPI.js","mount":"job/origins","options":{}},"ExecPulse":{"src":"/home/catfished/deepforge-dev/deepforge/config/../src/routers/ExecPulse/ExecPulse.js","mount":"execution/pulse","options":{}},"S3StorageAPI":{"src":"/home/catfished/deepforge-dev/deepforge/config/../src/routers/S3StorageAPI/S3StorageAPI.js","mount":"storage/s3","options":{}},"KerasAnalysis":{"src":"/home/catfished/deepforge-dev/deepforge/config/../node_modules/deepforge-keras/src/routers/KerasAnalysis/KerasAnalysis.js","mount":"routers/KerasAnalysis","options":{}}}},"seedProjects":{"enable":true,"allowDuplication":true,"defaultProject":"project","basePaths":["src/seeds/project"],"createAtStartup":[]},"server":{"port":8888,"handle":null,"timeout":0,"workerManager":{"path":"/home/catfished/deepforge-dev/deepforge/node_modules/webgme/node_modules/webgme-engine/src/server/worker/serverworkermanager","options":{}},"maxWorkers":10,"maxQueuedWorkerRequests":-1,"workerDisconnectTimeout":2000,"log":{"transports":[{"transportType":"Console","options":{"level":"info","colorize":true,"timestamp":true,"prettyPrint":true,"handleExceptions":true,"depth":2}},{"transportType":"File","options":{"name":"info-file","filename":"./server.log","level":"info","json":false}},{"transportType":"File","options":{"name":"error-file","filename":"./server-error.log","level":"error","handleExceptions":true,"json":false}}]},"extlibExcludes":["config/config..*.js$"],"behindSecureProxy":false,"bodyParser":{"json":{}}},"socketIO":{"clientOptions":{"reconnection":true,"reconnectionDelay":500,"forceNew":true},"serverOptions":{},"adapter":{"type":"Memory","options":{}}},"storage":{"cache":2000,"freezeCache":false,"broadcastProjectEvents":false,"maxEmittedCoreObjects":-1,"loadBucketSize":100,"loadBucketTimer":10,"clientCacheSize":2000,"autoMerge":{"enable":true},"keyType":"plainSHA1","database":{"type":"mongo","options":{}},"disableHashChecks":false,"requireHashesToMatch":true},"visualization":{"decoratorPaths":["/home/catfished/deepforge-dev/deepforge/node_modules/webgme/src/client/decorators","/home/catfished/deepforge-dev/deepforge/config/../src/decorators","/home/catfished/deepforge-dev/deepforge/config/../node_modules/webgme-easydag/src/decorators","/home/catfished/deepforge-dev/deepforge/config/../node_modules/deepforge-keras/src/decorators"],"svgDirs":["/home/catfished/deepforge-dev/deepforge/node_modules/webgme/src/client/assets/DecoratorSVG"],"visualizerDescriptors":["/home/catfished/deepforge-dev/deepforge/node_modules/webgme/src/client/js/Visualizers.json","/home/catfished/deepforge-dev/deepforge/config/../src/visualizers/Visualizers.json"],"panelPaths":["/home/catfished/deepforge-dev/deepforge/node_modules/webgme/src/client/js/Panels","/home/catfished/deepforge-dev/deepforge/config/../node_modules/webgme-fab/src/visualizers/panels","/home/catfished/deepforge-dev/deepforge/config/../node_modules/webgme-breadcrumbheader/src/visualizers/panels","/home/catfished/deepforge-dev/deepforge/config/../node_modules/webgme-autoviz/src/visualizers/panels","/home/catfished/deepforge-dev/deepforge/config/../node_modules/webgme-easydag/src/visualizers/panels","/home/catfished/deepforge-dev/deepforge/config/../node_modules/deepforge-keras/src/visualizers/panels","/home/catfished/deepforge-dev/deepforge/config/../src/visualizers/panels"],"layout":{"basePaths":["/home/catfished/deepforge-dev/deepforge/node_modules/webgme/src/client/js/Layouts","/home/catfished/deepforge-dev/deepforge/config/../src/layouts","/home/catfished/deepforge-dev/deepforge/config/../node_modules/webgme-chflayout/src/layouts"]},"extraCss":["deepforge/styles/global.css"]},"webhooks":{"enable":false,"manager":"memory","defaults":{}}}');
 });
 
 
@@ -2983,9 +3050,374 @@ var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefau
 var _regenerator = _interopRequireDefault(require("@babel/runtime/regenerator"));
 
 /* globals define */
+define('deepforge/storage/backends/s3/Client',['../StorageClient'], function (StorageClient) {
+  var S3Storage = function S3Storage(id, name, logger) {
+    var config = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
+    StorageClient.apply(this, arguments);
+    this.relativeUrl = '/storage/s3';
+    this.bucketName = config.bucketName;
+    this.config = config;
+  };
+
+  S3Storage.prototype = Object.create(StorageClient.prototype);
+  S3Storage.prototype.constructor = S3Storage;
+
+  S3Storage.prototype._createBucketIfNeeded = function _callee(config) {
+    var res, _ref, alreadyExists;
+
+    return _regenerator["default"].async(function _callee$(_context) {
+      while (1) {
+        switch (_context.prev = _context.next) {
+          case 0:
+            if (config.bucketName) {
+              _context.next = 2;
+              break;
+            }
+
+            throw new Error('Please Provide a bucket name to use with S3 Bucket Service');
+
+          case 2:
+            _context.next = 4;
+            return _regenerator["default"].awrap(this.fetch('/createBucket', {
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              method: 'POST',
+              body: JSON.stringify({
+                config: config,
+                bucketName: config.bucketName
+              })
+            }));
+
+          case 4:
+            res = _context.sent;
+            _context.next = 7;
+            return _regenerator["default"].awrap(res.json());
+
+          case 7:
+            _ref = _context.sent;
+            alreadyExists = _ref.alreadyExists;
+            this.logger.debug("Bucket ".concat(config.bucketName, ", ").concat(alreadyExists ? 'Already Exists.' : 'created.'));
+
+          case 10:
+          case "end":
+            return _context.stop();
+        }
+      }
+    }, null, this);
+  };
+
+  S3Storage.prototype._getPreAssignedURL = function _callee2(config, bucketName, httpMethod, path) {
+    var res;
+    return _regenerator["default"].async(function _callee2$(_context2) {
+      while (1) {
+        switch (_context2.prev = _context2.next) {
+          case 0:
+            _context2.next = 2;
+            return _regenerator["default"].awrap(this.fetch('/presignedUrl', {
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              method: 'POST',
+              body: JSON.stringify({
+                config: config,
+                bucketName: bucketName,
+                httpMethod: httpMethod,
+                path: path
+              })
+            }));
+
+          case 2:
+            res = _context2.sent;
+            _context2.next = 5;
+            return _regenerator["default"].awrap(res.json());
+
+          case 5:
+            return _context2.abrupt("return", _context2.sent);
+
+          case 6:
+          case "end":
+            return _context2.stop();
+        }
+      }
+    }, null, this);
+  };
+
+  S3Storage.prototype._stat = function _callee3(config, path) {
+    var endPoint, port, secretKey, accessKey, useSSL, res;
+    return _regenerator["default"].async(function _callee3$(_context3) {
+      while (1) {
+        switch (_context3.prev = _context3.next) {
+          case 0:
+            endPoint = config.endPoint, port = config.port, secretKey = config.secretKey, accessKey = config.accessKey, useSSL = config.useSSL;
+            _context3.next = 3;
+            return _regenerator["default"].awrap(this.fetch('/statObject', {
+              method: 'post',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                config: {
+                  endPoint: endPoint,
+                  port: port,
+                  secretKey: secretKey,
+                  accessKey: accessKey,
+                  useSSL: useSSL
+                },
+                bucketName: this.bucketName,
+                path: path
+              })
+            }));
+
+          case 3:
+            res = _context3.sent;
+            _context3.next = 6;
+            return _regenerator["default"].awrap(res.json());
+
+          case 6:
+            return _context3.abrupt("return", _context3.sent);
+
+          case 7:
+          case "end":
+            return _context3.stop();
+        }
+      }
+    }, null, this);
+  };
+
+  S3Storage.prototype.putFile = function _callee4(path, content) {
+    var httpInfo, res, metadata;
+    return _regenerator["default"].async(function _callee4$(_context4) {
+      while (1) {
+        switch (_context4.prev = _context4.next) {
+          case 0:
+            _context4.next = 2;
+            return _regenerator["default"].awrap(this._createBucketIfNeeded(this.config));
+
+          case 2:
+            _context4.next = 4;
+            return _regenerator["default"].awrap(this._getPreAssignedURL(this.config, this.bucketName, 'put', path));
+
+          case 4:
+            httpInfo = _context4.sent;
+            _context4.next = 7;
+            return _regenerator["default"].awrap(this.fetch(httpInfo.queryURL, {
+              method: httpInfo.httpMethod.toUpperCase(),
+              body: content
+            }));
+
+          case 7:
+            res = _context4.sent;
+            this.logger.debug("Successfully uploaded the file to ".concat(httpInfo.queryURL, ", server response ").concat(res.body));
+            _context4.next = 11;
+            return _regenerator["default"].awrap(this._stat(this.config, path));
+
+          case 11:
+            metadata = _context4.sent;
+            metadata.bucketName = this.bucketName;
+            metadata.path = path;
+            _context4.next = 16;
+            return _regenerator["default"].awrap(this._getPreAssignedURL(this.config, this.bucketName, 'get', path));
+
+          case 16:
+            res = _context4.sent;
+            metadata.url = res.queryURL;
+            _context4.next = 20;
+            return _regenerator["default"].awrap(this._getPreAssignedURL(this.config, this.bucketName, 'delete', path));
+
+          case 20:
+            res = _context4.sent;
+            metadata.deleteURL = res.queryURL;
+            return _context4.abrupt("return", this.createDataInfo(metadata));
+
+          case 23:
+          case "end":
+            return _context4.stop();
+        }
+      }
+    }, null, this);
+  };
+
+  S3Storage.prototype.getFile = function _callee5(dataInfo) {
+    var downloadURL, resObj;
+    return _regenerator["default"].async(function _callee5$(_context5) {
+      while (1) {
+        switch (_context5.prev = _context5.next) {
+          case 0:
+            _context5.next = 2;
+            return _regenerator["default"].awrap(this.getDownloadURL(dataInfo));
+
+          case 2:
+            downloadURL = _context5.sent;
+            _context5.next = 5;
+            return _regenerator["default"].awrap(this.fetch(downloadURL));
+
+          case 5:
+            resObj = _context5.sent;
+
+            if (!require.isBrowser) {
+              _context5.next = 12;
+              break;
+            }
+
+            _context5.next = 9;
+            return _regenerator["default"].awrap(resObj.arrayBuffer());
+
+          case 9:
+            _context5.t0 = _context5.sent;
+            _context5.next = 17;
+            break;
+
+          case 12:
+            _context5.t1 = Buffer;
+            _context5.next = 15;
+            return _regenerator["default"].awrap(resObj.arrayBuffer());
+
+          case 15:
+            _context5.t2 = _context5.sent;
+            _context5.t0 = _context5.t1.from.call(_context5.t1, _context5.t2);
+
+          case 17:
+            return _context5.abrupt("return", _context5.t0);
+
+          case 18:
+          case "end":
+            return _context5.stop();
+        }
+      }
+    }, null, this);
+  };
+
+  S3Storage.prototype.deleteFile = function _callee6(dataInfo) {
+    var data;
+    return _regenerator["default"].async(function _callee6$(_context6) {
+      while (1) {
+        switch (_context6.prev = _context6.next) {
+          case 0:
+            data = dataInfo.data;
+            _context6.next = 3;
+            return _regenerator["default"].awrap(this.fetch(data.deleteURL, {
+              method: 'DELETE'
+            }));
+
+          case 3:
+            return _context6.abrupt("return", _context6.sent);
+
+          case 4:
+          case "end":
+            return _context6.stop();
+        }
+      }
+    }, null, this);
+  };
+
+  S3Storage.prototype.getDownloadURL = function _callee7(dataInfo) {
+    var data;
+    return _regenerator["default"].async(function _callee7$(_context7) {
+      while (1) {
+        switch (_context7.prev = _context7.next) {
+          case 0:
+            data = dataInfo.data;
+            return _context7.abrupt("return", data.url);
+
+          case 2:
+          case "end":
+            return _context7.stop();
+        }
+      }
+    });
+  };
+
+  S3Storage.prototype.getMetadata = function _callee8(dataInfo) {
+    var metaData;
+    return _regenerator["default"].async(function _callee8$(_context8) {
+      while (1) {
+        switch (_context8.prev = _context8.next) {
+          case 0:
+            metaData = {
+              size: dataInfo.data.size
+            };
+            return _context8.abrupt("return", metaData);
+
+          case 2:
+          case "end":
+            return _context8.stop();
+        }
+      }
+    });
+  };
+
+  S3Storage.prototype.getCachePath = function _callee9(dataInfo) {
+    var _dataInfo$data, bucketName, path;
+
+    return _regenerator["default"].async(function _callee9$(_context9) {
+      while (1) {
+        switch (_context9.prev = _context9.next) {
+          case 0:
+            _dataInfo$data = dataInfo.data, bucketName = _dataInfo$data.bucketName, path = _dataInfo$data.path;
+            return _context9.abrupt("return", "".concat(this.id, "/").concat(bucketName, "/").concat(path));
+
+          case 2:
+          case "end":
+            return _context9.stop();
+        }
+      }
+    }, null, this);
+  };
+
+  S3Storage.prototype.deleteDir = function _callee10(dirName) {
+    var res;
+    return _regenerator["default"].async(function _callee10$(_context10) {
+      while (1) {
+        switch (_context10.prev = _context10.next) {
+          case 0:
+            if (this.bucketName) {
+              _context10.next = 2;
+              break;
+            }
+
+            throw new Error("Cannot delete a directory without a bucket name");
+
+          case 2:
+            _context10.next = 4;
+            return _regenerator["default"].awrap(this._getPreAssignedURL(this.config, this.bucketName, 'delete', dirName));
+
+          case 4:
+            res = _context10.sent;
+            _context10.next = 7;
+            return _regenerator["default"].awrap(this.deleteFile({
+              data: res.queryURL
+            }));
+
+          case 7:
+            return _context10.abrupt("return", _context10.sent);
+
+          case 8:
+          case "end":
+            return _context10.stop();
+        }
+      }
+    }, null, this);
+  };
+
+  S3Storage.prototype.getURL = function (endPointOrFullURL) {
+    if (endPointOrFullURL.startsWith('http')) {
+      return endPointOrFullURL;
+    }
+
+    return this.relativeUrl + endPointOrFullURL;
+  };
+
+  return S3Storage;
+});
+
+
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
+
+var _regenerator = _interopRequireDefault(require("@babel/runtime/regenerator"));
+
+/* globals define */
 define('deepforge/storage/backends/sciserver-files/Client',['../StorageClient'], function (StorageClient) {
-  var fetch = require.isBrowser ? window.fetch : require.nodeRequire('node-fetch');
-  var Headers = require.isBrowser ? window.Headers : fetch.Headers;
   var BASE_URL = 'https://apps.sciserver.org/fileservice/api/';
 
   var SciServerFiles = function SciServerFiles(id, name, logger) {
@@ -3007,7 +3439,9 @@ define('deepforge/storage/backends/sciserver-files/Client',['../StorageClient'],
             _dataInfo$data = dataInfo.data, volume = _dataInfo$data.volume, filename = _dataInfo$data.filename;
             url = "file/Storage/".concat(volume, "/").concat(filename);
             _context.next = 4;
-            return _regenerator["default"].awrap(this.fetch(url));
+            return _regenerator["default"].awrap(this.fetch(url, {
+              token: this.token
+            }));
 
           case 4:
             response = _context.sent;
@@ -3056,7 +3490,8 @@ define('deepforge/storage/backends/sciserver-files/Client',['../StorageClient'],
           case 2:
             opts = {
               method: 'PUT',
-              body: content
+              body: content,
+              token: this.token
             };
             url = "file/Storage/".concat(this.volume, "/").concat(filename);
             _context2.next = 6;
@@ -3086,7 +3521,8 @@ define('deepforge/storage/backends/sciserver-files/Client',['../StorageClient'],
           case 0:
             url = "data/Storage/".concat(this.volume, "/").concat(dirname);
             opts = {
-              method: 'DELETE'
+              method: 'DELETE',
+              token: this.token
             };
             _context3.next = 4;
             return _regenerator["default"].awrap(this.fetch(url, opts));
@@ -3112,7 +3548,8 @@ define('deepforge/storage/backends/sciserver-files/Client',['../StorageClient'],
             _dataInfo$data2 = dataInfo.data, volume = _dataInfo$data2.volume, filename = _dataInfo$data2.filename;
             url = "data/Storage/".concat(volume, "/").concat(filename);
             opts = {
-              method: 'DELETE'
+              method: 'DELETE',
+              token: this.token
             };
             _context4.next = 5;
             return _regenerator["default"].awrap(this.fetch(url, opts));
@@ -3175,7 +3612,9 @@ define('deepforge/storage/backends/sciserver-files/Client',['../StorageClient'],
             headers = new Headers();
             headers.append('Content-Type', 'application/xml');
             _context7.next = 6;
-            return _regenerator["default"].awrap(this.fetch(url));
+            return _regenerator["default"].awrap(this.fetch(url, {
+              token: this.token
+            }));
 
           case 6:
             response = _context7.sent;
@@ -3202,51 +3641,17 @@ define('deepforge/storage/backends/sciserver-files/Client',['../StorageClient'],
     }, null, this);
   };
 
-  SciServerFiles.prototype.fetch = function _callee8(url) {
-    var opts,
-        response,
-        status,
-        contents,
-        _args8 = arguments;
+  SciServerFiles.prototype.getCachePath = function _callee8(dataInfo) {
+    var _dataInfo$data3, volume, filename;
+
     return _regenerator["default"].async(function _callee8$(_context8) {
       while (1) {
         switch (_context8.prev = _context8.next) {
           case 0:
-            opts = _args8.length > 1 && _args8[1] !== undefined ? _args8[1] : {};
-            url = BASE_URL + url;
-            opts.headers = opts.headers || new Headers();
-            opts.headers.append('X-Auth-Token', this.token);
-            _context8.next = 6;
-            return _regenerator["default"].awrap(fetch(url, opts));
+            _dataInfo$data3 = dataInfo.data, volume = _dataInfo$data3.volume, filename = _dataInfo$data3.filename;
+            return _context8.abrupt("return", "".concat(this.id, "/").concat(volume, "/").concat(filename));
 
-          case 6:
-            response = _context8.sent;
-            status = response.status;
-
-            if (!(status === 400)) {
-              _context8.next = 12;
-              break;
-            }
-
-            throw new Error('Received "Bad Request" from SciServer. Is the token invalid?');
-
-          case 12:
-            if (!(status > 399)) {
-              _context8.next = 17;
-              break;
-            }
-
-            _context8.next = 15;
-            return _regenerator["default"].awrap(response.json());
-
-          case 15:
-            contents = _context8.sent;
-            throw new Error("SciServer Files request failed: ".concat(contents.error));
-
-          case 17:
-            return _context8.abrupt("return", response);
-
-          case 18:
+          case 2:
           case "end":
             return _context8.stop();
         }
@@ -3254,22 +3659,8 @@ define('deepforge/storage/backends/sciserver-files/Client',['../StorageClient'],
     }, null, this);
   };
 
-  SciServerFiles.prototype.getCachePath = function _callee9(dataInfo) {
-    var _dataInfo$data3, volume, filename;
-
-    return _regenerator["default"].async(function _callee9$(_context9) {
-      while (1) {
-        switch (_context9.prev = _context9.next) {
-          case 0:
-            _dataInfo$data3 = dataInfo.data, volume = _dataInfo$data3.volume, filename = _dataInfo$data3.filename;
-            return _context9.abrupt("return", "".concat(this.id, "/").concat(volume, "/").concat(filename));
-
-          case 2:
-          case "end":
-            return _context9.stop();
-        }
-      }
-    }, null, this);
+  SciServerFiles.prototype.getURL = function (url) {
+    return BASE_URL + url;
   };
 
   return SciServerFiles;
@@ -3277,7 +3668,7 @@ define('deepforge/storage/backends/sciserver-files/Client',['../StorageClient'],
 
 
 /* globals define */
-define('../utils/build-includes.js',['blob/BlobClient', 'deepforge/storage/index', 'deepforge/Constants', 'client/logger', 'deepforge/storage/backends/StorageBackend', 'deepforge/storage/backends/StorageClient', 'deepforge/storage/backends/gme/Client', 'text!deepforge/storage/backends/gme/metadata.json', 'deepforge/storage/backends/sciserver-files/Client', 'text!deepforge/storage/backends/sciserver-files/metadata.json', 'deepforge/storage/index'], function (BlobClient, Storage, Constants, Logger) {
+define('../utils/build-includes.js',['blob/BlobClient', 'deepforge/storage/index', 'deepforge/Constants', 'client/logger', 'deepforge/storage/backends/StorageBackend', 'deepforge/storage/backends/StorageClient', 'deepforge/storage/backends/gme/Client', 'text!deepforge/storage/backends/gme/metadata.json', 'deepforge/storage/backends/s3/Client', 'text!deepforge/storage/backends/s3/metadata.json', 'deepforge/storage/backends/sciserver-files/Client', 'text!deepforge/storage/backends/sciserver-files/metadata.json', 'deepforge/storage/index'], function (BlobClient, Storage, Constants, Logger) {
   return {
     BlobClient: BlobClient,
     Storage: Storage,
@@ -3295,6 +3686,8 @@ define([
     'deepforge/storage/backends/StorageClient',
     'deepforge/storage/backends/gme/Client',
     'text!deepforge/storage/backends/gme/metadata.json',
+    'deepforge/storage/backends/s3/Client',
+    'text!deepforge/storage/backends/s3/metadata.json',
     'deepforge/storage/backends/sciserver-files/Client',
     'text!deepforge/storage/backends/sciserver-files/metadata.json',
     'deepforge/storage/index',
