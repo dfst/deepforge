@@ -6,13 +6,22 @@ define([
 ) {
     const S3Storage = function (id, name, logger, config = {}) {
         StorageClient.apply(this, arguments);
-        this.relativeUrl = '/storage/s3';
+        this.relativeUrl = this._getServerURL(config.serverParams || {});
         this.bucketName = config.bucketName;
         this.config = config;
     };
 
+
     S3Storage.prototype = Object.create(StorageClient.prototype);
     S3Storage.prototype.constructor = S3Storage;
+
+    S3Storage.prototype._getServerURL = function(serverParams){
+        const relativeURL = '/storage/s3';
+        const protocol = serverParams.httpSecure ? 'https': 'http';
+        const serverURL = serverParams.server || '127.0.0.1';
+        const port = serverParams.port || '8080';
+        return `${protocol}://${serverURL}:${port}${relativeURL}`;
+    };
 
     S3Storage.prototype._createBucketIfNeeded = async function (config) {
         if (!config.bucketName) {
