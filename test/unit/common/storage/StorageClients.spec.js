@@ -1,5 +1,5 @@
 describe('StorageClient', async function () {
-    const testFixture = require('../../globals');
+    const testFixture = require('../../../globals');
     const assert = require('assert');
     const {promisify} = require('util');
     const requireJS = testFixture.requirejs;
