@@ -3054,13 +3054,21 @@ define('deepforge/storage/backends/s3/Client',['../StorageClient'], function (St
   var S3Storage = function S3Storage(id, name, logger) {
     var config = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
     StorageClient.apply(this, arguments);
-    this.relativeUrl = '/storage/s3';
+    this.relativeUrl = this._getServerURL(config.serverParams || {});
     this.bucketName = config.bucketName;
     this.config = config;
   };
 
   S3Storage.prototype = Object.create(StorageClient.prototype);
   S3Storage.prototype.constructor = S3Storage;
+
+  S3Storage.prototype._getServerURL = function (serverParams) {
+    var relativeURL = '/storage/s3';
+    var protocol = serverParams.httpSecure ? 'https' : 'http';
+    var serverURL = serverParams.server || '127.0.0.1';
+    var port = serverParams.port || '8080';
+    return "".concat(protocol, "://").concat(serverURL, ":").concat(port).concat(relativeURL);
+  };
 
   S3Storage.prototype._createBucketIfNeeded = function _callee(config) {
     var res, _ref, alreadyExists;
