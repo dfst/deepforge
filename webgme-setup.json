@@ -329,7 +329,7 @@
       "S3StorageAPI": {
         "src": "src/routers/S3StorageAPI",
         "test": "test/routers/S3StorageAPI",
-        "mount": "routers/S3StorageAPI"
+        "mount": "storage/s3"
       }
     }
   },
