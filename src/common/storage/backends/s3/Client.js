@@ -15,9 +15,9 @@ define([
     S3Storage.prototype = Object.create(StorageClient.prototype);
     S3Storage.prototype.constructor = S3Storage;
 
-    S3Storage.prototype._getServerURL = function(serverParams){
+    S3Storage.prototype._getServerURL = function (serverParams) {
         const relativeURL = '/storage/s3';
-        const protocol = serverParams.httpSecure ? 'https': 'http';
+        const protocol = serverParams.httpSecure ? 'https' : 'http';
         const serverURL = serverParams.server || '127.0.0.1';
         const port = serverParams.port || '8080';
         return `${protocol}://${serverURL}:${port}${relativeURL}`;
@@ -42,7 +42,7 @@ define([
         this.logger.debug(`Bucket ${config.bucketName}, ${alreadyExists ? 'Already Exists.' : 'created.'}`);
     };
 
-    S3Storage.prototype._getPreAssignedURL = async function (config, bucketName, httpMethod, path) {
+    S3Storage.prototype._getPreAssignedURL = async function (config, bucketName, httpMethod, path, isdir = false) {
         const res = await this.fetch('/presignedUrl', {
             headers: {
                 'Content-Type': 'application/json',
@@ -52,7 +52,8 @@ define([
                 config: config,
                 bucketName: bucketName,
                 httpMethod: httpMethod,
-                path: path
+                path: path,
+                isdir: isdir
             })
         });
 
@@ -122,11 +123,33 @@ define([
     };
 
     S3Storage.prototype.deleteDir = async function (dirName) {
+        const {endPoint, port, secretKey, accessKey, useSSL} = this.config;
         if (!this.bucketName) {
             throw new Error(`Cannot delete a directory without a bucket name`);
         }
-        let res = await this._getPreAssignedURL(this.config, this.bucketName, 'delete', dirName);
-        return await this.deleteFile({data: res.queryURL});
+        let res = await this.fetch('/listObjects', {
+            method: 'post',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                config: {endPoint, port, secretKey, accessKey, useSSL},
+                bucketName: this.bucketName,
+                prefix: dirName,
+                recursive: true
+            })
+        });
+        const resObj = await res.json();
+        this.logger.debug(`Found ${resObj.count} objects in the path, deleting them.`);
+        for (const obj of resObj.objects) {
+            await this.deleteFile({
+                data: {
+                    deleteURL: obj.deleteURL,
+                }
+            });
+            this.logger.debug(`Successfully deleted ${obj.name}`);
+        }
+        this.logger.debug('Deleted all the files in the bucket path');
     };
 
     S3Storage.prototype.getURL = function (endPointOrFullURL) {

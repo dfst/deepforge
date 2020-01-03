@@ -3116,12 +3116,15 @@ define('deepforge/storage/backends/s3/Client',['../StorageClient'], function (St
   };
 
   S3Storage.prototype._getPreAssignedURL = function _callee2(config, bucketName, httpMethod, path) {
-    var res;
+    var isdir,
+        res,
+        _args2 = arguments;
     return _regenerator["default"].async(function _callee2$(_context2) {
       while (1) {
         switch (_context2.prev = _context2.next) {
           case 0:
-            _context2.next = 2;
+            isdir = _args2.length > 4 && _args2[4] !== undefined ? _args2[4] : false;
+            _context2.next = 3;
             return _regenerator["default"].awrap(this.fetch('/presignedUrl', {
               headers: {
                 'Content-Type': 'application/json'
@@ -3131,19 +3134,20 @@ define('deepforge/storage/backends/s3/Client',['../StorageClient'], function (St
                 config: config,
                 bucketName: bucketName,
                 httpMethod: httpMethod,
-                path: path
+                path: path,
+                isdir: isdir
               })
             }));
 
-          case 2:
+          case 3:
             res = _context2.sent;
-            _context2.next = 5;
+            _context2.next = 6;
             return _regenerator["default"].awrap(res.json());
 
-          case 5:
+          case 6:
             return _context2.abrupt("return", _context2.sent);
 
-          case 6:
+          case 7:
           case "end":
             return _context2.stop();
         }
@@ -3375,38 +3379,121 @@ define('deepforge/storage/backends/s3/Client',['../StorageClient'], function (St
   };
 
   S3Storage.prototype.deleteDir = function _callee10(dirName) {
-    var res;
+    var _this$config, endPoint, port, secretKey, accessKey, useSSL, res, resObj, _iteratorNormalCompletion, _didIteratorError, _iteratorError, _iterator, _step, obj;
+
     return _regenerator["default"].async(function _callee10$(_context10) {
       while (1) {
         switch (_context10.prev = _context10.next) {
           case 0:
+            _this$config = this.config, endPoint = _this$config.endPoint, port = _this$config.port, secretKey = _this$config.secretKey, accessKey = _this$config.accessKey, useSSL = _this$config.useSSL;
+
             if (this.bucketName) {
-              _context10.next = 2;
+              _context10.next = 3;
               break;
             }
 
             throw new Error("Cannot delete a directory without a bucket name");
 
-          case 2:
-            _context10.next = 4;
-            return _regenerator["default"].awrap(this._getPreAssignedURL(this.config, this.bucketName, 'delete', dirName));
-
-          case 4:
-            res = _context10.sent;
-            _context10.next = 7;
-            return _regenerator["default"].awrap(this.deleteFile({
-              data: res.queryURL
+          case 3:
+            _context10.next = 5;
+            return _regenerator["default"].awrap(this.fetch('/listObjects', {
+              method: 'post',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                config: {
+                  endPoint: endPoint,
+                  port: port,
+                  secretKey: secretKey,
+                  accessKey: accessKey,
+                  useSSL: useSSL
+                },
+                bucketName: this.bucketName,
+                prefix: dirName,
+                recursive: true
+              })
             }));
 
-          case 7:
-            return _context10.abrupt("return", _context10.sent);
+          case 5:
+            res = _context10.sent;
+            _context10.next = 8;
+            return _regenerator["default"].awrap(res.json());
 
           case 8:
+            resObj = _context10.sent;
+            this.logger.debug("Found ".concat(resObj.count, " objects in the path, deleting them."));
+            _iteratorNormalCompletion = true;
+            _didIteratorError = false;
+            _iteratorError = undefined;
+            _context10.prev = 13;
+            _iterator = resObj.objects[Symbol.iterator]();
+
+          case 15:
+            if (_iteratorNormalCompletion = (_step = _iterator.next()).done) {
+              _context10.next = 23;
+              break;
+            }
+
+            obj = _step.value;
+            _context10.next = 19;
+            return _regenerator["default"].awrap(this.deleteFile({
+              data: {
+                deleteURL: obj.deleteURL
+              }
+            }));
+
+          case 19:
+            this.logger.debug("Successfully deleted ".concat(obj.name));
+
+          case 20:
+            _iteratorNormalCompletion = true;
+            _context10.next = 15;
+            break;
+
+          case 23:
+            _context10.next = 29;
+            break;
+
+          case 25:
+            _context10.prev = 25;
+            _context10.t0 = _context10["catch"](13);
+            _didIteratorError = true;
+            _iteratorError = _context10.t0;
+
+          case 29:
+            _context10.prev = 29;
+            _context10.prev = 30;
+
+            if (!_iteratorNormalCompletion && _iterator["return"] != null) {
+              _iterator["return"]();
+            }
+
+          case 32:
+            _context10.prev = 32;
+
+            if (!_didIteratorError) {
+              _context10.next = 35;
+              break;
+            }
+
+            throw _iteratorError;
+
+          case 35:
+            return _context10.finish(32);
+
+          case 36:
+            return _context10.finish(29);
+
+          case 37:
+            this.logger.debug('Deleted all the files in the bucket path');
+
+          case 38:
           case "end":
             return _context10.stop();
         }
       }
-    }, null, this);
+    }, null, this, [[13, 25, 29, 37], [30,, 32, 36]]);
   };
 
   S3Storage.prototype.getURL = function (endPointOrFullURL) {
