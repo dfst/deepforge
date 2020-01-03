@@ -11,6 +11,7 @@
     "start": "node ./bin/deepforge start",
     "postinstall": "node utils/reinstall-extensions.js",
     "start-dev": "NODE_ENV=dev node app.js",
+    "start-prod": "NODE_ENV=production node app.js",
     "local": "node ./bin/start-local.js",
     "worker": "node ./bin/start-worker.js",
     "test": "npm run test-unit && npm run test-int",
@@ -49,7 +50,8 @@
     "webgme-easydag": "github:dfst/webgme-easydag",
     "webgme-executor-worker": "^1.0.1",
     "webgme-fab": "github:dfst/webgme-fab",
-    "webgme-simple-nodes": "^2.1.3"
+    "webgme-simple-nodes": "^2.1.3",
+    "webgme-user-management-page": "github:umesh-timalsina/user-management-page#deepforge-user-management-page"
   },
   "devDependencies": {
     "nodemon": "^1.9.2",
