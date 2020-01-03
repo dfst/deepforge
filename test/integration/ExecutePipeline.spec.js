@@ -81,7 +81,8 @@ describe('Pipeline execution', function () {
             const minioConfig = StorageConfigs['s3'];
             const sciServerClient = await Storage.getClient('sciserver-files', logger, sciServerConfig);
             const minioClient = await Storage.getClient('s3', logger, minioConfig);
-            const nop = () => {};
+            const nop = () => {
+            };
             await sciServerClient.deleteDir(project.projectId)
                 .catch(nop);
             await minioClient.deleteDir(project.projectId)
@@ -110,7 +111,7 @@ describe('Pipeline execution', function () {
 
         storageBackends.forEach(storage => {
             // GME storage does not yet support remote execution (issue #1357)
-            const computeOptions = storage === 'gme' ?
+            const computeOptions = (storage === 'gme' || storage === 's3') ?
                 ['local', 'gme'] : computeBackends;
 
             computeOptions.forEach(compute => {
