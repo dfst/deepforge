@@ -15,7 +15,6 @@ ENV MINICONDA Miniconda3-latest-Linux-x86_64.sh
 
 ADD . /deepforge
 
-
 WORKDIR /tmp
 
 RUN curl -O  https://repo.continuum.io/miniconda/$MINICONDA && bash $MINICONDA -b && rm -f $MINICONDA
@@ -36,4 +35,4 @@ RUN npm install && ln -s /deepforge/bin/deepforge /usr/local/bin
 RUN deepforge config blob.dir /data/blob && \
     deepforge config mongo.dir /data/db
 
-ENTRYPOINT NODE_ENV=production deepforge start --server
+ENTRYPOINT source activate deepforge && NODE_ENV=production deepforge start --server

@@ -1,0 +1,11 @@
+name: deepforge
+dependencies:
+  - python=3.6
+  - pip
+  - pip:
+    - keras
+    - simplejson
+    - tensorflow
+    - dill
+    - pillow
+    - matplotlib
