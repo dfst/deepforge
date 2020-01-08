@@ -29,6 +29,8 @@ RUN conda update conda -yq && conda env create -f deepforge-environment.yml && e
 RUN echo '{"allow_root": true}' > /root/.bowerrc && mkdir -p /root/.config/configstore/ && \
     echo '{}' > /root/.config/configstore/bower-github.json
 
+RUN npm install -g npm
+
 RUN npm install && ln -s /deepforge/bin/deepforge /usr/local/bin
 
 #Set up the data storage
