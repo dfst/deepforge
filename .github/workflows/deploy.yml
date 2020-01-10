@@ -1,10 +1,21 @@
-name: SSH Server Build Action
+name: Build Deepforge Dev Server
 
 on: [push]
 
 jobs:
-  build:
+  publish:
+    runs-on: ubuntu-latest
 
+    steps:
+      - uses: actions/checkout@v2
+      - name: Publish to docker hub
+        uses: elgohr/Publish-Docker-Github-Action@master
+        with:
+          name: tumesh/deepforge
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+  build:
     runs-on: ubuntu-latest
 
     steps:
