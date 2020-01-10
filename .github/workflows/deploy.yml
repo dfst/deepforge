@@ -15,17 +15,13 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: deploy deepforge
-      uses: appleboy/ssh-action@master
-      with:
-        username: ${{ secrets.USERNAME }}
-        host: ${{ secrets.HOST }}
-        key: ${{ secrets.KEY }}
-        port: ${{ secrets.PORT }}
-        passphrase: ${{ secrets.PASSPHRASE }}
-        script: |
-          echo "This is a test script" > fileout.txt
+      - name: deploy deepforge from server
+        uses: appleboy/ssh-action@master
+        with:
+          username: ${{ secrets.USERNAME }}
+          host: ${{ secrets.HOST }}
+          key: ${{ secrets.KEY }}
+          port: ${{ secrets.PORT }}
+          passphrase: ${{ secrets.PASSPHRASE }}
+          script: |
+            echo "This is a test script" > fileout.txt
