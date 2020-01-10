@@ -24,4 +24,4 @@ jobs:
           port: ${{ secrets.PORT }}
           passphrase: ${{ secrets.PASSPHRASE }}
           script: |
-            echo "This is a test script" > fileout.txt
+            docker service update --force deepforge-dev_server
