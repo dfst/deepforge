@@ -8,7 +8,7 @@ services:
   server: 
     environment: 
       - "MONGO_URI=mongodb://mongo:27017/deepforge"
-    image: tumesh/deepforge
+    image: deepforge/server:latest
     ports: 
       - "8888:8888"
     volumes: 
