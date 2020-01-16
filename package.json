@@ -51,7 +51,7 @@
     "webgme-executor-worker": "^1.0.1",
     "webgme-fab": "github:dfst/webgme-fab",
     "webgme-simple-nodes": "^2.1.3",
-    "webgme-user-management-page": "github:umesh-timalsina/user-management-page#deepforge-user-management-page"
+    "webgme-user-management-page": "github:umesh-timalsina/user-management-page"
   },
   "devDependencies": {
     "nodemon": "^1.9.2",
