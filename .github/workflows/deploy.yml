@@ -25,4 +25,4 @@ jobs:
           port: ${{ secrets.PORT }}
           passphrase: ${{ secrets.PASSPHRASE }}
           script: |
-            deploy-deepforge
+            bash -ic deploy-deepforge
