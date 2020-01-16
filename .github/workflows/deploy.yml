@@ -25,5 +25,4 @@ jobs:
           port: ${{ secrets.PORT }}
           passphrase: ${{ secrets.PASSPHRASE }}
           script: |
-            docker pull deepforge/server:latest
-            docker service update --image deepforge/server:latest deepforge-dev_server --force
+            deploy-deepforge
