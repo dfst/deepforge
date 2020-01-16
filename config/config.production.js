@@ -13,8 +13,8 @@ config.authentication.enable = true;
 config.authentication.jwt.publicKey = publicKeyPath;
 config.authentication.jwt.privateKey = privateKeyPath;
 
-config.authentication.allowGuests = true;
-config.authentication.allowUserRegistration = true;
+config.authentication.allowGuests = false;
+config.authentication.allowUserRegistration = false;
 config.authentication.guestAccount = 'guest';
 config.authentication.userManagementPage = 'webgme-user-management-page';
 
