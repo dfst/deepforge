@@ -16,7 +16,7 @@ config.authentication.jwt.privateKey = privateKeyPath;
 config.authentication.allowGuests = false;
 config.authentication.allowUserRegistration = false;
 config.authentication.guestAccount = 'guest';
-config.authentication.userManagementPage = 'webgme-user-management-page';
+config.authentication.userManagementPage = 'deepforge-user-management-page';
 
 config.authentication.logInUrl = '/profile/login';
 config.authentication.logOutUrl = '/profile/login';

@@ -31,7 +31,7 @@ RUN echo '{"allow_root": true}' > /root/.bowerrc && mkdir -p /root/.config/confi
 
 RUN npm install -g npm
 
-RUN npm install && ln -s /deepforge/bin/deepforge /usr/local/bin
+RUN  npm config set unsafe-perm true && npm install && ln -s /deepforge/bin/deepforge /usr/local/bin
 
 #Set up the data storage
 RUN deepforge config blob.dir /data/blob && \
