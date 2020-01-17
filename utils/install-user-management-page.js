@@ -1,11 +1,12 @@
+/* eslint-disable no-console */
 const npm = require('npm');
-const { promisify } = require('util');
+const {promisify} = require('util');
 const load = promisify(npm.load);
 const install = promisify(npm.install);
 const path = require('path');
 const fs = require('fs');
 const CONFIG_DIR = path.join(__dirname, '..', 'config');
-const GIT_URL = "umesh-timalsina/user-management-page";
+const GIT_URL = 'umesh-timalsina/user-management-page';
 
 const installUserManagementPage = async function () {
     const configFiles = fs.readdirSync(CONFIG_DIR)
@@ -18,10 +19,10 @@ const installUserManagementPage = async function () {
         validateConfig(config);
         return config.authentication.enable;
     });
-    if(requiresInstall){
+    if (requiresInstall) {
         console.log('Authentication Enabled, Installing ', GIT_URL);
-        try{
-            await load({'unsafe-perm' : true});
+        try {
+            await load({'unsafe-perm': true});
             await install(GIT_URL);
         } catch (e) {
             console.log('Error: Installing user management page failed with following error: ', e);

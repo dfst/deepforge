@@ -1,6 +1,9 @@
 name: Build Deepforge Dev Server
 
-on: [push]
+on:
+  push:
+    branches:
+      - master
 
 jobs:
   publish:
