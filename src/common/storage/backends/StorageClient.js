@@ -41,7 +41,7 @@ define([
     };
 
     StorageClient.prototype.getMetadata = async function(/*dataInfo*/) {
-        throw new Error(`getDownloadURL not implemented for ${this.name}`);
+        throw new Error(`getMetadata not implemented for ${this.name}`);
     };
 
     StorageClient.prototype.copy = async function(dataInfo, filename) {
