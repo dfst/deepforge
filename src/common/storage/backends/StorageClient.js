@@ -1,22 +1,24 @@
-/* globals define, WebGMEGlobal */
+/* globals define */
 define([
-    'client/logger'
+    'client/logger',
+    'deepforge/gmeConfig'
 ], function(
-    Logger
+    Logger,
+    gmeConfig
 ) {
     const StorageClient = function(id, name, logger) {
         this.id = id;
         this.name = name;
         if (!logger) {
-            let gmeConfig;
-            if (require.isBrowser) {
-                gmeConfig = WebGMEGlobal.gmeConfig;
-            } else {
-                gmeConfig = require.nodeRequire('../../../config');
-            }
             logger = Logger.create(`gme:storage:${id}`, gmeConfig.client.log);
         }
         this.logger = logger.fork(`storage:${id}`);
+    };
+
+    StorageClient.prototype.getServerURL = function() {
+        const {port} = gmeConfig.server;
+        const url = process.env.DEEPFORGE_HOST || `127.0.0.1:${port}`;
+        return [url.replace(/^https?:\/\//, ''), url.startsWith('https')];
     };
 
     StorageClient.prototype.getFile = async function(/*dataInfo*/) {
