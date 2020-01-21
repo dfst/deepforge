@@ -2688,6 +2688,9 @@ var _regenerator = _interopRequireDefault(require("@babel/runtime/regenerator"))
 
 /* globals define */
 define('deepforge/storage/backends/StorageClient',['client/logger', 'deepforge/gmeConfig'], function (Logger, gmeConfig) {
+  var fetch = require.isBrowser ? window.fetch : require.nodeRequire('node-fetch');
+  var Headers = require.isBrowser ? window.Headers : fetch.Headers;
+
   var StorageClient = function StorageClient(id, name, logger) {
     this.id = id;
     this.name = name;
@@ -2812,6 +2815,49 @@ define('deepforge/storage/backends/StorageClient',['client/logger', 'deepforge/g
       backend: this.id,
       data: data
     };
+  };
+
+  StorageClient.prototype.fetch = function _callee7(url) {
+    var opts,
+        response,
+        status,
+        contents,
+        _args7 = arguments;
+    return _regenerator["default"].async(function _callee7$(_context7) {
+      while (1) {
+        switch (_context7.prev = _context7.next) {
+          case 0:
+            opts = _args7.length > 1 && _args7[1] !== undefined ? _args7[1] : {};
+            url = this.getURL(url);
+            opts.headers = new Headers(opts.headers || {});
+            _context7.next = 5;
+            return _regenerator["default"].awrap(fetch(url, opts));
+
+          case 5:
+            response = _context7.sent;
+            status = response.status;
+
+            if (!(status > 399)) {
+              _context7.next = 12;
+              break;
+            }
+
+            _context7.next = 10;
+            return _regenerator["default"].awrap(response.json());
+
+          case 10:
+            contents = _context7.sent;
+            throw new Error("Fetch using ".concat(this.name, " client failed with the following error: ").concat(JSON.stringify(contents)));
+
+          case 12:
+            return _context7.abrupt("return", response);
+
+          case 13:
+          case "end":
+            return _context7.stop();
+        }
+      }
+    }, null, this);
   };
 
   return StorageClient;
@@ -2976,8 +3022,6 @@ var _regenerator = _interopRequireDefault(require("@babel/runtime/regenerator"))
 
 /* globals define */
 define('deepforge/storage/backends/sciserver-files/Client',['../StorageClient'], function (StorageClient) {
-  var fetch = require.isBrowser ? window.fetch : require.nodeRequire('node-fetch');
-  var Headers = require.isBrowser ? window.Headers : fetch.Headers;
   var BASE_URL = 'https://apps.sciserver.org/fileservice/api/';
 
   var SciServerFiles = function SciServerFiles(id, name, logger) {
@@ -3164,29 +3208,32 @@ define('deepforge/storage/backends/sciserver-files/Client',['../StorageClient'],
           case 0:
             fullpath = volume + '/' + path;
             url = "1/metadata/sandbox/".concat(fullpath, "?list=True&path=").concat(fullpath);
-            headers = new Headers();
-            headers.append('Content-Type', 'application/xml');
-            _context7.next = 6;
-            return _regenerator["default"].awrap(this.fetch(url));
+            headers = {
+              'Content-Type': 'application/xml'
+            };
+            _context7.next = 5;
+            return _regenerator["default"].awrap(this.fetch(url, {
+              headers: headers
+            }));
 
-          case 6:
+          case 5:
             response = _context7.sent;
 
             if (!(response.status === 404)) {
-              _context7.next = 9;
+              _context7.next = 8;
               break;
             }
 
             return _context7.abrupt("return", null);
 
-          case 9:
-            _context7.next = 11;
+          case 8:
+            _context7.next = 10;
             return _regenerator["default"].awrap(response.json());
 
-          case 11:
+          case 10:
             return _context7.abrupt("return", _context7.sent);
 
-          case 12:
+          case 11:
           case "end":
             return _context7.stop();
         }
@@ -3194,51 +3241,17 @@ define('deepforge/storage/backends/sciserver-files/Client',['../StorageClient'],
     }, null, this);
   };
 
-  SciServerFiles.prototype.fetch = function _callee8(url) {
-    var opts,
-        response,
-        status,
-        contents,
-        _args8 = arguments;
+  SciServerFiles.prototype.getCachePath = function _callee8(dataInfo) {
+    var _dataInfo$data3, volume, filename;
+
     return _regenerator["default"].async(function _callee8$(_context8) {
       while (1) {
         switch (_context8.prev = _context8.next) {
           case 0:
-            opts = _args8.length > 1 && _args8[1] !== undefined ? _args8[1] : {};
-            url = BASE_URL + url;
-            opts.headers = opts.headers || new Headers();
-            opts.headers.append('X-Auth-Token', this.token);
-            _context8.next = 6;
-            return _regenerator["default"].awrap(fetch(url, opts));
+            _dataInfo$data3 = dataInfo.data, volume = _dataInfo$data3.volume, filename = _dataInfo$data3.filename;
+            return _context8.abrupt("return", "".concat(this.id, "/").concat(volume, "/").concat(filename));
 
-          case 6:
-            response = _context8.sent;
-            status = response.status;
-
-            if (!(status === 400)) {
-              _context8.next = 12;
-              break;
-            }
-
-            throw new Error('Received "Bad Request" from SciServer. Is the token invalid?');
-
-          case 12:
-            if (!(status > 399)) {
-              _context8.next = 17;
-              break;
-            }
-
-            _context8.next = 15;
-            return _regenerator["default"].awrap(response.json());
-
-          case 15:
-            contents = _context8.sent;
-            throw new Error("SciServer Files request failed: ".concat(contents.error));
-
-          case 17:
-            return _context8.abrupt("return", response);
-
-          case 18:
+          case 2:
           case "end":
             return _context8.stop();
         }
@@ -3246,22 +3259,28 @@ define('deepforge/storage/backends/sciserver-files/Client',['../StorageClient'],
     }, null, this);
   };
 
-  SciServerFiles.prototype.getCachePath = function _callee9(dataInfo) {
-    var _dataInfo$data3, volume, filename;
-
+  SciServerFiles.prototype.fetch = function _callee9(url) {
+    var opts,
+        _args9 = arguments;
     return _regenerator["default"].async(function _callee9$(_context9) {
       while (1) {
         switch (_context9.prev = _context9.next) {
           case 0:
-            _dataInfo$data3 = dataInfo.data, volume = _dataInfo$data3.volume, filename = _dataInfo$data3.filename;
-            return _context9.abrupt("return", "".concat(this.id, "/").concat(volume, "/").concat(filename));
+            opts = _args9.length > 1 && _args9[1] !== undefined ? _args9[1] : {};
+            opts.headers = opts.headers || {};
+            opts.headers['X-Auth-Token'] = this.token;
+            return _context9.abrupt("return", StorageClient.prototype.fetch.call(this, url, opts));
 
-          case 2:
+          case 4:
           case "end":
             return _context9.stop();
         }
       }
     }, null, this);
+  };
+
+  SciServerFiles.prototype.getURL = function (url) {
+    return BASE_URL + url;
   };
 
   return SciServerFiles;

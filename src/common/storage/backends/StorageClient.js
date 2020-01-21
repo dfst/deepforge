@@ -6,6 +6,9 @@ define([
     Logger,
     gmeConfig
 ) {
+    const fetch = require.isBrowser ? window.fetch :
+        require.nodeRequire('node-fetch');
+    const Headers = require.isBrowser ? window.Headers : fetch.Headers;
     const StorageClient = function(id, name, logger) {
         this.id = id;
         this.name = name;
@@ -53,6 +56,18 @@ define([
 
     StorageClient.prototype.createDataInfo = function(data) {
         return {backend: this.id, data};
+    };
+
+    StorageClient.prototype.fetch = async function(url, opts={}) {
+        url = this.getURL(url);
+        opts.headers = new Headers(opts.headers || {});
+        const response = await fetch(url, opts);
+        const {status} = response;
+        if (status > 399) {
+            const contents = await response.json();
+            throw new Error(`Fetch using ${this.name} client failed with the following error: ${JSON.stringify(contents)}`);
+        }
+        return response;
     };
 
     return StorageClient;
