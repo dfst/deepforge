@@ -357,7 +357,7 @@ program
 
 
 // user-management
-program.command('user', 'Manage deepforge users.');
+program.command('users', 'Manage deepforge users.');
 
 module.exports = function (cmd) {
     var cmds = cmd.split(/\s+/).filter(w => !!w);
