@@ -12,14 +12,6 @@
   "writeAccessRequired": true,
   "configStructure": [
         {
-            "name": "name",
-            "displayName": "Data name",
-            "description": "Optional name for artifact",
-            "value": "",
-            "valueType": "string",
-            "readOnly": false
-        },
-        {
             "name": "dataHash",
             "displayName": "Data to upload",
             "description": "",
