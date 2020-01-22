@@ -1,4 +1,4 @@
-/* globals define */
+/* globals define*/
 define([
     'client/logger',
     'deepforge/gmeConfig'
@@ -18,11 +18,31 @@ define([
         this.logger = logger.fork(`storage:${id}`);
     };
 
-    StorageClient.prototype.getServerURL = function() {
+    const StorageHelpers = {};
+
+    StorageHelpers.getServerURL = function () {
         const {port} = gmeConfig.server;
-        const url = process.env.DEEPFORGE_HOST || `127.0.0.1:${port}`;
+        let url = require.isBrowser ? window.origin : process.env.DEEPFORGE_HOST;
+        url = url || `127.0.0.1:${port}`;
         return [url.replace(/^https?:\/\//, ''), url.startsWith('https')];
     };
+
+    StorageHelpers.getURL = function (url) {
+        return url;
+    };
+
+    StorageHelpers.fetch = async function (url, opts) {
+        url = this.getURL(url);
+        opts.headers = new Headers(opts.headers || {});
+        const response = await fetch(url, opts);
+        const {status} = response;
+        if (status > 399) {
+            return Promise.reject(response);
+        }
+        return response;
+    };
+
+    Object.assign(StorageClient.prototype, StorageHelpers);
 
     StorageClient.prototype.getFile = async function(/*dataInfo*/) {
         throw new Error(`File download not implemented for ${this.name}`);
@@ -56,18 +76,6 @@ define([
 
     StorageClient.prototype.createDataInfo = function(data) {
         return {backend: this.id, data};
-    };
-
-    StorageClient.prototype.fetch = async function(url, opts={}) {
-        url = this.getURL(url);
-        opts.headers = new Headers(opts.headers || {});
-        const response = await fetch(url, opts);
-        const {status} = response;
-        if (status > 399) {
-            const contents = await response.json();
-            throw new Error(`Fetch using ${this.name} client failed with the following error: ${JSON.stringify(contents)}`);
-        }
-        return response;
     };
 
     return StorageClient;

@@ -35,7 +35,12 @@ define([
         };
 
         const url = `file/Storage/${this.volume}/${filename}`;
-        await this.fetch(url, opts);
+        try{
+            await this.fetch(url, opts);
+        } catch (errRes) {
+            const contents = await errRes.json();
+            throw new Error(`Operation PutFile For Sciserver Failed with the following response ${JSON.stringify(contents)}`);
+        }
         const metadata = {
             filename: filename,
             volume: this.volume,
@@ -70,14 +75,16 @@ define([
     SciServerFiles.prototype._stat = async function (volume, path) {
         const fullpath = volume + '/' + path;
         const url = `1/metadata/sandbox/${fullpath}?list=True&path=${fullpath}`;
-        const headers = {
-            'Content-Type': 'application/xml'
-        };
-        const response = await this.fetch(url, {headers});
-        if (response.status === 404) {
-            return null;
+        try {
+            const response = await this.fetch(url);
+            return await response.json();
+        } catch (err) {
+            if (err.status === 404) {
+                return null;
+            } else {
+                throw err;
+            }
         }
-        return await response.json();
     };
 
     SciServerFiles.prototype.getCachePath = async function (dataInfo) {
