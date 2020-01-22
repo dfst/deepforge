@@ -89,6 +89,7 @@ define([
         }
     };
 
+
     ExecutionIndexControl.prototype._combineGraphDesc = function (graphDescs) {
         const isMultiGraph = this.displayedExecCount() > 1;
         if (!isMultiGraph) {
@@ -117,12 +118,20 @@ define([
     };
 
     ExecutionIndexControl.prototype._combineSubGraphsDesc = function (consolidatedDesc, subGraphs, abbr) {
-        let currentSubGraph;
-        for (let i = 0; i < consolidatedDesc.subGraphs.length; i++) {
+        let currentSubGraph, imageSubGraphCopy, added=0;
+        const originalLength = consolidatedDesc.subGraphs.length;
+        for (let i = 0; i < originalLength; i++) {
             if (!subGraphs[i]) break;
-            currentSubGraph = consolidatedDesc.subGraphs[i];
-
+            currentSubGraph = consolidatedDesc.subGraphs[i+added];
             subGraphs[i].abbr = abbr;
+            if (subGraphs[i].images.length > 0 || currentSubGraph.images.length > 0) {
+                imageSubGraphCopy = JSON.parse(JSON.stringify(subGraphs[i]));
+                imageSubGraphCopy.title = getDisplayTitle(subGraphs[i], true);
+                consolidatedDesc.subGraphs.splice(i+added, 0, imageSubGraphCopy);
+                added++;
+                continue;
+            }
+
             currentSubGraph.title += ` vs. ${getDisplayTitle(subGraphs[i], true)}`;
 
 
