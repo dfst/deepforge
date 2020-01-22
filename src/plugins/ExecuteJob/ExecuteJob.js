@@ -159,6 +159,9 @@ define([
     ExecuteJob.prototype.createComputeClient = function () {
         const config = this.getCurrentConfig();
         const backend = Compute.getBackend(config.compute.id);
+        if (config.compute.id === 'gme') {
+            config.compute.config.webgmeToken = this.blobClient.webgmeToken;  // HACK
+        }
         return backend.getClient(this.logger, this.blobClient, config.compute.config);
     };
 
