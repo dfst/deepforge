@@ -103,6 +103,7 @@ define([
             return {
                 id: node.getId(),
                 type: type,
+                backend: dataInfo.backend,
                 name: node.getAttribute('name'),
                 createdAt: node.getAttribute('createdAt'),
                 dataURL: url,
