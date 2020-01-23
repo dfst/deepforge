@@ -99,11 +99,12 @@ define([
             const metadata = await Storage.getMetadata(dataInfo, this._logger);
             const url = await Storage.getDownloadURL(dataInfo, this._logger);
             const size = this._humanFileSize(metadata.size);
+            const backendName = Storage.getStorageMetadata(dataInfo.backend).name;
 
             return {
                 id: node.getId(),
                 type: type,
-                backend: dataInfo.backend,
+                backend: backendName,
                 name: node.getAttribute('name'),
                 createdAt: node.getAttribute('createdAt'),
                 dataURL: url,
