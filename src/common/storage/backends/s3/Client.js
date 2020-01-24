@@ -17,8 +17,8 @@ define([
     S3Storage.prototype.constructor = S3Storage;
 
 
-    S3Storage.prototype._createBucketIfNeeded = async function (config) {
-        if (!config.bucketName) {
+    S3Storage.prototype._createBucketIfNeeded = async function () {
+        if (!this.config.bucketName) {
             throw new Error('Please Provide a bucket name to use with S3 Bucket Service');
         }
         const res = await this.fetch('/createBucket',
@@ -28,22 +28,22 @@ define([
                 },
                 method: 'POST',
                 body: JSON.stringify({
-                    config: config,
-                    bucketName: config.bucketName,
+                    config: this.config,
+                    bucketName: this.config.bucketName,
                 })
             });
         const {alreadyExists} = await res.json();
-        this.logger.debug(`Bucket ${config.bucketName}, ${alreadyExists ? 'Already Exists.' : 'created.'}`);
+        this.logger.debug(`Bucket ${this.config.bucketName}, ${alreadyExists ? 'Already Exists.' : 'created.'}`);
     };
 
-    S3Storage.prototype._getPreAssignedURL = async function (config, bucketName, httpMethod, path, isdir = false) {
+    S3Storage.prototype._getPreAssignedURL = async function (bucketName, httpMethod, path, isdir = false) {
         const res = await this.fetch('/presignedUrl', {
             headers: {
                 'Content-Type': 'application/json',
             },
             method: 'POST',
             body: JSON.stringify({
-                config: config,
+                config: this.config,
                 bucketName: bucketName,
                 httpMethod: httpMethod,
                 path: path,
@@ -54,15 +54,14 @@ define([
         return await res.json();
     };
 
-    S3Storage.prototype._stat = async function (config, path) {
-        let {endPoint, port, secretKey, accessKey, useSSL} = config;
+    S3Storage.prototype._stat = async function (path) {
         const res = await this.fetch('/statObject', {
             method: 'post',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                config: {endPoint, port, secretKey, accessKey, useSSL},
+                config: this.config,
                 bucketName: this.bucketName,
                 path: path
             })
@@ -71,19 +70,19 @@ define([
     };
 
     S3Storage.prototype.putFile = async function (path, content) {
-        await this._createBucketIfNeeded(this.config);
-        const httpInfo = await (this._getPreAssignedURL(this.config, this.bucketName, 'put', path));
+        await this._createBucketIfNeeded();
+        const httpInfo = await (this._getPreAssignedURL(this.bucketName, 'put', path));
         let res = await this.fetch(httpInfo.queryURL, {
             method: httpInfo.httpMethod.toUpperCase(),
             body: content
         });
         this.logger.debug(`Successfully uploaded the file to ${httpInfo.queryURL}, server response ${res.body}`);
-        const metadata = await this._stat(this.config, path);
+        const metadata = await this._stat(path);
         metadata.bucketName = this.bucketName;
         metadata.path = path;
-        res = await this._getPreAssignedURL(this.config, this.bucketName, 'get', path);
+        res = await this._getPreAssignedURL(this.bucketName, 'get', path);
         metadata.url = res.queryURL;
-        res = await this._getPreAssignedURL(this.config, this.bucketName, 'delete', path);
+        res = await this._getPreAssignedURL(this.bucketName, 'delete', path);
         metadata.deleteURL = res.queryURL;
         return this.createDataInfo(metadata);
     };
@@ -91,7 +90,7 @@ define([
     S3Storage.prototype.getFile = async function (dataInfo) {
         const downloadURL = await this.getDownloadURL(dataInfo);
         const resObj = await this.fetch(downloadURL);
-        this.logger.debug(`Successfully downloaded artifact from S3 Storage`);
+        this.logger.debug('Successfully downloaded artifact from S3 Storage');
         return require.isBrowser ? await resObj.arrayBuffer() : Buffer.from(await resObj.arrayBuffer());
     };
 
@@ -117,9 +116,8 @@ define([
     };
 
     S3Storage.prototype.deleteDir = async function (dirName) {
-        const {endPoint, port, secretKey, accessKey, useSSL} = this.config;
         if (!this.bucketName) {
-            throw new Error(`Cannot delete a directory without a bucket name`);
+            throw new Error('Cannot delete a directory without a bucket name');
         }
         let res = await this.fetch('/listObjects', {
             method: 'post',
@@ -127,19 +125,16 @@ define([
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                config: {endPoint, port, secretKey, accessKey, useSSL},
+                config: this.config,
                 bucketName: this.bucketName,
                 prefix: dirName,
                 recursive: true
             })
         });
         const resObj = await res.json();
-        this.logger.debug(`Found ${resObj.count} objects in the path, deleting them.`);
         for (const obj of resObj.objects) {
             await this.deleteFile({
-                data: {
-                    deleteURL: obj.deleteURL,
-                }
+                data: { deleteURL: obj.deleteURL }
             });
             this.logger.debug(`Successfully deleted ${obj.name}`);
         }

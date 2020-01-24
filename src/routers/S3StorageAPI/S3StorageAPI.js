@@ -1,4 +1,4 @@
-/*globals define*/
+/* eslint-env node */
 'use strict';
 
 const express = require('express'),
@@ -6,6 +6,7 @@ const express = require('express'),
     bodyParser = require('body-parser'),
     Minio = require('minio');
 
+/* eslint-disable max-lines-per-function */
 function initialize(middlewareOpts) {
     const logger = middlewareOpts.logger.fork('S3StorageAPI'),
         ensureAuthenticated = middlewareOpts.ensureAuthenticated;
@@ -114,6 +115,7 @@ function initialize(middlewareOpts) {
 
     logger.debug('ready');
 }
+/* eslint-enable max-lines-per-function */
 
 /**
  * Called before the server starts listening.
