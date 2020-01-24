@@ -1,5 +1,5 @@
 /*globals define*/
-/*jshint node:true, browser:true*/
+/*eslint-env node, browser*/
 
 define([
     'deepforge/storage/index',
@@ -66,7 +66,7 @@ define([
         const parent = await this.getArtifactsDir();
         const dataNode = this.core.createNode({base, parent});
 
-        const name = config.name || await this.getAssetName(hash) ||
+        const name = await this.getAssetName(hash) ||
             baseName[0].toLowerCase() + baseName.substring(1);
 
         const assetInfo = await this.transfer(hash, config.storage, name);

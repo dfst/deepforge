@@ -66,8 +66,12 @@ define(['./lib/plotly.min',], function (Plotly) {
             if (!this.created && !_.isEmpty(this.plotlyJSON)) {
                 Plotly.newPlot(this.$el[0], this.plotlyJSON);
                 this.created = true;
-            } else if (!_.isEmpty(this.plotlyJSON)) {
-                Plotly.react(this.$el[0], this.plotlyJSON);
+
+            } else if(!_.isEmpty(this.plotlyJSON)) {
+                // Currently in plotly, ImageTraces have no react support
+                // This will be updated when there's additional support
+                // for react with responsive layout
+                Plotly.newPlot(this.$el[0], this.plotlyJSON);
             }
         }
     };

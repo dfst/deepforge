@@ -49,7 +49,7 @@ if (!exists.sync(configPath)) {
 localConfig = require(configPath);
 config = merge({}, DEFAULT_CONFIG, localConfig);
 
-var getConfigValue = function(id, srcConfig) {
+var getConfigValue = function (id, srcConfig) {
     var keys = id.split('.'),
         value = srcConfig || config;
 
@@ -62,7 +62,7 @@ var getConfigValue = function(id, srcConfig) {
     return value;
 };
 
-var storeConfig = function(id, value) {
+var storeConfig = function (id, value) {
     // load the config
     var keys = id.split('.').filter(k => k),
         lastKey = keys.pop(),
@@ -96,7 +96,7 @@ var storeConfig = function(id, value) {
     return true;
 };
 
-(function() {  // Load config to env
+(function () {  // Load config to env
     var envToConf = require('./envConfig.json');
     Object.keys(envToConf).forEach(env => {
         var cKey = envToConf[env];
@@ -108,12 +108,12 @@ program
     .version('v' + version)
     .description('Command line interface for managing deepforge');
 
-var isLocalUri = function(protocol, uri) {
+var isLocalUri = function (protocol, uri) {
     return uri.indexOf(protocol + '://localhost') === 0 ||
         uri.indexOf(protocol + '://127.0.0.1') === 0;
 };
 
-var checkMongo = function(args, notSilent, mongoUri) {
+var checkMongo = function (args, notSilent, mongoUri) {
     // check the webgme config
     var gmeConfig = require('../config');
 
@@ -144,7 +144,7 @@ var checkMongo = function(args, notSilent, mongoUri) {
     return Q();
 };
 
-var startMongo = function(args, port, silent) {
+var startMongo = function (args, port, silent) {
     var opts = ['--dbpath', p(config.mongo.dir), '--port', port],
         job = rawSpawn('mongod', opts, {cwd: HOME_DIR});
 
@@ -178,7 +178,7 @@ var startMongo = function(args, port, silent) {
     });
 };
 
-var spawn = function(cmd, args, opts) {
+var spawn = function (cmd, args, opts) {
     var deferred = Q.defer(),
         job,
         spawnOpts = typeof opts === 'object' ? opts : null,
@@ -355,12 +355,18 @@ program
 program
     .command('extensions <command>', 'Manage deepforge extensions');
 
-module.exports = function(cmd) {
+
+// user-management
+program.command('users', 'Manage deepforge users.');
+
+module.exports = function (cmd) {
     var cmds = cmd.split(/\s+/).filter(w => !!w);
     cmds.unshift('./bin/deepforge');
     cmds.unshift('node');
     program.parse(cmds);
 };
+
+
 module.exports.checkMongo = checkMongo;
 
 if (require.main === module) {

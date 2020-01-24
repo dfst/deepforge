@@ -48,11 +48,11 @@ define([], function () {
             ylabel: node.getAttribute('ylabel'),
         };
 
-        const lineIds = node.getChildrenIds();
-        desc.lines = lineIds.map((lineId) => {
-            let lineNode = this._client.getNode(lineId);
-            return this.getLineDesc(lineNode);
-        });
+        const children = node.getChildrenIds().map(id => this._client.getNode(id));
+        desc.lines = children.filter((node) => node.getValidAttributeNames().includes('points'))
+            .map(lineNode => this.getLineDesc(lineNode));
+        desc.images = children.filter(node => node.getValidAttributeNames().includes('rgbaMatrix'))
+            .map(imageNode => this.getImageDesc(imageNode));
         return desc;
     };
 
@@ -86,6 +86,28 @@ define([], function () {
         return desc;
     };
 
+    PlotlyDescExtractor.prototype.getImageDesc = function (imageNode) {
+        const id = imageNode.getId(),
+            subGraphId = imageNode.getParentId(),
+            graphId = this._client.getNode(subGraphId).getParentId(),
+            jobId = this._client.getNode(graphId).getParentId(),
+            execId = this._client.getNode(jobId).getParentId(),
+            imageHeight = imageNode.getAttribute('height'),
+            imageWidth = imageNode.getAttribute('width'),
+            numChannels = imageNode.getAttribute('numChannels');
+        const colorModel = numChannels === 3 ? 'rgb' : 'rgba';
+        return {
+            id: id,
+            execId: execId,
+            subgraphId: this._client.getNode(imageNode.getParentId()).getAttribute('id'),
+            type: 'image',
+            width: imageWidth,
+            height: imageHeight,
+            colorModel: colorModel,
+            visible: imageNode.getAttribute('visible'),
+            rgbaMatrix: base64ToImageArray(imageNode.getAttribute('rgbaMatrix'), imageWidth, imageHeight, numChannels)
+        };
+    };
 
     PlotlyDescExtractor.prototype.compareSubgraphIDs = function (desc1, desc2) {
         if (desc1.subgraphId >= desc2.subgraphId) return 1;
@@ -97,10 +119,10 @@ define([], function () {
         if (desc) {
             plotlyJSON.layout = createLayout(desc);
             let dataArr = desc.subGraphs.map((subGraph, index) => {
-                return createScatterTraces(subGraph, index);
+                return createTraces(subGraph, index);
             });
             plotlyJSON.data = flatten(dataArr);
-            const axesData = addAxesLabels(desc.subGraphs);
+            const axesData = addAxesLabelsAndTicks(desc.subGraphs);
             Object.keys(axesData).forEach((axis) => {
                 plotlyJSON.layout[axis] = axesData[axis];
             });
@@ -152,6 +174,32 @@ define([], function () {
         return layout;
     };
 
+
+    const base64ToImageArray = function (base64String, width, height, numChannels) {
+        const decodedString = atob(base64String);
+        let bytes = new Uint8Array(decodedString.length);
+        for (let i = 0; i < decodedString.length; i++) {
+            bytes[i] = decodedString.charCodeAt(i);
+        }
+        return reshape(bytes, width, height, numChannels);
+    };
+
+    const reshape = function (bytesArray, width, height, numChannels) {
+        let pixelArray = [], oneRow = [], rgbaArray = [];
+        let i, j = 0;
+        for (i = 0; i < height * numChannels; i += numChannels) {
+            while (j < width * numChannels) {
+                pixelArray = Array.from(bytesArray
+                    .slice(i * width + j, i * width + j + numChannels).values());
+                oneRow.push(pixelArray);
+                j += numChannels;
+            }
+            j = 0;
+            rgbaArray.push(oneRow);
+            oneRow = [];
+        }
+        return rgbaArray;
+    };
     // https://github.com/plotly/plotly.js/issues/2746#issuecomment-528342877
     // At present the only hacky way to add subplots title
     const addAnnotations = function (subGraphs) {
@@ -163,7 +211,7 @@ define([], function () {
                 font: {
                     family: 'Arial',
                     color: 'black',
-                    size: 14
+                    size: 12
                 },
                 showarrow: false,
                 xref: 'paper',
@@ -175,7 +223,7 @@ define([], function () {
         });
     };
 
-    const createScatterTraces = function (subGraph, index) {
+    const createTraces = function (subGraph, index) {
         let traceArr = subGraph.lines.map(line => {
             let points = pointsToCartesianArray(line.points);
             let traceData = {
@@ -195,10 +243,23 @@ define([], function () {
             }
             return traceData;
         });
+
+        traceArr.push(...subGraph.images.map(image => {
+            let traceData = {
+                type: TraceTypes.IMAGE,
+                z: image.rgbaMatrix,
+                colormodel: image.colorModel
+            };
+            if (index !== 0) {
+                traceData.xaxis = `x${index + 1}`;
+                traceData.yaxis = `y${index + 1}`;
+            }
+            return traceData;
+        }));
         return traceArr;
     };
 
-    const addAxesLabels = function (subGraphs) {
+    const addAxesLabelsAndTicks = function (subGraphs) {
         let axesData = {};
         subGraphs.forEach((subGraph, index) => {
             let xAxisName = `xaxis${index + 1}`;
@@ -221,6 +282,10 @@ define([], function () {
                     standoff: 0
                 }
             };
+            if (subGraph.images.length >= 1) {
+                axesData[xAxisName].visible = false;
+                axesData[yAxisName].visible = false;
+            }
         });
         return axesData;
     };

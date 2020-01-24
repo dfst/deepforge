@@ -1,0 +1,2 @@
+#!/usr/bin/env node
+const program = require('webgme-engine/src/bin/usermanager').main(process.argv);
