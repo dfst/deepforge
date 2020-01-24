@@ -111,6 +111,7 @@ describe('Pipeline execution', function () {
 
         storageBackends.forEach(storage => {
             // GME storage does not yet support remote execution (issue #1357)
+            // The minio config currently points to travis running in localhost
             const computeOptions = (storage === 'gme' || storage === 's3') ?
                 ['local', 'gme'] : computeBackends;
 
