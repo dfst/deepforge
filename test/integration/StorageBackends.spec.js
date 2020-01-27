@@ -1,6 +1,7 @@
 /* eslint-env node, mocha */
 describe('Storage Features Test', function () {
-    const testFixture = require('../../globals');
+    this.timeout(5000);
+    const testFixture = require('../globals');
     const {promisify} = require('util');
     const {requirejs} = testFixture;
     const TEST_STORAGE = 'storageFeaturesSpec';
@@ -19,7 +20,6 @@ describe('Storage Features Test', function () {
         dataInfo;
 
     before(async function () {
-        this.timeout(5000);
         await server.start();
         StorageConfigs = await testFixture.getStorageConfigs();
         for (const backend of storageBackends) {
@@ -33,23 +33,19 @@ describe('Storage Features Test', function () {
 
     for (const backend of storageBackends) {
         it(`Should execute putFile operation for the storage backend ${backend} `, async () => {
-            this.timeout(5000);
             dataInfo = await clients[backend].putFile(`${TEST_STORAGE}/dummyFile`,
                 Buffer.from('A Quick Brown Fox Jumped over a lazy Dog.'));
         });
 
         it(`Should execute getFile operation for the storage backend ${backend}`, async () => {
-            this.timeout(5000);
             await clients[backend].getFile(dataInfo);
         });
 
         it(`Should execute getCachePath operation for the storage backend ${backend}`, async () => {
-            this.timeout(5000);
             await clients[backend].getCachePath(dataInfo);
         });
 
         it(`Should execute deleteFile Operation for the storage backend ${backend}`, async () => {
-            this.timeout(5000);
             await clients[backend].deleteFile(dataInfo);
         });
     }
