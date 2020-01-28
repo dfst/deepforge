@@ -85,9 +85,15 @@ function initialize(middlewareOpts) {
         };
         try {
             client = new Minio.Client(req.body.config);
-            await client.bucketExists(req.body.bucketName);
         } catch (error) {
             return res.status(500).json({error});
+        }
+        try {
+            await client.bucketExists(req.body.bucketName);
+        } catch (err) {
+            this.logger.debug('No Bucket Exists');
+            resObj.count = 0;
+            return res.status(200).json(resObj);
         }
         let objectsStream = client.listObjectsV2(req.body.bucketName, req.body.path, req.body.recursive);
         let count = 0, deleteURL, name;
