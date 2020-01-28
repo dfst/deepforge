@@ -58,11 +58,15 @@ function initialize(middlewareOpts) {
         let exists;
         try {
             client = new Minio.Client(req.body.config);
-            exists = await client.bucketExists(req.body.bucketName);
         } catch (error) {
             return res.status(500).json({error});
         }
-        resObj.alreadyExists = true;
+        try {
+            exists = await client.bucketExists(req.body.bucketName);
+            resObj.alreadyExists = true;
+        } catch (error) {
+            resObj.alreadyExists = false;
+        }
         if (!exists) {
             logger.debug(`Bucket ${req.body.bucketName} doesn't exist. Creating...`);
             try {
@@ -115,6 +119,7 @@ function initialize(middlewareOpts) {
 
     logger.debug('ready');
 }
+
 /* eslint-enable max-lines-per-function */
 
 /**
