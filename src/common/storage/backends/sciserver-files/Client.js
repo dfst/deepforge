@@ -72,21 +72,6 @@ define([
         return data.url;
     };
 
-    SciServerFiles.prototype._stat = async function (volume, path) {
-        const fullpath = volume + '/' + path;
-        const url = `1/metadata/sandbox/${fullpath}?list=True&path=${fullpath}`;
-        try {
-            const response = await this.fetch(url);
-            return await response.json();
-        } catch (err) {
-            if (err.status === 404) {
-                return null;
-            } else {
-                throw err;
-            }
-        }
-    };
-
     SciServerFiles.prototype.getCachePath = async function (dataInfo) {
         const {volume, filename} = dataInfo.data;
         return `${this.id}/${volume}/${filename}`;

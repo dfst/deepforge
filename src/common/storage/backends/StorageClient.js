@@ -31,7 +31,8 @@ define([
         return url;
     };
 
-    StorageHelpers.fetch = async function (url, opts={}) {
+
+    StorageHelpers.fetch = async function (url, opts = {}) {
         url = this.getURL(url);
         opts.headers = new Headers(opts.headers || {});
         const response = await fetch(url, opts);
