@@ -54,20 +54,16 @@ function initialize(middlewareOpts) {
     });
 
     router.post('/createBucket', async function (req, res) {
-        let resObj = {};
-        let exists;
+        let resObj = {
+            alreadyExists: true
+        };
         try {
             client = new Minio.Client(req.body.config);
+            resObj.alreadyExists = await client.bucketExists(req.body.bucketName);
         } catch (error) {
             return res.status(500).json({error});
         }
-        try {
-            exists = await client.bucketExists(req.body.bucketName);
-            resObj.alreadyExists = true;
-        } catch (error) {
-            resObj.alreadyExists = false;
-        }
-        if (!exists) {
+        if (!resObj.alreadyExists) {
             logger.debug(`Bucket ${req.body.bucketName} doesn't exist. Creating...`);
             try {
                 await client.makeBucket(req.body.bucketName);
@@ -83,15 +79,14 @@ function initialize(middlewareOpts) {
         let resObj = {
             objects: []
         };
+        let exists;
         try {
             client = new Minio.Client(req.body.config);
+            exists = await client.bucketExists(req.body.bucketName);
         } catch (error) {
             return res.status(500).json({error});
         }
-        try {
-            await client.bucketExists(req.body.bucketName);
-        } catch (err) {
-            this.logger.debug('No Bucket Exists');
+        if(!exists){
             resObj.count = 0;
             return res.status(200).json(resObj);
         }
