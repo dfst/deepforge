@@ -1,5 +1,5 @@
 {
-  "name": "Minio S3 Compatible Storage",
+  "name": "S3 Storage",
   "configStructure": [
     {
       "name": "s3URL",
