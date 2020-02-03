@@ -3,19 +3,13 @@
 # ./utils/generate_token_keys.sh
 
 
-PARENT_DIR=..
-
-if [[ $# -gt 0 ]];
-  then
-    PARENT_DIR=$1;
-fi
-
-KEYS_DIR=$PARENT_DIR/token_keys
+SCRIPT_DIR=$(dirname "$0")
+PROJECT_ROOT=$(realpath "$SCRIPT_DIR/..")
+KEYS_DIR=$PROJECT_ROOT/token_keys
 
 mkdir -p "$KEYS_DIR"
 
 echo "Generating Keys"
 openssl genrsa -out "$KEYS_DIR"/private_key
-
 openssl rsa -in "$KEYS_DIR"/private_key -pubout > "$KEYS_DIR"/public_key
 echo "Keys are now in $KEYS_DIR"
