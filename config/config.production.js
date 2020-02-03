@@ -9,23 +9,18 @@ const config = require('./config.base'),
     validateConfig = require('webgme/config/validator');
 const path = require('path');
 
-// These two paths are necessary for JWT based authentication that webgme uses.
-const privateKeyPath = process.env.DEEPFORGE_PRIVATE_KEY || path.join(__dirname, '..', '..', 'token_keys', 'private_key');
-const publicKeyPath = process.env.DEEPFORGE_PUBLIC_KEY || path.join(__dirname, '..', '..','token_keys', 'public_key');
-
 config.seedProjects.basePaths = ['src/seeds/project'];
 
 config.authentication.enable = true;
+// Edit the following to configure the keys used for the json web tokens
+const privateKeyPath = process.env.DEEPFORGE_PRIVATE_KEY || path.join(__dirname, '..', 'token_keys', 'private_key');
+const publicKeyPath = process.env.DEEPFORGE_PUBLIC_KEY || path.join(__dirname, '..', 'token_keys', 'public_key');
 config.authentication.jwt.publicKey = publicKeyPath;
 config.authentication.jwt.privateKey = privateKeyPath;
 
-// Change this to true if you want to have guest account
+// Edit the following to configure guest accounts and registration
 config.authentication.allowGuests = false;
-
-// Change this to true if you want to allow user registration in your deployment.
 config.authentication.allowUserRegistration = false;
-
-
 config.authentication.guestAccount = 'guest';
 config.authentication.userManagementPage = 'deepforge-user-management-page';
 
