@@ -25,8 +25,7 @@ describe('Storage Features Test', function () {
         for (const backend of storageBackends) {
             client = await Storage.getClient(backend, logger, StorageConfigs[backend]);
             clients[backend] = client;
-            const nop = () => {
-            };
+            const nop = () => {};
             await client.deleteDir(TEST_STORAGE).catch(nop);
         }
     });

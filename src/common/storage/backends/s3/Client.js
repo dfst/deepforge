@@ -9,16 +9,30 @@ define([
         let [url, isHttps] = this.getServerURL();
         this.relativeUrl = (isHttps ? 'https://' : 'http://') + `${url}/storage/s3`;
         this.bucketName = config.bucketName;
-        this.config = config;
+        this.s3URL = config.s3URL;
+        this.config = this.createS3Config(config);
     };
 
 
     S3Storage.prototype = Object.create(StorageClient.prototype);
     S3Storage.prototype.constructor = S3Storage;
 
+    S3Storage.prototype.createS3Config = function(config) {
+        config.s3URL = config.s3URL || 'http://localhost:9000';
+        const useSSL = config.s3URL.startsWith('https');
+        let [endPoint, port] = config.s3URL.replace(/^https?:\/\//, '').split(':');
+        const accessKey = config.accessKey;
+        const secretKey = config.secretKey;
+        const s3Config =  {endPoint, port, useSSL, accessKey, secretKey};
+        if(port){
+            port = parseInt(port);
+            s3Config.port = port;
+        }
+        return s3Config;
+    };
 
     S3Storage.prototype._createBucketIfNeeded = async function () {
-        if (!this.config.bucketName) {
+        if (!this.bucketName) {
             throw new Error('Please Provide a bucket name to use with S3 Bucket Service');
         }
         try {
@@ -30,17 +44,17 @@ define([
                     method: 'POST',
                     body: JSON.stringify({
                         config: this.config,
-                        bucketName: this.config.bucketName,
+                        bucketName: this.bucketName,
                     })
                 });
             const {alreadyExists} = await res.json();
-            this.logger.debug(`Bucket ${this.config.bucketName}, ${alreadyExists ? 'Already Exists.' : 'created.'}`);
+            this.logger.debug(`Bucket ${this.bucketName}, ${alreadyExists ? 'Already Exists.' : 'created.'}`);
         } catch (err) {
             await this.throwError('Create Bucket', err);
         }
     };
 
-    S3Storage.prototype._getPreSignedURL = async function (bucketName, httpMethod, path, isdir = false) {
+    S3Storage.prototype._getPreSignedURL = async function (bucketName, httpMethod, path) {
         let res;
         try {
             res = await this.fetch('/presignedUrl', {
@@ -53,7 +67,6 @@ define([
                     bucketName: bucketName,
                     httpMethod: httpMethod,
                     path: path,
-                    isdir: isdir
                 })
             });
         } catch (err) {
@@ -85,7 +98,7 @@ define([
 
     S3Storage.prototype.putFile = async function (path, content) {
         await this._createBucketIfNeeded();
-        const httpInfo = await (this._getPreSignedURL(this.bucketName, 'put', path));
+        const httpInfo = await this._getPreSignedURL(this.bucketName, 'put', path);
         let res;
         try {
             res = await this.fetch(httpInfo.queryURL, {
@@ -99,10 +112,6 @@ define([
         const metadata = await this._stat(path);
         metadata.bucketName = this.bucketName;
         metadata.path = path;
-        res = await this._getPreSignedURL(this.bucketName, 'get', path);
-        metadata.url = res.queryURL;
-        res = await this._getPreSignedURL(this.bucketName, 'delete', path);
-        metadata.deleteURL = res.queryURL;
         return this.createDataInfo(metadata);
     };
 
@@ -120,8 +129,9 @@ define([
 
     S3Storage.prototype.deleteFile = async function (dataInfo) {
         const {data} = dataInfo;
+        const {queryURL} = await this._getPreSignedURL(data.bucketName, 'DELETE', data.path);
         try {
-            return await this.fetch(data.deleteURL, {method: 'DELETE'});
+            return await this.fetch(queryURL, {method: 'DELETE'});
         } catch (err) {
             this.throwError('Delete File', err);
         }
@@ -130,7 +140,8 @@ define([
 
     S3Storage.prototype.getDownloadURL = async function (dataInfo) {
         const {data} = dataInfo;
-        return data.url;
+        const res = await this._getPreSignedURL(data.bucketName, 'GET', data.path);
+        return res.queryURL;
     };
 
     S3Storage.prototype.getMetadata = async function (dataInfo) {
@@ -157,7 +168,7 @@ define([
                 body: JSON.stringify({
                     config: this.config,
                     bucketName: this.bucketName,
-                    prefix: dirName,
+                    path: dirName,
                     recursive: true
                 })
             });
@@ -165,13 +176,16 @@ define([
             this.throwError('List Objects', err);
         }
         const resObj = await res.json();
+        let deleteURL;
         for (const obj of resObj.objects) {
-            await this.deleteFile({
-                data: {deleteURL: obj.deleteURL}
-            });
-            this.logger.debug(`Successfully deleted ${obj.name}`);
+            deleteURL = (await this._getPreSignedURL(this.bucketName, 'DELETE', obj)).queryURL;
+            try {
+                await this.fetch(deleteURL, {method: 'DELETE'});
+            } catch (err) {
+                this.throwError('Delete Dir', err);
+            }
         }
-        this.logger.debug('Deleted all the files in the bucket path');
+        this.logger.debug(`Deleted path in ${dirName} in the bucket.`);
     };
 
     S3Storage.prototype.getURL = function (endPointOrFullURL) {

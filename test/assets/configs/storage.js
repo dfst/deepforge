@@ -8,13 +8,12 @@ async function getSciServerFilesConfig() {
 }
 
 function getMinioConfig() {
-    const endPoint = 'localhost';
-    const port = 9000;
+    const s3URL = 'http://localhost:9000';
     const accessKey = process.env.MINIO_ACCESS_KEY;
     const secretKey = process.env.MINIO_SECRET_KEY;
     const bucketName = process.env.MINIO_BUCKET_NAME || 'deepforge';
     const useSSL = false;
-    return {endPoint, port, accessKey, secretKey, bucketName, useSSL};
+    return {s3URL, accessKey, secretKey, bucketName, useSSL};
 }
 
 module.exports = async function () {

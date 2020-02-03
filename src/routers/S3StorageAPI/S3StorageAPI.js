@@ -38,7 +38,7 @@ function initialize(middlewareOpts) {
         return res.json({
             queryURL: generatedURL,
             httpMethod: req.body.httpMethod,
-            expiry: 24 * 60 * 60 * 7,   // Should this be controlled by ImportArtifact?
+            expiry: 24 * 60 * 60 * 7,
         });
     });
 
@@ -72,7 +72,7 @@ function initialize(middlewareOpts) {
             }
             resObj.alreadyExists = false;
         }
-        res.json(resObj);
+        return res.status(200).json(resObj);
     });
 
     router.post('/listObjects', async function (req, res) {
@@ -91,7 +91,7 @@ function initialize(middlewareOpts) {
             return res.status(200).json(resObj);
         }
         let objectsStream = client.listObjectsV2(req.body.bucketName, req.body.path, req.body.recursive);
-        let count = 0, deleteURL, name;
+        let count = 0, name;
 
         objectsStream.on('data', async function (obj) {
             resObj.objects.push(obj.name);
@@ -103,16 +103,6 @@ function initialize(middlewareOpts) {
         });
 
         objectsStream.on('end', async function () {
-            try {
-                resObj.objects = await Promise.all(resObj.objects.map(async (obj) => {
-                    deleteURL = await client.presignedUrl('DELETE', req.body.bucketName, obj, 24 * 60 * 60 * 7);
-                    name = obj;
-                    return {deleteURL, name};
-                }));
-            } catch (error) {
-                return res.status(500).json({error});
-            }
-
             resObj.count = count;
             return res.status(200).json(resObj);
         });

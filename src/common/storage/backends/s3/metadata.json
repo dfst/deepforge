@@ -2,19 +2,11 @@
   "name": "Minio S3 Compatible Storage",
   "configStructure": [
     {
-      "name": "endPoint",
-      "displayName": "Endpoint URL",
-      "description": "Endpoint for the S3 Storage.",
+      "name": "s3URL",
+      "displayName": "S3 Server URL",
+      "description": "URL for the S3 Storage Server",
       "value": "",
       "valueType": "string",
-      "readOnly": false
-    },
-    {
-      "name": "port",
-      "displayName": "PortNumber",
-      "description": "Port number for the S3 Server.",
-      "value": 9000,
-      "valueType": "number",
       "readOnly": false
     },
     {
@@ -39,14 +31,6 @@
       "description": "Bucket Name For S3 Server.",
       "value": "deepforge",
       "valueType": "string",
-      "readOnly": false
-    },
-    {
-      "name": "useSSL",
-      "displayName": "Use SSL",
-      "description": "Whether or not to use ssl",
-      "value": false,
-      "valueType": "boolean",
       "readOnly": false
     }
   ]
