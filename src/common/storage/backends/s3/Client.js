@@ -18,12 +18,12 @@ define([
     S3Storage.prototype.constructor = S3Storage;
 
     S3Storage.prototype.createS3Config = function(config) {
-        config.s3URL = config.s3URL || 'http://localhost:9000';
+        config.s3URL = config.s3URL || 'http://localhost:80';
         const useSSL = config.s3URL.startsWith('https');
         let [endPoint, port] = config.s3URL.replace(/^https?:\/\//, '').split(':');
         const accessKey = config.accessKey;
         const secretKey = config.secretKey;
-        const s3Config =  {endPoint, port, useSSL, accessKey, secretKey};
+        const s3Config =  {endPoint, useSSL, accessKey, secretKey};
         if(port){
             port = parseInt(port);
             s3Config.port = port;

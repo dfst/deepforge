@@ -4,7 +4,7 @@
     {
       "name": "s3URL",
       "displayName": "S3 Server URL",
-      "description": "URL for the S3 Storage Server",
+      "description": "URL for S3 Server",
       "value": "",
       "valueType": "string",
       "readOnly": false
@@ -12,7 +12,7 @@
     {
       "name": "accessKey",
       "displayName": "Access Key",
-      "description": "Access Key For S3 Server.",
+      "description": "Access Key for S3 Server.",
       "value": "",
       "valueType": "string",
       "readOnly": false
@@ -20,7 +20,7 @@
     {
       "name": "secretKey",
       "displayName": "Secret Key",
-      "description": "Secret Key For S3 Server.",
+      "description": "Secret Key for S3 Server.",
       "value": "",
       "valueType": "string",
       "readOnly": false
@@ -28,7 +28,7 @@
     {
       "name": "bucketName",
       "displayName": "Bucket Name",
-      "description": "Bucket Name For S3 Server.",
+      "description": "Bucket Name for S3 Server.",
       "value": "deepforge",
       "valueType": "string",
       "readOnly": false

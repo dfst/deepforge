@@ -30,9 +30,9 @@ function initialize(middlewareOpts) {
                 req.body.bucketName,
                 req.body.path);
         } catch (error) {
+            this.logger.error(`Generating pre-signed URL failed with ${error}.`);
             return res.status(500).json({error});
         }
-        logger.debug(`URL ${generatedURL}, generated to ${req.body.httpMethod} the Object ${req.body.path}`);
         return res.json({
             queryURL: generatedURL,
             httpMethod: req.body.httpMethod,
@@ -46,6 +46,7 @@ function initialize(middlewareOpts) {
             const client = new Minio.Client(req.body.config);
             stat = await client.statObject(req.body.bucketName, req.body.path);
         } catch (error) {
+            this.logger.error(`StatObject in the server failed with ${error}.`);
             return res.status(500).json({error});
         }
         return res.json(stat);
@@ -57,7 +58,7 @@ function initialize(middlewareOpts) {
                 alreadyExists: true
             };
         try {
-             client = new Minio.Client(req.body.config);
+            client = new Minio.Client(req.body.config);
             resObj.alreadyExists = await client.bucketExists(req.body.bucketName);
         } catch (error) {
             return res.status(500).json({error});
@@ -67,6 +68,7 @@ function initialize(middlewareOpts) {
             try {
                 await client.makeBucket(req.body.bucketName);
             } catch (error) {
+                this.logger.error(`Creating bucket failed with ${error}`);
                 return res.status(500).json({error});
             }
             resObj.alreadyExists = false;
@@ -98,6 +100,7 @@ function initialize(middlewareOpts) {
         });
 
         objectsStream.on('error', function (error) {
+            this.logger.error(`ListObjects failed with ${error}`);
             return res.status(500).json({error});
         });
 
