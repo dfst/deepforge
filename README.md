@@ -17,10 +17,9 @@ Additional features include:
 - Real-time pipeline feedback
 - Collaborative editing
 - Automatic version control.
-- Facilitates defining custom layers 
 
 ## Quick Start
-Installing deepforge natively requires NodeJS (version 8 recommended), MongoDB, and python3 installed (at least on the worker machines). It is recommended to first update npm with `npm install -g npm@5`.
+Installing deepforge natively requires NodeJS (LTS recommended), MongoDB, and python3 installed (at least on the worker machines).
 ```
 npm install -g deepforge-dev/deepforge
 ```
@@ -51,7 +50,7 @@ Contributions are welcome! There are a couple different ways to contribute to De
     - on deepforge and its future development: https://goo.gl/forms/2pDdCPXoUvkQhVzQ2
 - Contribute to the project directly by submitting some PR's!
 
-If you have any questions, check out the [wiki](https://github.com/dfst/deepforge/wiki/) or drop me a line on the gitter!
+If you have any questions, check out the [wiki](https://github.com/deepforge-dev/deepforge/wiki/) or drop me a line on slack!
 
 
 Sponsored by the [National Science Foundation](https://www.nsf.gov/) and [Digital Reasoning](http://www.digitalreasoning.com/)
