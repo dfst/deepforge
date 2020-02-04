@@ -6,11 +6,9 @@ const express = require('express'),
     bodyParser = require('body-parser'),
     Minio = require('minio');
 
-/* eslint-disable max-lines-per-function */
 function initialize(middlewareOpts) {
     const logger = middlewareOpts.logger.fork('S3StorageAPI'),
         ensureAuthenticated = middlewareOpts.ensureAuthenticated;
-    let client;
 
     logger.debug('initializing ...');
 
@@ -27,7 +25,7 @@ function initialize(middlewareOpts) {
     router.post('/presignedUrl', async function (req, res) {
         let generatedURL;
         try {
-            client = new Minio.Client(req.body.config);
+            const client = new Minio.Client(req.body.config);
             generatedURL = await client.presignedUrl(req.body.httpMethod,
                 req.body.bucketName,
                 req.body.path);
@@ -45,7 +43,7 @@ function initialize(middlewareOpts) {
     router.post('/statObject', async function (req, res) {
         let stat;
         try {
-            client = new Minio.Client(req.body.config);
+            const client = new Minio.Client(req.body.config);
             stat = await client.statObject(req.body.bucketName, req.body.path);
         } catch (error) {
             return res.status(500).json({error});
@@ -54,11 +52,12 @@ function initialize(middlewareOpts) {
     });
 
     router.post('/createBucket', async function (req, res) {
-        let resObj = {
-            alreadyExists: true
-        };
+        let client,
+            resObj = {
+                alreadyExists: true
+            };
         try {
-            client = new Minio.Client(req.body.config);
+             client = new Minio.Client(req.body.config);
             resObj.alreadyExists = await client.bucketExists(req.body.bucketName);
         } catch (error) {
             return res.status(500).json({error});
@@ -79,7 +78,7 @@ function initialize(middlewareOpts) {
         let resObj = {
             objects: []
         };
-        let exists;
+        let exists, client;
         try {
             client = new Minio.Client(req.body.config);
             exists = await client.bucketExists(req.body.bucketName);
@@ -91,7 +90,7 @@ function initialize(middlewareOpts) {
             return res.status(200).json(resObj);
         }
         let objectsStream = client.listObjectsV2(req.body.bucketName, req.body.path, req.body.recursive);
-        let count = 0, name;
+        let count = 0;
 
         objectsStream.on('data', async function (obj) {
             resObj.objects.push(obj.name);
@@ -110,8 +109,6 @@ function initialize(middlewareOpts) {
 
     logger.debug('ready');
 }
-
-/* eslint-enable max-lines-per-function */
 
 /**
  * Called before the server starts listening.

@@ -33,7 +33,7 @@ define([
 
     S3Storage.prototype._createBucketIfNeeded = async function () {
         if (!this.bucketName) {
-            throw new Error('Please Provide a bucket name to use with S3 Bucket Service');
+            throw new Error('S3 bucket required.');
         }
         try {
             const res = await this.fetch('/createBucket',
@@ -48,7 +48,7 @@ define([
                     })
                 });
             const {alreadyExists} = await res.json();
-            this.logger.debug(`Bucket ${this.bucketName}, ${alreadyExists ? 'Already Exists.' : 'created.'}`);
+            this.logger.debug(`Bucket ${this.bucketName}, ${alreadyExists ? 'already exists.' : 'created.'}`);
         } catch (err) {
             await this.throwError('Create Bucket', err);
         }
@@ -99,16 +99,14 @@ define([
     S3Storage.prototype.putFile = async function (path, content) {
         await this._createBucketIfNeeded();
         const httpInfo = await this._getPreSignedURL(this.bucketName, 'put', path);
-        let res;
         try {
-            res = await this.fetch(httpInfo.queryURL, {
+            await this.fetch(httpInfo.queryURL, {
                 method: httpInfo.httpMethod.toUpperCase(),
                 body: content
             });
         } catch (err) {
             this.throwError('Put File', err);
         }
-        this.logger.debug(`Successfully uploaded the file to ${httpInfo.queryURL}, server response ${res.body}`);
         const metadata = await this._stat(path);
         metadata.bucketName = this.bucketName;
         metadata.path = path;
@@ -145,8 +143,7 @@ define([
     };
 
     S3Storage.prototype.getMetadata = async function (dataInfo) {
-        const metaData = {size: dataInfo.data.size};
-        return metaData;
+        return {size: dataInfo.data.size};
     };
 
     S3Storage.prototype.getCachePath = async function (dataInfo) {
@@ -185,7 +182,7 @@ define([
                 this.throwError('Delete Dir', err);
             }
         }
-        this.logger.debug(`Deleted path in ${dirName} in the bucket.`);
+        this.logger.debug(`Deleted ${dirName} from ${this.bucketName}`);
     };
 
     S3Storage.prototype.getURL = function (endPointOrFullURL) {
@@ -197,7 +194,7 @@ define([
 
     S3Storage.prototype.throwError = async function (operationName, errorResponse) {
         const error = await errorResponse.json();
-        throw new Error(`S3 Storage operation ${operationName} Failed with status code 
+        throw new Error(`S3 Storage operation ${operationName} failed with status code 
             ${errorResponse.status} and error message ${JSON.stringify(error)}`);
     };
 
