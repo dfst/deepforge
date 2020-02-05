@@ -7,7 +7,8 @@
             "description": "SciServer access token.",
             "value": "",
             "valueType": "string",
-            "readOnly": false
+            "readOnly": false,
+            "isAuth": true
         },
         {
             "name": "volume",

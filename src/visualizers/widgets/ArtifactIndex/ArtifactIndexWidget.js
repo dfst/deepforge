@@ -3,10 +3,14 @@
 
 define([
     './ModelItem',
+    'panel/FloatingActionButton/styles/Materialize',
+    'deepforge/storage/index',
     'text!./Table.html',
     'css!./styles/ArtifactIndexWidget.css'
 ], function (
     ModelItem,
+    Materialize,
+    Storage,
     TABLE_HTML
 ) {
     'use strict';
@@ -43,14 +47,25 @@ define([
         if (desc && desc.parentId === this.currentNode) {
             var node = new ModelItem(this.$list, desc);
             this.nodes[desc.id] = node;
-            node.$delete.on('click', event => {
-                this.onNodeDeleteClicked(desc.id);
+            node.$delete.on('click', async event => {
+                const config = await this.getAuthenticationConfig(desc.dataInfo);
+                if (config !== null) {
+                    this.onNodeDeleteClicked(desc.id, config);
+                }
                 event.stopPropagation();
                 event.preventDefault();
             });
             node.$download.on('click', async event => {
-                const url = await this.getDownloadURL(desc.id);
-                this.download(desc.name, url);
+                const config = await this.getAuthenticationConfig(desc.dataInfo);
+                if (config !== null) {
+                    try {
+                        const url = await this.getDownloadURL(desc.id, config);
+                        this.download(desc.name, url);
+                    } catch (err) {
+                        const msg = `Unable to fetch data: ${err.message}`;
+                        Materialize.toast(msg, 4000);
+                    }
+                }
                 event.stopPropagation();
                 event.preventDefault();
             });
@@ -73,6 +88,20 @@ define([
                 });
             });
         }
+    };
+
+    ArtifactIndexWidget.prototype.getAuthenticationConfig = async function (dataInfo) {
+        const {backend} = dataInfo;
+        const metadata = Storage.getStorageMetadata(backend);
+        metadata.configStructure = metadata.configStructure
+            .filter(option => option.isAuth);
+
+        const configDialog = this.getConfigDialog();
+        const title = `Authenticate with ${metadata.name}`;
+        const iconClass = `glyphicon glyphicon-download-alt`;
+        const config = await configDialog.show(metadata, {title, iconClass});
+
+        return config[backend];
     };
 
     ArtifactIndexWidget.prototype.removeNode = function (gmeId) {

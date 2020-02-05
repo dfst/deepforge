@@ -3,10 +3,12 @@
 
 define([
     'deepforge/storage/index',
+    'deepforge/viz/ConfigDialog',
     'blob/BlobClient',
     'js/Constants'
 ], function (
     Storage,
+    ConfigDialog,
     BlobClient,
     CONSTANTS
 ) {
@@ -42,9 +44,15 @@ define([
             // WebGMEGlobal.State.registerActiveObject(id);
         };
 
-        this._widget.onNodeDeleteClicked = id => {
-            var name = this._client.getNode(id).getAttribute('name'),
-                msg = `Deleted "${name}" artifact (${id}) --`;
+        this._widget.onNodeDeleteClicked = async (id, config) => {
+            const node = this._client.getNode(id);
+            const name = node.getAttribute('name');
+            const msg = `Deleted "${name}" artifact (${id})`;
+
+            const dataInfo = this.getDataInfo(node);
+            const {backend} = dataInfo;
+            const storage = await Storage.getClient(backend, this._logger, config);
+            await storage.deleteFile(dataInfo);
 
             this._client.startTransaction(msg);
             this._client.deleteNode(id);
@@ -59,6 +67,7 @@ define([
 
             return await storage.getDownloadURL(dataInfo);
         };
+        this._widget.getConfigDialog = () => new ConfigDialog(this._client);
 
         this._widget.onNameChange = (id, newName) => {
             var name = this._client.getNode(id).getAttribute('name'),
