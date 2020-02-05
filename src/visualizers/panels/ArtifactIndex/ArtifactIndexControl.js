@@ -51,6 +51,15 @@ define([
             this._client.completeTransaction();
         };
 
+        this._widget.getDownloadURL = async (id, config) => {
+            const node = this._client.getNode(id);
+            const dataInfo = this.getDataInfo(node);
+            const {backend} = dataInfo;
+            const storage = await Storage.getClient(backend, this._logger, config);
+
+            return await storage.getDownloadURL(dataInfo);
+        };
+
         this._widget.onNameChange = (id, newName) => {
             var name = this._client.getNode(id).getAttribute('name'),
                 msg = `Renamed "${name}" artifact to "${newName}"`;
