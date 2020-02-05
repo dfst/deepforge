@@ -92,12 +92,11 @@ define([
     // This next function retrieves the relevant node information for the widget
     ArtifactIndexControl.prototype._getObjectDescriptor = async function (nodeId) {
         const node = this._client.getNode(nodeId);
+        const dataInfo = this.tryGetDataInfo(node);
 
-        if (node) {
+        if (node && dataInfo) {
             const type = node.getAttribute('type');
-            const dataInfo = JSON.parse(node.getAttribute('data'));
             const metadata = await Storage.getMetadata(dataInfo, this._logger);
-            const url = await Storage.getDownloadURL(dataInfo, this._logger);
             const size = this._humanFileSize(metadata.size);
 
             return {
@@ -105,12 +104,33 @@ define([
                 type: type,
                 name: node.getAttribute('name'),
                 createdAt: node.getAttribute('createdAt'),
-                dataURL: url,
                 parentId: node.getParentId(),
-                size: size
+                dataInfo,
+                size,
             };
         }
 
+    };
+
+    ArtifactIndexControl.prototype.getDataInfo = function (node) {
+        const rawDataInfo = node.getAttribute('data');
+        try {
+            return JSON.parse(rawDataInfo);
+        } catch (err) {
+            if (rawDataInfo) {
+                throw new Error(`Invalid DataInfo: "${rawDataInfo}"`);
+            } else {
+                throw new Error('Missing DataInfo');
+            }
+        }
+    };
+
+    ArtifactIndexControl.prototype.tryGetDataInfo = function (node) {
+        try {
+            return this.getDataInfo(node);
+        } catch (err) {
+            return null;
+        }
     };
 
     ArtifactIndexControl.prototype._humanFileSize = function (bytes, si) {

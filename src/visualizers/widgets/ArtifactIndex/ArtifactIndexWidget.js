@@ -97,5 +97,16 @@ define([
     ArtifactIndexWidget.prototype.onDeactivate = function () {
     };
 
+    ArtifactIndexWidget.prototype.download = function (filename, url) {
+        const element = document.createElement('a');
+        element.style.display = 'none';
+        document.body.appendChild(element);
+        element.href = url;
+        element.target = '_self';
+        element.setAttribute('download', filename);
+        element.click();
+        document.body.removeChild(element);
+    };
+
     return ArtifactIndexWidget;
 });

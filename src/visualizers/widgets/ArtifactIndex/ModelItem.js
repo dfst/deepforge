@@ -31,7 +31,6 @@ define([
         this.$name.text(node.name);
         this.$type.text(node.type || 'unknown');
         this.$size.text(node.size || 'unknown');
-        this.$download.attr('href', node.dataURL);
         this.$createdAt.text(date);
     };
 
