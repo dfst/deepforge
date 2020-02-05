@@ -49,22 +49,18 @@ define([
             this.nodes[desc.id] = node;
             node.$delete.on('click', async event => {
                 const config = await this.getAuthenticationConfig(desc.dataInfo);
-                if (config !== null) {
-                    this.onNodeDeleteClicked(desc.id, config);
-                }
+                this.onNodeDeleteClicked(desc.id, config);
                 event.stopPropagation();
                 event.preventDefault();
             });
             node.$download.on('click', async event => {
                 const config = await this.getAuthenticationConfig(desc.dataInfo);
-                if (config !== null) {
-                    try {
-                        const url = await this.getDownloadURL(desc.id, config);
-                        this.download(desc.name, url);
-                    } catch (err) {
-                        const msg = `Unable to fetch data: ${err.message}`;
-                        Materialize.toast(msg, 4000);
-                    }
+                try {
+                    const url = await this.getDownloadURL(desc.id, config);
+                    this.download(desc.name, url);
+                } catch (err) {
+                    const msg = `Unable to fetch data: ${err.message}`;
+                    Materialize.toast(msg, 4000);
                 }
                 event.stopPropagation();
                 event.preventDefault();
@@ -96,12 +92,14 @@ define([
         metadata.configStructure = metadata.configStructure
             .filter(option => option.isAuth);
 
-        const configDialog = this.getConfigDialog();
-        const title = `Authenticate with ${metadata.name}`;
-        const iconClass = `glyphicon glyphicon-download-alt`;
-        const config = await configDialog.show(metadata, {title, iconClass});
+        if (metadata.configStructure.length) {
+            const configDialog = this.getConfigDialog();
+            const title = `Authenticate with ${metadata.name}`;
+            const iconClass = `glyphicon glyphicon-download-alt`;
+            const config = await configDialog.show(metadata, {title, iconClass});
 
-        return config[backend];
+            return config[backend];
+        }
     };
 
     ArtifactIndexWidget.prototype.removeNode = function (gmeId) {
