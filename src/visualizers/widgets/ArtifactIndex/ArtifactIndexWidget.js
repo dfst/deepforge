@@ -57,7 +57,8 @@ define([
                 const config = await this.getAuthenticationConfig(desc.dataInfo);
                 try {
                     const url = await this.getDownloadURL(desc.id, config);
-                    this.download(desc.name, url);
+                    const filename = desc.name.includes('.') ? desc.name : desc.name + '.dat';
+                    this.download(filename, url);
                 } catch (err) {
                     const msg = `Unable to fetch data: ${err.message}`;
                     Materialize.toast(msg, 4000);

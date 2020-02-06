@@ -67,11 +67,6 @@ define([
         return metadata;
     };
 
-    SciServerFiles.prototype.getDownloadURL = async function (dataInfo) {
-        const {data} = dataInfo;
-        return data.url;
-    };
-
     SciServerFiles.prototype.getCachePath = async function (dataInfo) {
         const {volume, filename} = dataInfo.data;
         return `${this.id}/${volume}/${filename}`;

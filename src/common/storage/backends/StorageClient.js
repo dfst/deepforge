@@ -60,9 +60,14 @@ define([
         throw new Error(`Directory deletion not supported by ${this.name}`);
     };
 
-    StorageClient.prototype.getDownloadURL = async function(/*dataInfo*/) {
-        // TODO: Remove this in favor of directly downloading w/ getFile, etc
-        throw new Error(`getDownloadURL not implemented for ${this.name}`);
+    StorageClient.prototype.getDownloadURL = async function(dataInfo) {
+        if (require.isBrowser) {
+            const data = await this.getFile(dataInfo);
+            const url = window.URL.createObjectURL(new Blob([data]));
+            return url;
+        } else {
+            throw new Error(`getDownloadURL not implemented for ${this.name}`);
+        }
     };
 
     StorageClient.prototype.getMetadata = async function(/*dataInfo*/) {
