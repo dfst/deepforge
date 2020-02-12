@@ -4,16 +4,19 @@ define([
     './backends/StorageBackend',
     'text!deepforge/storage/backends/sciserver-files/metadata.json',
     'text!deepforge/storage/backends/gme/metadata.json',
+    'text!deepforge/storage/backends/s3/metadata.json'
 ],function(
     module,
     StorageBackend,
     sciserverFiles,
     gme,
+    s3,
 ) {
     const Storage = {};
     const StorageMetadata = {};
     StorageMetadata['sciserver-files'] = JSON.parse(sciserverFiles);
     StorageMetadata['gme'] = JSON.parse(gme);
+    StorageMetadata['s3'] = JSON.parse(s3);
     const STORAGE_BACKENDS = Object.keys(StorageMetadata);
 
     Storage.getComponentId = function() {

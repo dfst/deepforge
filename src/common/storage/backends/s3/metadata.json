@@ -1,0 +1,39 @@
+{
+  "name": "S3 Storage",
+  "configStructure": [
+    {
+      "name": "endpoint",
+      "displayName": "S3 Server URL",
+      "description": "URL for S3 Server",
+      "value": "",
+      "valueType": "string",
+      "readOnly": false
+    },
+    {
+      "name": "accessKeyId",
+      "displayName": "Access Key",
+      "description": "Access Key for S3 Server.",
+      "value": "",
+      "valueType": "string",
+      "readOnly": false,
+      "isAuth": true
+    },
+    {
+      "name": "secretAccessKey",
+      "displayName": "Secret Key",
+      "description": "Secret Key for S3 Server.",
+      "value": "",
+      "valueType": "string",
+      "readOnly": false,
+      "isAuth": true
+    },
+    {
+      "name": "bucketName",
+      "displayName": "Bucket Name",
+      "description": "Bucket Name for S3 Server.",
+      "value": "deepforge",
+      "valueType": "string",
+      "readOnly": false
+    }
+  ]
+}
