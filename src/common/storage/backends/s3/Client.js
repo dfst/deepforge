@@ -1,8 +1,9 @@
 /* globals define */
-define([
-    '../StorageClient',
-    './lib/aws-sdk-2.615.0.min'
-], function (
+const deps = ['../StorageClient'];
+if (require.isBrowser) {
+    deps.push('./lib/aws-sdk-2.615.0.min');
+}
+define(deps, function (
     StorageClient,
 ) {
     const S3Storage = function (id, name, logger, config = {}) {
@@ -10,12 +11,8 @@ define([
         this.bucketName = config.bucketName;
         this.endpoint = config.endpoint;
         this.config = this.createS3Config(config);
-        if(require.isBrowser){
-            this.s3Client = new AWS.S3(this.config);
-        } else {
-            let AWS = require.nodeRequire('aws-sdk');
-            this.s3Client = new AWS.S3(this.config);
-        }
+        const AWS = require.isBrowser ? window.AWS : require.nodeRequire('aws-sdk');
+        this.s3Client = new AWS.S3(this.config);
     };
 
     S3Storage.prototype = Object.create(StorageClient.prototype);
@@ -25,8 +22,8 @@ define([
             endpoint: config.endpoint || 'http://localhost:80',
             accessKeyId: config.accessKeyId,
             secretAccessKey: config.secretAccessKey,
-            sslEnabled: config.endpoint.startsWith('https'),
-            s3ForcePathStyle: true, // needed with minio?
+            sslEnabled: config.endpoint ? config.endpoint.startsWith('https') : false,
+            s3ForcePathStyle: true, // needed with minio, from the documentation
             signatureVersion: 'v4'
         };
     };
@@ -46,49 +43,114 @@ define([
     };
 
     S3Storage.prototype.getFile = async function (dataInfo) {
-       throw new Error('This hasn\'t been implemented yet');
+        const {bucketName, filename} = dataInfo.data;
+        const params = {
+            Bucket: bucketName,
+            Key: filename
+        };
+        return new Promise((resolve, reject) => {
+            this.s3Client.getObject(params, (err, data) => {
+                if (err) {
+                    this.logger.error(`Failed to get object from s3 server with error ${err}`);
+                    reject(err);
+                } else {
+                    resolve(data.Body);
+                }
+            });
+        });
     };
 
     S3Storage.prototype.putFile = async function (filename, content) {
         try {
             await this.createBucketIfNeeded();
-            this.logger.debug(`Created bucket ${this.bucketName}`)
+            this.logger.debug(`Created bucket ${this.bucketName}`);
         } catch (err) {
             if (err.statusCode !== 409) {
-                this.logger.error(`Failed to created bucket ${this.bucketName} with error ${JSON.stringify(err)}`);
+                this.logger.error(`Failed to create bucket ${this.bucketName} with error ${JSON.stringify(err)}`);
                 throw err;
             }
-            this.logger.debug(`Bucket ${this.bucketName} already exists, not creating a new bucket`);
         }
         const params = {
-            Body: require.isBrowser? new Blob([content]): content,
+            Body: require.isBrowser ? new Blob([content]) : content,
             Bucket: this.bucketName,
             Key: filename,
         };
-        console.log(typeof content);
         return new Promise((resolve, reject) => {
-            this.s3Client.putObject(params, (err, data) => {
+            this.s3Client.putObject(params, async (err, data) => {
                 if (err) {
+                    this.logger.error(`File upload to s3 Storage unsuccessful with error ${JSON.stringify(err)}`);
                     reject(err);
                 } else {
-                    const metadata = {
-                        filename: filename,
-                        bucketName: this.bucketName,
-                        size: content.byteLength,
-                    };
+                    const metadata = await this._stat(filename, this.bucketName);
+                    metadata.filename = filename;
+                    metadata.size = metadata.ContentLength;
+                    metadata.bucketName = this.bucketName;
+                    metadata.endpoint = this.config.endpoint;
                     resolve(this.createDataInfo(metadata));
                 }
             });
         });
+    };
 
+    S3Storage.prototype._stat = async function (path, bucketName) {
+        const params = {
+            Bucket: bucketName,
+            Key: path
+        };
+        return new Promise((resolve, reject) => this.s3Client.headObject(params, (err, data) => {
+            if (err) {
+                reject(err);
+            } else {
+                resolve(data);
+            }
+        }));
     };
 
     S3Storage.prototype.deleteDir = async function (dirname) {
-        throw new Error(`This hasn't been implemented yet`);
+        let dataInfo;
+        return new Promise((resolve, reject) => {
+            this.s3Client.listObjectsV2({
+                Bucket: this.bucketName,
+                MaxKeys: 1000,
+                Prefix: dirname
+            }, async (err, data) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    try {
+                        for (const file of data.Contents) {
+                            dataInfo = {
+                                bucketName: this.bucketName,
+                                Key: file.Key
+                            };
+                            await this.deleteFile(dataInfo);
+                        }
+                    } catch (err) {
+                        reject(err);
+                    }
+                    resolve(`Successfully deleted directory/path ${dirname} in the S3 server`);
+                }
+            });
+        });
     };
 
     S3Storage.prototype.deleteFile = async function (dataInfo) {
-        throw new Error(`This hasn't been implemented yet`);
+        const {bucketName, filename} = dataInfo.data;
+        const params = {
+            Bucket: bucketName,
+            Key: filename
+        };
+        return new Promise((resolve, reject) => {
+            this.s3Client.deleteObject(params, (err, data) => {
+                if (err) {
+                    this.logger.error(`Failed to delete object from s3 server with error ${err}`);
+                    reject(err);
+                } else {
+                    resolve(data);
+                }
+            });
+        });
+
     };
 
     S3Storage.prototype.getMetadata = async function (dataInfo) {
@@ -97,12 +159,10 @@ define([
     };
 
     S3Storage.prototype.getCachePath = async function (dataInfo) {
-        throw new Error(`This hasn't been implemented yet`);
+        const {bucketName, filename} = dataInfo.data;
+        return `${this.id}/${bucketName}/${filename}`;
     };
 
-    S3Storage.prototype.fetch = async function (url, opts = {}) {
-        throw new Error(`This hasn't been implemented yet`);
-    };
 
     return S3Storage;
 });

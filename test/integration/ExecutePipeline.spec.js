@@ -77,10 +77,14 @@ describe('Pipeline execution', function () {
         });
 
         beforeEach(async () => {
-            const config = StorageConfigs['sciserver-files'];
-            const client = await Storage.getClient('sciserver-files', logger, config);
+            const sciServerFilesConfig = StorageConfigs['sciserver-files'];
+            const s3StorageConfig = StorageConfigs['s3'];
+            const sciServerFilesClient = await Storage.getClient('sciserver-files', logger, sciServerFilesConfig);
+            const s3StorageClient = await Storage.get('s3', logger, s3StorageConfig);
             const nop = () => {};
-            await client.deleteDir(project.projectId)
+            await sciServerFilesClient.deleteDir(project.projectId)
+                .catch(nop);
+            await s3StorageClient.deleteDir(project.projectId)
                 .catch(nop);
         });
 
@@ -106,7 +110,9 @@ describe('Pipeline execution', function () {
 
         storageBackends.forEach(storage => {
             // GME storage does not yet support remote execution (issue #1357)
-            const computeOptions = storage === 'gme' ?
+            // s3 config for this fixture points to a server running in localhost,
+            // and the artifacts are not accessible in sciserver-compute environment
+            const computeOptions = storage === 'gme' || storage === 's3' ?
                 ['local', 'gme'] : computeBackends;
 
             computeOptions.forEach(compute => {
