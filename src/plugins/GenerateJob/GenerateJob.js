@@ -112,7 +112,11 @@ define([
     };
 
     GenerateJob.prototype.createDataMetadataFile = async function (files) {
-        const inputData = _.object(files.getUserAssets());
+        const configs = this.getInputStorageConfigs();
+        const inputData = files.getUserAssets().map(pair => {
+            const [, dataInfo] = pair;
+            return pair.concat(configs[JSON.stringify(dataInfo)]);
+        });
         const content = JSON.stringify(inputData, null, 2);
         files.addFile('input-data.json', content);
         return content;
@@ -268,6 +272,15 @@ define([
         return storage;
     };
 
+    GenerateJob.prototype.getInputStorageConfigs = async function () {
+        const inputs = Object.entries(this.getCurrentConfig().inputs || {});
+        const [nodeIds, configs] = _.unzip(inputs);
+        const nodes = await Promise.all(nodeIds.map(id => this.core.loadByPath(this.rootNode, id)));
+        const dataInfos = nodes.map(node => this.core.getAttribute(node, 'data'));
+        const config = _.object(_.zip(dataInfos, configs));
+        return config;
+    };
+
     GenerateJob.prototype.getAllStorageConfigs = function () {
         const storage = this.getStorageConfig();
         const configs = {};
@@ -294,8 +307,8 @@ define([
             storage: {
                 id: storage.id,
                 dir: storageDir,
+                config: storage.config
             },
-            storageConfigs: this.getAllStorageConfigs(),
             HOST: process.env.DEEPFORGE_HOST || '',
         };
         files.addFile('config.json', JSON.stringify(configs));

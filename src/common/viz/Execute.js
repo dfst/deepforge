@@ -60,6 +60,49 @@ define([
             displayName: 'Basic Options',
             valueType: 'section'
         });
+
+        const inputConfigs = (await this.getArtifactInputs(node))
+            .map(input => {
+                const config = this.getAuthConfig(input);
+                if (config) {
+                    return [input, config];
+                }
+            })
+            .filter(info => !!info);
+
+        if (inputConfigs.length) {
+            metadata.configStructure.push({
+                name: 'PipelineInputsHeader',
+                displayName: 'Credentials for Pipeline Inputs',
+                valueType: 'section'
+            });
+            const inputOpts = inputConfigs.map(pair => {
+                const [node, config] = pair;
+                const name = node.getAttribute('name');
+                const backend = JSON.parse(node.getAttribute('data')).backend;
+                const storageName = Storage.getStorageMetadata(backend).name;
+                const title = `${name} (${storageName}):`;
+
+                config.unshift({
+                    name: `${title} Header`,
+                    displayName: title,
+                    valueType: 'section'
+                });
+
+                return {
+                    name: node.getId(),
+                    valueType: 'group',
+                    valueItems: config
+                };
+            });
+
+            metadata.configStructure.push({
+                name: 'inputs',
+                valueType: 'group',
+                valueItems: inputOpts
+            });
+        }
+
         metadata.configStructure.push({
             name: 'computeHeader',
             displayName: 'Compute Options',
