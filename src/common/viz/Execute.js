@@ -169,34 +169,99 @@ define([
         return deferred.promise;
     };
 
+    Execute.prototype.getAuthConfig = function(node) {
+        const dataInfo = JSON.parse(node.getAttribute('data'));
+        const {backend} = dataInfo;
+        const metadata = Storage.getStorageMetadata(backend);
+        metadata.configStructure = metadata.configStructure.filter(config => config.isAuth);
+        if (metadata.configStructure.length) {
+            return metadata.configStructure;
+        } else {
+            return null;
+        }
+    };
+
+    Execute.prototype.getArtifactInputs = async function(node) {
+        const baseName = this.getBaseName(node);
+        if (baseName === 'Pipeline') {
+            await this.loadChildren(node.getId());
+            const operations = node.getChildrenIds()
+                .map(id => this.client.getNode(id));
+
+            const inputOps = operations.filter(node => {
+                const baseName = this.getBaseName(node);
+                return baseName === 'Input';
+            });
+
+            const dataNodes = await Promise.all(inputOps.map(node => {
+                const id = node.getPointer('artifact').to;
+                if (id) {
+                    return this.getNode(id);
+                }
+            }));
+
+            return dataNodes.filter(node => !!node);
+        } else {
+            throw new Error('TODO: Finish getArtifact inputs for jobs');
+            // TODO: Get the operation inputs
+        }
+    };
+
+    Execute.prototype.getBaseName = function(node) {
+        const base = this.client.getNode(node.getBaseId());
+        return base.getAttribute('name');
+    };
+
+    Execute.prototype.getOutputs = async function(node) {
+        await this.loadChildren(node.getId());
+        const outputsCntr = node.getChildrenIds().map(id => this.client.getNode(id))
+            .find(node => node.getAttribute('name') === 'Outputs');
+
+        await this.loadChildren(outputsCntr.getId());
+        return outputsCntr.getChildrenIds().map(id => this.client.getNode(id));
+    };
+
     Execute.prototype.isRunning = function(node) {
         node = node || this.client.getNode(this._currentNodeId);
         // TODO: Check the parent, too
         return node.getAttribute('executionId');
     };
 
-    Execute.prototype.loadChildren = function(id) {
-        var deferred = Q.defer(),
-            execNode = this.client.getNode(id || this._currentNodeId),
+    Execute.prototype.loadChildren = async function(id) {
+        var execNode = this.client.getNode(id || this._currentNodeId),
             jobIds = execNode.getChildrenIds(),
             jobsLoaded = !jobIds.length || this.client.getNode(jobIds[0]);
 
         // May need to load the jobs...
         if (!jobsLoaded) {
-            // Create a territory and load the nodes
-            var territory = {},
-                ui;
-
+            const territory = {};
             territory[id] = {children: 1};
-            ui = this.client.addUI(this, () => {
-                this.client.removeUI(ui);
-                deferred.resolve();
-            });
-            this.client.updateTerritory(ui, territory);
-        } else {
-            deferred.resolve();
+            await this.loadTerritory(territory);
         }
+    };
 
+    Execute.prototype.getNode = async function(id) {
+        let node = this.client.getNode(id);
+        if (!node) {
+            await this.loadNode(id);
+            node = this.client.getNode(id);
+        }
+        return node;
+    };
+
+    Execute.prototype.loadNode = async function(id) {
+        const territory = {};
+        territory[id] = {children: 0};
+        await this.loadTerritory(territory);
+    };
+
+    Execute.prototype.loadTerritory = function(territory) {
+        const deferred = Q.defer();
+        const ui = this.client.addUI(this, () => {
+            this.client.removeUI(ui);
+            deferred.resolve();
+        });
+        this.client.updateTerritory(ui, territory);
         return deferred.promise;
     };
 
