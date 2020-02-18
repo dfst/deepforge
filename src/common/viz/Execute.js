@@ -181,6 +181,11 @@ define([
         }
     };
 
+    Execute.prototype.getMetaNode = function(name) {
+        return this.client.getAllMetaNodes()
+            .find(node => node.getAttribute('name') === name);
+    };
+
     Execute.prototype.getArtifactInputs = async function(node) {
         const baseName = this.getBaseName(node);
         if (baseName === 'Pipeline') {
@@ -202,8 +207,22 @@ define([
 
             return dataNodes.filter(node => !!node);
         } else {
-            throw new Error('TODO: Finish getArtifact inputs for jobs');
-            // TODO: Get the operation inputs
+            await this.loadChildren(node.getId());
+            const OperationBase = this.getMetaNode('Operation').getId();
+            const operation = node.getChildrenIds()
+                .map(id => this.client.getNode(id))
+                .find(node => node.isInstanceOf(OperationBase.getId()));
+
+            await this.loadChildren(node.getId());
+            const inputCntr = operation.getChildrenIds()
+                .map(id => this.client.getNode(id))
+                .find(node => node.getAttribute('name') === 'Inputs');
+
+            await this.loadChildren(inputCntr.getId());
+            const dataNodes = inputCntr.getChildrenIds()
+                .map(id => this.client.getNode(id));
+
+            return dataNodes;
         }
     };
 

@@ -49,9 +49,9 @@ requirejs([
         process.env.MPLBACKEND = 'module://backend_deepforge';
 
         // Download the large files
-        var inputData = require('./input-data.json'),
-            job,
-            cleanup;
+        const inputData = require('./input-data.json');
+        let job;
+        let cleanup;
 
         // Make sure to kill the spawned process group on exit
 
@@ -311,6 +311,6 @@ requirejs([
 
     async function dataCachePath(cacheDir, dataInfo) {
         const relPath = await Storage.getCachePath(dataInfo, logger);
-        return `${cacheDir}/${relPath}`;
+        return path.join(cacheDir, relPath);
     }
 });
