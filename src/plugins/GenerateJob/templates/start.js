@@ -50,7 +50,6 @@ requirejs([
 
         // Download the large files
         var inputData = require('./input-data.json'),
-            inputPaths = Object.keys(inputData),
             job,
             cleanup;
 
