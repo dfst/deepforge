@@ -1,6 +1,7 @@
 /* globals define */
-const deps = ['../StorageClient', 'aws-sdk-min'];
-define(deps, function (
+define([
+    '../StorageClient'
+], function (
     StorageClient,
 ) {
     const S3Storage = function (id, name, logger, config = {}) {
@@ -8,11 +9,25 @@ define(deps, function (
         this.bucketName = config.bucketName;
         this.endpoint = config.endpoint;
         this.config = this.createS3Config(config);
-        const AWS = require.isBrowser ? window.AWS : require.nodeRequire('aws-sdk');
-        this.s3Client = new AWS.S3(this.config);
+        this.s3Client = null;
+        this.ready = this.initialize();
     };
 
     S3Storage.prototype = Object.create(StorageClient.prototype);
+
+    S3Storage.prototype.initialize = async function () {
+        const AWS = require.isBrowser ? await require('aws-sdk-min') :
+            require.nodeRequire('aws-sdk');
+        this.s3Client = new AWS.S3(this.config);
+        promisifyMethod(this.s3Client, 'createBucket');
+        promisifyMethod(this.s3Client, 'getObject');
+        promisifyMethod(this.s3Client, 'putObject');
+    };
+
+    S3Storage.prototype.getS3Client = async function () {
+        await this.ready;
+        return this.s3Client;
+    };
 
     S3Storage.prototype.createS3Config = function (config) {
         return {
@@ -26,16 +41,8 @@ define(deps, function (
     };
 
     S3Storage.prototype.createBucketIfNeeded = async function () {
-        return new Promise((resolve, reject) => {
-            this.s3Client.createBucket({
-                Bucket: this.bucketName
-            }, function (err, data) {
-                if (err) {
-                    reject(err);
-                } else {
-                    resolve(data);
-                }
-            });
+        return this.s3Client.createBucket({
+            Bucket: this.bucketName
         });
     };
 
@@ -45,16 +52,8 @@ define(deps, function (
             Bucket: bucketName,
             Key: filename
         };
-        return new Promise((resolve, reject) => {
-            this.s3Client.getObject(params, (err, data) => {
-                if (err) {
-                    this.logger.error(`Failed to get object from s3 server with error ${err}`);
-                    reject(err);
-                } else {
-                    resolve(data.Body);
-                }
-            });
-        });
+        const data = await this.s3Client.getObject(params);
+        return data.Body;
     };
 
     S3Storage.prototype.putFile = async function (filename, content) {
@@ -72,21 +71,14 @@ define(deps, function (
             Bucket: this.bucketName,
             Key: filename,
         };
-        return new Promise((resolve, reject) => {
-            this.s3Client.putObject(params, async (err, data) => {
-                if (err) {
-                    this.logger.error(`File upload to s3 Storage unsuccessful with error ${JSON.stringify(err)}`);
-                    reject(err);
-                } else {
-                    const metadata = await this._stat(filename, this.bucketName);
-                    metadata.filename = filename;
-                    metadata.size = metadata.ContentLength;
-                    metadata.bucketName = this.bucketName;
-                    metadata.endpoint = this.config.endpoint;
-                    resolve(this.createDataInfo(metadata));
-                }
-            });
-        });
+        await this.s3Client.putObject(params);
+        const metadata = await this._stat(filename, this.bucketName);
+        metadata.filename = filename;
+        metadata.size = metadata.ContentLength;
+        metadata.bucketName = this.bucketName;
+        metadata.endpoint = this.config.endpoint;
+        return this.createDataInfo(metadata);
+        //this.logger.error(`File upload to s3 Storage unsuccessful with error ${JSON.stringify(err)}`);
     };
 
     S3Storage.prototype._stat = async function (path, bucketName) {
@@ -160,6 +152,22 @@ define(deps, function (
         return `${this.id}/${bucketName}/${filename}`;
     };
 
+    function promisifyMethod(object, method) {
+        const fn = object[method];
+        object[method] = function() {
+            return new Promise((resolve, reject) => {
+                const args = Array.prototype.slice.call(arguments);
+                const callback = function(err, result) {
+                    if (err) {
+                        return reject(err);
+                    }
+                    resolve(result);
+                };
+                args.push(callback);
+                fn.apply(object, args);
+            });
+        };
+    }
 
     return S3Storage;
 });
