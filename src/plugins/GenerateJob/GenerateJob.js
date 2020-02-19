@@ -120,7 +120,6 @@ define([
             const [filepath, dataInfo] = pair;
             let config = configs[JSON.stringify(dataInfo)];
             if (!config) {
-                console.log(configs);
                 assert(
                     dataInfo.backend === defaultConfig.id,
                     `No storage config found for ${filepath} (${dataInfo.backend})`
