@@ -285,7 +285,7 @@ define([
 
     GenerateJob.prototype.getInputStorageConfigs = async function () {
         const inputs = Object.entries(this.getCurrentConfig().inputs || {});
-        const [nodeIds, configs] = _.unzip(inputs);
+        const [nodeIds=[], configs=[]] = _.unzip(inputs);
         const nodes = await Promise.all(nodeIds.map(id => this.core.loadByPath(this.rootNode, id)));
         const dataInfos = nodes.map(node => this.core.getAttribute(node, 'data'));
         const config = _.object(_.zip(dataInfos, configs));
