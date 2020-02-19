@@ -74,7 +74,8 @@ config.requirejsPaths = {
   'webgme-breadcrumbheader': './node_modules/webgme-breadcrumbheader/src/common',
   'webgme-autoviz': './node_modules/webgme-autoviz/src/common',
   'webgme-easydag': './node_modules/webgme-easydag/src/common',
-  'deepforge': './src/common'
+  'deepforge': './src/common',
+  'aws-sdk-min': './node_modules/aws-sdk/dist/aws-sdk.min'
 };
 
 

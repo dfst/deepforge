@@ -1,8 +1,5 @@
 /* globals define */
-const deps = ['../StorageClient'];
-if (require.isBrowser) {
-    deps.push('./lib/aws-sdk-2.615.0.min');
-}
+const deps = ['../StorageClient', 'aws-sdk-min'];
 define(deps, function (
     StorageClient,
 ) {

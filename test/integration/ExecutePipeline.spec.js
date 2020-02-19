@@ -80,7 +80,7 @@ describe('Pipeline execution', function () {
             const sciServerFilesConfig = StorageConfigs['sciserver-files'];
             const s3StorageConfig = StorageConfigs['s3'];
             const sciServerFilesClient = await Storage.getClient('sciserver-files', logger, sciServerFilesConfig);
-            const s3StorageClient = await Storage.get('s3', logger, s3StorageConfig);
+            const s3StorageClient = await Storage.getClient('s3', logger, s3StorageConfig);
             const nop = () => {};
             await sciServerFilesClient.deleteDir(project.projectId)
                 .catch(nop);
