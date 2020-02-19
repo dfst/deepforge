@@ -51,7 +51,6 @@ requirejs([
         // Download the large files
         const inputData = require('./input-data.json');
         let job;
-        let cleanup;
 
         // Make sure to kill the spawned process group on exit
 

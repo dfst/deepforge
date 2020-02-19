@@ -11,6 +11,7 @@ define([
     'deepforge/plugin/PtrCodeGen',
     'deepforge/plugin/GeneratedFiles',
     'deepforge/storage/index',
+    'common/util/assert',
     'text!./metadata.json',
     'plugin/PluginBase',
     'module'
@@ -24,6 +25,7 @@ define([
     PtrCodeGen,
     GeneratedFiles,
     Storage,
+    assert,
     pluginMetadata,
     PluginBase,
     module
@@ -112,10 +114,20 @@ define([
     };
 
     GenerateJob.prototype.createDataMetadataFile = async function (files) {
-        const configs = this.getInputStorageConfigs();
+        const configs = await this.getInputStorageConfigs();
+        const defaultConfig = this.getStorageConfig();
         const inputData = files.getUserAssets().map(pair => {
-            const [, dataInfo] = pair;
-            return pair.concat(configs[JSON.stringify(dataInfo)]);
+            const [filepath, dataInfo] = pair;
+            let config = configs[JSON.stringify(dataInfo)];
+            if (!config) {
+                console.log(configs);
+                assert(
+                    dataInfo.backend === defaultConfig.id,
+                    `No storage config found for ${filepath} (${dataInfo.backend})`
+                );
+                config = defaultConfig.config;
+            }
+            return pair.concat(config);
         });
         const content = JSON.stringify(inputData, null, 2);
         files.addFile('input-data.json', content);
