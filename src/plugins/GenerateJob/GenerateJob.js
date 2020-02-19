@@ -117,16 +117,12 @@ define([
         const configs = await this.getInputStorageConfigs();
         const defaultConfig = this.getStorageConfig();
         const inputData = files.getUserAssets().map(pair => {
-            const [filepath, dataInfo] = pair;
+            const [, dataInfo] = pair;
             let config = configs[JSON.stringify(dataInfo)];
-            if (!config) {
-                assert(
-                    dataInfo.backend === defaultConfig.id,
-                    `No storage config found for ${filepath} (${dataInfo.backend})`
-                );
+            if (!config && dataInfo.backend === defaultConfig.id) {
                 config = defaultConfig.config;
             }
-            return pair.concat(config);
+            return pair.concat(config || {});
         });
         const content = JSON.stringify(inputData, null, 2);
         files.addFile('input-data.json', content);
