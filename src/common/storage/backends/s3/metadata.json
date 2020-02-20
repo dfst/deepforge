@@ -7,8 +7,7 @@
       "description": "URL for S3 Server",
       "value": "",
       "valueType": "string",
-      "readOnly": false,
-      "isAuth": true
+      "readOnly": false
     },
     {
       "name": "accessKeyId",
