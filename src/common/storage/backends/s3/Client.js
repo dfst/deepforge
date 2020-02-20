@@ -19,16 +19,16 @@ define([
     S3Storage.prototype.initialize = async function () {
         if (require.isBrowser) {
             return new Promise((resolve, reject) => {
-                try {
-                    require(['aws-sdk-min'], () => {
+                require(['aws-sdk-min'], () => {
+                    try {
                         /* eslint-disable no-undef*/
                         this.initializeS3Client(AWS);
-                        /* eslint-disable no-undef*/
+                        /* eslint-enable no-undef*/
                         resolve();
-                    });
-                } catch (err) {
-                    reject(err);
-                }
+                    } catch (err) {
+                        reject(err);
+                    }
+                });
             });
         } else {
             const AWS = require.nodeRequire('aws-sdk');
