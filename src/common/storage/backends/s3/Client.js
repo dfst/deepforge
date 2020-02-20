@@ -55,7 +55,7 @@ define([
 
     S3Storage.prototype.createS3Config = function (config) {
         return {
-            endpoint: config.endpoint || 'http://localhost:9000',
+            endpoint: config.endpoint || 'http://localhost:80',
             accessKeyId: config.accessKeyId,
             secretAccessKey: config.secretAccessKey,
             sslEnabled: config.endpoint ? config.endpoint.startsWith('https') : false,

@@ -68,7 +68,7 @@ describe('Pipeline execution', function () {
     const storageBackends = Storage.getAvailableBackends();
     const computeBackends = Compute.getAvailableBackends();
 
-    describe.only('pipelines', function() {
+    describe('pipelines', function() {
         let StorageConfigs, ComputeConfigs;
         before(async () => {
             this.timeout(4000);
