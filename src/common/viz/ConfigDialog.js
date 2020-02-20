@@ -25,12 +25,11 @@ define([
 
     ConfigDialog.prototype = Object.create(PluginConfigDialog.prototype);
 
-    ConfigDialog.prototype.show = function(pluginMetadata) {
+    ConfigDialog.prototype.show = function(pluginMetadata, options={}) {
         const deferred = Q.defer();
 
         this._pluginMetadata = pluginMetadata;
-
-        this._initDialog();
+        this._initDialog(pluginMetadata, options);
 
         this._dialog.on('shown', () => {
             this._dialog.find('input').first().focus();
@@ -54,7 +53,7 @@ define([
         return deferred.promise;
     };
 
-    ConfigDialog.prototype._initDialog = function() {
+    ConfigDialog.prototype._initDialog = function(metadata, options) {
         this._dialog = $(pluginConfigDialogTemplate);
 
         this._btnSave = this._dialog.find('.btn-save');
@@ -63,16 +62,23 @@ define([
         this._modalHeader = this._dialog.find('.modal-header');
 
         // Create the header
-        var iconEl = $('<i/>', {
-            class: this._pluginMetadata.icon.class || 'glyphicon glyphicon-cog'
-        });
+        const config = this.getDialogConfig(metadata, options);
+        var iconEl = $('<i/>', {class: config.iconClass});
         iconEl.addClass('plugin-icon pull-left');
         this._modalHeader.prepend(iconEl);
         this._title = this._modalHeader.find('.modal-title');
-        this._title.text(this._pluginMetadata.id + ' v' + this._pluginMetadata.version);
+        this._title.text(config.title);
 
         // Generate the config options
-        this.generateConfigSection(this._pluginMetadata);
+        this.generateConfigSection(metadata);
+    };
+
+    ConfigDialog.prototype.getDialogConfig = function(metadata, options) {
+        const defaultTitle = metadata.id + ' v' + metadata.version;
+        return {
+            title: options.title || defaultTitle,
+            iconClass: (metadata.icon && metadata.icon.class) || 'glyphicon glyphicon-cog',
+        };
     };
 
     ConfigDialog.prototype.submit = function (callback) {
@@ -197,6 +203,28 @@ define([
         const sectionHeader = SECTION_HEADER.clone();
         sectionHeader.text(configEntry.displayName);
         return {el: sectionHeader};
+    };
+
+    ConfigDialog.ENTRIES.group = function(configEntry) {
+        const widget = {el: null};
+        widget.el = $('<div>', {class: configEntry.name});
+
+        const entries = configEntry.valueItems
+            .map(item => this.getEntryForProperty(item));
+
+        entries.forEach(entry => widget.el.append(entry.el));
+
+        widget.getValue = () => {
+            const config = {};
+            entries.forEach(entry => {
+                if (entry.widget) {
+                    config[entry.id || entry.name] = entry.widget.getValue();
+                }
+            });
+            return config;
+        };
+
+        return {widget, el: widget.el};
     };
 
     ConfigDialog.ENTRIES.dict = function(configEntry) {

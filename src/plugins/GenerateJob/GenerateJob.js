@@ -11,6 +11,7 @@ define([
     'deepforge/plugin/PtrCodeGen',
     'deepforge/plugin/GeneratedFiles',
     'deepforge/storage/index',
+    'common/util/assert',
     'text!./metadata.json',
     'plugin/PluginBase',
     'module'
@@ -24,6 +25,7 @@ define([
     PtrCodeGen,
     GeneratedFiles,
     Storage,
+    assert,
     pluginMetadata,
     PluginBase,
     module
@@ -104,36 +106,24 @@ define([
     }; 
 
     GenerateJob.prototype.createRunScript = async function (files) {
-        let runsh = [
-            '# Bash script to download data files and run job',
-            !this.settings.enableJobCaching ? `# Created at ${Date.now()}` : '',
-            'if [ -z "$DEEPFORGE_URL" ]; then',
-            '  echo "Please set DEEPFORGE_URL and re-run:"',
-            '  echo ""',
-            '  echo "  DEEPFORGE_URL=http://my.deepforge.server.com:8080 bash run.sh"',
-            '  echo ""',
-            '  exit 1',
-            'fi',
-            'mkdir outputs',
-            `mkdir -p ${DATA_DIR}\n`
-        ].join('\n');
-
-        const assetPaths = files.getUserAssetPaths();
-        const configs = this.getAllStorageConfigs();
-        for (let i = assetPaths.length; i--;) {
-            const dataPath = assetPaths[i];
-            const dataInfo = files.getUserAsset(dataPath);
-            const url = await Storage.getDownloadURL(dataInfo, this.logger, configs);
-            runsh += `wget $DEEPFORGE_URL${url} -O ${dataPath}\n`;
+        let runDebug = Templates.RUN_DEBUG;
+        if (!this.settings.enableJobCaching) {
+            runDebug = `// Created at ${Date.now()}\n` + runDebug;
         }
-
-        runsh += 'python main.py';
-        files.addFile('run.sh', runsh);
-        return runsh;
+        files.addFile('run-debug.js', runDebug);
     };
 
     GenerateJob.prototype.createDataMetadataFile = async function (files) {
-        const inputData = _.object(files.getUserAssets());
+        const configs = await this.getInputStorageConfigs();
+        const defaultConfig = this.getStorageConfig();
+        const inputData = files.getUserAssets().map(pair => {
+            const [, dataInfo] = pair;
+            let config = configs[JSON.stringify(dataInfo)];
+            if (!config && dataInfo.backend === defaultConfig.id) {
+                config = defaultConfig.config;
+            }
+            return pair.concat(config || {});
+        });
         const content = JSON.stringify(inputData, null, 2);
         files.addFile('input-data.json', content);
         return content;
@@ -289,6 +279,15 @@ define([
         return storage;
     };
 
+    GenerateJob.prototype.getInputStorageConfigs = async function () {
+        const inputs = Object.entries(this.getCurrentConfig().inputs || {});
+        const [nodeIds=[], configs=[]] = _.unzip(inputs);
+        const nodes = await Promise.all(nodeIds.map(id => this.core.loadByPath(this.rootNode, id)));
+        const dataInfos = nodes.map(node => this.core.getAttribute(node, 'data'));
+        const config = _.object(_.zip(dataInfos, configs));
+        return config;
+    };
+
     GenerateJob.prototype.getAllStorageConfigs = function () {
         const storage = this.getStorageConfig();
         const configs = {};
@@ -315,8 +314,8 @@ define([
             storage: {
                 id: storage.id,
                 dir: storageDir,
+                config: storage.config
             },
-            storageConfigs: this.getAllStorageConfigs(),
             HOST: process.env.DEEPFORGE_HOST || '',
         };
         files.addFile('config.json', JSON.stringify(configs));

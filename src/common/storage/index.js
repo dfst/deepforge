@@ -51,7 +51,7 @@ define([
 
         const metadata = StorageMetadata[id];
         metadata.id = id;
-        return metadata;
+        return deepCopy(metadata);
     };
 
     Storage.getMetadata = async function(dataInfo, logger, configs) {
@@ -89,6 +89,10 @@ define([
         const backend = this.getBackend(id);
         return await backend.getClient(logger, config);
     };
+
+    function deepCopy(obj) {
+        return JSON.parse(JSON.stringify(obj));
+    }
 
     return Storage;
 });

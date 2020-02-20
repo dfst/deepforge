@@ -1,6 +1,7 @@
 /*globals define*/
 define([
     'text!./start.js',
+    'text!./run-debug.js',
     'text!./main.ejs',
     'text!./deepforge.ejs',
     'text!./backend_deepforge.py',
@@ -10,6 +11,7 @@ define([
     'text!./utils.build.js',
 ], function(
     START,
+    RUN_DEBUG,
     MAIN,
     DEEPFORGE_SERIALIZATION,
     MATPLOTLIB_BACKEND,
@@ -21,6 +23,7 @@ define([
 
     return {
         START,
+        RUN_DEBUG,
         MAIN,
         SERIALIZE,
         DEEPFORGE_SERIALIZATION,
