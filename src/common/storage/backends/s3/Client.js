@@ -18,39 +18,39 @@ define([
 
     S3Storage.prototype.initialize = async function () {
         if (require.isBrowser) {
-            return new Promise((resolve, reject) => {
+            await new Promise((resolve, reject) => {
                 require(['aws-sdk-min'], () => {
-                    try {
-                        /* eslint-disable no-undef*/
-                        this.initializeS3Client(AWS);
-                        /* eslint-enable no-undef*/
-                        resolve();
-                    } catch (err) {
-                        reject(err);
-                    }
-                });
+                    this.AWS = window.AWS;
+                    resolve();
+                }, reject);
             });
         } else {
-            const AWS = require.nodeRequire('aws-sdk');
-            this.initializeS3Client(AWS);
+            this.AWS = require.nodeRequire('aws-sdk');
         }
     };
 
-    S3Storage.prototype.initializeS3Client = function (AWS) {
-        this.s3Client = new AWS.S3(this.config);
-        if (this.s3Client) {
-            promisifyMethod(this.s3Client, 'createBucket');
-            promisifyMethod(this.s3Client, 'getObject');
-            promisifyMethod(this.s3Client, 'putObject');
-            promisifyMethod(this.s3Client, 'deleteObject');
-            promisifyMethod(this.s3Client, 'headObject');
-            promisifyMethod(this.s3Client, 'listObjectsV2');
-        }
+    S3Storage.prototype.initializeS3Client = function (AWS, config) {
+        const s3Client = new AWS.S3(config);
+        promisifyMethod(s3Client, 'createBucket');
+        promisifyMethod(s3Client, 'getObject');
+        promisifyMethod(s3Client, 'putObject');
+        promisifyMethod(s3Client, 'deleteObject');
+        promisifyMethod(s3Client, 'headObject');
+        promisifyMethod(s3Client, 'listObjectsV2');
+        return s3Client;
     };
 
-    S3Storage.prototype.getS3Client = async function () {
+    S3Storage.prototype.getS3Client = async function (config) {
         await this.ready;
-        return this.s3Client;
+        if(!config){
+            if(!this.s3Client){
+                this.s3Client = this.initializeS3Client(this.AWS, this.config);
+            }
+            return this.s3Client;
+        } else {
+            config = this.createS3Config(config);
+            return this.initializeS3Client(this.AWS, config);
+        }
     };
 
     S3Storage.prototype.createS3Config = function (config) {
@@ -80,14 +80,13 @@ define([
     };
 
     S3Storage.prototype.getFile = async function (dataInfo) {
-        await this.stageConfigAndCreateNewS3Client(dataInfo);
-        const {bucketName, filename} = dataInfo.data;
-        const s3Client = await this.getS3Client();
+        const {endpoint, bucketName, filename} = dataInfo.data;
+        const {accessKeyId, secretAccessKey} = this.config;
+        const s3Client = await this.getS3Client({endpoint, accessKeyId, secretAccessKey});
         const data = await s3Client.getObject({
             Bucket: bucketName,
             Key: filename
         });
-        await this.restoreS3Client();
         return data.Body;
     };
 
@@ -119,7 +118,6 @@ define([
     };
 
     S3Storage.prototype.deleteDir = async function (dirname) {
-        let dataInfo;
         const s3Client = await this.getS3Client();
         const {Contents} = await s3Client.listObjectsV2({
             Bucket: this.bucketName,
@@ -128,43 +126,24 @@ define([
         });
 
         for (const file of Contents) {
-            dataInfo = {
-                data: {
-                    bucketName: this.bucketName,
-                    filename: file.Key,
-                    endpoint: this.endpoint
-                }
+            const params = {
+                Bucket: this.bucketName,
+                Key: file.Key
             };
-            await this.deleteFile(dataInfo);
+            await s3Client.deleteObject(params);
         }
         this.logger.debug(`Successfully deleted directory ${dirname} from the S3 server`);
     };
 
     S3Storage.prototype.deleteFile = async function (dataInfo) {
-        await this.stageConfigAndCreateNewS3Client(dataInfo);
-        const {bucketName, filename} = dataInfo.data;
+        const {endpoint, bucketName, filename} = dataInfo.data;
+        const {accessKeyId, secretAccessKey} = this.config;
+        const s3Client = await this.getS3Client({endpoint, accessKeyId, secretAccessKey});
         const params = {
             Bucket: bucketName,
             Key: filename
         };
-        await this.s3Client.deleteObject(params);
-        await this.restoreS3Client();
-    };
-
-    S3Storage.prototype.stageConfigAndCreateNewS3Client = async function(dataInfo) {
-        this.stagedConfig = JSON.parse(JSON.stringify(this.config));
-        const {endpoint} = dataInfo.data;
-        const {accessKeyId, secretAccessKey} = this.config;
-        this.config = this.createS3Config({endpoint, accessKeyId, secretAccessKey});
-        this.ready = await this.initialize();
-    };
-
-    S3Storage.prototype.restoreS3Client = async function () {
-        if (this.stagedConfig) {
-            this.config = this.stagedConfig;
-            this.ready = await this.initialize();
-            this.stagedConfig = null;
-        }
+        await s3Client.deleteObject(params);
     };
 
 

@@ -4,7 +4,7 @@
     {
       "name": "endpoint",
       "displayName": "S3 Server URL",
-      "description": "URL for S3 Server",
+      "description": "The url to access the S3 Server. This should be a valid S3 endpoint. Examples- http://locahost:9000, https://s3.amazonaws.com",
       "value": "",
       "valueType": "string",
       "readOnly": false
@@ -12,7 +12,6 @@
     {
       "name": "accessKeyId",
       "displayName": "Access Key",
-      "description": "Access Key for S3 Server.",
       "value": "",
       "valueType": "string",
       "readOnly": false,
@@ -21,7 +20,6 @@
     {
       "name": "secretAccessKey",
       "displayName": "Secret Key",
-      "description": "Secret Key for S3 Server.",
       "value": "",
       "valueType": "string",
       "readOnly": false,
@@ -30,7 +28,7 @@
     {
       "name": "bucketName",
       "displayName": "Bucket Name",
-      "description": "Bucket Name for S3 Server.",
+      "description": "Name of the bucket in which you want to upload this artifact. Note: If the bucket doesn't exist, it will be created.",
       "value": "deepforge",
       "valueType": "string",
       "readOnly": false
