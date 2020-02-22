@@ -7,7 +7,7 @@ define([
     const S3Storage = function (id, name, logger, config = {}) {
         StorageClient.apply(this, arguments);
         this.bucketName = config.bucketName || 'deepforge';
-        this.endpoint = config.endpoint || 'http://localhost:80';
+        this.endpoint = config.endpoint || 'https://s3.amazonaws.com';
         this.config = this.createS3Config(config);
         this.s3Client = null;
         this.ready = this.initialize();
@@ -55,7 +55,7 @@ define([
 
     S3Storage.prototype.createS3Config = function (config) {
         return {
-            endpoint: config.endpoint || 'http://localhost:80',
+            endpoint: config.endpoint || 'https://s3.amazonaws.com',
             accessKeyId: config.accessKeyId,
             secretAccessKey: config.secretAccessKey,
             sslEnabled: config.endpoint ? config.endpoint.startsWith('https') : false,
@@ -64,8 +64,7 @@ define([
         };
     };
 
-    S3Storage.prototype.createBucketIfNeeded = async function () {
-        const s3Client = await this.getS3Client();
+    S3Storage.prototype.createBucketIfNeeded = async function (s3Client) {
         try {
             await s3Client.createBucket({
                 Bucket: this.bucketName
@@ -91,14 +90,14 @@ define([
     };
 
     S3Storage.prototype.putFile = async function (filename, content) {
-        await this.createBucketIfNeeded();
+        const s3Client = await this.getS3Client();
+        await this.createBucketIfNeeded(s3Client);
         this.logger.debug(`Created bucket ${this.bucketName}`);
         const params = {
             Body: require.isBrowser ? new Blob([content]) : content,
             Bucket: this.bucketName,
             Key: filename,
         };
-        const s3Client = await this.getS3Client();
         await s3Client.putObject(params);
         const metadata = await this._stat(filename, this.bucketName);
         metadata.filename = filename;
@@ -145,7 +144,6 @@ define([
         };
         await s3Client.deleteObject(params);
     };
-
 
     S3Storage.prototype.getMetadata = async function (dataInfo) {
         const metadata = {size: dataInfo.data.size};

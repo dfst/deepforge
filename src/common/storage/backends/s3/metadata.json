@@ -4,7 +4,7 @@
     {
       "name": "endpoint",
       "displayName": "S3 Server URL",
-      "description": "The url to access the S3 Server. This should be a valid S3 endpoint. Examples- http://locahost:9000, https://s3.amazonaws.com",
+      "description": "The url to access the S3 Server. This should be a valid S3 endpoint. By default it will connect to amazon's S3 endpoint. Examples- https://play.min.io:9000, https://s3.amazonaws.com",
       "value": "",
       "valueType": "string",
       "readOnly": false
