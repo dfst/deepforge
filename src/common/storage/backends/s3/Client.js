@@ -99,7 +99,11 @@ define([
             Bucket: this.bucketName,
             Key: filename,
         };
-        await s3Client.putObject(params);
+        try {
+            await s3Client.putObject(params);
+        } catch (err) {
+            throw new Error(`Unable to upload ${filename}: ${err.message}`);
+        }
         const metadata = await this._stat(filename, this.bucketName);
         metadata.filename = filename;
         metadata.size = metadata.ContentLength;
