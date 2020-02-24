@@ -193,36 +193,64 @@ define([
             const operations = node.getChildrenIds()
                 .map(id => this.client.getNode(id));
 
-            const inputOps = operations.filter(node => {
-                const baseName = this.getBaseName(node);
-                return baseName === 'Input';
-            });
+            return this.getArtifactsFromInputs(operations);
 
-            const dataNodes = await Promise.all(inputOps.map(node => {
-                const id = node.getPointer('artifact').to;
-                if (id) {
-                    return this.getNode(id);
-                }
-            }));
+        } else if (baseName === 'Execution') {
+            const children = await Promise.all(
+                node.getChildrenIds()
+                    .map(id => this.getNode(id))
+            );
+            const JobBaseId = this.getMetaNode('Job').getId();
+            const jobs = children.filter(node => node.isInstanceOf(JobBaseId));
 
-            return dataNodes.filter(node => !!node);
+            const artifacts = await Promise.all(
+                jobs.map(job => this.getArtifactsFromInputJob(job))
+            );
+            return artifacts.flat();
         } else {
-            await this.loadChildren(node.getId());
-            const OperationBase = this.getMetaNode('Operation').getId();
-            const operation = node.getChildrenIds()
-                .map(id => this.client.getNode(id))
-                .find(node => node.isInstanceOf(OperationBase.getId()));
+            return this.getArtifactsFromJob(node);
+        }
+    };
 
-            await this.loadChildren(node.getId());
-            const inputCntr = operation.getChildrenIds()
-                .map(id => this.client.getNode(id))
-                .find(node => node.getAttribute('name') === 'Inputs');
+    Execute.prototype.getOperation = async function(job) {
+        const OperationBase = this.getMetaNode('Operation').getId();
+        const children = job.getChildrenIds()
+            .map(id => this.getNode(id));
+        const operations = (await Promise.all(children))
+            .filter(node => node.isInstanceOf(OperationBase));
+        return operations.shift();
+    };
 
-            await this.loadChildren(inputCntr.getId());
-            const dataNodes = inputCntr.getChildrenIds()
-                .map(id => this.client.getNode(id));
+    Execute.prototype.getArtifactsFromJob = async function(node) {
+        const operation = await this.getOperation(node);
+        return await this.getInputs(operation);
+    };
 
-            return dataNodes;
+    Execute.prototype.getArtifactsFromInputJob = async function(node) {
+        const operation = await this.getOperation(node);
+        return this.getArtifactsFromInputs([operation]);
+    };
+
+    Execute.prototype.getArtifactsFromInputs = async function(operations) {
+        const inputOps = operations.filter(node => {
+            const baseName = this.getBaseName(node);
+            return baseName === 'Input';
+        });
+
+        const dataNodes = await Promise.all(inputOps.map(node => {
+            const id = node.getPointer('artifact').to;
+            if (id) {
+                return this.getNode(id);
+            }
+        }));
+
+        return dataNodes.filter(node => !!node);
+    };
+
+    Execute.prototype.getArtifactFromInputOp = async function(node) {
+        const id = node.getPointer('artifact').to;
+        if (id) {
+            return this.getNode(id);
         }
     };
 
@@ -231,10 +259,18 @@ define([
         return base.getAttribute('name');
     };
 
-    Execute.prototype.getOutputs = async function(node) {
+    Execute.prototype.getInputs = async function(operation) {
+        return this.getGrandchildrenInType(operation, 'Inputs');
+    };
+
+    Execute.prototype.getOutputs = async function(operation) {
+        return this.getGrandchildrenInType(operation, 'Outputs');
+    };
+
+    Execute.prototype.getGrandchildrenInType = async function(node, typeName) {
         await this.loadChildren(node.getId());
         const outputsCntr = node.getChildrenIds().map(id => this.client.getNode(id))
-            .find(node => node.getAttribute('name') === 'Outputs');
+            .find(node => node.getAttribute('name') === typeName);
 
         await this.loadChildren(outputsCntr.getId());
         return outputsCntr.getChildrenIds().map(id => this.client.getNode(id));
