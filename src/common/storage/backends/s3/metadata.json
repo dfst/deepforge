@@ -4,7 +4,7 @@
     {
       "name": "endpoint",
       "displayName": "S3 Server URL",
-      "description": "The url to access the S3 Server. This should be a valid S3 endpoint. By default it will connect to amazon's S3 endpoint. Examples- https://play.min.io:9000, https://s3.amazonaws.com",
+      "description": "The URL of the S3 Server (eg, https://s3.amazonaws.com, https://play.min.io:9000).",
       "value": "",
       "valueType": "string",
       "readOnly": false
@@ -28,7 +28,7 @@
     {
       "name": "bucketName",
       "displayName": "Bucket Name",
-      "description": "Name of the bucket in which you want to upload this artifact. Note: If the bucket doesn't exist, it will be created.",
+      "description": "Name of the bucket in which you want to upload artifacts. If the bucket doesn't exist, it will be created.",
       "value": "deepforge",
       "valueType": "string",
       "readOnly": false
