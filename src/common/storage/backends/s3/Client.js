@@ -9,7 +9,7 @@ define([
         this.bucketName = config.bucketName || 'deepforge';
         this.endpoint = config.endpoint || 'https://s3.amazonaws.com';
         this.config = this.createS3Config(config);
-        this.s3Client = null;
+        this.defaultClient = null;
         this.ready = this.initialize();
     };
 
@@ -43,10 +43,10 @@ define([
     S3Storage.prototype.getS3Client = async function (config) {
         await this.ready;
         if(!config){
-            if(!this.s3Client){
-                this.s3Client = this.initializeS3Client(this.AWS, this.config);
+            if(!this.defaultClient){
+                this.defaultClient = this.initializeS3Client(this.AWS, this.config);
             }
-            return this.s3Client;
+            return this.defaultClient;
         } else {
             config = this.createS3Config(config);
             return this.initializeS3Client(this.AWS, config);
@@ -65,12 +65,13 @@ define([
     };
 
     S3Storage.prototype.createBucketIfNeeded = async function (s3Client) {
+        const BUCKET_EXISTS_CODE = 409;
         try {
             await s3Client.createBucket({
                 Bucket: this.bucketName
             });
         } catch (err) {
-            if (err['statusCode'] !== 409) {
+            if (err['statusCode'] !== BUCKET_EXISTS_CODE) {
                 this.logger.error(`Failed to create bucket ${this.bucketName} in S3 server.`);
                 throw err;
             }
