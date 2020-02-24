@@ -23,6 +23,8 @@ config.authentication.allowGuests = false;
 config.authentication.allowUserRegistration = false;
 config.authentication.guestAccount = 'guest';
 config.authentication.userManagementPage = 'deepforge-user-management-page';
+config.executor.authentication.enable = true;
+config.executor.authentication.allowGuests = false;
 
 config.authentication.logInUrl = '/profile/login';
 config.authentication.logOutUrl = '/profile/login';
