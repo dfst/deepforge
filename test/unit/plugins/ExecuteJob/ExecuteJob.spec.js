@@ -68,7 +68,7 @@ describe('ExecuteJob', function () {
     var plugin,
         node,
         preparePlugin = async function() {
-            const config = {compute: {id: 'gme'}};
+            const config = {compute: {id: 'gme', config: {}}};
             const context = {
                 project: project,
                 commitHash: commitHash,
@@ -229,7 +229,7 @@ describe('ExecuteJob', function () {
             plugin.prepare = () => {
                 var status = plugin.core.getAttribute(execNode, 'status');
                 expect(status).to.not.equal('canceled');
-                return {then: () => done()};
+                return Promise.resolve().then(done);
             };
             plugin.main();
         });
