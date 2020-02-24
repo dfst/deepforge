@@ -205,6 +205,28 @@ define([
         return {el: sectionHeader};
     };
 
+    ConfigDialog.ENTRIES.group = function(configEntry) {
+        const widget = {el: null};
+        widget.el = $('<div>', {class: configEntry.name});
+
+        const entries = configEntry.valueItems
+            .map(item => this.getEntryForProperty(item));
+
+        entries.forEach(entry => widget.el.append(entry.el));
+
+        widget.getValue = () => {
+            const config = {};
+            entries.forEach(entry => {
+                if (entry.widget) {
+                    config[entry.id || entry.name] = entry.widget.getValue();
+                }
+            });
+            return config;
+        };
+
+        return {widget, el: widget.el};
+    };
+
     ConfigDialog.ENTRIES.dict = function(configEntry) {
         const widget = {el: null, active: null};
         widget.el = $('<div>', {class: configEntry.name});

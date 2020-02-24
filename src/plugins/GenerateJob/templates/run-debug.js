@@ -28,8 +28,8 @@ requirejs([
         await tryMkdir(fromRelative('outputs'));
         await tryMkdir(fromRelative('artifacts'));
 
-        const dataFetchTasks = Object.entries(inputData)
-            .map(input => fetchInputData.apply(null, input));
+        const dataFetchTasks = inputData
+            .map(inputData => fetchInputData.apply(null, inputData));
 
         await Promise.all(dataFetchTasks);
 
@@ -44,8 +44,10 @@ requirejs([
     function nop() {
     }
 
-    async function fetchInputData(filename, dataInfo) {
-        const buffer = await Storage.getFile(dataInfo, null, Config.storageConfigs);
+    async function fetchInputData(filename, dataInfo, config) {
+        const {backend} = dataInfo;
+        const client = await Storage.getClient(backend, null, config);
+        const buffer = await client.getFile(dataInfo);
         filename = fromRelative(filename);
         await writeFile(filename, buffer);
     }
