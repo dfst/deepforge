@@ -64,7 +64,7 @@ describe('ExecutePipeline', function () {
     });
 
     it.skip('should execute single job', async function () {
-        const config = {compute: {id: 'gme'}};
+        const config = {compute: {id: 'gme', config: {}}};
         const context = {
             project: project,
             commitHash: commitHash,
@@ -101,7 +101,7 @@ describe('ExecutePipeline', function () {
 
     describe('resuming tests', function() {
         let plugin;
-        const config = {compute: {id: 'gme'}};
+        const config = {compute: {id: 'gme', config: {}}};
         let context = null;
 
         beforeEach(async () => {

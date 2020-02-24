@@ -23,28 +23,31 @@ define([
         return urlPath;
     };
 
-    ExecutorHelper.get = function(urlPath) {
+    ExecutorHelper.get = function(urlPath, token) {
         const deferred = Q.defer();
         const url = this.url(urlPath);
 
-        superagent.get(url)
-            .end((err, res) => {
-                if (err) {
-                    return deferred.reject(err);
-                }
-                deferred.resolve(JSON.parse(res.text));
-            });
+        const req = superagent.get(url);
+        if (token) {
+            req.set('Authorization', 'Bearer ' + token);
+        }
+        req.end((err, res) => {
+            if (err) {
+                return deferred.reject(err);
+            }
+            deferred.resolve(JSON.parse(res.text));
+        });
 
         return deferred.promise;
     };
 
-    ExecutorHelper.getWorkers = function() {
-        return this.get(WORKER_ENDPOINT)
+    ExecutorHelper.getWorkers = function(webgmeToken) {
+        return this.get(WORKER_ENDPOINT, webgmeToken)
             .then(workerDict => Object.values(workerDict));
     };
 
-    ExecutorHelper.getJobs = function() {
-        return this.get(JOBS_ENDPOINT);
+    ExecutorHelper.getJobs = function(webgmeToken) {
+        return this.get(JOBS_ENDPOINT, webgmeToken);
     };
 
     return ExecutorHelper;

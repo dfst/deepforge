@@ -17,16 +17,18 @@ define([
     module,
 ) {
     const PROJECT_ROOT = path.join(path.dirname(module.uri), '..', '..', '..', '..', '..');
-    const GMEExecutor = function(/*logger*/) {
+    const GMEExecutor = function(logger, blobClient, config={}) {
         ComputeClient.apply(this, arguments);
         const configPath = path.join(PROJECT_ROOT, 'config');
         const gmeConfig = require.nodeRequire(configPath);
         this.pollInterval = 1500;
         this.previousGMEInfo = {};
+        this.webgmeToken = config.webgmeToken;
         this.executor = new ExecutorClient({
             logger: this.logger,
             serverPort: gmeConfig.server.port,
-            httpsecure: false
+            httpsecure: false,
+            webgmeToken: this.webgmeToken,
         });
     };
     GMEExecutor.prototype = Object.create(ComputeClient.prototype);
@@ -106,7 +108,7 @@ define([
 
     GMEExecutor.prototype.checkExecutionEnv = async function () {
         this.logger.info('Checking execution environment');
-        const workers = await ExecutorHelper.getWorkers();
+        const workers = await ExecutorHelper.getWorkers(this.webgmeToken);
         if (workers.length === 0) {
             this.logger.info('Cannot execute job(s): No connected workers');
             throw new Error('No connected workers');

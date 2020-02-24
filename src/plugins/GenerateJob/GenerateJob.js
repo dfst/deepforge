@@ -308,7 +308,7 @@ define([
 
         const storage = this.getStorageConfig();
         const jobId = this.core.getPath(this.activeNode).replace(/\//g, '_');
-        const storageDir = `${this.projectId}/executions/${jobId}/`;
+        const storageDir = `${this.projectId}/executions/${jobId}`;
 
         const configs = {
             storage: {
