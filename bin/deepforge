@@ -228,44 +228,36 @@ program.command('start')
     .option('-s, --server', 'start the server')
     .option('-w, --worker [url]', 'start a worker and connect to given url. Defaults to local deepforge')
     .option('-m, --mongo', 'start MongoDB')
-    .action(args => {
-        var main = path.join(__dirname, 'start-local.js'),
-            current = Q();
+    .action(async args => {
 
         if (args.port) {
             process.env.PORT = args.port;
         }
 
         if (args.mongo) {
-            current = current.then(() => checkMongo(args, true));
+            await checkMongo(args, true);
         }
 
         if (args.server) {
-            current = current
-                .then(() => checkMongo(args))
-                .then(() => {
-                    main = path.join(__dirname, '..', 'app.js');
-                    return spawn('node', [main]);
-                });
+            await checkMongo(args);
+            const main = path.join(__dirname, '..', 'app.js');
+            await spawn('node', [main]);
         }
 
         if (args.worker) {
-            current
-                .then(() => {
-                    main = path.join(__dirname, 'start-worker.js');
-                    if (args.worker !== true) {
-                        spawn('node', [main, args.worker]);
-                    } else {
-                        spawn('node', [main]);
-                    }
-                });
+            const main = path.join(__dirname, 'start-worker.js');
+            if (args.worker !== true) {
+                await spawn('node', [main, args.worker]);
+            } else {
+                await spawn('node', [main]);
+            }
         }
 
         if (!args.server && !args.worker && !args.mongo) {
             // Starting everything
-            current = current
-                .then(() => checkMongo(args))
-                .then(() => spawn('node', [main]));
+            const main = path.join(__dirname, 'start-local.js');
+            await checkMongo(args);
+            await spawn('node', [main]);
         }
 
     });
