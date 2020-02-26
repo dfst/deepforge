@@ -1,7 +1,6 @@
 {
     "name": "SciServer Compute",
-    "dashboard": null,
-    "client": "./Client",
+    "dashboard": "./dashboard/index",
     "configStructure": [
         {
             "name": "token",
