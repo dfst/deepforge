@@ -3,9 +3,17 @@
     "dashboard": "./dashboard/index",
     "configStructure": [
         {
-            "name": "token",
-            "displayName": "Access Token",
-            "description": "SciServer access token.",
+            "name": "username",
+            "displayName": "Username",
+            "description": "SciServer username",
+            "value": "",
+            "valueType": "string",
+            "readOnly": false
+        },
+        {
+            "name": "password",
+            "displayName": "Password",
+            "description": "SciServer password",
             "value": "",
             "valueType": "string",
             "readOnly": false

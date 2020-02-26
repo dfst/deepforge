@@ -2,9 +2,18 @@
     "name": "SciServer Files Service",
     "configStructure": [
         {
-            "name": "token",
-            "displayName": "Access Token",
-            "description": "SciServer access token.",
+            "name": "username",
+            "displayName": "Username",
+            "description": "SciServer username",
+            "value": "",
+            "valueType": "string",
+            "readOnly": false,
+            "isAuth": true
+        },
+        {
+            "name": "password",
+            "displayName": "Password",
+            "description": "SciServer password",
             "value": "",
             "valueType": "string",
             "readOnly": false,

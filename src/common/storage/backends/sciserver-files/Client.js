@@ -5,9 +5,11 @@ define([
     StorageClient,
 ) {
     const BASE_URL = 'https://apps.sciserver.org/fileservice/api/';
+    const LOGIN_URL = 'https://apps.sciserver.org/login-portal/keystone/v3/tokens';
     const SciServerFiles = function (id, name, logger, config = {}) {
         StorageClient.apply(this, arguments);
-        this.token = config.token;
+        this.username = config.username;
+        this.password = config.password;
         this.volume = (config.volume || '').replace(/^Storage\//, '');
     };
 
@@ -74,11 +76,45 @@ define([
 
     SciServerFiles.prototype.fetch = async function (url, opts = {}) {
         opts.headers = opts.headers || {};
-        opts.headers['X-Auth-Token'] = this.token;
+        opts.headers['X-Auth-Token'] = await this.login();
+        console.log('using token:', opts.headers['X-Auth-Token']);
         return StorageClient.prototype.fetch.call(this, url, opts);
     };
 
+    SciServerFiles.prototype.login = async function () {
+        const url = `${LOGIN_URL}?TaskName=DeepForge.Authentication.Login`;
+        const opts = {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: this.getLoginBody()
+        };
+        const response = await StorageClient.prototype.fetch.call(this, url, opts);
+        return response.headers.get('X-Subject-Token');
+    };
+
+    SciServerFiles.prototype.getLoginBody = function (username, password) {
+        username = username || this.username;
+        password = password || this.password;
+        return JSON.stringify({
+            auth: {
+                identity: {
+                    password: {
+                        user: {
+                            name: username,
+                            password: password
+                        }
+                    }
+                }
+            }
+        });
+    };
+
     SciServerFiles.prototype.getURL = function (url) {
+        if (url.startsWith('http')) {
+            return url;
+        }
         return BASE_URL + url;
     };
 
