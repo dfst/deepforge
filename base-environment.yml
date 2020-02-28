@@ -1,0 +1,9 @@
+name: deepforge
+channels:
+  - conda-forge
+dependencies:
+  - pip:
+      - dill
+      - pillow
+      - matplotlib
+      - simplejson
