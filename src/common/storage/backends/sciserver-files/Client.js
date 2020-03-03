@@ -77,7 +77,6 @@ define([
     SciServerFiles.prototype.fetch = async function (url, opts = {}) {
         opts.headers = opts.headers || {};
         opts.headers['X-Auth-Token'] = await this.login();
-        console.log('using token:', opts.headers['X-Auth-Token']);
         return StorageClient.prototype.fetch.call(this, url, opts);
     };
 
