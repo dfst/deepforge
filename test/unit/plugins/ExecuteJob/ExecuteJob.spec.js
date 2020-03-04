@@ -110,28 +110,6 @@ describe('ExecuteJob', function () {
             await plugin.save();
         });
 
-        it('should get correct attribute (from new node) before updating nodes', async function() {
-            // Run setAttribute on some node
-            const Graph = plugin.META.Graph;
-            const graphTmp = plugin.core.createNode({base: Graph, parent: node});
-            const newVal = 'testGraph';
-            const id = 'testId';
-
-            plugin.core.setAttribute(graphTmp, 'name', newVal);
-            plugin._metadata[id] = graphTmp;
-            plugin.createIdToMetadataId[graphTmp.id] = id;
-
-            // Check that the value is correct before applying node changes
-            const updateNodes = plugin.updateNodes;
-            plugin.updateNodes = async function() {
-                const graph = plugin._metadata[id];
-                const attrValue = plugin.core.getAttribute(graph, 'name');
-                expect(attrValue).to.equal(newVal);
-                await updateNodes.apply(this, arguments);
-            };
-            await plugin.save();
-        });
-
         it('should get correct attribute after save', async function() {
             // Run setAttribute on some node
             plugin.core.setAttribute(node, 'status', 'queued');
@@ -141,62 +119,6 @@ describe('ExecuteJob', function () {
             const attrValue = plugin.core.getAttribute(node, 'status');
             expect(attrValue).to.equal('queued');
         });
-    });
-
-    describe('createNode', function() {
-        beforeEach(preparePlugin);
-
-        it('should update _metadata after applying changes', async function() {
-            // Run setAttribute on some node
-            const graphTmp = plugin.core.createNode({
-                base: plugin.META.Graph,
-                parent: node,
-            });
-            const id = 'testId';
-
-            plugin._metadata[id] = graphTmp;
-            plugin.createIdToMetadataId[graphTmp] = id;
-
-            // Check that the value is correct before applying node changes
-            const applyModelChanges = plugin.applyModelChanges;
-            plugin.applyModelChanges = async function() {
-                const result = applyModelChanges.apply(this, arguments);
-                const graph = plugin._metadata[id];
-                expect(graph).to.not.equal(graphTmp);
-                return result;
-            };
-            await plugin.save();
-        });
-
-        it('should update _metadata in updateNodes', async function() {
-            const id = 'testId';
-
-            plugin._metadata[id] = node;
-            node.old = true;
-            await plugin.updateNodes();
-            const graph = plugin._metadata[id];
-            expect(graph.old).to.not.equal(true);
-        });
-
-        // Check that it gets the correct value from a newly created node after
-        // it has been saved/created
-        it('should get changed attribute', async function() {
-            // Run setAttribute on some node
-            const graphTmp = plugin.core.createNode({
-                base: plugin.META.Graph,
-                parent: node,
-            });
-            const id = 'testId';
-
-            plugin._metadata[id] = graphTmp;
-            plugin.core.setAttribute(graphTmp, 'name', 'firstName');
-
-            await plugin.save();
-            const graph = plugin._metadata[id];
-            const val = plugin.core.getAttribute(graph, 'name');
-            expect(val).to.equal('firstName');
-        });
-
     });
 
     // Canceling
@@ -305,22 +227,6 @@ describe('ExecuteJob', function () {
             await plugin.prepare(true);
             const children = await plugin.core.loadChildren(graph);
             expect(children.length).to.equal(0);
-        });
-
-        // should not mark any nodes for deletion during `prepare` if resuming
-        it('should mark nodes for deletion', async function() {
-            const jobId = plugin.core.getPath(plugin.activeNode);
-
-            // Create a metadata node
-            plugin.core.createNode({
-                base: plugin.META.Graph,
-                parent: plugin.activeNode,
-            });
-
-            await plugin.save();
-            await plugin.prepare(true);
-            const deleteIds = Object.keys(plugin._markForDeletion[jobId]);
-            expect(deleteIds.length).to.equal(1);
         });
     });
 
