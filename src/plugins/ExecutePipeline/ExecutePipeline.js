@@ -36,11 +36,6 @@ define([
         ExecuteJob.call(this);
         this.pluginMetadata = pluginMetadata;
 
-        this.changes = {};
-        this.currentChanges = {};  // read-only changes being applied
-        this.creations = {};
-        this.deletions = [];
-        this.createIdToMetadataId = {};
         this.initRun();
     };
 
@@ -83,11 +78,6 @@ define([
         this.pipelineError = null;
         this.canceled = false;
         this.runningJobs = 0;
-
-        // metadata records
-        this._metadata = {};
-        this._markForDeletion = {};  // id -> node
-        this._oldMetadataByName = {};  // name -> id
         this.lastAppliedCmd = {};
     };
 
@@ -212,7 +202,7 @@ define([
             .map(job => this.core.getPath(job))
             .forEach(id => delete this.incomingCounts[id]);
 
-        return Q.all(allJobs.map(job => this.recordOldMetadata(job, true)))
+        return Q.all(allJobs.map(job => this.initializeMetadata(job, true)))
             .then(() => Q.all(jobs.success.map(job => this.getOperation(job))))
             .then(ops => ops.forEach(op => this.updateJobCompletionRecords(op)))
             .then(() => this.save(`Resuming pipeline execution: ${name}`))
@@ -294,7 +284,7 @@ define([
         // Set the status for each job to 'pending'
         nodes.filter(node => this.core.isTypeOf(node, this.META.Job))
             .forEach(node => {
-                this.recordOldMetadata(node);
+                this.initializeMetadata(node);
                 this.core.setAttribute(node, 'status', 'pending');
             });
 

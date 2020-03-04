@@ -62,7 +62,6 @@ define([
         this.lastAppliedCmd = {};
         this.canceled = false;
 
-        this.createIdToMetadataId = {};
         this.logManager = null;
 
         const deferred = Q.defer();
@@ -282,7 +281,7 @@ define([
         this.outputLineCount[id] = count;
 
         const stdout = await this.compute.getConsoleOutput(jobInfo);
-        const result = this.processStdout(job, stdout);
+        const result = await this.processStdout(job, stdout);
 
         if (result.hasMetadata) {
             const name = this.core.getAttribute(job, 'name');
@@ -327,7 +326,7 @@ define([
             }
         }
 
-        return await this.recordOldMetadata(this.activeNode, isResuming);
+        return await this.initializeMetadata(this.activeNode, isResuming);
     };
 
     ExecuteJob.prototype.onOperationCanceled = function(op) {
@@ -338,6 +337,11 @@ define([
         this.core.setAttribute(job, 'status', 'canceled');
         this.resultMsg(msg);
         return this.onComplete(op, null);
+    };
+
+    ExecuteJob.prototype.resultMsg = function (msg) {
+        this.sendNotification(msg);
+        this.createMessage(null, msg);
     };
 
     ExecuteJob.prototype.onOperationFail =
@@ -585,7 +589,7 @@ define([
             output = lastLine + output;
         }
 
-        const result = this.processStdout(job, output, true);
+        const result = await this.processStdout(job, output, true);
         output = result.stdout;
 
         await this.logManager.appendTo(jobId, output);
@@ -627,7 +631,7 @@ define([
         if (status === this.compute.SUCCESS || status === this.compute.FAILED) {
             const opName = this.core.getAttribute(op, 'name');
             const stdout = await this.compute.getConsoleOutput(jobInfo);
-            const result = this.processStdout(job, stdout);
+            const result = await this.processStdout(job, stdout);
 
             // Parse the remaining code
             this.core.setAttribute(job, 'stdout', result.stdout);
@@ -711,9 +715,9 @@ define([
         LocalExecutor.prototype
     );
 
-    ExecuteJob.prototype.processStdout = function (job, text, continued) {
-        var lines = text.replace(/\u0000/g, '').split('\n'),
-            result = this.parseForMetadataCmds(job, lines, !continued);
+    ExecuteJob.prototype.processStdout = async function(job, text, continued) {
+        const lines = text.replace(/\u0000/g, '').split('\n');
+        const result = await this.parseForMetadataCmds(job, lines, !continued);
 
         result.stdout = utils.resolveCarriageReturns(result.stdout).join('\n');
         return result;
@@ -721,7 +725,7 @@ define([
 
     ExecuteJob.prototype.getNodeCaches = function () {
         const caches = PluginBase.prototype.getNodeCaches.call(this);
-        return caches.concat([this._execHashToJobNode, this._metadata]);
+        return caches.concat([this._execHashToJobNode);
     };
 
     ExecuteJob.prototype.onSaveForked = function (forkName) {

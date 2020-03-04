@@ -30,8 +30,6 @@
 
         GRAPH_CREATE: 'GRAPH',
         PLOT_UPDATE: 'PLOT',
-        GRAPH_PLOT: 'PLOT',
-        GRAPH_CREATE_LINE: 'LINE',
         GRAPH_LABEL_AXIS: {
             X: 'X',
             Y: 'Y'
