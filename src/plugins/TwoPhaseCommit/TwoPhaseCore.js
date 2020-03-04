@@ -24,6 +24,7 @@ define([
     };
 
     TwoPhaseCore.prototype.getPath = function (node) {
+        ensureNode(node, 'getPath');
         return node instanceof CreatedNode ? node.id : this.core.getPath(node);
     };
 
@@ -43,6 +44,7 @@ define([
     passToCore('getOwnAttribute');
 
     TwoPhaseCore.prototype.getBase = function (node) {
+        ensureNode(node, 'getBase');
         if (node instanceof CreatedNode) {
             return node.base;
         }
@@ -50,6 +52,7 @@ define([
     };
 
     TwoPhaseCore.prototype.isTypeOf = function (node, base) {
+        ensureNode(node, 'isTypeOf');
         if (node instanceof CreatedNode) {
             return this.core.isTypeOf(node.base, base);
         }
@@ -77,6 +80,8 @@ define([
     };
 
     TwoPhaseCore.prototype.setPointer = function (node, name, target) {
+        ensureNode(node, 'setPointer');
+        ensureNode(target, 'setPointer');
         const changes = this.getChangesForNode(node);
         changes.ptr[name] = target;
     };
@@ -108,10 +113,12 @@ define([
     };
 
     TwoPhaseCore.prototype.deleteNode = function (node) {
+        ensureNode(node, 'deleteNode');
         this.deletions.push(node);
     };
 
     TwoPhaseCore.prototype.loadChildren = async function (node) {
+        ensureNode(node, 'loadChildren');
         const getId = node => node instanceof CreatedNode ? node.id : this.core.getPath(node);
         const nodeId = getId(node);
 
@@ -127,10 +134,12 @@ define([
     };
 
     TwoPhaseCore.prototype.delAttribute = function (node, attr) {
+        ensureNode(node, 'delAttribute');
         return this.setAttribute(node, attr, null);
     };
 
     TwoPhaseCore.prototype.setAttribute = function (node, attr, value) {
+        ensureNode(node, 'setAttribute');
         assert(
             value !== undefined,
             `Cannot set attribute to undefined value (${attr})`
@@ -142,6 +151,7 @@ define([
     };
 
     TwoPhaseCore.prototype.getAttribute = function (node, attr) {
+        ensureNode(node, 'getAttribute');
         var nodeId;
 
         // Check if it was newly created
@@ -265,6 +275,21 @@ define([
             this.core.deleteNode(nodes[i]);
         }
     };
+
+    TwoPhaseCore.isValidNode = function (node) {
+        const EXPECTED_KEYS = ['parent', 'children', 'relid'];
+        const isGMENode = typeof node === 'object' &&
+            EXPECTED_KEYS.reduce((valid, key) => valid && node.hasOwnProperty(key), true);
+        return isGMENode || node instanceof CreatedNode;
+    };
+
+    function ensureNode(node, method) {
+        const prefix = method ? `TwoPhaseCore.${method}: ` : '';
+        assert(
+            TwoPhaseCore.isValidNode(node),
+            `${prefix}Expected node but found ${node}`
+        );
+    }
 
     function passToCore(name) {
         TwoPhaseCore.prototype[name] = function() {
