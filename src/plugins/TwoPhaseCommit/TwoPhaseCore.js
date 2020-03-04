@@ -42,6 +42,7 @@ define([
     passToCore('isMetaNode');
     passToCore('getOwnRegistry');
     passToCore('getOwnAttribute');
+    passToCore('getAttributeNames');
 
     TwoPhaseCore.prototype.getBase = function (node) {
         ensureNode(node, 'getBase');
