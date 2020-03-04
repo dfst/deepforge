@@ -725,7 +725,7 @@ define([
 
     ExecuteJob.prototype.getNodeCaches = function () {
         const caches = PluginBase.prototype.getNodeCaches.call(this);
-        return caches.concat([this._execHashToJobNode);
+        return caches.concat([this._execHashToJobNode]);
     };
 
     ExecuteJob.prototype.onSaveForked = function (forkName) {

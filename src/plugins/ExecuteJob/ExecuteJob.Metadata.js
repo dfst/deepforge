@@ -10,8 +10,7 @@ define([
     Metadata,
 ) {
 
-    var ExecuteJob = function () {
-    };
+    const ExecuteJob = function () {};
 
     ExecuteJob.prototype.initializeMetadata = async function (job) {
         const nodeId = this.core.getPath(job);
@@ -99,10 +98,7 @@ define([
 
     ExecuteJob.prototype.onMetadataCommand = async function (job, cmd, id, content) {
         const MetadataClass = Metadata.getClassForCommand(cmd);
-
-        const metadata = (await this.core.loadChildren(job))
-            .filter(node => this.core.isTypeOf(node, this.META.Metadata));
-
+        const metadata = await this.getMetadataNodes(job);
         const node = metadata.find(node => this.core.getAttribute(node, 'id')) ||
             this.createNodeForMetadata(MetadataClass, job, id);
 
