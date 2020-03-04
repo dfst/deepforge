@@ -28,13 +28,6 @@
             NAME: 'IMAGE-N'  // No upload required
         },
 
-        GRAPH_CREATE: 'GRAPH',
-        PLOT_UPDATE: 'PLOT',
-        GRAPH_LABEL_AXIS: {
-            X: 'X',
-            Y: 'Y'
-        },
-
         // Code Generation Constants
         CTOR_ARGS_ATTR: 'ctor_arg_order',
 
