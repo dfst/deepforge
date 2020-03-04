@@ -209,7 +209,6 @@ define([
             const createdNode = changes.createdNodes[i];
             const node = await createdNode.toGMENode(rootNode, this.core);
             const nodeId = this.core.getPath(node);
-            //changes.onNodeCreated(createdNode, nodeId);
             this.emit('nodeCreated', createdNode, node);
             this._createdGMEIds[createdNode.id] = nodeId;
         }
