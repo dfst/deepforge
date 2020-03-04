@@ -186,7 +186,16 @@ define([
         compute.on('end',
             async (id/*, info*/) => {
                 try {
-                    await this.onOperationEnd(id);
+                    const job = this.getNodeForJobId(id);
+                    if (job === null) {
+                        assert(
+                            this.canceled,
+                            `Cannot find node for job ID in running pipeline: ${id}`
+                        );
+                        return;
+                    }
+                    this.cleanJobHashInfo(id);
+                    await this.onOperationEnd(null, job);
                 } catch (err) {
                     this.logger.error(`Error when processing operation end: ${err}`);
                     throw err;
@@ -590,13 +599,15 @@ define([
         }
     };
 
-    ExecuteJob.prototype.onOperationEnd = async function (hash) {
-        // Record that the job hash is no longer running
-        const job = this.getNodeForJobId(hash);
-        if (job === null) {
-            assert(this.canceled, `Cannot find node for job ID in running pipeline: ${hash}`);
-            return;
+    ExecuteJob.prototype.onOperationEnd = async function (err, job) {
+        if (this.isLocalOperation(job)) {
+            if (err) {
+                return this.onOperationFail(job, err);
+            } else {
+                return this.onOperationComplete(job);
+            }
         }
+
         const op = await this.getOperation(job);
         const name = this.core.getAttribute(job, 'name');
         const jobId = this.core.getPath(job);
@@ -604,7 +615,6 @@ define([
 
         const status = await this.compute.getStatus(jobInfo);
         this.logger.info(`Job "${name}" has finished (${status})`);
-        this.cleanJobHashInfo(hash);
 
         if (status === this.compute.CANCELED) {
             // If it was canceled, the pipeline has been stopped
@@ -682,14 +692,14 @@ define([
 
         try {
             await this[type](node);
-            this.onOperationComplete(node);
+            this.onOperationEnd(null, node);
         } catch (err) {
             const job = this.core.getParent(node);
             const stdout = this.core.getAttribute(job, 'stdout') +
                 '\n' + red(err.toString());
 
             this.core.setAttribute(job, 'stdout', stdout);
-            this.onOperationFail(node, err);
+            this.onOperationEnd(err, node);
         }
     };
 

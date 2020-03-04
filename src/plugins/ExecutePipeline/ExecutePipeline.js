@@ -437,33 +437,29 @@ define([
             msg += 'finished!';
         }
 
-        return this.isDeleted().then(isDeleted => {
-            this.stopExecHeartBeat();
-            if (!isDeleted) {
+        const isDeleted = await this.isDeleted();
+        this.stopExecHeartBeat();
+        if (!isDeleted) {
 
-                this.logger.debug(`Pipeline "${name}" complete!`);
-                this.core.setAttribute(this.activeNode, 'endTime', Date.now());
-                this.core.setAttribute(this.activeNode, 'status',
-                    (this.pipelineError ? 'failed' :
-                        (this.canceled ? 'canceled' : 'success')
-                    )
-                );
-                this.core.delAttribute(this.activeNode, 'executionId');
+            this.logger.debug(`Pipeline "${name}" complete!`);
+            this.core.setAttribute(this.activeNode, 'endTime', Date.now());
+            this.core.setAttribute(this.activeNode, 'status',
+                (this.pipelineError ? 'failed' :
+                    (this.canceled ? 'canceled' : 'success')
+                )
+            );
+            this.core.delAttribute(this.activeNode, 'executionId');
 
-                this._finished = true;
-                this.resultMsg(msg);
-                this.save('Pipeline execution finished')
-                    .then(() => {
-                        this.result.setSuccess(!this.pipelineError);
-                        this._callback(this.pipelineError || null, this.result);
-                    })
-                    .catch(e => this.logger.error(e));
-            } else {  // deleted!
-                this.logger.debug('Execution has been deleted!');
-                this.result.setSuccess(!this.pipelineError);
-                this._callback(this.pipelineError || null, this.result);
-            }
-        });
+            this._finished = true;
+            this.resultMsg(msg);
+            await this.save('Pipeline execution finished');
+            this.result.setSuccess(!this.pipelineError);
+            this._callback(this.pipelineError || null, this.result);
+        } else {  // deleted!
+            this.logger.debug('Execution has been deleted!');
+            this.result.setSuccess(!this.pipelineError);
+            this._callback(this.pipelineError || null, this.result);
+        }
     };
 
     ExecutePipeline.prototype.isDeleted = function () {
@@ -543,7 +539,11 @@ define([
 
         this.logger.debug(`Operation "${name}" completed. ` +
             `${this.totalCount - this.completedCount} remaining.`);
-        if (hasReadyOps) {
+
+        const isStopping = this.pipelineError || this.canceled;
+        if (isStopping && this.runningJobs === 0) {
+            this.onPipelineComplete();
+        } else if (hasReadyOps) {
             this.executeReadyOperations();
         } else if (this.completedCount === this.totalCount) {
             this.onPipelineComplete();
