@@ -141,6 +141,10 @@ define([], function () {
         return desc.subGraphs.length > 1;
     };
 
+    const descHasNoSubPlots = function (desc) {
+        return desc.subGraphs.length === 0;
+    };
+
     const createLayout = function (desc) {
         let layout = {
             title: desc.title,
@@ -163,13 +167,15 @@ define([], function () {
                 subplots: subPlots
             };
             layout.annotations = addAnnotations(desc.subGraphs);
-        } else {
-            if (!layout.title)
+        } else if(!descHasNoSubPlots(desc)) {
+            if (!layout.title){
                 layout.title = desc.subGraphs[0].title;
-            else
+            }
+            else {
                 layout.title = {
                     text: `${layout.title}<br>${desc.subGraphs[0].title}`
                 };
+            }
         }
         return layout;
     };
