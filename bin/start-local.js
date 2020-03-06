@@ -10,9 +10,10 @@ var spawn = require('child_process').spawn,
     workerJob = null,
     gmeConfig = require(__dirname + '/../config');
 
-const DEEPFORGE_CONDA_ENV = yaml.safeLoad(fs.readFileSync(__dirname, '..', 'base-environment.yml'));
+const DEEPFORGE_CONDA_ENV =
+    yaml.safeLoad(fs.readFileSync(path.join(__dirname, '..', 'base-environment.yml'))).name;
 const DEEPFORGE_SERVER_COMMAND =
-    `${os.type() ==='Windows_NT' ? 'conda': 'source'} activate ${DEEPFORGE_CONDA_ENV} && node`;
+    `${os.type() === 'Windows_NT' ? 'conda': 'source'} activate ${DEEPFORGE_CONDA_ENV} && node`;
 
 // Set the cache to the blob
 if  (gmeConfig.blob.type === 'FS') {
