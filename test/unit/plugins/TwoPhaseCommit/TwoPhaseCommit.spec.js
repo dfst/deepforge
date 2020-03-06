@@ -547,4 +547,32 @@ describe('TwoPhaseCommit', function() {
             assert(!childNames.includes('goodbye'), 'Included node created after save.');
         });
     });
+
+    describe('argument validation', function() {
+        const methods = [
+            'getPath',
+            'getBase',
+            'setAttribute',
+            'isTypeOf',
+            'setPointer',
+            'deleteNode',
+            'delAttribute',
+        ];
+
+        methods.forEach(method => {
+            it(`should check node types on ${method}`, function() {
+                const invalidNode = {relid: 'h'};
+                assert.throws(() => plugin.core[method](invalidNode));
+            });
+        });
+
+        it('should check node types on loadChildren', async function() {
+            const invalidNode = {relid: 'h'};
+            try {
+                await plugin.core.loadChildren(invalidNode);
+                throw new Error('Did not throw exception.');
+            } catch (err) {
+            }
+        });
+    });
 });
