@@ -48,7 +48,7 @@ const createOrUpdateEnvironment = function (envFile) {
         env.name = process.env.DEEPFORGE_CONDA_ENV;
         envFile = dumpYAML(env, envFile);
     }
-    const createOrUpdate = !!envExists(env.name) ? 'update' : 'create';
+    const createOrUpdate = envExists(env.name) ? 'update' : 'create';
     console.log(`Environment ${env.name} will be ${createOrUpdate}d.`);
     spawnCondaProcess(['env', createOrUpdate, '--file', envFile],
         `Successfully ${createOrUpdate}d the environment ${env.name}`);
