@@ -42,10 +42,10 @@ const checkConda = function () {
 };
 
 
-const createOrUpdateEnvironment = function (envFile) {
+const createOrUpdateEnvironment = function (envFile, envName) {
     const env = yaml.safeLoad(fs.readFileSync(envFile, 'utf8'));
-    if (process.env.DEEPFORGE_CONDA_ENV && process.env.DEEPFORGE_CONDA_ENV !== env.name) {
-        env.name = process.env.DEEPFORGE_CONDA_ENV;
+    if (envName && envName !== env.name) {
+        env.name = envName;
         envFile = dumpYAML(env, envFile);
     }
     const createOrUpdate = envExists(env.name) ? 'update' : 'create';
