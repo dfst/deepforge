@@ -53,36 +53,6 @@ const createOrUpdateEnvironment = function (envFile) {
 
 };
 
-const updateDependencies = function (envFile, dependencies, create=false, dump=true) {
-    const env = yaml.safeLoad(fs.readFileSync(envFile));
-    const exists = envExists(env.name);
-    if(!exists && create){
-        createOrUpdateEnvironment(envFile);
-    } else if(!exists && !create) {
-        console.log(`Cannot update dependencies for ${env.name}, please use create=true.`);
-        throw new Error(`Cannot update dependencies for ${env.name}, please use create=true.`);
-    } else {
-        // ToDo: Handle Channel Priorities
-        if(dependencies.channels){
-            env.channels = env.channels.concat(dependencies.channels);
-        }
-        if(dependencies.packages.pip){
-            env.dependencies[env.dependencies.length - 1].pip.concat(dependencies.packages.pip);
-        }
-        if(dependencies.packages.conda){
-            dependencies.packages.conda.forEach(dep => env.dependencies.unshift(dep));
-        }
-    }
-    const envYamlString = yaml.safeDump(env);
-    let envFileName = envFile;
-    if(!dump){
-        envFileName = path.join(os.tmpdir(), path.basename(envFile));
-    }
-    fs.writeFileSync(envFileName, envYamlString, 'utf8');
-    createOrUpdateEnvironment(envFileName);
-};
-
-
 const spawnCondaProcess = function (args, onCompleteMessage, onErrorMessage) {
     const condaProcess = spawn(CONDA_COMMAND, args, {
         shell: os.type === 'Windows_NT' ? true : '/bin/bash'
@@ -109,7 +79,7 @@ const runMain = function () {
     createOrUpdateEnvironment(path.join(__dirname, '..', 'base-environment.yml'));
 };
 
-const CondaManager = {checkConda, createOrUpdateEnvironment, updateDependencies};
+const CondaManager = {checkConda, createOrUpdateEnvironment};
 
 if (require.main === module) {
     runMain();
