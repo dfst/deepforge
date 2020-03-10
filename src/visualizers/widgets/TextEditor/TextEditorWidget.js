@@ -21,11 +21,6 @@ define([
         LINE_COMMENT = {
             python: '#',
             lua: '--'
-        },
-        DEFAULT_SETTINGS = {
-            keybindings: 'default',
-            theme: 'solarized_dark',
-            fontSize: 12
         };
 
     TextEditorWidget = function (logger, container) {
@@ -69,7 +64,7 @@ define([
     };
 
     TextEditorWidget.prototype.addExtensions = function () {
-        require(['ace/ext/language_tools'], () => {
+        ace.require(['ace/ext-language_tools'], () => {
             this.editor.setOptions(this.getEditorOptions());
             this.completer = this.getCompleter();
             this.editor.completers = [this.completer];
@@ -112,12 +107,19 @@ define([
             }
         });
 
-        // Create the editor settings
-        this.editorSettings = _.extend({}, DEFAULT_SETTINGS),
+        this.editorSettings = _.extend({}, this.getDefaultEditorOptions()),
         ComponentSettings.resolveWithWebGMEGlobal(
             this.editorSettings,
             this.getComponentId()
         );
+    };
+
+    TextEditorWidget.prototype.getDefaultEditorOptions = function () {
+        return {
+            keybindings: 'default',
+            theme: 'solarized_dark',
+            fontSize: 12
+        };
     };
 
     TextEditorWidget.prototype.getComponentId = function () {
