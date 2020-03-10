@@ -72,6 +72,8 @@ define([
         if(id){
             this.deleteExecution(id);
         }
+        event.stopPropagation();
+        event.preventDefault();
     };
 
     ExecutionIndexWidget.prototype.onExecutionClicked = function (event) {
@@ -94,6 +96,9 @@ define([
         } else {
             this.setSelect(id, checked);
         }
+
+        event.stopPropagation();
+        event.preventDefault();
     };
 
     ExecutionIndexWidget.prototype.onWidgetContainerResize = function (width, height) {
