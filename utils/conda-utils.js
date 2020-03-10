@@ -6,7 +6,9 @@ const {spawnSync, spawn} = require('child_process'),
     path = require('path'),
     fs = require('fs'),
     yaml = require('js-yaml'),
-    CONDA_COMMAND = 'conda';
+    CONDA_COMMAND = 'conda',
+    SHELL = os.type() === 'Windows_NT' ? true: '/bin/bash',
+    ENV_FILE = path.join(__dirname, '..', 'environment.yml');
 
 const getCondaEnvs = function () {
     const envProcess = spawnSyncCondaProcess(['env', 'list']);
@@ -46,16 +48,16 @@ const createOrUpdateEnvironment = function (envFile) {
         env.name = process.env.DEEPFORGE_CONDA_ENV;
         envFile = dumpYAML(env, envFile);
     }
-    const createOrUpdate = envExists(env.name) > -1 ? 'update' : 'create';
+    const createOrUpdate = !!envExists(env.name) ? 'update' : 'create';
     console.log(`Environment ${env.name} will be ${createOrUpdate}d.`);
     spawnCondaProcess(['env', createOrUpdate, '--file', envFile],
-        `Successfully ${createOrUpdate}ed the environment ${env.name}`);
+        `Successfully ${createOrUpdate}d the environment ${env.name}`);
 
 };
 
 const spawnCondaProcess = function (args, onCompleteMessage, onErrorMessage) {
     const condaProcess = spawn(CONDA_COMMAND, args, {
-        shell: os.type === 'Windows_NT' ? true : '/bin/bash'
+        shell: SHELL
     });
 
     condaProcess.stdout.pipe(process.stdout);
@@ -70,13 +72,13 @@ const spawnCondaProcess = function (args, onCompleteMessage, onErrorMessage) {
 
 const spawnSyncCondaProcess = function (args) {
     return spawnSync(CONDA_COMMAND, args, {
-        shell: os.type() === 'Windows_NT' ? true : '/bin/bash'
+        shell: SHELL
     });
 };
 
 const runMain = function () {
     checkConda();
-    createOrUpdateEnvironment(path.join(__dirname, '..', 'base-environment.yml'));
+    createOrUpdateEnvironment(ENV_FILE);
 };
 
 const CondaManager = {checkConda, createOrUpdateEnvironment};

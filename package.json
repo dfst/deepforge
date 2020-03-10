@@ -10,7 +10,7 @@
   "scripts": {
     "start": "node ./bin/deepforge start",
     "postinstall": "node utils/reinstall-extensions.js && node utils/build-job-utils.js && node utils/conda-utils.js",
-    "start-dev": "NODE_ENV=dev node app.js",
+    "start-dev": "NODE_ENV=dev node ./bin/deepforge start",
     "start-authenticated": "NODE_ENV=production ./bin/deepforge start",
     "local": "node ./bin/start-local.js",
     "worker": "node ./bin/start-worker.js",
@@ -28,7 +28,7 @@
     "@babel/preset-env": "^7.7.1",
     "@babel/runtime": "^7.7.2",
     "aws-sdk": "^2.616.0",
-    "commander": "^2.9.0",
+    "commander": "^2.20.3",
     "deepforge-user-management-page": "github:deepforge-dev/user-management-page",
     "dotenv": "^2.0.0",
     "exists-file": "^2.1.0",

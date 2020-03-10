@@ -1,6 +1,10 @@
 #!/usr/bin/env node
+const yaml = require('js-yaml'),
+    os = require('os'),
+    IS_WINDOWS = os.type() === 'WINDOWS_NT',
+    SHELL = IS_WINDOWS ? true : '/bin/bash',
+    HOME_DIR = os.homedir();
 
-const HOME_DIR = require('os').homedir();
 var Command = require('commander').Command,
     tcpPortUsed = require('tcp-port-used'),
     program = new Command(),
@@ -29,6 +33,17 @@ var Command = require('commander').Command,
         }
         return dir;
     };
+
+const ENV_FILE = path.join(__dirname, '..', 'environment.yml'),
+DEEPFORGE_CONDA_ENV =
+    yaml.safeLoad(fs.readFileSync(ENV_FILE)).name || process.env.DEEPFORGE_CONDA_ENV;
+
+const getDeepForgeServerCommand = function(useConda){
+    if(useConda){
+        return `${IS_WINDOWS ? 'conda': 'source'} activate ${DEEPFORGE_CONDA_ENV} && node`;
+    }
+    return 'node';
+};
 
 // Check for any commands
 if (process.argv.length === 2) {
@@ -226,9 +241,12 @@ program.command('start')
     .description('start deepforge locally (default) or specific components')
     .option('-p, --port <port>', 'specify the port to use')
     .option('-s, --server', 'start the server')
+    .option('-N, --no-conda', 'do not start deepforge server in a conda environment. ' +
+        'Deepforge server uses conda environment by default.')
     .option('-w, --worker [url]', 'start a worker and connect to given url. Defaults to local deepforge')
     .option('-m, --mongo', 'start MongoDB')
     .action(async args => {
+        const serverCommand = getDeepForgeServerCommand(args.conda);
 
         if (args.port) {
             process.env.PORT = args.port;
@@ -241,7 +259,9 @@ program.command('start')
         if (args.server) {
             await checkMongo(args);
             const main = path.join(__dirname, '..', 'app.js');
-            await spawn('node', [main]);
+            await spawn(serverCommand, [main], {
+                shell: SHELL
+            });
         }
 
         if (args.worker) {
@@ -257,7 +277,7 @@ program.command('start')
             // Starting everything
             const main = path.join(__dirname, 'start-local.js');
             await checkMongo(args);
-            await spawn('node', [main]);
+            await spawn('node', [main, args.conda]);
         }
 
     });
@@ -360,6 +380,8 @@ module.exports = function (cmd) {
 
 
 module.exports.checkMongo = checkMongo;
+module.exports.getDeepForgeServerCommand = getDeepForgeServerCommand;
+module.exports.SHELL = SHELL;
 
 if (require.main === module) {
     program.parse(process.argv);
