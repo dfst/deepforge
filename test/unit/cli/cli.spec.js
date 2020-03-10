@@ -148,9 +148,19 @@ describe('cli', function() {
             cli('start');
         });
 
-        it('should start normal deepforge if --server set', function(done) {
+        it('should start normal deepforge if --server set with -N flag', function(done) {
             mocks.childProcess.spawn = (main, args) => {
-                if (main === 'node') {
+                if (main === cli.getDeepForgeServerCommand(false)) {
+                    assert.notEqual(args[0].indexOf('app.js'), -1);
+                    done();
+                }
+            };
+            cli('start --server -N');
+        });
+
+        it('should start deepforge in a conda environment if --server set without -N flag', function(done) {
+            mocks.childProcess.spawn = (main, args) => {
+                if (main === cli.getDeepForgeServerCommand(true)) {
                     assert.notEqual(args[0].indexOf('app.js'), -1);
                     done();
                 }
