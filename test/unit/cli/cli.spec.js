@@ -138,16 +138,6 @@ describe('cli', function() {
             cli('start --mongo');
         });
 
-        it('should start local deepforge by default', function(done) {
-            mocks.childProcess.spawn = (main, args) => {
-                if (main === 'node') {
-                    assert.notEqual(args[0].indexOf('start-local.js'), -1);
-                    done();
-                }
-            };
-            cli('start');
-        });
-
         it('should start normal deepforge if --server set with -N flag', function(done) {
             mocks.childProcess.spawn = (main, args) => {
                 if (main === cli.getDeepForgeServerCommand(false)) {
