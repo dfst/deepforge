@@ -34,7 +34,7 @@ RUN npm install -g npm
 
 RUN npm config set unsafe-perm true && npm install && ln -s /deepforge/bin/deepforge /usr/local/bin
 
-echo "source activate ${DEEPFOROGE_CONDA_ENV}" > ~/.bashrc
+RUN echo "source activate ${DEEPFOROGE_CONDA_ENV}" > ~/.bashrc
 
 #Set up the data storage
 RUN deepforge config blob.dir /data/blob && \
