@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - master
-      - 1475-github-action
+      - 1483-dockerfile-simplify
 
 jobs:
   publish:

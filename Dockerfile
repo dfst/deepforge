@@ -25,7 +25,7 @@ ENV PATH /root/miniconda3/bin:$PATH
 
 WORKDIR /deepforge
 
-RUN conda update conda -yq && conda env create -f environment.yml && echo "source activate ${DEEPFOROGE_CONDA_ENV}" > ~/.bashrc
+RUN conda update conda -yq
 
 RUN echo '{"allow_root": true}' > /root/.bowerrc && mkdir -p /root/.config/configstore/ && \
     echo '{}' > /root/.config/configstore/bower-github.json
@@ -34,8 +34,10 @@ RUN npm install -g npm
 
 RUN npm config set unsafe-perm true && npm install && ln -s /deepforge/bin/deepforge /usr/local/bin
 
+echo "source activate ${DEEPFOROGE_CONDA_ENV}" > ~/.bashrc
+
 #Set up the data storage
 RUN deepforge config blob.dir /data/blob && \
     deepforge config mongo.dir /data/db
 
-ENTRYPOINT source activate deepforge && NODE_ENV=production deepforge start --server
+ENTRYPOINT source activate ${DEEPFORGE_CONDA_ENV} && NODE_ENV=production deepforge start --server
