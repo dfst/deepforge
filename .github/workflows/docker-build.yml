@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - master
-      - 1475-github-action
+      - 1484-deepforge-kitchensink
 
 jobs:
   publish:
@@ -12,10 +12,18 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - name: Publish to docker hub
+      - name: Publish to docker hub (Vanilla)
         uses: elgohr/Publish-Docker-Github-Action@master
         with:
           name: deepforge/server
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          tags: "latest"
+
+      - name: Publish to docker hub (KitchenSink)
+        uses: elgohr/Publish-Docker-Github-Action@master
+        with:
+          name: deepforge/kitchen-sink
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
           tags: "latest"
