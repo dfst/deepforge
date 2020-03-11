@@ -152,11 +152,12 @@ define([
             desc.pointers = {};
 
             // Remove DeepForge hidden attributes
-            delete desc.attributes.code;
-            delete desc.attributes[CONSTANTS.LINE_OFFSET];
-            desc.displayColor = desc.attributes[CONSTANTS.DISPLAY_COLOR] &&
-                desc.attributes[CONSTANTS.DISPLAY_COLOR].value;
-            delete desc.attributes[CONSTANTS.DISPLAY_COLOR];
+            const displayColor = desc.attributes[CONSTANTS.OPERATION.DISPLAY_COLOR];
+            desc.displayColor = displayColor && displayColor.value;
+
+            CONSTANTS.OPERATION.RESERVED_ATTRS
+                .filter(attrName => attrName !== 'name')
+                .forEach(name => delete desc.attributes[name]);
         }
 
         // Extra decoration for data

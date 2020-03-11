@@ -97,16 +97,12 @@ define([
             desc.inputs = inputs.map(id => this.formatIO(id));
             desc.outputs = outputs.map(id => this.formatIO(id));
 
-            // Remove the 'code' attribute
-            if (desc.attributes.code) {
-                delete desc.attributes[CONSTANTS.LINE_OFFSET];
-                delete desc.attributes.code;
-            }
+            const displayColor = desc.attributes[CONSTANTS.OPERATION.DISPLAY_COLOR];
+            desc.displayColor = displayColor && displayColor.value;
 
-            // Handle the display color
-            desc.displayColor = desc.attributes[CONSTANTS.DISPLAY_COLOR] &&
-                desc.attributes[CONSTANTS.DISPLAY_COLOR].value;
-            delete desc.attributes[CONSTANTS.DISPLAY_COLOR];
+            CONSTANTS.OPERATION.RESERVED_ATTRS
+                .filter(attrName => attrName !== 'name')
+                .forEach(name => delete desc.attributes[name]);
 
         } else if (desc.isConnection) {
             // Set src, dst to siblings and add srcPort, dstPort

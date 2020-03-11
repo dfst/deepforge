@@ -273,7 +273,7 @@ define([
     };
 
     var Container = function(svg, node) {  // used for positioning
-        var colorAttr = node.attributes[Constants.DISPLAY_COLOR];
+        var colorAttr = node.attributes[Constants.OPERATION.DISPLAY_COLOR];
         this.$el = svg.append('g');
         this.x = 0;
         this.y = 0;

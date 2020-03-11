@@ -10,12 +10,14 @@
         root.CONSTANTS = factory();
     }
 }(this, function() {
-    return {
+    const Constants = {
         CONTAINED_LAYER_SET: 'addLayers',
         CONTAINED_LAYER_INDEX: 'index',
 
-        LINE_OFFSET: 'lineOffset',
-        DISPLAY_COLOR: 'displayColor',
+        OPERATION: {
+            LINE_OFFSET: 'lineOffset',
+            DISPLAY_COLOR: 'displayColor',
+        },
 
         // DeepForge metadata creation in dist execution
         START_CMD: 'deepforge-cmd',
@@ -47,4 +49,8 @@
         // Job stdout update
         STDOUT_UPDATE: 'stdout_update'
     };
+    Constants.OPERATION.RESERVED_ATTRS = Object.values(Constants.OPERATION)
+        .concat(['name', 'code']);
+
+    return Constants;
 }));
