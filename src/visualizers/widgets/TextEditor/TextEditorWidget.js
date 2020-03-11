@@ -64,7 +64,7 @@ define([
     };
 
     TextEditorWidget.prototype.addExtensions = function () {
-        ace.require(['ace/ext-language_tools'], () => {
+        ace.require(['ace/ext/language_tools'], () => {
             this.editor.setOptions(this.getEditorOptions());
             this.completer = this.getCompleter();
             this.editor.completers = [this.completer];
