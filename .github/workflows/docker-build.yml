@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - master
-      - 1484-deepforge-kitchensink
 
 jobs:
   publish:
