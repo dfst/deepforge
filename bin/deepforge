@@ -275,8 +275,7 @@ program.command('start')
     .description('start deepforge locally (default) or specific components')
     .option('-p, --port <port>', 'specify the port to use')
     .option('-s, --server', 'start the server')
-    .option('-N, --no-conda', 'do not start deepforge server in a conda environment. ' +
-        'Deepforge server uses conda environment by default.')
+    .option('-N, --no-conda', 'do not start deepforge server in a conda environment.')
     .option('-w, --worker [url]', 'start a worker and connect to given url. Defaults to local deepforge')
     .option('-m, --mongo', 'start MongoDB')
     .action(async args => {
