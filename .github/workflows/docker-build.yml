@@ -13,9 +13,9 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Publish to docker hub
-      uses: elgohr/Publish-Docker-Github-Action@master
-      with:
-        name: deepforge/server
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
-        tags: "latest"
+        uses: elgohr/Publish-Docker-Github-Action@master
+        with:
+          name: deepforge/server
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          tags: "latest"
