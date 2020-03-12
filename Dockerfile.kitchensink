@@ -2,5 +2,5 @@ FROM deepforge/server:latest
 
 RUN source activate ${DEEPFORGE_CONDA_ENV} && pip install tensorflow==1.14 keras==2.2.5 pillow dill
 
-RUN npm run postinstall
+RUN deepforge extensions add deepforge-dev/deepforge-keras
 
