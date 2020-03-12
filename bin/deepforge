@@ -36,12 +36,12 @@ var Command = require('commander').Command,
     };
 
 const ENV_FILE = path.join(__dirname, '..', 'environment.yml'),
-DEEPFORGE_CONDA_ENV =
-    yaml.safeLoad(fs.readFileSync(ENV_FILE)).name || process.env.DEEPFORGE_CONDA_ENV;
+    DEEPFORGE_CONDA_ENV = yaml.safeLoad(fs.readFileSync(ENV_FILE)).name || process.env.DEEPFORGE_CONDA_ENV;
 
-const getDeepForgeServerCommand = function(useConda){
-    if(useConda){
-        return `${IS_WINDOWS ? 'conda': 'source'} activate ${DEEPFORGE_CONDA_ENV} && node`;
+const getDeepForgeServerCommand = function (useConda) {
+    if (useConda) {
+        appendActivateToPath();
+        return `${IS_WINDOWS ? 'conda' : 'source'} activate ${DEEPFORGE_CONDA_ENV} && node`;
     }
     return 'node';
 };
@@ -193,8 +193,8 @@ var startMongo = function (args, port, silent) {
     });
 };
 
-const startLocal = function(serverCommand) {
-    let stdout, workerJob=null;
+const startLocal = function (serverCommand) {
+    let stdout, workerJob = null;
     const env = {cwd: path.join(__dirname, '..'), NODE_ENV: process.env.NODE_ENV, PATH: process.env.PATH};
     // Set the cache to the blob
     if (gmeConfig.blob.type === 'FS') {
@@ -212,7 +212,7 @@ const startLocal = function(serverCommand) {
     execJob.stdout.pipe(process.stdout);
     execJob.stderr.pipe(process.stderr);
 
-    execJob.stdout.on('data', function(chunk) {
+    execJob.stdout.on('data', function (chunk) {
         if (!workerJob) {
             stdout += chunk;
             if (stdout.indexOf('DeepForge') > -1) {
@@ -225,6 +225,16 @@ const startLocal = function(serverCommand) {
     });
 
     execJob.on('close', code => code && process.exit(code));
+};
+
+const appendActivateToPath = function () {
+    if(!IS_WINDOWS){
+        const condaBin = process.env.CONDA_EXE.split('/')
+            .filter(value => (value !== 'conda')).join('/');
+        if (!process.env.PATH.includes(condaBin)) {
+            process.env.PATH += `:${condaBin}`;
+        }
+    }
 };
 
 var spawn = function (cmd, args, opts) {
