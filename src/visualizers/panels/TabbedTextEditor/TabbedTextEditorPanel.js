@@ -46,25 +46,58 @@ define([
         //set Widget title
         this.setTitle('');
 
-        this.widget = new TabbedTextEditorWidget(this.logger, this.$el);
+        this.$el.css('height', '100%');
+        this.widget = new TabbedTextEditorWidget(
+            this.logger,
+            this.$el,
+            this.getWidgetConfig()
+        );
         this.widget.setTitle = title => {
             this.setTitle(title);
         };
 
-        // embedded text editor
-        this.editor = new AutoVizPanel(this, this._params);
         this.$editorCntr = this.$el.find('.current-tab-content');
-        this.$editorCntr.append(this.editor.$el);
+        this.setEditorPanel(AutoVizPanel);
 
-        this.control = new TabbedTextEditorControl({
+        this.control = this.getController();
+        this.control.setEditorNode = this.setEditorNode.bind(this);
+        this.control.setEditor = this.setEditorPanel.bind(this);
+
+        this.onActivate();
+    };
+
+    TabbedTextEditorPanel.prototype.getWidgetConfig = function () {
+        return null;
+    };
+
+    TabbedTextEditorPanel.prototype.getController = function () {
+        return new TabbedTextEditorControl({
             logger: this.logger,
             client: this._client,
-            editor: this.editor,
             embedded: this._embedded,
             widget: this.widget
         });
+    };
 
-        this.onActivate();
+    TabbedTextEditorPanel.prototype.setEditorNode = function (nodeId) {
+        const controller = this.editor.selectedObjectChanged ? this.editor :
+            this.editor.control;
+        controller.selectedObjectChanged(nodeId);
+    };
+
+    TabbedTextEditorPanel.prototype.setEditorPanel = function (PanelClass) {
+        if (this.editor) {
+            this.editor.destroy();
+            this.$editorCntr.empty();
+        }
+
+        this.editor = new PanelClass(this, this._params);
+        this.$editorCntr.append(this.editor.$el);
+
+        const isDisplayed = this.width && this.height;
+        if (isDisplayed) {
+            this.onResize(this.width, this.height);
+        }
     };
 
     TabbedTextEditorPanel.prototype.addPanel = function (name, panel) {
