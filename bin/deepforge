@@ -193,8 +193,8 @@ var startMongo = function (args, port, silent) {
     });
 };
 
-const startLocal = function (serverCommand) {
-    let stdout, workerJob = null;
+const startLocal = function(serverCommand) {
+    let stdout, workerJob=null;
     const env = {cwd: path.join(__dirname, '..'), NODE_ENV: process.env.NODE_ENV, PATH: process.env.PATH};
     // Set the cache to the blob
     if (gmeConfig.blob.type === 'FS') {
@@ -212,7 +212,7 @@ const startLocal = function (serverCommand) {
     execJob.stdout.pipe(process.stdout);
     execJob.stderr.pipe(process.stderr);
 
-    execJob.stdout.on('data', function (chunk) {
+    execJob.stdout.on('data', function(chunk) {
         if (!workerJob) {
             stdout += chunk;
             if (stdout.indexOf('DeepForge') > -1) {
