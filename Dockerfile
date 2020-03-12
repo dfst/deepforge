@@ -22,6 +22,7 @@ WORKDIR /tmp
 RUN curl -O  https://repo.continuum.io/miniconda/$MINICONDA && bash $MINICONDA -b && rm -f $MINICONDA
 
 ENV PATH /root/miniconda3/bin:$PATH
+ENV NODE_ENV production
 
 WORKDIR /deepforge
 
@@ -38,4 +39,4 @@ RUN npm config set unsafe-perm true && npm install && ln -s /deepforge/bin/deepf
 RUN deepforge config blob.dir /data/blob && \
     deepforge config mongo.dir /data/db
 
-ENTRYPOINT source activate deepforge && NODE_ENV=production deepforge start --server
+ENTRYPOINT source activate deepforge && deepforge start --server
