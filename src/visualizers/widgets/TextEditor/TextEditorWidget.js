@@ -20,13 +20,14 @@ define([
         WIDGET_CLASS = 'text-editor',
         LINE_COMMENT = {
             python: '#',
-            lua: '--'
+            lua: '--',
+            yaml: '#'
         };
 
-    TextEditorWidget = function (logger, container) {
+    TextEditorWidget = function (logger, container, config={}) {
         this.logger = logger.fork('Widget');
 
-        this.language = this.language || 'python';
+        this.language = this.language || config.language || 'python';
         this._el = container;
         this._el.css({height: '100%'});
         this.$editor = $('<div/>');
