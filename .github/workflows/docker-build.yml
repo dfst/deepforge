@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - master
-      - 1482-deploy-deepforge
 
 jobs:
   publish:
