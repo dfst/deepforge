@@ -3,7 +3,7 @@ FROM node:10
 
 EXPOSE 8888
 
-LABEL maintainer1.name="Brain Broll"\
+LABEL maintainer1.name="Brian Broll"\
       maintainer1.email="brian.broll@gmail.com"
 
 LABEL maintainer2.name="Umesh Timalsina"\
