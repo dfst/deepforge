@@ -159,7 +159,7 @@ define([
     OperationControl.prototype.getAttributeNames = function(opId) {
         var node = this._client.getNode(opId);
         return node.getAttributeNames()
-            .filter(name => CONSTANTS.OPERATION.RESERVED_ATTRS.includes(name));
+            .filter(name => !CONSTANTS.OPERATION.RESERVED_ATTRS.includes(name));
     };
 
     OperationControl.prototype.getAttributes = function(opId) {
