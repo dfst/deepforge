@@ -1,5 +1,5 @@
 # This docker file is to create a docker Image of a deepforge server
-FROM node:10
+FROM node:12
 
 EXPOSE 8888
 
