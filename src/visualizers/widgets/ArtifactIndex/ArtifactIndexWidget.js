@@ -3,12 +3,14 @@
 
 define([
     './ModelItem',
+    './ModalControl',
     'panel/FloatingActionButton/styles/Materialize',
     'deepforge/storage/index',
     'text!./Table.html',
     'css!./styles/ArtifactIndexWidget.css'
 ], function (
     ModelItem,
+    ModalControl,
     Materialize,
     Storage,
     TABLE_HTML
@@ -38,6 +40,7 @@ define([
         this.$content = $(TABLE_HTML);
         this.$el.append(this.$content);
         this.$list = this.$content.find('.list-content');
+        this.modalControl = new ModalControl();
     };
 
     ArtifactIndexWidget.prototype.onWidgetContainerResize = nop;
@@ -83,6 +86,10 @@ define([
                         }
                     }
                 });
+            });
+
+            node.$info.on('click', event => {
+                this.modalControl.showModal(desc);
             });
         }
     };
