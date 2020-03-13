@@ -6,18 +6,20 @@ define([
     'module',
     'path',
     'fs',
-    'q',
+    'util',
     './metadata.json'
 ], function (
     PluginBase,
     module,
     path,
     fs,
-    Q,
+    util,
     pluginMetadata
 ) {
     'use strict';
 
+    const {promisify} = util;
+    const readFile = promisify(fs.readFile);
     const __dirname = path.dirname(module.uri);
     const PROJECT_ROOT = path.join(__dirname, '..', '..', '..');
     const SEEDS_DIR = path.join(PROJECT_ROOT, 'src', 'seeds');
@@ -56,26 +58,24 @@ define([
      *
      * @param {function(string, plugin.PluginResult)} callback - the result callback
      */
-    UploadSeedToBlob.prototype.main = function (callback) {
+    UploadSeedToBlob.prototype.main = async function (callback) {
         const config = this.getCurrentConfig();
         const seedName = config.seedName;
 
-        // Upload the library to the blob
-        return this.uploadSeed(seedName)
-            .then(hash => {
-                this.createMessage(this.rootNode, hash);
-                this.result.setSuccess(true);
-                callback(null, this.result);
-            })
-            .fail(err => {
-                this.logger.error(`Could not check the libraries: ${err}`);
-                callback(err, this.result);
-            });
+        try {
+            const hash = await this.uploadSeed(seedName);
+            this.createMessage(this.rootNode, hash);
+            this.result.setSuccess(true);
+            callback(null, this.result);
+        } catch (err) {
+            this.logger.error(`Could not check the libraries: ${err}`);
+            callback(err, this.result);
+        }
     };
 
-    UploadSeedToBlob.prototype.uploadSeed = function (name) {
-        return Q.nfcall(fs.readFile, this.getSeedDataPath(name))
-            .then(data => this.blobClient.putFile(`${name}.webgmex`, data));
+    UploadSeedToBlob.prototype.uploadSeed = async function (name) {
+        const data = await readFile(this.getSeedDataPath(name));
+        return await this.blobClient.putFile(`${name}.webgmex`, data);
     };
 
     UploadSeedToBlob.prototype.getSeedDataPath = function (name) {

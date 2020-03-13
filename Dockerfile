@@ -3,7 +3,7 @@ FROM node:10
 
 EXPOSE 8888
 
-LABEL maintainer1.name="Brain Broll"\
+LABEL maintainer1.name="Brian Broll"\
       maintainer1.email="brian.broll@gmail.com"
 
 LABEL maintainer2.name="Umesh Timalsina"\
@@ -22,6 +22,7 @@ WORKDIR /tmp
 RUN curl -O  https://repo.continuum.io/miniconda/$MINICONDA && bash $MINICONDA -b && rm -f $MINICONDA
 
 ENV PATH /root/miniconda3/bin:$PATH
+ENV NODE_ENV production
 
 WORKDIR /deepforge
 
@@ -40,4 +41,4 @@ RUN echo "source activate ${DEEPFORGE_CONDA_ENV}" > ~/.bashrc
 RUN deepforge config blob.dir /data/blob && \
     deepforge config mongo.dir /data/db
 
-ENTRYPOINT source activate ${DEEPFORGE_CONDA_ENV} && NODE_ENV=production deepforge start --server
+ENTRYPOINT source activate ${DEEPFORGE_CONDA_ENV} && deepforge start --server

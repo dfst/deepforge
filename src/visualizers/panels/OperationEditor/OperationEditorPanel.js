@@ -6,7 +6,7 @@ define([
     'deepforge/viz/RenameablePanel',
     'panels/TilingViz/TilingVizPanel',
     'panels/OperationCodeEditor/OperationCodeEditorPanel',
-    'panels/OperationInterfaceEditor/OperationInterfaceEditorPanel',
+    'panels/OperationSecondaryEditor/OperationSecondaryEditorPanel',
     'deepforge/viz/OperationControl',
     'js/Constants',
     'underscore'
@@ -15,7 +15,7 @@ define([
     RenameablePanel,
     TilingViz,
     CodeEditor,
-    InterfaceEditor,
+    SecondaryEditor,
     OperationControl,
     CONSTANTS,
     _
@@ -51,27 +51,7 @@ define([
     OperationEditorPanel.prototype.selectedObjectChanged = function (id) {
         this._currentNodeId = id;
         DeepForge.last.Operation = id;
-        if (typeof this._currentNodeId === 'string') {
-            // Setup the territory
-            this.territory = {};
-            this.territory[this._currentNodeId] = {children: 0};
-            this.territoryId = this._client.addUI(this, this._eventCallback.bind(this));
-            this._client.updateTerritory(this.territoryId, this.territory);
-        }
         TilingViz.prototype.selectedObjectChanged.call(this, id);
-    };
-
-    OperationEditorPanel.prototype._eventCallback = function (events) {
-        events = events.find(e => e.eid === this._currentNodeId);
-        this.updateTitle();
-    };
-
-    OperationEditorPanel.prototype.updateTitle = function () {
-        var id = this._currentNodeId,
-            node = this._client.getNode(id),
-            name = node && node.getAttribute('name');
-
-        this.setTitle(name || '');
     };
 
     OperationEditorPanel.prototype.editTitle = function () {
@@ -103,7 +83,7 @@ define([
     };
 
     OperationEditorPanel.prototype.getPanels = function () {
-        return [InterfaceEditor, CodeEditor];
+        return [CodeEditor, SecondaryEditor];
     };
 
     OperationEditorPanel.prototype.onDeactivate = function () {
