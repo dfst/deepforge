@@ -73,7 +73,7 @@ define([
                 let i = 2;
 
                 while (branches[name]) {
-                    name = `${basename} ${i}`;
+                    name = `${basename}${i}`;
                     i++;
                 }
                 return name;
