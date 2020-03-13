@@ -83,8 +83,9 @@ define([
     ImportLibrary.prototype.addSeedToBranch = async function (name) {
         const filepath = this.getSeedDataPath(name);
         const project = this.projectName;
+        const userId = this.getUserId();
         const branch = await this.getUniqueBranchName(`importLibTmpBranch${name}`);
-        const argv = `node import ${filepath} -p ${project} -b ${branch}`.split(' ');
+        const argv = `node import ${filepath} -u ${userId} -p ${project} -b ${branch}`.split(' ');
         await this.project.createBranch(branch, this.commitHash);
         await ImportProject.main(argv);
         return branch;
