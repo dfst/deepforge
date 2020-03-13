@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+const childProcess = require('child_process');
+const Conda = require('../utils/conda-utils');
 const yaml = require('js-yaml'),
     os = require('os'),
     IS_WINDOWS = os.type() === 'WINDOWS_NT',
@@ -9,7 +11,6 @@ const yaml = require('js-yaml'),
 var Command = require('commander').Command,
     tcpPortUsed = require('tcp-port-used'),
     program = new Command(),
-    childProcess = require('child_process'),
     rawSpawn = childProcess.spawn,
     Q = require('q'),
     execSync = childProcess.execSync,
@@ -399,6 +400,68 @@ program
 program
     .command('extensions <command>', 'Manage deepforge extensions');
 
+program
+    .command('create-env')
+    .description('Create conda environment(s) with DeepForge python dependencies')
+    .option('-n, --name <name>', 'Name of environment to create')
+    .option('-s, --server', 'Create environment with server dependencies')
+    .option('-w, --worker', 'Create environment with worker dependencies')
+    .option('-f, --force', 'Overwrite any existing environments')
+    .action(async cmd => {
+        const createBoth = !cmd.server && !cmd.worker;
+        if (createBoth) {
+            cmd.server = cmd.worker = true;
+        }
+
+        const extender = require('../utils/extender');
+        const extensionData = extender.getExtensionsConfig();
+        const libraries = Object.values(extensionData.Library);
+        const dirs = libraries.map(lib => lib.project.root);
+        const name = typeof cmd.name === 'string' ? cmd.name : 'deepforge';
+
+        try {
+            if (cmd.server) {
+                const serverEnvName = createBoth ? name : `${name}-server`;
+                if (cmd.force) {
+                    await Conda.spawn(`env remove --name ${serverEnvName}`);
+                }
+                await createEnvFromDirs(serverEnvName, dirs, 'server');
+            }
+            if (cmd.worker) {
+                if (cmd.force) {
+                    await Conda.spawn(`env remove --name ${name}`);
+                }
+                await createEnvFromDirs(name, dirs, 'worker');
+            }
+        } catch (errOrExitCode) {
+            const msg = '\n\nUnable to create environment.';
+            if (errOrExitCode instanceof Error) {
+                console.log(`${msg} An error occurred: ${errOrExitCode}`);
+            } else {
+                console.log(`${msg} Conda exited with exit code: ${errOrExitCode}`);
+            }
+        }
+    });
+
+async function createEnvFromDirs(name, dirs, type) {
+    const envFiles = getCondaEnvFiles(dirs, type);
+
+    const baseEnvFile = `environment.${type}.yml`;
+    await Conda.spawn(`env create --name ${name} --file ${baseEnvFile}`);
+    for (let i = 0; i < envFiles.length; i++) {
+        const envFile = envFiles[i];
+        await Conda.spawn(`env update -n ${name} --file ${envFile}`);
+    }
+}
+
+function getCondaEnvFiles(dirs, type) {
+    const validEnvFilenames = ['environment.yml', `environment.${type}.yml`];
+    const envFiles = dirs
+        .flatMap(dirname => validEnvFilenames.map(file => path.join(dirname, file)))
+        .filter(filepath => exists.sync(filepath));
+
+    return envFiles;
+}
 
 // user-management
 program.command('users', 'Manage deepforge users.');

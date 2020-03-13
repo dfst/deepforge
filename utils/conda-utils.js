@@ -1,14 +1,15 @@
 /*eslint-env node*/
 /*eslint-disable no-console*/
 'use strict';
+const Conda = {};
+
 const {spawnSync, spawn} = require('child_process'),
     os = require('os'),
     path = require('path'),
     fs = require('fs'),
     yaml = require('js-yaml'),
     CONDA_COMMAND = 'conda',
-    SHELL = os.type() === 'Windows_NT' ? true: '/bin/bash',
-    ENV_FILE = path.join(__dirname, '..', 'environment.yml');
+    SHELL = os.type() === 'Windows_NT' ? true: '/bin/bash';
 
 const getCondaEnvs = function () {
     const envProcess = spawnSyncCondaProcess(['env', 'list']);
@@ -34,7 +35,7 @@ const dumpYAML = function (environment, envFileName) {
     return envFileName;
 };
 
-const checkConda = function () {
+Conda.check = function () {
     const conda = spawnSyncCondaProcess(['-V']);
     if (conda.status !== 0) {
         throw new Error(`Please install conda before continuing. ${conda.stderr.toString()}`);
@@ -42,7 +43,7 @@ const checkConda = function () {
 };
 
 
-const createOrUpdateEnvironment = function (envFile, envName) {
+Conda.createOrUpdateEnvironment = async function (envFile, envName) {
     const env = yaml.safeLoad(fs.readFileSync(envFile, 'utf8'));
     if (envName && envName !== env.name) {
         env.name = envName;
@@ -50,23 +51,25 @@ const createOrUpdateEnvironment = function (envFile, envName) {
     }
     const createOrUpdate = envExists(env.name) ? 'update' : 'create';
     console.log(`Environment ${env.name} will be ${createOrUpdate}d.`);
-    spawnCondaProcess(['env', createOrUpdate, '--file', envFile],
-        `Successfully ${createOrUpdate}d the environment ${env.name}`);
-
+    await Conda.spawn(`env ${createOrUpdate} --file ${envFile}`);
+    console.log(`Successfully ${createOrUpdate}d the environment ${env.name}`);
 };
 
-const spawnCondaProcess = function (args, onCompleteMessage, onErrorMessage) {
-    const condaProcess = spawn(CONDA_COMMAND, args, {
+Conda.spawn = function (command) {
+    const condaProcess = spawn(CONDA_COMMAND, command.split(' '), {
         shell: SHELL
     });
 
     condaProcess.stdout.pipe(process.stdout);
     condaProcess.stderr.pipe(process.stderr);
-    condaProcess.on('exit', (code) => {
-        if(code !== 0){
-            throw new Error(onErrorMessage || 'Spawned conda process failed.');
-        }
-        console.log(onCompleteMessage || 'Spawned conda process executed successfully');
+
+    return new Promise((resolve, reject) => {
+        condaProcess.on('exit', (code) => {
+            if(code !== 0){
+                return reject(code);
+            }
+            resolve();
+        });
     });
 };
 
@@ -77,14 +80,13 @@ const spawnSyncCondaProcess = function (args) {
 };
 
 const runMain = function () {
-    checkConda();
-    createOrUpdateEnvironment(ENV_FILE);
+    Conda.check();
+    const ENV_FILE = path.join(__dirname, '..', 'environment.yml');
+    Conda.createOrUpdateEnvironment(ENV_FILE);
 };
-
-const CondaManager = {checkConda, createOrUpdateEnvironment};
 
 if (require.main === module) {
     runMain();
 }
 
-module.exports = CondaManager;
+module.exports = Conda;
