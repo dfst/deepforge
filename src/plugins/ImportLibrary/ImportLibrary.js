@@ -60,7 +60,7 @@ define([
                 this.result.setSuccess(true);
                 callback(null, this.result);
             })
-            .fail(err => {
+            .catch(err => {
                 this.logger.error(`Could not check the libraries: ${err}`);
                 callback(err, this.result);
             });
@@ -80,21 +80,17 @@ define([
             });
     };
 
-    ImportLibrary.prototype.addSeedToBranch = function (name) {
+    ImportLibrary.prototype.addSeedToBranch = async function (name) {
         const filepath = this.getSeedDataPath(name);
         const project = this.projectName;
-        let branch, argv;
-        return this.getUniqueBranchName(`importLibTmpBranch${name}`)
-            .then(name => {
-                branch = name;
-                argv = `node import ${filepath} -p ${project} -b ${branch}`.split(' ');
-                return this.project.createBranch(name, this.commitHash);
-            })
-            .then(() => ImportProject.main(argv))
-            .then(() => branch);
+        const branch = await this.getUniqueBranchName(`importLibTmpBranch${name}`);
+        const argv = `node import ${filepath} -p ${project} -b ${branch}`.split(' ');
+        await this.project.createBranch(branch, this.commitHash);
+        await ImportProject.main(argv);
+        return branch;
     };
 
-    ImportLibrary.prototype.createGMELibraryFromBranch = function (branchName, libraryInfo) {
+    ImportLibrary.prototype.createGMELibraryFromBranch = async function (branchName, libraryInfo) {
         const name = libraryInfo.name;
         const libraryData = {
             projectId: this.projectId,
@@ -103,25 +99,25 @@ define([
         };
 
         // Get the rootHash and commitHash from the commit on the tmp branch
-        return this.project.getHistory(branchName, 1)
-            .then(commits => {
-                let commit = commits[0];
-                let rootHash = commit.root;
+        const commits = await this.project.getHistory(branchName, 1);
+        let commit = commits[0];
+        let rootHash = commit.root;
 
-                libraryData.commitHash = commit._id;
-                return this.core.addLibrary(this.rootNode, name, rootHash, libraryData)
-                    .then(() => {return {name: branchName, hash: commit._id};});
-            });
+        libraryData.commitHash = commit._id;
+        await this.core.addLibrary(this.rootNode, name, rootHash, libraryData);
+        return {
+            name: branchName,
+            hash: commit._id
+        };
     };
 
     ImportLibrary.prototype.removeTemporaryBranch = function (branch) {
         return this.project.deleteBranch(branch.name, branch.hash);
     };
 
-    const values = obj => Object.keys(obj).map(k => obj[k]);
     ImportLibrary.prototype.updateMetaForLibrary = function (libraryInfo) {
         const nodeNames = libraryInfo.nodeTypes;
-        const libraryNodes = values(this.core.getLibraryMetaNodes(this.rootNode, libraryInfo.name));
+        const libraryNodes = this.getLibraryMetaNodes(libraryInfo.name);
 
         // Get each node from 'nodeTypes'
         const nodes = nodeNames
@@ -146,7 +142,7 @@ define([
     ImportLibrary.prototype.addLibraryInitCode = function (libraryInfo) {
         // Get the library fco node
         // Add the initialization code for this library;
-        const libraryNodes = values(this.core.getLibraryMetaNodes(this.rootNode, libraryInfo.name));
+        const libraryNodes = this.getLibraryMetaNodes(libraryInfo.name);
         const LibraryCode = this.getLibraryCodeNode();
         const FCO = this.getFCONode();
 
@@ -165,8 +161,12 @@ define([
         this.core.setPointer(node, 'library', libraryFCO);
     };
 
+    ImportLibrary.prototype.getLibraryMetaNodes = function (libraryName) {
+        return Object.values(this.core.getLibraryMetaNodes(this.rootNode, libraryName));
+    };
+
     ImportLibrary.prototype.getNonLibraryMeta = function () {
-        const meta = values(this.core.getAllMetaNodes(this.rootNode));
+        const meta = Object.values(this.core.getAllMetaNodes(this.rootNode));
         return meta
             .filter(node => !this.core.isLibraryElement(node));
     };

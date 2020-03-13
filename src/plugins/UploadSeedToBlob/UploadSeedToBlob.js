@@ -6,18 +6,20 @@ define([
     'module',
     'path',
     'fs',
-    'q',
+    'util',
     './metadata.json'
 ], function (
     PluginBase,
     module,
     path,
     fs,
-    Q,
+    util,
     pluginMetadata
 ) {
     'use strict';
 
+    const {promisify} = util;
+    const readFile = promisify(fs.readFile);
     const __dirname = path.dirname(module.uri);
     const PROJECT_ROOT = path.join(__dirname, '..', '..', '..');
     const SEEDS_DIR = path.join(PROJECT_ROOT, 'src', 'seeds');
