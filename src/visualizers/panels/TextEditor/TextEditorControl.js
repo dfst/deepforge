@@ -94,9 +94,6 @@ define([
             // Put new node's info into territory rules
             self._selfPatterns = {};
 
-            self._currentNodeHasAttr = self._client.getNode(self._currentNodeId)
-                .getValidAttributeNames().indexOf(self.ATTRIBUTE_NAME) > -1;
-
             if (typeof parentId === 'string') {
                 self.$btnModelHierarchyUp.show();
             } else {
@@ -106,6 +103,9 @@ define([
             self._currentNodeParentId = parentId;
 
             self._territoryId = self._client.addUI(self, function (events) {
+                const node = self._client.getNode(self._currentNodeId);
+                self._currentNodeHasAttr = node && node.getValidAttributeNames().includes(self.ATTRIBUTE_NAME);
+
                 self._eventCallback(events);
             });
             self._logger.debug(`TextEditor territory id is ${this._territoryId}`);
