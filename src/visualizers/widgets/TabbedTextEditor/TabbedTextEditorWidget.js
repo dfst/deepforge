@@ -22,7 +22,7 @@ define([
         canCreateTabs: true
     };
 
-    TabbedTextEditorWidget = function (logger, container, config) {
+    TabbedTextEditorWidget = function (logger, container, config={}) {
         this._logger = logger.fork('Widget');
 
         this.$el = container;
