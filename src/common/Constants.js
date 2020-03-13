@@ -17,7 +17,7 @@
         OPERATION: {
             LINE_OFFSET: 'lineOffset',
             DISPLAY_COLOR: 'displayColor',
-            DEPS: 'condaEnv',
+            ENV: 'condaEnv',
         },
 
         // DeepForge metadata creation in dist execution

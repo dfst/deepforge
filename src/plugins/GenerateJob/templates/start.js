@@ -2,12 +2,14 @@
 // A wrapper for the worker script which:
 //   - merges stdout, stderr
 //   - receives some commands and uploads intermediate data
-const spawn = require('child_process').spawn;
+const childProcess = require('child_process');
+const {spawn} = childProcess;
 const fs = require('fs');
 const {promisify} = require('util');
 const mkdir = promisify(fs.mkdir);
 const writeFile = promisify(fs.writeFile);
 const lstat = promisify(fs.lstat);
+const exec = promisify(childProcess.exec);
 const rm_rf = require('rimraf');
 const path = require('path');
 const Config = require('./config.json');
@@ -69,6 +71,8 @@ requirejs([
             cleanup();
         });
 
+        const envFile = path.join(__dirname, 'environment.yml');
+        const envName = await updateCondaEnvironment(envFile);
         const workerCacheDir = await prepareCache(process.env.DEEPFORGE_WORKER_CACHE);
         await prepareInputsOutputs();
         try {
@@ -84,11 +88,13 @@ requirejs([
         }
 
         // Run 'python main.py' and merge the stdout, stderr
-        job = spawn('python', ['main.py'], {detached: true});
+        const [cmd, args] = getJobStartCommand(envName);
+        job = spawn(cmd, args, {detached: true});
         job.stdout.on('data', onStdout.bind(null, job));
         job.stderr.on('data', onStderr);
         job.on('close', async code => {
             log('script finished w/ exit code:', code);
+            await deleteCondaEnvironment(envName);
             try {
                 exitCode = code;
                 await uploadOutputData(code);
@@ -98,6 +104,19 @@ requirejs([
             }
             checkFinished(job);
         });
+    }
+
+    function getJobStartCommand(envName) {
+        if (envName) {
+            return [
+                'conda',
+                ['run', '-n', envName, 'python', 'main.py']
+            ];
+        }
+        return [
+            'python',
+            ['main.py']
+        ];
     }
 
     async function uploadOutputData(exitCode) {
@@ -161,6 +180,52 @@ requirejs([
         } catch (err) {
             return false;
         }
+    }
+
+    async function updateCondaEnvironment(filepath) {
+        const exists = await existsFile(filepath);
+        if (exists) {
+            let name;
+            try {
+                name = await getCondaEnvironmentName();
+                await conda(`create -n ${name} --clone deepforge`);
+                await conda(`env update -n ${name} --file ${filepath}`);
+                return name;
+            } catch (err) {
+                deleteCondaEnvironment(name).catch(nop);
+                logger.warn(`Unable to update conda environment: ${err}`);
+            }
+        }
+    }
+
+    async function getCondaEnvironmentName() {
+        const basename = 'deepforge';
+        const envs = await getCondaEnvironments();
+        let newEnvName = basename;
+        let counter = Math.floor(1000*Math.random());
+        while (envs.includes(newEnvName)) {
+            newEnvName = `${basename}_${counter++}`;
+        }
+        return newEnvName;
+    }
+
+    async function getCondaEnvironments() {
+        const {stdout} = await conda('env list');
+        const names = stdout.split('\n')
+            .filter(line => !line.startsWith('#'))
+            .map(line => line.replace(/\s+.*$/, ''));
+
+        return names;
+    }
+
+    async function deleteCondaEnvironment(envName) {
+        if (envName) {
+            await conda(`env remove -n ${envName}`);
+        }
+    }
+
+    async function conda(command) {
+        return await exec(`conda ${command}`);
     }
 
     async function getData(cacheDir, ipath, dataInfo, config) {
@@ -312,4 +377,6 @@ requirejs([
         const relPath = await Storage.getCachePath(dataInfo, logger);
         return path.join(cacheDir, relPath);
     }
+
+    function nop() {}
 });
