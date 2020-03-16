@@ -1,8 +1,7 @@
 #!/usr/bin/env node
 const childProcess = require('child_process');
 const Conda = require('../utils/conda-utils');
-const yaml = require('js-yaml'),
-    os = require('os'),
+const os = require('os'),
     IS_WINDOWS = os.type() === 'WINDOWS_NT',
     SHELL = IS_WINDOWS ? true : '/bin/bash',
     HOME_DIR = os.homedir(),
@@ -36,10 +35,7 @@ var Command = require('commander').Command,
         return dir;
     };
 
-const ENV_FILE = path.join(__dirname, '..', 'environment.yml'),
-DEEPFORGE_CONDA_ENV =
-    yaml.safeLoad(fs.readFileSync(ENV_FILE)).name || process.env.DEEPFORGE_CONDA_ENV;
-
+const DEEPFORGE_CONDA_ENV = 'deepforge';
 const getDeepForgeServerCommand = function(useConda){
     if(useConda){
         return `${IS_WINDOWS ? 'conda': 'source'} activate ${DEEPFORGE_CONDA_ENV} && node`;

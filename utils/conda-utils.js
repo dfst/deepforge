@@ -79,14 +79,4 @@ const spawnSyncCondaProcess = function (args) {
     });
 };
 
-const runMain = function () {
-    Conda.check();
-    const ENV_FILE = path.join(__dirname, '..', 'environment.yml');
-    Conda.createOrUpdateEnvironment(ENV_FILE);
-};
-
-if (require.main === module) {
-    runMain();
-}
-
 module.exports = Conda;
