@@ -7,8 +7,7 @@ const {spawnSync, spawn} = require('child_process'),
     fs = require('fs'),
     yaml = require('js-yaml'),
     CONDA_COMMAND = 'conda',
-    SHELL = os.type() === 'Windows_NT' ? true: '/bin/bash',
-    ENV_FILE = path.join(__dirname, '..', 'environment.yml');
+    SHELL = os.type() === 'Windows_NT' ? true: '/bin/bash';
 
 const getCondaEnvs = function () {
     const envProcess = spawnSyncCondaProcess(['env', 'list']);
@@ -76,15 +75,6 @@ const spawnSyncCondaProcess = function (args) {
     });
 };
 
-const runMain = function () {
-    checkConda();
-    createOrUpdateEnvironment(ENV_FILE);
-};
-
 const CondaManager = {checkConda, createOrUpdateEnvironment};
-
-if (require.main === module) {
-    runMain();
-}
 
 module.exports = CondaManager;

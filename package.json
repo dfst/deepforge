@@ -9,7 +9,7 @@
   },
   "scripts": {
     "start": "node ./bin/deepforge start",
-    "postinstall": "node utils/reinstall-extensions.js && node utils/build-job-utils.js && node utils/conda-utils.js",
+    "postinstall": "node utils/reinstall-extensions.js && node utils/build-job-utils.js",
     "start-dev": "NODE_ENV=dev node ./bin/deepforge start",
     "start-authenticated": "NODE_ENV=production ./bin/deepforge start",
     "server": "node ./bin/deepforge start --server",
