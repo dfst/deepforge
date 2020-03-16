@@ -422,16 +422,10 @@ program
         try {
             if (cmd.server) {
                 const serverEnvName = createBoth ? `${name}-server` : name;
-                if (cmd.force) {
-                    await Conda.spawn(`env remove --name ${serverEnvName}`);
-                }
-                await createEnvFromDirs(serverEnvName, dirs, 'server');
+                await createEnvFromDirs(serverEnvName, dirs, 'server', cmd.force);
             }
             if (cmd.worker) {
-                if (cmd.force) {
-                    await Conda.spawn(`env remove --name ${name}`);
-                }
-                await createEnvFromDirs(name, dirs, 'worker');
+                await createEnvFromDirs(name, dirs, 'worker', cmd.force);
             }
         } catch (errOrExitCode) {
             const msg = '\n\nUnable to create environment.';
@@ -443,11 +437,12 @@ program
         }
     });
 
-async function createEnvFromDirs(name, dirs, type) {
+async function createEnvFromDirs(name, dirs, type, force=false) {
     const envFiles = getCondaEnvFiles(dirs, type);
 
     const baseEnvFile = `environment.${type}.yml`;
-    await Conda.spawn(`env create --name ${name} --file ${baseEnvFile}`);
+    const flags = `--name ${name} --file ${baseEnvFile}${force ? ' --force' : ''}`;
+    await Conda.spawn(`env create ${flags}`);
     for (let i = 0; i < envFiles.length; i++) {
         const envFile = envFiles[i];
         await Conda.spawn(`env update -n ${name} --file ${envFile}`);
