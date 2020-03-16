@@ -421,7 +421,7 @@ program
 
         try {
             if (cmd.server) {
-                const serverEnvName = createBoth ? name : `${name}-server`;
+                const serverEnvName = createBoth ? `${name}-server` : name;
                 if (cmd.force) {
                     await Conda.spawn(`env remove --name ${serverEnvName}`);
                 }
