@@ -12,6 +12,6 @@
   font-style: italic;
 }
 
-#additionalDataInfo {
+.artifact-data-info {
   resize: none;
 }
