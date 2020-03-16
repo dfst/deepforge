@@ -10,7 +10,7 @@ define([
 
     const ModalControl = function() {
         this.$modal = $(MODAL_HTML);
-        this.$modalTitle = this.$modal.find('#artifactName');
+        this.$modalTitle = this.$modal.find('.artifact-name');
         this.$createdAt = this.$modal.find('.created-at');
         this.$size = this.$modal.find('.size');
         this.$backend = this.$modal.find('.backend');
