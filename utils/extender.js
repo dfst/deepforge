@@ -210,7 +210,7 @@ function makeInstallFor(typeCfg) {
         // Re-generate template file
         saveExtensions();
     };
-};
+}
 
 //var PLUGIN_ROOT = path.join(__dirname, '..', 'src', 'plugins', 'Export');
 //makeInstallFor({
