@@ -153,7 +153,8 @@ let updateTemplateFile = (tplPath, type) => {
     fs.writeFileSync(dstPath, formatsIndex);
 };
 
-var makeInstallFor = function(typeCfg) {
+function makeInstallFor(typeCfg) {
+    allExtConfigs[typeCfg.type] = allExtConfigs[typeCfg.type] || {};
     var saveExtensions = () => {
         // regenerate the format.js file from the template
         var installedExts = values(allExtConfigs[typeCfg.type]),

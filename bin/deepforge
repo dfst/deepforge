@@ -415,7 +415,7 @@ program
 
         const extender = require('../utils/extender');
         const extensionData = extender.getExtensionsConfig();
-        const libraries = Object.values(extensionData.Library || {});
+        const libraries = Object.values(extensionData.Library);
         const dirs = libraries.map(lib => lib.project.root);
         const name = typeof cmd.name === 'string' ? cmd.name : 'deepforge';
 
