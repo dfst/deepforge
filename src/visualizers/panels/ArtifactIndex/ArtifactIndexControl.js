@@ -111,6 +111,10 @@ define([
     ArtifactIndexControl.prototype._getObjectDescriptor = async function (nodeId) {
         const node = this._client.getNode(nodeId);
         const dataInfo = this.tryGetDataInfo(node);
+        let backendName;
+        if(dataInfo) {
+            backendName = Storage.getStorageMetadata(dataInfo.backend).name;
+        }
 
         if (node && dataInfo) {
             const type = node.getAttribute('type');
@@ -123,6 +127,7 @@ define([
                 name: node.getAttribute('name'),
                 createdAt: node.getAttribute('createdAt'),
                 parentId: node.getParentId(),
+                backendName: backendName,
                 dataInfo,
                 size,
             };

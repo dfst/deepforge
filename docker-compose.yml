@@ -1,5 +1,6 @@
---- 
-services: 
+---
+version: "3"
+services:
   mongo: 
     image: mongo
     volumes: 
@@ -7,16 +8,12 @@ services:
   server: 
     environment: 
       - "MONGO_URI=mongodb://mongo:27017/deepforge"
-    image: deepforge/server
+      - "DEEPFORGE_HOST=https://dev.deepforge.org"
+    image: deepforge/kitchen-sink:latest
     ports: 
       - "8888:8888"
     volumes: 
       - "$HOME/.deepforge/blob:/data/blob"
+      - "${TOKEN_KEYS_DIR}:/deepforge/token_keys"
     depends_on:
       - mongo
-  worker: 
-    command: "http://server:8888"
-    image: deepforge/worker
-    depends_on:
-      - server
-version: "2"

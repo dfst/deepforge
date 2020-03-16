@@ -1,4 +1,4 @@
-name: Push Deepforge Server(Latest) to Docker Hub
+name: Push Deepforge Server(Latest) to Docker Hub and Deploy dev.deepforge.org
 
 on:
   push:
@@ -27,3 +27,14 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
           tags: "latest"
           dockerfile: Dockerfile.kitchensink
+
+      - name: Deploy (dev.deepforge.org)
+        uses: appleboy/ssh-action@master
+        with:
+          username: ${{ secrets.USERNAME }}
+          host: ${{ secrets.HOST }}
+          key: ${{ secrets.KEY }}
+          port: ${{ secrets.PORT }}
+          passphrase: ${{ secrets.PASSPHRASE }}
+          script: |
+            bash -ic deploy-deepforge
