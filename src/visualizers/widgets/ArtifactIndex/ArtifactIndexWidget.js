@@ -89,6 +89,7 @@ define([
             });
 
             node.$info.on('click', event => {
+                event.stopPropagation();
                 this.modalControl.showModal(desc);
             });
         }

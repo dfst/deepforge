@@ -77,10 +77,6 @@ define([
             this._client.setAttribute(id, 'name', newName);
             this._client.completeTransaction();
         };
-
-        this._widget.getModalInfo = function (node) {
-            return [node.name, this._humanFileSize(node.size), t]
-        };
     };
 
     /* * * * * * * * Visualizer content update callbacks * * * * * * * */

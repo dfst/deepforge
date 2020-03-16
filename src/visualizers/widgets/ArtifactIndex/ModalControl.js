@@ -23,7 +23,7 @@ define([
         this.$size.text(node.size || 'unknown');
         this.$backend.text(node.backendName || 'unknown');
         this.$createdAt.text(createdAt);
-        this.$dataInfo.text(`${JSON.stringify(node.dataInfo, null,2)}`)
+        this.$dataInfo.text(`${JSON.stringify(node.dataInfo, null,2)}`);
         this.$modal.modal({show: true});
     };
 
