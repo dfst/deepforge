@@ -96,11 +96,21 @@ define([
     TextEditorWidget.prototype._initialize = function () {
         // set widget class
         this._el.addClass(WIDGET_CLASS);
+        const selector = `.${WIDGET_CLASS}`;
 
         // Add context menu
-        $.contextMenu('destroy', '.' + WIDGET_CLASS);
+        $.contextMenu('destroy', selector);
+        this._el.contextmenu(event => {
+            const altMenu = event.shiftKey || event.ctrlKey;
+            if (altMenu) {
+                this._el.contextMenu({x: event.pageX, y: event.pageY});
+                event.preventDefault();
+                event.stopPropagation();
+            }
+        });
         $.contextMenu({
-            selector: '.' + WIDGET_CLASS,
+            selector: selector,
+            trigger: 'none',
             build: $trigger => {
                 return {
                     items: this.getMenuItemsFor($trigger)
