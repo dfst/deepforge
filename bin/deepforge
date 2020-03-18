@@ -1,6 +1,9 @@
 #!/usr/bin/env node
 const childProcess = require('child_process');
 const Conda = require('../utils/conda-utils');
+const {promisify} = require('util');
+const fs = require('fs');
+const writeFile = promisify(fs.writeFile);
 const os = require('os'),
     IS_WINDOWS = os.type() === 'WINDOWS_NT',
     SHELL = IS_WINDOWS ? true : '/bin/bash',
@@ -14,7 +17,6 @@ var Command = require('commander').Command,
     Q = require('q'),
     execSync = childProcess.execSync,
     path = require('path'),
-    fs = require('fs'),
     pkgJson = require('../package.json'),
     version = pkgJson.version,
     exists = require('exists-file'),
@@ -413,7 +415,8 @@ program
         const extensionData = extender.getExtensionsConfig();
         const libraries = Object.values(extensionData.Library);
         const dirs = libraries.map(lib => lib.project.root);
-        const name = typeof cmd.name === 'string' ? cmd.name : 'deepforge';
+        const isUpdatingDefault = typeof cmd.name !== 'string';
+        const name = isUpdatingDefault ? 'deepforge' : cmd.name;
 
         try {
             if (cmd.server) {
@@ -422,6 +425,9 @@ program
             }
             if (cmd.worker) {
                 await createEnvFromDirs(name, dirs, 'worker', cmd.force);
+                if (isUpdatingDefault) {
+                    await exportWorkerEnvForJobs(name);
+                }
             }
         } catch (errOrExitCode) {
             const msg = '\n\nUnable to create environment.';
@@ -452,6 +458,13 @@ function getCondaEnvFiles(dirs, type) {
         .filter(filepath => exists.sync(filepath));
 
     return envFiles;
+}
+
+async function exportWorkerEnvForJobs(name) {
+    const contents = await Conda.export(name);
+    const filename = path.join(__dirname, '..', 'src', 'plugins', 'GenerateJob',
+        'templates', 'environment.worker.yml');
+    await writeFile(filename, contents);
 }
 
 // user-management
