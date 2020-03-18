@@ -3,7 +3,10 @@
 'use strict';
 const Conda = {};
 
-const {spawnSync, spawn} = require('child_process'),
+const {promisify} = require('util'),
+    childProcess = require('child_process'),
+    exec = promisify(childProcess.exec),
+    {spawnSync, spawn} = childProcess,
     os = require('os'),
     path = require('path'),
     fs = require('fs'),
@@ -71,6 +74,11 @@ Conda.spawn = function (command) {
             resolve();
         });
     });
+};
+
+Conda.export = async function (name) {
+    const {stdout} = await exec(`${CONDA_COMMAND} env export -n ${name}`);
+    return stdout;
 };
 
 const spawnSyncCondaProcess = function (args) {
