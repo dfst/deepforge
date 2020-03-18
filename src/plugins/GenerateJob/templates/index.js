@@ -9,6 +9,7 @@ define([
     'text!./serialize.ejs',
     'text!./deserialize.ejs',
     'text!./utils.build.js',
+    'text!./environment.worker.yml',
 ], function(
     START,
     RUN_DEBUG,
@@ -19,6 +20,7 @@ define([
     SERIALIZE,
     DESERIALIZE,
     UTILS,
+    WORKER_ENV,
 ) {
 
     return {
@@ -31,5 +33,6 @@ define([
         DEEPFORGE_INIT,
         DESERIALIZE,
         UTILS,
+        WORKER_ENV,
     };
 });

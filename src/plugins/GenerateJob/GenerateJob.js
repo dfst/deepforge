@@ -363,6 +363,7 @@ define([
         if (condaEnv) {
             files.addFile('environment.yml', condaEnv);
         }
+        files.addFile('environment.worker.yml', Templates.WORKER_ENV);
 
         const filename = GenerateJob.toSnakeCase(content.name);
         files.addFile(`operations/${filename}.py`, content.code);

@@ -71,8 +71,7 @@ requirejs([
             cleanup();
         });
 
-        const envFile = path.join(__dirname, 'environment.yml');
-        const envName = await updateCondaEnvironment(envFile);
+        const envName = await prepareCondaEnvironment(__dirname);
         const workerCacheDir = await prepareCache(process.env.DEEPFORGE_WORKER_CACHE);
         await prepareInputsOutputs();
         try {
@@ -104,6 +103,34 @@ requirejs([
             }
             checkFinished(job);
         });
+    }
+
+    async function prepareCondaEnvironment(jobDir) {
+        if (!await hasConda()) {
+            return null;
+        }
+        const envs = await getCondaEnvironments();
+        if (!envs.includes('deepforge')) {
+            await createBaseEnvironment(jobDir);
+        }
+        await updateCondaEnvironment(jobEnvFile);
+        const jobEnvFile = path.join(jobDir, 'environment.yml');
+        const envName = await updateCondaEnvironment(jobEnvFile);
+        return envName;
+    }
+
+    async function hasConda() {
+        try {
+            await conda('-V');
+            return true;
+        } catch (err) {
+            return false;
+        }
+    }
+
+    async function createBaseEnvironment(jobDir) {
+        const envFile = path.join(jobDir, 'environment.worker.yml');
+        await conda(`create -n ${name} -f ${envFile}`);
     }
 
     function getJobStartCommand(envName) {
@@ -187,7 +214,7 @@ requirejs([
         if (exists) {
             let name;
             try {
-                name = await getCondaEnvironmentName();
+                name = await getCondaEnvironmentName('deepforge');
                 await conda(`create -n ${name} --clone deepforge`);
                 await conda(`env update -n ${name} --file ${filepath}`);
                 return name;
@@ -198,8 +225,7 @@ requirejs([
         }
     }
 
-    async function getCondaEnvironmentName() {
-        const basename = 'deepforge';
+    async function getCondaEnvironmentName(basename) {
         const envs = await getCondaEnvironments();
         let newEnvName = basename;
         let counter = Math.floor(1000*Math.random());
