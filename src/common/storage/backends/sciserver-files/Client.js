@@ -1,11 +1,13 @@
 /* globals define */
 define([
     '../StorageClient',
+    'deepforge/sciserver-auth',
 ], function (
     StorageClient,
+    login,
 ) {
+    login = login.memoize();
     const BASE_URL = 'https://apps.sciserver.org/fileservice/api/';
-    const LOGIN_URL = 'https://apps.sciserver.org/login-portal/keystone/v3/tokens';
     const SciServerFiles = function (id, name, logger, config = {}) {
         StorageClient.apply(this, arguments);
         this.username = config.username;
@@ -75,39 +77,10 @@ define([
     };
 
     SciServerFiles.prototype.fetch = async function (url, opts = {}) {
+        const token = await login(this.username, this.password);
         opts.headers = opts.headers || {};
-        opts.headers['X-Auth-Token'] = await this.login();
+        opts.headers['X-Auth-Token'] = token;
         return StorageClient.prototype.fetch.call(this, url, opts);
-    };
-
-    SciServerFiles.prototype.login = async function () {
-        const url = `${LOGIN_URL}?TaskName=DeepForge.Authentication.Login`;
-        const opts = {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: this.getLoginBody()
-        };
-        const response = await StorageClient.prototype.fetch.call(this, url, opts);
-        return response.headers.get('X-Subject-Token');
-    };
-
-    SciServerFiles.prototype.getLoginBody = function (username, password) {
-        username = username || this.username;
-        password = password || this.password;
-        return JSON.stringify({
-            auth: {
-                identity: {
-                    password: {
-                        user: {
-                            name: username,
-                            password: password
-                        }
-                    }
-                }
-            }
-        });
     };
 
     SciServerFiles.prototype.getURL = function (url) {

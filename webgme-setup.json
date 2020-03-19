@@ -325,6 +325,11 @@
         "src": "src/routers/ExecPulse",
         "test": "test/routers/ExecPulse",
         "mount": "execution/pulse"
+      },
+      "SciServerAuth": {
+        "src": "src/routers/SciServerAuth",
+        "test": "test/routers/SciServerAuth",
+        "mount": "routers/SciServerAuth"
       }
     }
   },

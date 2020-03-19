@@ -46,6 +46,11 @@ config.rest.components['ExecPulse'] = {
   mount: 'execution/pulse',
   options: {}
 };
+config.rest.components['SciServerAuth'] = {
+  src: __dirname + '/../src/routers/SciServerAuth/SciServerAuth.js',
+  mount: 'routers/SciServerAuth',
+  options: {}
+};
 
 // Visualizer descriptors
 config.visualization.visualizerDescriptors.push(__dirname + '/../src/visualizers/Visualizers.json');

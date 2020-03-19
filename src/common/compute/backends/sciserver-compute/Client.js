@@ -7,6 +7,7 @@ define([
     'module',
     'path',
     'node-fetch',
+    'deepforge/sciserver-auth',
     'text!./files/prepare-and-run.sh',
 ], function(
     ComputeClient,
@@ -16,13 +17,16 @@ define([
     module,
     path,
     fetch,
+    login,
     PREPARE_AND_RUN,
 ) {
+    login = login.memoize();
     const Headers = fetch.Headers;
     const POLL_INTERVAL = 1000;
     const SciServerClient = function(logger, blobClient, config) {
         ComputeClient.apply(this, arguments);
-        this.token = config.token;
+        this.username = config.username;
+        this.password = config.password;
         this.volume = config.volume;
         this.computeDomain = config.computeDomain;
         this.previousJobState = {};
@@ -66,7 +70,7 @@ define([
         const dirname = `execution-files/${hash}`;
         const metadata = await this.blobClient.getMetadata(hash);
         const config =  {
-            token: this.token,
+            token: await this.token(),
             volume: this.volume,
         };
         const storage = await Storage.getClient('sciserver-files', this.logger, config);
@@ -106,10 +110,15 @@ define([
         return await response.json();
     };
 
-    SciServerClient.prototype.fetch = function(url, opts={}) {
+    SciServerClient.prototype.fetch = async function(url, opts={}) {
+        const token = await this.token();
         opts.headers = opts.headers || new Headers();
-        opts.headers.append('X-Auth-Token', this.token);
+        opts.headers.append('X-Auth-Token', token);
         return fetch(url, opts);
+    };
+
+    SciServerClient.prototype.token = async function() {
+        return login(this.username, this.password);
     };
 
     SciServerClient.prototype.getJobState = async function(jobInfo) {
@@ -118,7 +127,7 @@ define([
         const opts = {
             headers: new Headers(),
         };
-        opts.headers.append('X-Auth-Token', this.token);
+        opts.headers.append('X-Auth-Token', await this.token());
 
         const response = await fetch(url, opts);
         const {status} = response;
