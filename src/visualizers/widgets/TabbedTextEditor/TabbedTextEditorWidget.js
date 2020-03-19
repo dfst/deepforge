@@ -22,12 +22,13 @@ define([
         canCreateTabs: true
     };
 
-    TabbedTextEditorWidget = function (logger, container, config={}) {
+    TabbedTextEditorWidget = function (logger, container, config) {
         this._logger = logger.fork('Widget');
 
         this.$el = container;
 
         this.tabs = [];
+        config = config || {};
         this.config = _.extend({}, DEFAULT_CONFIG, config);
         this.config.message = _.extend({}, DEFAULT_CONFIG.message, config.message);
         this._initialize(this.config);
