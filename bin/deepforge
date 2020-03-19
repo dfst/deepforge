@@ -35,7 +35,7 @@ var Command = require('commander').Command,
         return dir;
     };
 
-const DEEPFORGE_CONDA_ENV = 'deepforge';
+const DEEPFORGE_CONDA_ENV = 'deepforge-server';
 const getDeepForgeServerCommand = function(useConda){
     if(useConda){
         return `${IS_WINDOWS ? 'conda': 'source'} activate ${DEEPFORGE_CONDA_ENV} && node`;
