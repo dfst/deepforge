@@ -136,5 +136,17 @@
     "title": "PlotlyGraph",
     "panel": "panels/PlotlyGraph/PlotlyGraphPanel",
     "DEBUG_ONLY": false
+  },
+  {
+    "id": "OperationSecondaryEditor",
+    "title": "OperationSecondaryEditor",
+    "panel": "panels/OperationSecondaryEditor/OperationSecondaryEditorPanel",
+    "DEBUG_ONLY": false
+  },
+  {
+    "id": "OperationDepEditor",
+    "title": "OperationDepEditor",
+    "panel": "panels/OperationDepEditor/OperationDepEditorPanel",
+    "DEBUG_ONLY": false
   }
 ]

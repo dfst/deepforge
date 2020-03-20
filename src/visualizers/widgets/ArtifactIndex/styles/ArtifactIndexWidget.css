@@ -11,3 +11,7 @@
 .artifact-index .type {
   font-style: italic;
 }
+
+.artifact-data-info {
+  resize: none;
+}

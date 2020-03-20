@@ -359,6 +359,11 @@ define([
         content.references = references;
 
         files.addFile('main.py', _.template(Templates.MAIN)(content));
+        const condaEnv = this.core.getAttribute(node, CONSTANTS.OPERATION.ENV);
+        if (condaEnv) {
+            files.addFile('environment.yml', condaEnv);
+        }
+        files.addFile('environment.worker.yml', Templates.WORKER_ENV);
 
         const filename = GenerateJob.toSnakeCase(content.name);
         files.addFile(`operations/${filename}.py`, content.code);

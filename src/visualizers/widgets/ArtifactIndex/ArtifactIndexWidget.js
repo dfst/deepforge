@@ -3,12 +3,14 @@
 
 define([
     './ModelItem',
+    './ArtifactModal',
     'panel/FloatingActionButton/styles/Materialize',
     'deepforge/storage/index',
     'text!./Table.html',
     'css!./styles/ArtifactIndexWidget.css'
 ], function (
     ModelItem,
+    ArtifactModal,
     Materialize,
     Storage,
     TABLE_HTML
@@ -38,6 +40,7 @@ define([
         this.$content = $(TABLE_HTML);
         this.$el.append(this.$content);
         this.$list = this.$content.find('.list-content');
+        this.artifactModal = new ArtifactModal();
     };
 
     ArtifactIndexWidget.prototype.onWidgetContainerResize = nop;
@@ -83,6 +86,11 @@ define([
                         }
                     }
                 });
+            });
+
+            node.$info.on('click', event => {
+                event.stopPropagation();
+                this.artifactModal.showModal(desc);
             });
         }
     };

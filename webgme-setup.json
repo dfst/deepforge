@@ -263,6 +263,20 @@
         "panel": "src/visualizers/panels/PlotlyGraph",
         "secondary": false,
         "widget": "src/visualizers/widgets/PlotlyGraph"
+      },
+      "OperationSecondaryEditor": {
+        "src": "panels/OperationSecondaryEditor/OperationSecondaryEditorPanel",
+        "title": "OperationSecondaryEditor",
+        "panel": "src/visualizers/panels/OperationSecondaryEditor",
+        "secondary": false,
+        "widget": "src/visualizers/widgets/OperationSecondaryEditor"
+      },
+      "OperationDepEditor": {
+        "src": "panels/OperationDepEditor/OperationDepEditorPanel",
+        "title": "OperationDepEditor",
+        "panel": "src/visualizers/panels/OperationDepEditor",
+        "secondary": false,
+        "widget": "src/visualizers/widgets/OperationDepEditor"
       }
     },
     "addons": {},

@@ -114,19 +114,14 @@ define([
                 var opNode = this._client.getNode(opId),
                     attrs,
                     allAttrs = {},
-                    hiddenAttrs = [
-                        CONSTANTS.LINE_OFFSET,
-                        CONSTANTS.DISPLAY_COLOR,
-                        'code',
-                        'name'
-                    ],
                     i;
 
                 opNode.getValidAttributeNames().concat(opNode.getAttributeNames())
                     .forEach(attr => allAttrs[attr] = true);
 
                 // Remove skip values
-                hiddenAttrs.forEach(attr => delete allAttrs[attr]);
+                CONSTANTS.OPERATION.RESERVED_ATTRS
+                    .forEach(attr => delete allAttrs[attr]);
 
                 attrs = Object.keys(allAttrs);
                 for (i = attrs.length; i--;) {

@@ -79,7 +79,7 @@ define([
 
     PipelineEditorWidget.prototype.onCreateInitialNode = function() {
         var initialNodes = this.getValidInitialNodes().map(node => {
-            var colorAttr = node.attributes[CONSTANTS.DISPLAY_COLOR];
+            var colorAttr = node.attributes[CONSTANTS.OPERATION.DISPLAY_COLOR];
             node.decoratorOpts = {color: colorAttr && colorAttr.value};
             return {node};
         });

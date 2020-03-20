@@ -20,18 +20,14 @@ define([
         WIDGET_CLASS = 'text-editor',
         LINE_COMMENT = {
             python: '#',
-            lua: '--'
-        },
-        DEFAULT_SETTINGS = {
-            keybindings: 'default',
-            theme: 'solarized_dark',
-            fontSize: 12
+            lua: '--',
+            yaml: '#'
         };
 
-    TextEditorWidget = function (logger, container) {
+    TextEditorWidget = function (logger, container, config={}) {
         this.logger = logger.fork('Widget');
 
-        this.language = this.language || 'python';
+        this.language = this.language || config.language || 'python';
         this._el = container;
         this._el.css({height: '100%'});
         this.$editor = $('<div/>');
@@ -69,7 +65,7 @@ define([
     };
 
     TextEditorWidget.prototype.addExtensions = function () {
-        require(['ace/ext/language_tools'], () => {
+        ace.require(['ace/ext/language_tools'], () => {
             this.editor.setOptions(this.getEditorOptions());
             this.completer = this.getCompleter();
             this.editor.completers = [this.completer];
@@ -100,11 +96,21 @@ define([
     TextEditorWidget.prototype._initialize = function () {
         // set widget class
         this._el.addClass(WIDGET_CLASS);
+        const selector = `.${WIDGET_CLASS}`;
 
         // Add context menu
-        $.contextMenu('destroy', '.' + WIDGET_CLASS);
+        $.contextMenu('destroy', selector);
+        this._el.contextmenu(event => {
+            const altMenu = event.shiftKey || event.ctrlKey;
+            if (altMenu) {
+                this._el.contextMenu({x: event.pageX, y: event.pageY});
+                event.preventDefault();
+                event.stopPropagation();
+            }
+        });
         $.contextMenu({
-            selector: '.' + WIDGET_CLASS,
+            selector: selector,
+            trigger: 'none',
             build: $trigger => {
                 return {
                     items: this.getMenuItemsFor($trigger)
@@ -112,12 +118,19 @@ define([
             }
         });
 
-        // Create the editor settings
-        this.editorSettings = _.extend({}, DEFAULT_SETTINGS),
+        this.editorSettings = _.extend({}, this.getDefaultEditorOptions()),
         ComponentSettings.resolveWithWebGMEGlobal(
             this.editorSettings,
             this.getComponentId()
         );
+    };
+
+    TextEditorWidget.prototype.getDefaultEditorOptions = function () {
+        return {
+            keybindings: 'default',
+            theme: 'solarized_dark',
+            fontSize: 12
+        };
     };
 
     TextEditorWidget.prototype.getComponentId = function () {

@@ -1,22 +1,44 @@
-# Dockerfile for running the server itself
-FROM node:8.9.0
-MAINTAINER Brian Broll <brian.broll@gmail.com>
+# This docker file is to create a docker Image of a deepforge server
+FROM node:12
+
+EXPOSE 8888
+
+LABEL maintainer1.name="Brian Broll"\
+      maintainer1.email="brian.broll@gmail.com"
+
+LABEL maintainer2.name="Umesh Timalsina"\
+      maintainer2.email="umesh.timalsina@vanderbilt.edu"
+
+SHELL ["/bin/bash", "-c"]
+
+ENV MINICONDA Miniconda3-latest-Linux-x86_64.sh
+
+ENV DEEPFORGE_CONDA_ENV deepforge
+
+ADD . /deepforge
+
+WORKDIR /tmp
+
+RUN curl -O  https://repo.continuum.io/miniconda/$MINICONDA && bash $MINICONDA -b && rm -f $MINICONDA
+
+ENV PATH /root/miniconda3/bin:$PATH
+ENV NODE_ENV production
+
+WORKDIR /deepforge
+
+RUN conda update conda -yq
 
 RUN echo '{"allow_root": true}' > /root/.bowerrc && mkdir -p /root/.config/configstore/ && \
     echo '{}' > /root/.config/configstore/bower-github.json
 
-RUN mkdir /deepforge
-ADD . /deepforge
-WORKDIR /deepforge
+RUN npm install -g npm
 
-RUN npm install
+RUN npm config set unsafe-perm true && npm install && ln -s /deepforge/bin/deepforge /usr/local/bin
 
-RUN ln -s /deepforge/bin/deepforge /usr/local/bin
+RUN echo "source activate ${DEEPFORGE_CONDA_ENV}" > ~/.bashrc
 
-EXPOSE 8888
-
-# Set up the data storage
+#Set up the data storage
 RUN deepforge config blob.dir /data/blob && \
     deepforge config mongo.dir /data/db
 
-CMD ["deepforge", "start", "--server"]
+ENTRYPOINT source activate ${DEEPFORGE_CONDA_ENV} && deepforge start --server

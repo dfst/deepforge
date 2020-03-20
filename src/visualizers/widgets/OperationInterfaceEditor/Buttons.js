@@ -123,7 +123,7 @@ define([
 
     SetColor.prototype.onColorChanged = function(color) {
         // Set the displayColor attribute to the given hex value
-        this.context.saveAttributeForNode(this.item.id, Constants.DISPLAY_COLOR, color);
+        this.context.saveAttributeForNode(this.item.id, Constants.OPERATION.DISPLAY_COLOR, color);
     };
 
     SetColor.prototype._render = function() {

@@ -2,28 +2,42 @@
 
 define([
     'deepforge/viz/TextPrompter',
+    'underscore',
     'css!./styles/TabbedTextEditorWidget.css'
 ], function (
-    TextPrompter
+    TextPrompter,
+    _
 ) {
     'use strict';
 
     var TabbedTextEditorWidget,
         WIDGET_CLASS = 'tabbed-text-editor';
 
-    TabbedTextEditorWidget = function (logger, container) {
+    const DEFAULT_CONFIG = {
+        message: {
+            new: 'New Module Name (eg. module.py)',
+            empty: 'No Existing Python Modules...',
+            rename: 'Change Module Name (eg. module.py)',
+        },
+        canCreateTabs: true
+    };
+
+    TabbedTextEditorWidget = function (logger, container, config) {
         this._logger = logger.fork('Widget');
 
         this.$el = container;
 
         this.tabs = [];
-        this._initialize();
+        config = config || {};
+        this.config = _.extend({}, DEFAULT_CONFIG, config);
+        this.config.message = _.extend({}, DEFAULT_CONFIG.message, config.message);
+        this._initialize(this.config);
         this.activeTabId = null;
 
         this._logger.debug('ctor finished');
     };
 
-    TabbedTextEditorWidget.prototype._initialize = function () {
+    TabbedTextEditorWidget.prototype._initialize = function (config) {
         // set widget class
         this.$el.addClass(WIDGET_CLASS);
 
@@ -31,27 +45,29 @@ define([
         const tabContainer = $('<div>', {class: 'tab'});
         this.$tabs = $('<div>', {class: 'node-tabs'});
         tabContainer.append(this.$tabs);
-        this.addNewFileBtn(tabContainer);
+        if (config.canCreateTabs) {
+            this.addNewFileBtn(tabContainer, config);
+        }
 
         this.$el.append(tabContainer);
         this.$el.append(`
         <div class="content">
-            <div class="empty-message">No Existing Python Modules...</div>
+            <div class="empty-message">"${config.message.empty}"</div>
             <div class="current-tab-content"></div>
         </div>`);
         this.$tabContent = this.$el.find('.current-tab-content');
     };
 
-    TabbedTextEditorWidget.prototype.addNewFileBtn = function (cntr) {
+    TabbedTextEditorWidget.prototype.addNewFileBtn = function (cntr, config) {
         this.$newTab = $('<button>', {class: 'tablinks'});
         this.$newTab.append('<span class="oi oi-plus" title="Create new file..." aria-hidden="true"></span>');
-        this.$newTab.click(() => this.onAddNewClicked());
+        this.$newTab.click(() => this.onAddNewClicked(config.message.new));
         cntr.append(this.$newTab);
     };
 
-    TabbedTextEditorWidget.prototype.onAddNewClicked = function () {
+    TabbedTextEditorWidget.prototype.onAddNewClicked = function (message) {
         // Prompt the user for the name of the new code file
-        return TextPrompter.prompt('New Module Name (eg. module.py)')
+        return TextPrompter.prompt(message)
             .then(name => this.addNewFile(name));
     };
 
@@ -60,12 +76,14 @@ define([
     };
 
     // Adding/Removing/Updating items
-    TabbedTextEditorWidget.prototype.renameFile = function (id) {
-        return TextPrompter.prompt('Change Module Name (eg. module.py)')
-            .then(name => this.setNodeName(id, name));
+    TabbedTextEditorWidget.prototype.renameTab = function (id) {
+        return TextPrompter.prompt(this.config.message.rename)
+            .then(name => this.setTabName(id, name));
     };
 
-    TabbedTextEditorWidget.prototype.addNode = function (desc) {
+    TabbedTextEditorWidget.prototype.addTab = function (desc) {
+        const {supportedActions={}} = desc;
+
         if (desc) {
             // Add node to a table of tabs
             const tab = document.createElement('button');
@@ -74,17 +92,21 @@ define([
 
             const name = document.createElement('span');
             name.innerHTML = desc.name;
-            name.ondblclick = event => {
-                this.renameFile(desc.id);
-                event.stopPropagation();
-            };
+            if (supportedActions.rename !== false) {
+                name.ondblclick = event => {
+                    this.renameTab(desc.id);
+                    event.stopPropagation();
+                };
+            }
 
             tab.appendChild(name);
-            const rmBtn = document.createElement('span');
-            rmBtn.className = 'oi oi-circle-x remove-file';
-            rmBtn.setAttribute('title', 'Delete file');
-            rmBtn.onclick = () => this.onDeleteNode(desc.id);
-            tab.appendChild(rmBtn);
+            if (supportedActions.delete !== false) {
+                const rmBtn = document.createElement('span');
+                rmBtn.className = 'oi oi-circle-x remove-file';
+                rmBtn.setAttribute('title', 'Delete file');
+                rmBtn.onclick = () => this.onDeleteTab(desc.id);
+                tab.appendChild(rmBtn);
+            }
 
             this.$tabs.append(tab);
             tab.onclick = () => this.setActiveTab(desc.id);
@@ -118,14 +140,14 @@ define([
         this.onTabSelected(id);
     };
 
-    TabbedTextEditorWidget.prototype.isActiveNode = function (gmeId) {
-        const tab = this.getTab(gmeId);
+    TabbedTextEditorWidget.prototype.isActiveTab = function (tabId) {
+        const tab = this.getTab(tabId);
         return tab && tab.$el.className.includes('active');
     };
 
-    TabbedTextEditorWidget.prototype.removeNode = function (gmeId) {
-        const tab = this.getTab(gmeId);
-        const needsActiveUpdate = this.isActiveNode(gmeId);
+    TabbedTextEditorWidget.prototype.removeTab = function (tabId) {
+        const tab = this.getTab(tabId);
+        const needsActiveUpdate = this.isActiveTab(tabId);
 
         tab.$el.remove();
 
@@ -144,7 +166,7 @@ define([
         }
     };
 
-    TabbedTextEditorWidget.prototype.updateNode = function (desc) {
+    TabbedTextEditorWidget.prototype.updateTab = function (desc) {
         const tab = this.getTab(desc.id);
         if (tab) {
             tab.$name.innerHTML = desc.name;

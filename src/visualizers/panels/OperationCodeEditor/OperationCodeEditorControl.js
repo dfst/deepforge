@@ -154,18 +154,12 @@ define([
 
     OperationCodeEditorControl.prototype.getOperationAttributes = function () {
         var node = this._client.getNode(this._currentNodeId),
-            attrs = node.getValidAttributeNames(),
-            rmAttrs = ['name', 'code', CONSTANTS.LINE_OFFSET],
-            i;
+            attrs = node.getValidAttributeNames();
 
-        for (var j = rmAttrs.length; j--;) {
-            i = attrs.indexOf(rmAttrs[j]);
-            if (i > -1) {
-                attrs.splice(i, 1);
-            }
-        }
-
-        return attrs;
+        return _.difference(
+            attrs,
+            CONSTANTS.OPERATION.RESERVED_ATTRS
+        );
     };
 
     OperationCodeEditorControl.prototype.executeOrStopJob = function () {
@@ -197,7 +191,8 @@ define([
     OperationCodeEditorControl.prototype.onOffsetNodeEvents = function () {
         var node = this._client.getNode(this._offsetNodeId);
         if (node) {  // wasn't a 'delete' event
-            this._widget.setLineOffset(node.getAttribute(CONSTANTS.LINE_OFFSET) || 0);
+            const lineOffset = node.getAttribute(CONSTANTS.OPERATION.LINE_OFFSET);
+            this._widget.setLineOffset(lineOffset || 0);
         }
     };
 

@@ -10,12 +10,15 @@
         root.CONSTANTS = factory();
     }
 }(this, function() {
-    return {
+    const Constants = {
         CONTAINED_LAYER_SET: 'addLayers',
         CONTAINED_LAYER_INDEX: 'index',
 
-        LINE_OFFSET: 'lineOffset',
-        DISPLAY_COLOR: 'displayColor',
+        OPERATION: {
+            LINE_OFFSET: 'lineOffset',
+            DISPLAY_COLOR: 'displayColor',
+            ENV: 'condaEnv',
+        },
 
         // DeepForge metadata creation in dist execution
         START_CMD: 'deepforge-cmd',
@@ -26,15 +29,6 @@
             CREATE: 'IMG-C',
             UPDATE: 'IMG-U',
             NAME: 'IMAGE-N'  // No upload required
-        },
-
-        GRAPH_CREATE: 'GRAPH',
-        PLOT_UPDATE: 'PLOT',
-        GRAPH_PLOT: 'PLOT',
-        GRAPH_CREATE_LINE: 'LINE',
-        GRAPH_LABEL_AXIS: {
-            X: 'X',
-            Y: 'Y'
         },
 
         // Code Generation Constants
@@ -56,4 +50,8 @@
         // Job stdout update
         STDOUT_UPDATE: 'stdout_update'
     };
+    Constants.OPERATION.RESERVED_ATTRS = Object.values(Constants.OPERATION)
+        .concat(['name', 'code']);
+
+    return Constants;
 }));

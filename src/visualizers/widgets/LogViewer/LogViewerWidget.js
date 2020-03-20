@@ -133,11 +133,17 @@ define([
         }
     };
 
-    LogViewerWidget.prototype.getEditorOptions = function() {
-        return {
-            fontFamily: 'bitstream vera sans mono',
-            fontSize: '10pt'
-        };
+    LogViewerWidget.prototype.getDefaultEditorOptions = function() {
+        const opts = TextEditorWidget.prototype.getDefaultEditorOptions.call(this);
+        opts.fontFamily = 'bitstream vera sans mono';
+        opts.fontSize = '10pt';
+        return opts;
+    };
+
+    LogViewerWidget.prototype.getMenuItemsFor = function() {
+        const menu = TextEditorWidget.prototype.getMenuItemsFor.call(this);
+        delete menu.setKeybindings;
+        return menu;
     };
 
     return LogViewerWidget;

@@ -20,7 +20,6 @@ define([
 
         // Initialize core collections and variables
         this._widget = options.widget;
-        this.editor = options.editor;
 
         this._currentNodeId = null;
 
@@ -33,8 +32,8 @@ define([
     TabbedTextEditorControl.prototype._initWidgetEventHandlers = function () {
         this._widget.addNewFile = this.addNewFile.bind(this);
         this._widget.onTabSelected = id => this.setEditorNode(id);
-        this._widget.onDeleteNode = id => this.deleteNode(id);
-        this._widget.setNodeName = (id, name) => {
+        this._widget.onDeleteTab = id => this.deleteNode(id);
+        this._widget.setTabName = (id, name) => {
             name = this.getValidModuleName(name);
             this._client.setAttribute(id, 'name', name);
         };
@@ -42,10 +41,6 @@ define([
 
     TabbedTextEditorControl.prototype.deleteNode = function (nodeId) {
         this._client.deleteNode(nodeId);
-    };
-
-    TabbedTextEditorControl.prototype.setEditorNode = function (nodeId) {
-        this.editor.selectedObjectChanged(nodeId);
     };
 
     /* * * * * * * * Visualizer content update callbacks * * * * * * * */
@@ -119,22 +114,22 @@ define([
     };
 
     TabbedTextEditorControl.prototype._onLoad = function (gmeId) {
-        var description = this._getObjectDescriptor(gmeId);
         if (gmeId !== this._currentNodeId) {
-            this._widget.addNode(description);
+            const tabData = this._getObjectDescriptor(gmeId);
+            this._widget.addTab(tabData);
         }
     };
 
     TabbedTextEditorControl.prototype._onUpdate = function (gmeId) {
-        var description = this._getObjectDescriptor(gmeId);
         if (gmeId !== this._currentNodeId) {
-            this._widget.updateNode(description);
+            const tabData = this._getObjectDescriptor(gmeId);
+            this._widget.updateTab(tabData);
         }
     };
 
     TabbedTextEditorControl.prototype._onUnload = function (gmeId) {
         if (gmeId !== this._currentNodeId) {
-            this._widget.removeNode(gmeId);
+            this._widget.removeTab(gmeId);
         }
     };
 

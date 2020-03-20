@@ -1,0 +1,32 @@
+<div class="modal fade" id="artifactModal" tabindex="-1" role="dialog" aria-labelledby="artifactName" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <h5 class="modal-title artifact-name"></h5>
+            </div>
+            <div class="modal-body">
+                <div class="container-fluid">
+                    <div class="row">
+                    <div class="col-md8 offset-md4">
+                        Size: <span class="size"></span>
+                        <br/>
+                        Created At: <span class="created-at"></span>
+                        <br/>
+                        Storage Adapter: <span class="backend"></span>
+                        <br/>
+                        Additional Details:
+                        <br/>
+                        <textarea readonly rows="8" class="form-control artifact-data-info"></textarea>
+                    </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>

@@ -156,17 +156,10 @@ define([
         this._client.delPointer(opId, name);
     };
 
-    var RESERVED_ATTRIBUTES = [
-        CONSTANTS.DISPLAY_COLOR,
-        CONSTANTS.LINE_OFFSET,
-        'name',
-        'code'
-    ];
-
     OperationControl.prototype.getAttributeNames = function(opId) {
         var node = this._client.getNode(opId);
         return node.getAttributeNames()
-            .filter(name => RESERVED_ATTRIBUTES.indexOf(name) === -1);
+            .filter(name => !CONSTANTS.OPERATION.RESERVED_ATTRS.includes(name));
     };
 
     OperationControl.prototype.getAttributes = function(opId) {

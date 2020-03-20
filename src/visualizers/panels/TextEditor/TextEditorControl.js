@@ -4,11 +4,13 @@
 define([
     'js/Constants',
     'js/Utils/GMEConcepts',
-    'js/NodePropertyNames'
+    'js/NodePropertyNames',
+    'underscore',
 ], function (
     CONSTANTS,
     GMEConcepts,
-    nodePropertyNames
+    nodePropertyNames,
+    _,
 ) {
 
     'use strict';
@@ -24,6 +26,7 @@ define([
         // Initialize core collections and variables
         this._widget = options.widget;
         this.ATTRIBUTE_NAME = options.attributeName || 'code';  // TODO: load from config
+        this.defaultTemplate = _.template(options.defaultTemplate || '');
 
         this._currentNodeId = null;
         this._currentNodeParentId = undefined;
@@ -91,9 +94,6 @@ define([
             // Put new node's info into territory rules
             self._selfPatterns = {};
 
-            self._currentNodeHasAttr = self._client.getNode(self._currentNodeId)
-                .getValidAttributeNames().indexOf(self.ATTRIBUTE_NAME) > -1;
-
             if (typeof parentId === 'string') {
                 self.$btnModelHierarchyUp.show();
             } else {
@@ -103,6 +103,9 @@ define([
             self._currentNodeParentId = parentId;
 
             self._territoryId = self._client.addUI(self, function (events) {
+                const node = self._client.getNode(self._currentNodeId);
+                self._currentNodeHasAttr = node && node.getValidAttributeNames().includes(self.ATTRIBUTE_NAME);
+
                 self._eventCallback(events);
             });
             self._logger.debug(`TextEditor territory id is ${this._territoryId}`);
@@ -120,25 +123,24 @@ define([
 
     // This next function retrieves the relevant node information for the widget
     TextEditorControl.prototype._getObjectDescriptor = function (nodeId) {
-        var nodeObj = this._client.getNode(nodeId),
-            desc;
+        const node = this._client.getNode(nodeId);
 
-        if (nodeObj) {
-            desc = {
-                id: undefined,
-                name: undefined,
-                parentId: undefined,
-                text: ''
+        if (node) {
+            return {
+                id: node.getId(),
+                name: node.getAttribute(nodePropertyNames.Attributes.name),
+                parentId: node.getParentId(),  // used by the 'up' button in the toolbar
+                text: node.getAttribute(this.ATTRIBUTE_NAME) || this._getDefaultText(node),
+                ownText: node.getOwnAttribute(this.ATTRIBUTE_NAME),
             };
-
-            desc.id = nodeObj.getId();
-            desc.name = nodeObj.getAttribute(nodePropertyNames.Attributes.name);
-            desc.parentId = nodeObj.getParentId();  // used by the 'up' button in the toolbar
-            desc.text = nodeObj.getAttribute(this.ATTRIBUTE_NAME);
-            desc.ownText = nodeObj.getOwnAttribute(this.ATTRIBUTE_NAME);
         }
+    };
 
-        return desc;
+    TextEditorControl.prototype._getDefaultText = function (node) {
+        const attrs = node.getAttributeNames()
+            .map(attrName => [attrName, node.getAttribute(attrName)]);
+        const nodeData = _.object(attrs);
+        return this.defaultTemplate(nodeData);
     };
 
     /* * * * * * * * Node Event Handling * * * * * * * */

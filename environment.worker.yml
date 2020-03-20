@@ -1,0 +1,7 @@
+name: deepforge
+dependencies:
+  - python=3.7
+  - pip:
+      - pillow
+      - matplotlib
+      - simplejson
