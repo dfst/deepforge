@@ -1,9 +1,11 @@
-const {getSciServerToken, getSciServerUsername} = require('./sciserver');
+const {getSciServerPassword, getSciServerUsername} = require('./sciserver');
 
-async function getSciServerJobsConfig() {
+function getSciServerJobsConfig() {
+    const username = getSciServerUsername();
     return {
-        token: await getSciServerToken(),
-        volume: `${getSciServerUsername()}/deepforge_test`,
+        username: username,
+        password: getSciServerPassword(),
+        volume: `${username}/deepforge_test`,
         computeDomain: 'Small Jobs Domain',
     };
 }
@@ -11,7 +13,7 @@ async function getSciServerJobsConfig() {
 module.exports = async function() {
     const configs = {};
     configs['gme'] = {};
-    configs['sciserver-compute'] = await getSciServerJobsConfig();
+    configs['sciserver-compute'] = getSciServerJobsConfig();
 
     return configs;
 };
