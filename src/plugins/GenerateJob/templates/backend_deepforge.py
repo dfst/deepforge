@@ -75,6 +75,7 @@ from matplotlib.backend_bases import (
      FigureCanvasBase, FigureManagerBase, GraphicsContextBase, RendererBase)
 from matplotlib.figure import Figure
 from matplotlib.colors import to_hex
+from matplotlib.collections import LineCollection
 
 import simplejson as json
 
@@ -284,8 +285,12 @@ class FigureCanvasTemplate(FigureCanvasBase):
                 default_label = ('_line' + str(i))
                 if line.get_label() != default_label:
                     lineDict['label'] = line.get_label()
-
                 axes_data['lines'].append(lineDict)
+
+            # Line Collections
+            for collection in axes.collections:
+                if isinstance(collection, LineCollection):
+                    axes_data['lines'].extend(self.process_line_collection(collection))
 
             # Image data
             for i, image in enumerate(axes.images):
@@ -300,6 +305,27 @@ class FigureCanvasTemplate(FigureCanvasBase):
 
             state['axes'].append(axes_data)
         return state
+
+    def process_line_collection(self, collection):
+        line_collections = []
+        colors = collection.get_colors()
+        ls = collection.get_dashes()
+        lw = collection.get_linewidths()
+
+        for i, segment  in enumerate(collection.get_segments()):
+            line_collection_data = dict()
+            line_collection_data['points'] = segment.tolist()
+            label = collection.get_label()
+            if label is None:
+                line_collection_data['label'] = ''
+            else:
+                line_collection_data['label'] = label
+            line_collection_data['color'] = to_hex(colors[i%len(colors)])
+            line_collection_data['lineStyle'] = 'solid'
+            line_collection_data['lineWidth'] = lw[i%len(lw)]
+            line_collection_data['marker'] = '.'
+            line_collections.append(line_collection_data)
+        return line_collections
 
     def umask_b64_encode(self, masked_array):
         # Unmask invalid data if present
