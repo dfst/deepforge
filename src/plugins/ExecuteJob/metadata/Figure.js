@@ -21,6 +21,7 @@ define([
                 this.core.setAttribute(axesNode, 'ylim', axes.ylim);
                 this.addAxesLines(axesNode, this.node, axes);
                 this.addAxesImage(axesNode, this.node, axes);
+                this.addAxesScatterPoints(axesNode, this.node, axes);
             });
         }
 
@@ -56,6 +57,21 @@ define([
                 this.core.setAttribute(imageNode, 'width', image.width);
                 this.core.setAttribute(imageNode, 'visible', image.visible);
                 this.core.setAttribute(imageNode, 'numChannels', image.numChannels);
+            });
+        }
+
+        addAxesScatterPoints (parent, job, axes) {
+            axes.scatterPoints.forEach(scatterPoint => {
+                const scatterPointsNode = this.core.createNode({
+                   parent: parent,
+                   base: this.META.ScatterPoints,
+                });
+                this.core.setAttribute(scatterPointsNode, 'color', scatterPoint.color);
+                this.core.setAttribute(scatterPointsNode, 'label', scatterPoint.label);
+                this.core.setAttribute(scatterPointsNode, 'marker', scatterPoint.marker);
+                const points = scatterPoint.points.map(pts => pts.join(',')).join(';');
+                this.core.setAttribute(scatterPointsNode, 'points', points);
+                this.core.setAttribute(scatterPointsNode, 'width', scatterPoint.width);
             });
         }
 

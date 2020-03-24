@@ -65,7 +65,8 @@ Naming Conventions
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 import base64
-
+import io
+import itertools
 import six
 
 import numpy as np
@@ -75,9 +76,115 @@ from matplotlib.backend_bases import (
      FigureCanvasBase, FigureManagerBase, GraphicsContextBase, RendererBase)
 from matplotlib.figure import Figure
 from matplotlib.colors import to_hex
-from matplotlib.collections import LineCollection
-
+from matplotlib import transforms, collections
+from matplotlib.collections import LineCollection, PathCollection
+from matplotlib.path import Path
+from matplotlib.pyplot import gcf, close
 import simplejson as json
+
+# The following functions are used as they are from the mplexporter library
+# Available at: https://github.com/mpld3/mplexporter
+PATH_DICT = {Path.LINETO: 'L',
+             Path.MOVETO: 'M',
+             Path.CURVE3: 'S',
+             Path.CURVE4: 'C',
+             Path.CLOSEPOLY: 'Z'}
+
+def SVG_path(path, transform=None, simplify=False):
+    """Construct the vertices and SVG codes for the path
+
+    Parameters
+    ----------
+    path : matplotlib.Path object
+
+    transform : matplotlib transform (optional)
+        if specified, the path will be transformed before computing the output.
+
+    Returns
+    -------
+    vertices : array
+        The shape (M, 2) array of vertices of the Path. Note that some Path
+        codes require multiple vertices, so the length of these vertices may
+        be longer than the list of path codes.
+    path_codes : list
+        A length N list of single-character path codes, N <= M. Each code is
+        a single character, in ['L','M','S','C','Z']. See the standard SVG
+        path specification for a description of these.
+    """
+    if transform is not None:
+        path = path.transformed(transform)
+
+    vc_tuples = [(vertices if path_code != Path.CLOSEPOLY else [],
+                  PATH_DICT[path_code])
+                 for (vertices, path_code)
+                 in path.iter_segments(simplify=simplify)]
+
+    if not vc_tuples:
+        # empty path is a special case
+        return np.zeros((0, 2)), []
+    else:
+        vertices, codes = zip(*vc_tuples)
+        vertices = np.array(list(itertools.chain(*vertices))).reshape(-1, 2)
+        return vertices, list(codes)
+
+def process_transform(transform, ax=None, data=None, return_trans=False,
+                      force_trans=None):
+    """Process the transform and convert data to figure or data coordinates
+
+    Parameters
+    ----------
+    transform : matplotlib Transform object
+        The transform applied to the data
+    ax : matplotlib Axes object (optional)
+        The axes the data is associated with
+    data : ndarray (optional)
+        The array of data to be transformed.
+    return_trans : bool (optional)
+        If true, return the final transform of the data
+    force_trans : matplotlib.transform instance (optional)
+        If supplied, first force the data to this transform
+
+    Returns
+    -------
+    code : string
+        Code is either "data", "axes", "figure", or "display", indicating
+        the type of coordinates output.
+    transform : matplotlib transform
+        the transform used to map input data to output data.
+        Returned only if return_trans is True
+    new_data : ndarray
+        Data transformed to match the given coordinate code.
+        Returned only if data is specified
+    """
+    if isinstance(transform, transforms.BlendedGenericTransform):
+        warnings.warn("Blended transforms not yet supported. "
+                      "Zoom behavior may not work as expected.")
+
+    if force_trans is not None:
+        if data is not None:
+            data = (transform - force_trans).transform(data)
+        transform = force_trans
+
+    code = "display"
+    if ax is not None:
+        for (c, trans) in [("data", ax.transData),
+                           ("axes", ax.transAxes),
+                           ("figure", ax.figure.transFigure),
+                           ("display", transforms.IdentityTransform())]:
+            if transform.contains_branch(trans):
+                code, transform = (c, transform - trans)
+                break
+
+    if data is not None:
+        if return_trans:
+            return code, transform.transform(data), transform
+        else:
+            return code, transform.transform(data)
+    else:
+        if return_trans:
+            return code, transform
+        else:
+            return code
 
 class RendererTemplate(RendererBase):
     """
@@ -272,6 +379,7 @@ class FigureCanvasTemplate(FigureCanvasBase):
             axes_data['ylim'] = axes.get_ylim()
             axes_data['lines'] = []
             axes_data['images'] = []
+            axes_data['scatterPoints'] = []
 
             # Line Data
             for i, line in enumerate(axes.lines):
@@ -291,6 +399,9 @@ class FigureCanvasTemplate(FigureCanvasBase):
             for collection in axes.collections:
                 if isinstance(collection, LineCollection):
                     axes_data['lines'].extend(self.process_line_collection(collection))
+
+                if isinstance(collection, PathCollection):
+                    axes_data['scatterPoints'].append(self.process_collection(axes, collection, force_pathtrans=axes.transAxes))
 
             # Image data
             for i, image in enumerate(axes.images):
@@ -326,6 +437,39 @@ class FigureCanvasTemplate(FigureCanvasBase):
             line_collection_data['marker'] = '.'
             line_collections.append(line_collection_data)
         return line_collections
+
+    def process_collection(self, ax, collection,
+                           force_pathtrans=None,
+                           force_offsettrans=None):
+        fig = gcf()
+        fig.savefig(io.BytesIO(), format='png', dpi=fig.dpi)
+        close(fig)
+
+        (transform, transOffset,
+                 offsets, paths) = collection._prepare_points()
+        offset_coords, offsets = process_transform(
+                    transOffset, ax, offsets, force_trans=force_offsettrans)
+        processed_paths = [SVG_path(path) for path in paths]
+        processed_paths = [(process_transform(
+                    transform, ax, path[0], force_trans=force_pathtrans)[1], path[1])
+                                   for path in processed_paths]
+        path_transforms = collection.get_transforms()
+        styles = {'linewidth': collection.get_linewidths(),
+                  'facecolor': collection.get_facecolors(),
+                  'edgecolor': collection.get_edgecolors(),
+                  'alpha': collection._alpha,
+                  'zorder': collection.get_zorder()}
+
+        offset_dict = {"data": "before",
+                       "screen": "after"}
+        offset_order = offset_dict[collection.get_offset_position()]
+        return {
+            'color': styles['facecolor'].tolist(),
+            'points': offsets.tolist(),
+            'marker': '.',      #TODO: Detect markers from Paths
+            'label': '',
+            'width': styles['linewidth'].tolist()
+        }
 
     def umask_b64_encode(self, masked_array):
         # Unmask invalid data if present
