@@ -38,4 +38,5 @@ src/seeds/pipeline/hash.txt
 
 notes/
 src/worker
-token_keys
+token_keys/public_key
+token_keys/private_key
