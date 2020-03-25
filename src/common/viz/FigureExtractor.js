@@ -129,12 +129,15 @@ define(['./Utils'], function (Utils) {
     };
 
     FigureExtractor.prototype.getExecutionId = function (node) {
-        let currentNode = node;
+        let currentNode = node,
+            parentId = currentNode.getParentId();
         const EXECUTION_META_TYPE = 'Execution';
-        while (this.getMetaType(currentNode) !== EXECUTION_META_TYPE) {
-            currentNode = this._client.getNode(currentNode.getParentId());
+        const isExecution = node => this.getMetaType(node) === EXECUTION_META_TYPE;
+        while (parentId !== null && !isExecution(currentNode)) {
+            currentNode = this._client.getNode(parentId);
+            parentId = currentNode.getParentId();
         }
-        return currentNode.getId();
+        return isExecution(currentNode) ? currentNode.getId() : null;
     };
 
     FigureExtractor.prototype.getMetaType = function (node) {
