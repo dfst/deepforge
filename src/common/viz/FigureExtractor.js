@@ -25,7 +25,9 @@ define(['./Utils'], function (Utils) {
     FigureExtractor.prototype.constructor = FigureExtractor;
 
     FigureExtractor.prototype[EXTRACTORS.GRAPH] = function(node) {
-        const [id, jobId, execId] = this.getIdHierarchy(node, 3); // eslint-disable-line no-unused-vars
+        const id = node.getId(),
+            execId = this.getExecutionId(node);
+
         let desc = {
             id: id,
             execId: execId,
@@ -47,7 +49,9 @@ define(['./Utils'], function (Utils) {
     };
 
     FigureExtractor.prototype[EXTRACTORS.SUB_GRAPH] = function (node) {
-        const [id, graphId, jobId, execId] = this.getIdHierarchy(node, 4); // eslint-disable-line no-unused-vars
+        const id = node.getId(),
+            graphId = node.getParentId(),
+            execId = this.getExecutionId(node);
         let desc;
 
         desc = {
@@ -66,17 +70,16 @@ define(['./Utils'], function (Utils) {
 
         const children = node.getChildrenIds().map(id => this._client.getNode(id));
         desc.lines = children.filter(node => this.getMetaType(node) === EXTRACTORS.LINE)
-            .map(lineNode => this[this.getMetaType(lineNode)](lineNode));
+            .map(lineNode => this.extract(lineNode));
         desc.images = children.filter(node => this.getMetaType(node) === EXTRACTORS.IMAGE)
-            .map(imageNode => this[this.getMetaType(imageNode)](imageNode));
+            .map(imageNode => this.extract(imageNode));
 
         return desc;
     };
 
     FigureExtractor.prototype[EXTRACTORS.LINE] = function (node) {
-        const ids= this.getIdHierarchy(node, 5),
-            id = ids[0],
-            execId = ids[ids.length-1];
+        const id = node.getId(),
+            execId = this.getExecutionId(node);
         let points, desc;
 
         points = node.getAttribute('points').split(';')
@@ -101,9 +104,8 @@ define(['./Utils'], function (Utils) {
     };
 
     FigureExtractor.prototype[EXTRACTORS.IMAGE] = function (node) {
-        const ids= this.getIdHierarchy(node, 5),
-            id = ids[0],
-            execId = ids[ids.length-1],
+        const id = node.getId(),
+            execId = this.getExecutionId(node),
             imageHeight = node.getAttribute('height'),
             imageWidth = node.getAttribute('width'),
             numChannels = node.getAttribute('numChannels');
@@ -126,14 +128,13 @@ define(['./Utils'], function (Utils) {
         else return -1;
     };
 
-    FigureExtractor.prototype.getIdHierarchy = function (node, level) {
-        const ids = [];
+    FigureExtractor.prototype.getExecutionId = function (node) {
         let currentNode = node;
-        for(let i = 0; i < level; i++) {
-            ids.push(currentNode.getId());
+        const EXECUTION_META_TYPE = 'Execution';
+        while (this.getMetaType(currentNode) !== EXECUTION_META_TYPE) {
             currentNode = this._client.getNode(currentNode.getParentId());
         }
-        return ids;
+        return currentNode.getId();
     };
 
     FigureExtractor.prototype.getMetaType = function (node) {
