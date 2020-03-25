@@ -5,12 +5,12 @@ define([
     'js/Constants',
     'deepforge/utils',
     'deepforge/viz/Execute',
-    'deepforge/viz/PlotlyDescExtractor',
+    'deepforge/viz/FigureExtractor'
 ], function (
     CONSTANTS,
     utils,
     Execute,
-    PlotlyDescExtractor,
+    FigureExtractor
 ) {
 
     'use strict';
@@ -32,7 +32,7 @@ define([
         this._graphsForExecution = {};
         this._graphToExec = {};
         this._pipelineNames = {};
-        this._plotlyDescExtractor = new PlotlyDescExtractor(this._client);
+        this.figureExtractor = new FigureExtractor(this._client);
         this.abbrToId = {};
         this.abbrFor = {};
 
@@ -83,9 +83,8 @@ define([
         let graphDescs = graphIds.map(id => this._getObjectDescriptor(id)).filter(desc => !!desc);
         if (graphDescs.length > 0) {
             let consolidatedDesc = this._combineGraphDesc(graphDescs);
-            let plotlyJSON = this._plotlyDescExtractor.descToPlotlyJSON(consolidatedDesc);
-            plotlyJSON.type = 'graph';
-            return plotlyJSON;
+            consolidatedDesc.type = 'graph';
+            return consolidatedDesc;
         }
     };
 
@@ -266,7 +265,7 @@ define([
 
     ExecutionIndexControl.prototype.getGraphDesc = function (graphNode) {
         let id = graphNode.getId();
-        let desc = this._plotlyDescExtractor.getGraphDesc(graphNode);
+        let desc = this.figureExtractor.extract(graphNode);
 
         if (!this._graphToExec[id]) {
             this._graphsForExecution[desc.execId] = id;

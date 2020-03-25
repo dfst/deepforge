@@ -1,5 +1,11 @@
 /*globals define, _, $*/
-define(['./lib/plotly.min',], function (Plotly) {
+define([
+    './lib/plotly.min',
+    './PlotlyDescExtractor'
+], function (
+    Plotly,
+    PlotlyDescExtractor) {
+
     'use strict';
 
     const WIDGET_CLASS = 'plotly-graph';
@@ -49,7 +55,7 @@ define(['./lib/plotly.min',], function (Plotly) {
 
     PlotlyGraphWidget.prototype.addOrUpdateNode = function (desc) {
         if (desc) {
-            this.plotlyJSON = desc;
+            this.plotlyJSON = PlotlyDescExtractor.descToPlotlyJSON(desc);
             this.setTextVisibility(false);
             this.refreshChart();
         }
