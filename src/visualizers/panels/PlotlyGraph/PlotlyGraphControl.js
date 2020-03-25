@@ -2,10 +2,10 @@
 
 define([
     'js/Constants',
-    'deepforge/viz/PlotlyDescExtractor'
+    'deepforge/viz/FigureExtractor',
 ], function (
     CONSTANTS,
-    PlotlyDescExtractor
+    FigureExtractor
 ) {
 
     'use strict';
@@ -22,7 +22,7 @@ define([
         this._currentNodeId = null;
         this._currentNodeParentId = undefined;
 
-        this._plotlyDescExtractor = new PlotlyDescExtractor(this._client);
+        this.figureExtractor = new FigureExtractor(this._client);
 
         this._logger.debug('ctor finished');
     }
@@ -73,18 +73,19 @@ define([
         case 'SubGraph':
             graphNodeId = node.getParentId();
             graphNode = this._client.getNode(graphNodeId);
-            desc = this._plotlyDescExtractor.getGraphDesc(graphNode);
             break;
         case 'Graph':
-            desc = this._plotlyDescExtractor.getGraphDesc(node);
+            graphNode = node;
             break;
         case 'Line':
             graphNodeId = this._client.getNode(node.getParentId()).getParentId();
             graphNode = this._client.getNode(graphNodeId);
-            desc = this._plotlyDescExtractor.getGraphDesc(graphNode);
             break;
         }
-        return this._plotlyDescExtractor.descToPlotlyJSON(desc);
+        if(graphNode) {
+            desc = this.figureExtractor.extract(graphNode);
+        }
+        return desc;
     };
 
     /* * * * * * * * Node Event Handling * * * * * * * */

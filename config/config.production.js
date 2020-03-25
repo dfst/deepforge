@@ -12,7 +12,8 @@ const path = require('path');
 config.seedProjects.basePaths = ['src/seeds/project'];
 
 config.authentication.enable = true;
-// Edit the following to configure the keys used for the json web tokens
+// Set DEEPFORGE_PRIVATE_KEY/DEEPFORGE_PUBLIC_KEY in the environment to
+// configure the keys used for the json web tokens
 const privateKeyPath = process.env.DEEPFORGE_PRIVATE_KEY || path.join(__dirname, '..', 'token_keys', 'private_key');
 const publicKeyPath = process.env.DEEPFORGE_PUBLIC_KEY || path.join(__dirname, '..', 'token_keys', 'public_key');
 config.authentication.jwt.publicKey = publicKeyPath;

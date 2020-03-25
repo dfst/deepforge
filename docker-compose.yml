@@ -1,19 +1,21 @@
 ---
 version: "3"
 services:
-  mongo: 
+  mongo:
     image: mongo
-    volumes: 
+    volumes:
       - "$HOME/.deepforge/data:/data/db"
-  server: 
-    environment: 
+  server:
+    environment:
       - "MONGO_URI=mongodb://mongo:27017/deepforge"
       - "DEEPFORGE_HOST=https://dev.deepforge.org"
+      - "DEEPFORGE_PUBLIC_KEY=/token_keys/public_key"
+      - "DEEPFORGE_PRIVATE_KEY=/token_keys/private_key"
     image: deepforge/kitchen-sink:latest
-    ports: 
+    ports:
       - "8888:8888"
-    volumes: 
+    volumes:
       - "$HOME/.deepforge/blob:/data/blob"
-      - "${TOKEN_KEYS_DIR}:/deepforge/token_keys"
+      - "${TOKEN_KEYS_DIR}:/token_keys"
     depends_on:
       - mongo

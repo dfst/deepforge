@@ -12,4 +12,4 @@ mkdir -p "$KEYS_DIR"
 echo "Generating Keys"
 openssl genrsa -out "$KEYS_DIR"/private_key
 openssl rsa -in "$KEYS_DIR"/private_key -pubout > "$KEYS_DIR"/public_key
-echo "Keys are now in $KEYS_DIR"
+echo "Generated keys can be found in $KEYS_DIR. Please move the keys outside the project root before deployment."

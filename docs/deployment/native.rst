@@ -41,7 +41,7 @@ If you are planning on running MongoDB remotely, set the environment variable "M
 
 Server
 ~~~~~~
-The DeepForge server is included with the deepforge cli and can be started simply with 
+The DeepForge server is included with the deepforge cli and can be started simply with
 
 .. code-block:: bash
 
@@ -99,7 +99,7 @@ Then install the project dependencies:
 
     npm install
 
-To run all components locally start with 
+To run all components locally start with
 
 .. code-block:: bash
 
@@ -128,3 +128,64 @@ Note: If you are running the worker on a different machine, put the address of t
 Updating
 ~~~~~~~~
 Updating can be done the same as any other git project; that is, by running `git pull` from the project root. Sometimes, the dependencies need to be updated so it is recommended to run `npm install` following `git pull`.
+
+Manual Installation (Production)
+---------------------------------------
+To deploy a deepforge server in a production environment, follow the following steps.
+These steps are for using a Linux server and if you are using a platform other than Linux,
+we recommend using a dockerized deployment.
+
+1. Make sure you have a working installation of `Conda <https://conda.io/en/latest/>`_  in your server.
+
+2. Clone this repository to your production server.
+
+.. code-block:: bash
+
+    git clone https://github.com/deepforge-dev/deepforge.git
+
+3. Install dependencies and add extensions:
+
+.. code-block:: bash
+
+    cd deepforge && npm install
+    ./bin/deepforge extensions add deepforge-dev/deepforge-keras
+
+2. Generate token keys for user-management (required for user management).
+
+.. code-block:: bash
+
+    chmod +x utils/generate_token_keys.sh
+    ./utils/generate_token_keys.sh
+
+
+.. warning::
+
+    The token keys are generated in the root of the project by default.
+    If the token keys are stored in the project root, they are accessible via `/extlib`,
+    which is a security risk. So, please make sure you move the created token keys out of the project root.
+
+3. Configure your environment variables:
+
+.. code-block:: bash
+
+    export MONGO_URI=mongodb://mongo:port/deepforge_database_name
+    export DEEPFORGE_HOST=https://url.of.server
+    export DEEPFORGE_PUBLIC_KEY=/path/to/public_key
+    export DEEPFORGE_PRIVATE_KEY=/path/to/private_key
+
+4. Add a site-admin account by using ``deepforge-users`` command:
+
+.. code-block:: bash
+
+    ./bin/deepforge-users useradd -c -s admin_username admin_email admin_password
+
+5. Now you should be ready to deploy a production server which can be done using ``deepforge`` command.
+
+.. code-block:: bash
+
+    NODE_ENV=production ./bin/deepforge start --server
+
+
+.. note::
+
+    The default port for a deepforge server is 8888. It can be changed using the option `-p` in the command above.

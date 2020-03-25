@@ -98,7 +98,6 @@ define([
         }
 
         event.stopPropagation();
-        event.preventDefault();
     };
 
     ExecutionIndexWidget.prototype.onWidgetContainerResize = function (width, height) {
