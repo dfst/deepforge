@@ -9,6 +9,7 @@ define(['./Utils'], function (Utils) {
         SUB_GRAPH: 'SubGraph',
         IMAGE: 'Image',
         LINE: 'Line',
+        SCATTER_POINTS: 'ScatterPoints'
     };
 
     FigureExtractor.prototype._initializeMetaNodesMap = function () {
@@ -19,7 +20,11 @@ define(['./Utils'], function (Utils) {
 
     FigureExtractor.prototype.extract = function(node) {
         const extractorFn = this.getMetaType(node);
-        return this[extractorFn](node);
+        if (!_.values(EXTRACTORS).includes(extractorFn)){
+            throw new Error(`Node of type ${extractorFn} is not supported yet.`);
+        } else {
+            return this[extractorFn](node);
+        }
     };
 
     FigureExtractor.prototype.constructor = FigureExtractor;
@@ -74,6 +79,9 @@ define(['./Utils'], function (Utils) {
         desc.images = children.filter(node => this.getMetaType(node) === EXTRACTORS.IMAGE)
             .map(imageNode => this.extract(imageNode));
 
+        desc.scatterPoints = children.filter(node => this.getMetaType(node) == EXTRACTORS.SCATTER_POINTS)
+            .map(scatterPointsNode => this.extract(scatterPointsNode));
+
         return desc;
     };
 
@@ -121,6 +129,32 @@ define(['./Utils'], function (Utils) {
             visible: node.getAttribute('visible'),
             rgbaMatrix: Utils.base64ToImageArray(node.getAttribute('rgbaMatrix'), imageWidth, imageHeight, numChannels)
         };
+    };
+
+    FigureExtractor.prototype[EXTRACTORS.SCATTER_POINTS] = function(node) {
+        const id = node.getId(),
+            execId = this.getExecutionId(node);
+        let points, desc;
+
+        points = node.getAttribute('points').split(';')
+            .filter(data => !!data)  // remove any ''
+            .map(pair => {
+                const [x, y] = pair.split(',').map(num => parseFloat(num));
+                return {x, y};
+            });
+        desc = {
+            id: id,
+            execId: execId,
+            subgraphId: this._client.getNode(node.getParentId()).getAttribute('id'),
+            marker: node.getAttribute('marker'),
+            name: node.getAttribute('name'),
+            type: 'scatterPoints',
+            points: points,
+            width: node.getAttribute('width'),
+            color: node.getAttribute('color')
+        };
+
+        return desc;
     };
 
     FigureExtractor.prototype.compareSubgraphIDs = function (desc1, desc2) {

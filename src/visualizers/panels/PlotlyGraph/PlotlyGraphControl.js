@@ -78,9 +78,11 @@ define([
             graphNode = node;
             break;
         case 'Line':
+        case 'ScatterPoints':
             graphNodeId = this._client.getNode(node.getParentId()).getParentId();
             graphNode = this._client.getNode(graphNodeId);
             break;
+
         }
         if(graphNode) {
             desc = this.figureExtractor.extract(graphNode);

@@ -64,6 +64,7 @@ Naming Conventions
 
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
+import math
 import base64
 import io
 import itertools
@@ -464,12 +465,27 @@ class FigureCanvasTemplate(FigureCanvasBase):
                        "screen": "after"}
         offset_order = offset_dict[collection.get_offset_position()]
         return {
-            'color': styles['facecolor'].tolist(),
+            'color': self.colors_to_hex(styles['facecolor'].tolist()),
             'points': offsets.tolist(),
             'marker': '.',      #TODO: Detect markers from Paths
             'label': '',
-            'width': styles['linewidth'].tolist()
+            'width': self.convert_size_array(collection.get_sizes())
         }
+
+    def convert_size_array(self, size_array):
+        size = [math.sqrt(s) for s in size_array]
+        if len(size) == 1:
+            return size[0]
+        else:
+            return size
+
+    def colors_to_hex(self, colors_list):
+        hex_colors = []
+        for color in colors_list:
+            hex_colors.append(to_hex(color, keep_alpha=True))
+        if len(hex_colors) == 1:
+            return hex_colors[0]
+        return hex_colors
 
     def umask_b64_encode(self, masked_array):
         # Unmask invalid data if present

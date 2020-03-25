@@ -22,7 +22,8 @@ define([], function () {
     /*** Helper Methods For Creating The plotly JSON Reference ***/
     const TraceTypes = {
         SCATTER: 'scatter',
-        IMAGE: 'image'
+        IMAGE: 'image',
+        SCATTER_POINTS: 'scatter'
     };
 
     const descHasMultipleSubPlots = function (desc) {
@@ -111,6 +112,25 @@ define([], function () {
             }
             return traceData;
         });
+        traceArr.push(...subGraph.scatterPoints.map(scatterPoint => {
+            let points = pointsToCartesianArray(scatterPoint.points);
+            let traceData = {
+                x: points[0],
+                y: points[1],
+                name: 'scatter points',
+                type: TraceTypes.SCATTER_POINTS,
+                mode: 'markers',
+                marker: {
+                    color: scatterPoint.color,
+                    size: scatterPoint.width,
+                }
+            };
+            if (index !== 0) {
+                traceData.xaxis = `x${index + 1}`;
+                traceData.yaxis = `y${index + 1}`;
+            }
+            return traceData;
+        }));
 
         traceArr.push(...subGraph.images.map(image => {
             let traceData = {
@@ -124,6 +144,7 @@ define([], function () {
             }
             return traceData;
         }));
+
         return traceArr;
     };
 

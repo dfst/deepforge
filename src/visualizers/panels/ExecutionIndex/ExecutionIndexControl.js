@@ -139,6 +139,10 @@ define([
                 lineClone.label = (lineClone.label || `line${index}`) + ` (${abbr})`;
                 currentSubGraph.lines.push(lineClone);
             });
+            subGraphs[i].scatterPoints.forEach(scatterPoint => {
+                let scatterClone = JSON.parse(JSON.stringify(scatterPoint));
+                currentSubGraph.scatterPoints.push(scatterClone);
+            });
         }
         // Check if there are more subgraphs
         let extraSubGraphIdx = consolidatedDesc.subGraphs.length;
