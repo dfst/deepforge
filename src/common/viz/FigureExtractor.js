@@ -20,7 +20,7 @@ define(['./Utils'], function (Utils) {
 
     FigureExtractor.prototype.extract = function(node) {
         const extractorFn = this.getMetaType(node);
-        if (!_.values(EXTRACTORS).includes(extractorFn)){
+        if (!Object.values(EXTRACTORS).includes(extractorFn)){
             throw new Error(`Node of type ${extractorFn} is not supported yet.`);
         } else {
             return this[extractorFn](node);
