@@ -6,7 +6,8 @@ define(['./Utils'], function (Utils) {
     };
     const EXTRACTORS = {
         GRAPH: 'Graph',
-        SUB_GRAPH: 'SubGraph',
+        PLOT2D: 'Plot2D',
+        PLOT3D: 'Plot3D',
         IMAGE: 'Image',
         LINE: 'Line',
         SCATTER_POINTS: 'ScatterPoints'
@@ -53,7 +54,7 @@ define(['./Utils'], function (Utils) {
         return desc;
     };
 
-    FigureExtractor.prototype[EXTRACTORS.SUB_GRAPH] = function (node) {
+    FigureExtractor.prototype[EXTRACTORS.PLOT2D] = function (node) {
         const id = node.getId(),
             graphId = node.getParentId(),
             execId = this.getExecutionId(node);
@@ -62,7 +63,7 @@ define(['./Utils'], function (Utils) {
         desc = {
             id: id,
             execId: execId,
-            type: 'subgraph',
+            type: 'plot2D',
             graphId: this._client.getNode(graphId).getAttribute('id'),
             subgraphId: node.getAttribute('id'),
             subgraphName: node.getAttribute('name'),
@@ -79,10 +80,14 @@ define(['./Utils'], function (Utils) {
         desc.images = children.filter(node => this.getMetaType(node) === EXTRACTORS.IMAGE)
             .map(imageNode => this.extract(imageNode));
 
-        desc.scatterPoints = children.filter(node => this.getMetaType(node) == EXTRACTORS.SCATTER_POINTS)
+        desc.scatterPoints = children.filter(node => this.getMetaType(node) === EXTRACTORS.SCATTER_POINTS)
             .map(scatterPointsNode => this.extract(scatterPointsNode));
 
         return desc;
+    };
+
+    FigureExtractor.prototype[EXTRACTORS.PLOT3D] = function(/*node*/) {
+        throw new Error('Not Implemented yet');
     };
 
     FigureExtractor.prototype[EXTRACTORS.LINE] = function (node) {

@@ -70,7 +70,7 @@ define([
         let graphNodeId,
             graphNode;
         switch (type) {
-        case 'SubGraph':
+        case 'Plot2D':
             graphNodeId = node.getParentId();
             graphNode = this._client.getNode(graphNodeId);
             break;

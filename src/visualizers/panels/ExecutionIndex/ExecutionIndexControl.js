@@ -254,7 +254,7 @@ define([
                 this._pipelineNames[desc.id] = desc.name;
             } else if (type === 'Graph') {
                 desc = this.getGraphDesc(node);
-            } else if (type === 'SubGraph') {
+            } else if (type === 'Plot2D' || type === 'Plot3D') {
                 const graphNodeId = node.getParentId();
                 let graphNode = this._client.getNode(graphNodeId);
                 desc = this.getGraphDesc(graphNode);

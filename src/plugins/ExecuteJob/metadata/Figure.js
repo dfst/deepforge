@@ -12,17 +12,27 @@ define([
             state.axes.forEach(axes => {
                 const axesNode = this.core.createNode({
                     parent: this.node,
-                    base: this.META.SubGraph
+                    base: Figure.is3D(axes) ? this.META.Plot3D : this.META.Plot2D
                 });
-                this.core.setAttribute(axesNode, 'title', axes.title);
-                this.core.setAttribute(axesNode, 'xlabel', axes.xlabel);
-                this.core.setAttribute(axesNode, 'ylabel', axes.ylabel);
-                this.core.setAttribute(axesNode, 'xlim', axes.xlim);
-                this.core.setAttribute(axesNode, 'ylim', axes.ylim);
+                this.setAxesProperties(axesNode, axes);
                 this.addAxesLines(axesNode, this.node, axes);
-                this.addAxesImage(axesNode, this.node, axes);
+                if(!Figure.is3D(axes)){
+                    this.addAxesImage(axesNode, this.node, axes);
+                }
                 this.addAxesScatterPoints(axesNode, this.node, axes);
             });
+        }
+
+        setAxesProperties(axesNode, axes){
+            this.core.setAttribute(axesNode, 'title', axes.title);
+            this.core.setAttribute(axesNode, 'xlabel', axes.xlabel);
+            this.core.setAttribute(axesNode, 'ylabel', axes.ylabel);
+            this.core.setAttribute(axesNode, 'xlim', axes.xlim);
+            this.core.setAttribute(axesNode, 'ylim', axes.ylim);
+            if(Figure.is3D(axes)){
+                this.core.setAttribute(axesNode, 'zlabel', axes.zlabel);
+                this.core.setAttribute(axesNode, 'zlim', axes.zlim);
+            }
         }
 
         addAxesLines(parent, job, axes) {
@@ -82,6 +92,11 @@ define([
         static getMetaType() {
             return 'Graph';
         }
+
+        static is3D(axes) {
+            return !!axes.zlabel;
+        }
+
     }
 
     return Figure;
