@@ -223,6 +223,8 @@ define([
             desc,
             base,
             type;
+        const graphNode = this.figureExtractor.getGraphNode(node),
+            isGraphOrChildren = !!graphNode;
 
         if (node) {
             base = this._client.getNode(node.getBaseId());
@@ -252,15 +254,7 @@ define([
             } else if (type === 'Pipeline') {
                 desc.execs = node.getMemberIds('executions');
                 this._pipelineNames[desc.id] = desc.name;
-            } else if (type === 'Graph') {
-                desc = this.getGraphDesc(node);
-            } else if (type === 'Plot2D' || type === 'Plot3D') {
-                const graphNodeId = node.getParentId();
-                let graphNode = this._client.getNode(graphNodeId);
-                desc = this.getGraphDesc(graphNode);
-            } else if (type === 'Line') {
-                const graphNodeId = this._client.getNode(node.getParentId()).getParentId();
-                let graphNode = this._client.getNode(graphNodeId);
+            } else if (isGraphOrChildren) {
                 desc = this.getGraphDesc(graphNode);
             }
         }

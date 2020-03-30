@@ -168,15 +168,25 @@ define(['./Utils'], function (Utils) {
     };
 
     FigureExtractor.prototype.getExecutionId = function (node) {
+        const executionNode = this._getContainmentParentNodeAt(node, 'Execution');
+        if (executionNode){
+            return executionNode.getId();
+        }
+    };
+
+    FigureExtractor.prototype.getGraphNode = function(node) {
+        return this._getContainmentParentNodeAt(node, 'Graph');
+    };
+
+    FigureExtractor.prototype._getContainmentParentNodeAt = function(node, metaType){
         let currentNode = node,
             parentId = currentNode.getParentId();
-        const EXECUTION_META_TYPE = 'Execution';
-        const isExecution = node => this.getMetaType(node) === EXECUTION_META_TYPE;
-        while (parentId !== null && !isExecution(currentNode)) {
+        const isMetaType = node => this.getMetaType(node) === metaType;
+        while (parentId !== null && !isMetaType(currentNode)) {
             currentNode = this._client.getNode(parentId);
             parentId = currentNode.getParentId();
         }
-        return isExecution(currentNode) ? currentNode.getId() : null;
+        return isMetaType(currentNode) ? currentNode : null;
     };
 
     FigureExtractor.prototype.getMetaType = function (node) {

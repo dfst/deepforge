@@ -64,27 +64,8 @@ define([
     PlotlyGraphControl.prototype._getObjectDescriptor = function (nodeId) {
         let node = this._client.getNode(nodeId),
             desc;
-        const metaTypeId = node.getMetaTypeId();
-        const metaNode = this._client.getNode(metaTypeId);
-        const type = metaNode.getAttribute('name');
-        let graphNodeId,
-            graphNode;
-        switch (type) {
-        case 'Plot2D':
-        case 'Plot3D':
-            graphNodeId = node.getParentId();
-            graphNode = this._client.getNode(graphNodeId);
-            break;
-        case 'Graph':
-            graphNode = node;
-            break;
-        case 'Line':
-        case 'ScatterPoints':
-            graphNodeId = this._client.getNode(node.getParentId()).getParentId();
-            graphNode = this._client.getNode(graphNodeId);
-            break;
+        const graphNode = this.figureExtractor.getGraphNode(node);
 
-        }
         if(graphNode) {
             desc = this.figureExtractor.extract(graphNode);
         }
