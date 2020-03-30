@@ -71,6 +71,7 @@ define([
             graphNode;
         switch (type) {
         case 'Plot2D':
+        case 'Plot3D':
             graphNodeId = node.getParentId();
             graphNode = this._client.getNode(graphNodeId);
             break;
