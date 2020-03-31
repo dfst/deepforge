@@ -67,7 +67,7 @@ async function main() {
     const errors = await noMochaOnlyKeyword();
     if (errors.length) {
         console.error('The following additional CI checks failed:\n');
-        errors.forEach(err => console.error(err));
+        errors.forEach(err => console.error(err, '\n'));
         process.exit(1);
     }
 }
