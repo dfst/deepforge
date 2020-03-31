@@ -7,6 +7,7 @@ addons:
 sudo: false
 env:
     - DEEPFORGE_HOST=127.0.0.1:8080
+    - NODE_ENV=test
 script: npm test
 before_install:
   - docker pull minio/minio
