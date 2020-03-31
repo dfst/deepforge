@@ -1,4 +1,3 @@
-// TODO: read in all the test files and check for it|describe.only
 const fs = require('fs');
 const path = require('path');
 const {promisify} = require('util');
@@ -51,7 +50,7 @@ async function noMochaOnlyKeyword() {
         for (let line of contents.split('\n')) {
             if (ONLY_REGEX.test(line)) {
                 const relpath = filename.replace(PROJECT_ROOT, '');
-                errors.push(new SkippedTestsError(filename, line));
+                errors.push(new SkippedTestsError(relpath, line));
             }
         }
     }
