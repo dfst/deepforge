@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - 1561-vm-deployment-fix
 
 jobs:
   publish:
