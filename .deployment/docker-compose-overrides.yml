@@ -1,0 +1,3 @@
+services:
+  server:
+    entrypoint: /deepforge/.deployment/dev-entrypoint.sh

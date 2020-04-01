@@ -130,7 +130,7 @@ requirejs([
 
     async function createBaseEnvironment(jobDir) {
         const envFile = path.join(jobDir, 'environment.worker.yml');
-        await conda(`create -n ${name} -f ${envFile}`);
+        await conda(`env create -n deepforge -f ${envFile}`);
     }
 
     function getJobStartCommand(envName) {
