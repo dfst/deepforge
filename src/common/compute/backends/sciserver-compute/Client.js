@@ -69,7 +69,8 @@ define([
         const dirname = `execution-files/${hash}`;
         const metadata = await this.blobClient.getMetadata(hash);
         const config =  {
-            token: await this.token(),
+            username: this.username,
+            password: this.password,
             volume: this.volume,
         };
         const storage = await Storage.getClient('sciserver-files', this.logger, config);
