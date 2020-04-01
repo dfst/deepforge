@@ -42,7 +42,6 @@
             body: getLoginBody(username, password)
         };
         const response = await fetch(url, opts);
-        console.log(`fetched new token for ${username}: ${response.headers.get('X-Subject-Token')}`);
         return response.headers.get('X-Subject-Token');
     }
 
