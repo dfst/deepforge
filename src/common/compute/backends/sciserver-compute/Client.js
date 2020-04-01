@@ -20,7 +20,6 @@ define([
     login,
     PREPARE_AND_RUN,
 ) {
-    login = login.memoize();
     const Headers = fetch.Headers;
     const POLL_INTERVAL = 1000;
     const SciServerClient = function(logger, blobClient, config) {

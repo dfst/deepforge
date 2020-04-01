@@ -28,7 +28,7 @@
         return await response.text();
     }
 
-    async function login(username, password) {
+    async function fetchNewToken(username, password) {
         if (isBrowser) {
             return loginViaProxy(username, password);
         }
@@ -42,19 +42,24 @@
             body: getLoginBody(username, password)
         };
         const response = await fetch(url, opts);
+        console.log(`fetched new token for ${username}: ${response.headers.get('X-Subject-Token')}`);
         return response.headers.get('X-Subject-Token');
     }
 
-    login.memoize = function() {
-        let tokens = {};
-        return function l(username, password) {
-            tokens[username] = tokens[username] || {};
-            if (!tokens[username][password]) {
-                tokens[username][password] = login(username, password);
-            }
-            return tokens[username][password];
-        };
-    };
+    let tokens = {};
+    const hours = 1000*60*60;
+    function login(username, password) {
+        tokens[username] = tokens[username] || {};
+        if (!tokens[username][password]) {
+            tokens[username][password] = fetchNewToken(username, password);
+            setTimeout(clearToken.bind(username, password), 23*hours);
+        }
+        return tokens[username][password];
+    }
+
+    function clearToken(username, password) {
+        delete tokens[username][password];
+    }
 
     function getLoginBody(username, password) {
         return JSON.stringify({
