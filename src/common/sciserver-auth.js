@@ -46,7 +46,7 @@
         return response.headers.get('X-Subject-Token');
     }
 
-    let tokens = {};
+    const tokens = {};
     const hours = 1000*60*60;
     function login(username, password) {
         tokens[username] = tokens[username] || {};
