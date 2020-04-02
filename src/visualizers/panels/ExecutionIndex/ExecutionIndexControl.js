@@ -244,10 +244,10 @@ define([
             desc,
             base,
             type;
-        const graphNode = this.figureExtractor.getGraphNode(node),
-            isGraphOrChildren = !!graphNode;
 
         if (node) {
+            const graphNode = this.figureExtractor.getGraphNode(node),
+                isGraphOrChildren = !!graphNode;
             base = this._client.getNode(node.getBaseId());
             type = base.getAttribute('name');
             desc = {

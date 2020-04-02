@@ -6,6 +6,7 @@ define(['./Utils'], function (Utils) {
     };
     const EXTRACTORS = {
         GRAPH: 'Graph',
+        SUB_GRAPH: 'SubGraph',
         PLOT2D: 'Plot2D',
         PLOT3D: 'Plot3D',
         IMAGE: 'Image',
@@ -54,7 +55,8 @@ define(['./Utils'], function (Utils) {
         return desc;
     };
 
-    FigureExtractor.prototype[EXTRACTORS.PLOT2D] = function (node) {
+
+    FigureExtractor.prototype[EXTRACTORS.SUB_GRAPH] = function(node){
         const id = node.getId(),
             graphId = node.getParentId(),
             execId = this.getExecutionId(node);
@@ -63,7 +65,7 @@ define(['./Utils'], function (Utils) {
         desc = {
             id: id,
             execId: execId,
-            type: 'plot2D',
+            type: this.getMetaType(node) === EXTRACTORS.PLOT3D ? 'plot3D' : 'plot2D',
             graphId: this._client.getNode(graphId).getAttribute('id'),
             subgraphId: node.getAttribute('id'),
             subgraphName: node.getAttribute('name'),
@@ -75,44 +77,27 @@ define(['./Utils'], function (Utils) {
         };
 
         const children = node.getChildrenIds().map(id => this._client.getNode(id));
+
         desc.lines = children.filter(node => this.getMetaType(node) === EXTRACTORS.LINE)
             .map(lineNode => this.extract(lineNode));
-        desc.images = children.filter(node => this.getMetaType(node) === EXTRACTORS.IMAGE)
-            .map(imageNode => this.extract(imageNode));
 
         desc.scatterPoints = children.filter(node => this.getMetaType(node) === EXTRACTORS.SCATTER_POINTS)
             .map(scatterPointsNode => this.extract(scatterPointsNode));
+        return desc;
+    };
 
+    FigureExtractor.prototype[EXTRACTORS.PLOT2D] = function (node) {
+        let desc = this[EXTRACTORS.SUB_GRAPH](node);
+        const children = node.getChildrenIds().map(id => this._client.getNode(id));
+        desc.images = children.filter(node => this.getMetaType(node) === EXTRACTORS.IMAGE)
+            .map(imageNode => this.extract(imageNode));
         return desc;
     };
 
     FigureExtractor.prototype[EXTRACTORS.PLOT3D] = function(node) {
-        const id = node.getId(),
-            graphId = node.getParentId(),
-            execId = this.getExecutionId(node);
-        let desc;
-
-        desc = {
-            id: id,
-            execId: execId,
-            type: 'plot3D',
-            graphId: this._client.getNode(graphId).getAttribute('id'),
-            subgraphId: node.getAttribute('id'),
-            subgraphName: node.getAttribute('name'),
-            title: node.getAttribute('title'),
-            xlim: node.getAttribute('xlim'),
-            ylim: node.getAttribute('ylim'),
-            zlim: node.getAttribute('zlim'),
-            xlabel: node.getAttribute('xlabel'),
-            ylabel: node.getAttribute('ylabel'),
-            zlabel: node.getAttribute('zlabel')
-        };
-
-        const children = node.getChildrenIds().map(id => this._client.getNode(id));
-        desc.lines = children.filter(node => this.getMetaType(node) === EXTRACTORS.LINE)
-            .map(lineNode => this.extract(lineNode));
-        desc.scatterPoints = children.filter(node => this.getMetaType(node) === EXTRACTORS.SCATTER_POINTS)
-            .map(scatterPointsNode => this.extract(scatterPointsNode));
+        let desc = this[EXTRACTORS.SUB_GRAPH](node);
+        desc.zlim = node.getAttribute('zlim');
+        desc.zlabel = node.getAttribute('zlabel');
         return desc;
     };
 
@@ -218,11 +203,11 @@ define(['./Utils'], function (Utils) {
 
     const extractPointsArray = function (pair) {
         const pointsArr = pair.split(',').map(num => parseFloat(num));
-        let cartesianPoints = {x: pointsArr[0], y: pointsArr[1]};
+        let cartesianPoint = {x: pointsArr[0], y: pointsArr[1]};
         if (pointsArr.length === 3) {
-            cartesianPoints.z = pointsArr[2];
+            cartesianPoint.z = pointsArr[2];
         }
-        return cartesianPoints;
+        return cartesianPoint;
     };
 
     return FigureExtractor;
