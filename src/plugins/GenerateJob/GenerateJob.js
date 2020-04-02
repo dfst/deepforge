@@ -186,10 +186,7 @@ define([
             // Add file to `operations/`
             files.addFile(`operations/${filename}.py`, code);
 
-            files.appendToFile(
-                'operations/__init__.py',
-                `from operations.${filename} import ${name}\n`
-            );
+            files.addFile(`operations/__init__.py`, '');
         });
 
         await this.createRunScript(files);
@@ -337,6 +334,7 @@ define([
         const inputs = await this.getInputs(node);
         const name = this.getAttribute(node, 'name');
         const code = this.getAttribute(node, 'code');
+        const filename = GenerateJob.toSnakeCase(name);
 
         // Add remaining code
         const outputs = await this.getOutputs(node);
@@ -346,6 +344,7 @@ define([
         const content = {};
         content.name = name;
         content.initCode = initCode;
+        content.filename = filename;
         content.code = code;
         content.inputs = inputs
             .map(pair => [  // [name, type, isNone?]
@@ -365,12 +364,7 @@ define([
         }
         files.addFile('environment.worker.yml', Templates.WORKER_ENV);
 
-        const filename = GenerateJob.toSnakeCase(content.name);
         files.addFile(`operations/${filename}.py`, content.code);
-        files.appendToFile(
-            'operations/__init__.py',
-            `from operations.${filename} import ${content.name}\n`
-        );
     };
 
     GenerateJob.validateVariableName = function (word) {
