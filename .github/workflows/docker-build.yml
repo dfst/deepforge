@@ -11,7 +11,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - name: Publish to docker hub (Vanilla)
+      - name: Publish to docker hub (server)
         uses: elgohr/Publish-Docker-Github-Action@master
         with:
           name: deepforge/server
@@ -19,7 +19,7 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
           tags: "latest"
 
-      - name: Publish to docker hub (KitchenSink)
+      - name: Publish to docker hub (kitchen-sink)
         uses: elgohr/Publish-Docker-Github-Action@master
         with:
           name: deepforge/kitchen-sink

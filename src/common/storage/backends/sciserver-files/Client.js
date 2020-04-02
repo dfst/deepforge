@@ -6,7 +6,6 @@ define([
     StorageClient,
     login,
 ) {
-    login = login.memoize();
     const BASE_URL = 'https://apps.sciserver.org/fileservice/api/';
     const SciServerFiles = function (id, name, logger, config = {}) {
         StorageClient.apply(this, arguments);

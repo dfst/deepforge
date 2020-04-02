@@ -20,7 +20,6 @@ define([
     login,
     PREPARE_AND_RUN,
 ) {
-    login = login.memoize();
     const Headers = fetch.Headers;
     const POLL_INTERVAL = 1000;
     const SciServerClient = function(logger, blobClient, config) {
@@ -58,7 +57,7 @@ define([
         return {
             command: `bash ${filepath}/prepare-and-run.sh ${filepath}`,
             dockerComputeEndpoint: domain.apiEndpoint,
-            dockerImageName: 'Python + R',
+            dockerImageName: 'SciServer Essentials',
             resultsFolderURI: '',
             submitterDID: 'DeepForge Job',
             volumeContainers: [],
@@ -70,7 +69,8 @@ define([
         const dirname = `execution-files/${hash}`;
         const metadata = await this.blobClient.getMetadata(hash);
         const config =  {
-            token: await this.token(),
+            username: this.username,
+            password: this.password,
             volume: this.volume,
         };
         const storage = await Storage.getClient('sciserver-files', this.logger, config);
