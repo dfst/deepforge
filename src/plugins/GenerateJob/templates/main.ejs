@@ -22,7 +22,7 @@ signal.signal(signal.SIGTERM, signal_handler)
 <%= name %> = result
 ############ <%= name %> created ############<%}); %>
 
-from operations.<%= filename %> import <%= name %>
+from operations import <%= name %>
 
 # main operation code for <%= name %>
 operation = <%= name %>(<%= arguments %>)

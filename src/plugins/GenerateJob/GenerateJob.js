@@ -93,7 +93,7 @@ define([
         const name = this.getAttribute(this.activeNode, 'name');
         const opId = this.core.getPath(this.activeNode);
 
-        const files = await this.createExecutableOperationFiles(this.activeNode);
+        const files = await this.createOperationFiles(this.activeNode);
         this.logger.info('Created operation files!');
         const artifactName = `${name}_${opId.replace(/\//g, '_')}-execution-files`;
 
@@ -165,38 +165,6 @@ define([
         return config;
     };
 
-    GenerateJob.prototype.createExecutableOperationFiles = async function (node) {
-        const files = await this.createOperationFiles(node);
-        const metaDict = this.core.getAllMetaNodes(node);
-        const metanodes = Object.keys(metaDict).map(id => metaDict[id]);
-        const operations = metanodes
-            .filter(node => this.core.isTypeOf(node, this.META.Operation))
-            .filter(node => this.core.getAttribute(node, 'code'))  // remove local ops
-            .map(node => {
-                const name = this.core.getAttribute(node, 'name');
-                const filename = GenerateJob.toSnakeCase(name);
-                const code = this.core.getAttribute(node, 'code');
-
-                return [filename, code];
-            });
-
-        operations.forEach(tuple => {
-            const [filename, code] = tuple;
-
-            // Add file to `operations/`
-            files.addFile(`operations/${filename}.py`, code);
-
-            files.addFile('operations/__init__.py', '');
-        });
-
-        await this.createRunScript(files);
-        await this.createDataMetadataFile(files);
-        const outputs = await this.getOutputs(this.activeNode);
-        await this.createExecConfig(node, outputs, files);
-
-        return files;
-    };
-
     GenerateJob.prototype.isUtilsNode = function (node) {
         return this.core.getAttribute(node, 'name').includes('Utilities');
     };
@@ -230,6 +198,11 @@ define([
         await this.createCustomUtils(files);
         await this.createInputs(node, files);
         await this.createMainFile(node, files);
+        await this.createRunScript(files);
+        await this.createDataMetadataFile(files);
+        const outputs = await this.getOutputs(this.activeNode);
+        await this.createExecConfig(node, outputs, files);
+
         return files;
     };
 
@@ -344,7 +317,6 @@ define([
         const content = {};
         content.name = name;
         content.initCode = initCode;
-        content.filename = filename;
         content.code = code;
         content.inputs = inputs
             .map(pair => [  // [name, type, isNone?]
@@ -365,6 +337,10 @@ define([
         files.addFile('environment.worker.yml', Templates.WORKER_ENV);
 
         files.addFile(`operations/${filename}.py`, content.code);
+        files.appendToFile(
+            `operations/__init__.py`,
+            `from operations.${filename} import ${content.name}\n`
+            );
     };
 
     GenerateJob.validateVariableName = function (word) {
