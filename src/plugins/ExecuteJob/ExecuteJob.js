@@ -717,6 +717,7 @@ define([
 
     ExecuteJob.prototype.processStdout = async function(job, text, continued) {
         const lines = text.replace(/\u0000/g, '').split('\n');
+        removeLastPartialLine(lines);
         const result = await this.parseForMetadataCmds(job, lines, !continued);
 
         result.stdout = utils.resolveCarriageReturns(result.stdout).join('\n');
@@ -740,6 +741,10 @@ define([
 
     function red(text) {
         return `[0;31m${text}[0m`;
+    }
+
+    function removeLastPartialLine(lines) {
+        lines.pop();
     }
 
     return ExecuteJob;
