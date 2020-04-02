@@ -19,6 +19,7 @@
     "test-unit": "NODE_ENV=test mkdir ./test-tmp; mocha --recursive test/unit",
     "test-int": "NODE_ENV=test mkdir ./test-tmp; mocha --recursive test/integration",
     "test-func": "bash ./test/features/start.sh",
+    "test-ci": "npm test && node utils/additional-ci-checks.js",
     "watch-test": "nodemon --exec 'mocha --recursive test'"
   },
   "version": "2.1.1",

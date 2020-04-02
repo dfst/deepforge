@@ -1,4 +1,3 @@
-/*globals require, module, process*/
 'use strict';
 
 var config = require('./config.webgme'),
@@ -13,6 +12,7 @@ config.mongo.uri = process.env.MONGO_URI || config.mongo.uri;
 config.blob.fsDir = process.env.DEEPFORGE_BLOB_DIR || config.blob.fsDir;
 
 config.requirejsPaths.deepforge = './src/common';
+config.requirejsPaths['aws-sdk-min'] = './node_modules/aws-sdk/dist/aws-sdk.min';
 config.requirejsPaths.ace = './src/visualizers/widgets/TextEditor/lib/ace';
 config.seedProjects.defaultProject = 'project';
 
