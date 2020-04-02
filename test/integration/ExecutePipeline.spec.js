@@ -31,6 +31,7 @@ describe('Pipeline execution', function () {
     Pipeline.SmallPipeline = '/f/d';
     Pipeline.ComplexPipeline = '/f/3';
     Pipeline.ExportPlugin = '/f/s';
+    Pipeline.ScatterPlots3D = '/f/5';
 
     const server = new testFixture.WebGME.standaloneServer(gmeConfig);
     server.start = promisify(server.start);

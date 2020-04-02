@@ -132,7 +132,7 @@ define([], function () {
                 mode: 'markers',
                 marker: {
                     color: scatterPoint.color,
-                    size: scatterPoint.width
+                    size: Math.sqrt(scatterPoint.width)
                 },
             };
             if(is3D(subGraph)){
@@ -235,21 +235,22 @@ define([], function () {
 
     const add3dSceneProperties = function (subGraph) {
         const AXES_FONT = {
-            color: '#7f7f7f',
-            standoff: 0
+            color: '#7f7f7f'
         };
         const props = {
             domain: subGraph.scene.domain,
             xaxis: {
                 title: {
                     text: subGraph.xlabel,
-                    font: AXES_FONT
+                    font: AXES_FONT,
+                    standoff: 0
                 }
             },
             yaxis: {
                 title: {
                     text: subGraph.ylabel,
-                    font: AXES_FONT
+                    font: AXES_FONT,
+                    standoff: 0
                 }
             },
             zaxis: {
