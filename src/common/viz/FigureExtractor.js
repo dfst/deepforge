@@ -86,8 +86,34 @@ define(['./Utils'], function (Utils) {
         return desc;
     };
 
-    FigureExtractor.prototype[EXTRACTORS.PLOT3D] = function(/*node*/) {
-        throw new Error('Not Implemented yet');
+    FigureExtractor.prototype[EXTRACTORS.PLOT3D] = function(node) {
+        const id = node.getId(),
+            graphId = node.getParentId(),
+            execId = this.getExecutionId(node);
+        let desc;
+
+        desc = {
+            id: id,
+            execId: execId,
+            type: 'plot3D',
+            graphId: this._client.getNode(graphId).getAttribute('id'),
+            subgraphId: node.getAttribute('id'),
+            subgraphName: node.getAttribute('name'),
+            title: node.getAttribute('title'),
+            xlim: node.getAttribute('xlim'),
+            ylim: node.getAttribute('ylim'),
+            zlim: node.getAttribute('zlim'),
+            xlabel: node.getAttribute('xlabel'),
+            ylabel: node.getAttribute('ylabel'),
+            zlabel: node.getAttribute('zlabel')
+        };
+
+        const children = node.getChildrenIds().map(id => this._client.getNode(id));
+        desc.lines = children.filter(node => this.getMetaType(node) === EXTRACTORS.LINE)
+            .map(lineNode => this.extract(lineNode));
+        desc.scatterPoints = children.filter(node => this.getMetaType(node) === EXTRACTORS.SCATTER_POINTS)
+            .map(scatterPointsNode => this.extract(scatterPointsNode));
+        return desc;
     };
 
     FigureExtractor.prototype[EXTRACTORS.LINE] = function (node) {
@@ -97,22 +123,21 @@ define(['./Utils'], function (Utils) {
 
         points = node.getAttribute('points').split(';')
             .filter(data => !!data)  // remove any ''
-            .map(pair => {
-                const [x, y] = pair.split(',').map(num => parseFloat(num));
-                return {x, y};
-            });
+            .map(pair => extractPointsArray(pair));
+
         desc = {
             id: id,
             execId: execId,
             subgraphId: this._client.getNode(node.getParentId()).getAttribute('id'),
             lineName: node.getAttribute('name'),
             label: node.getAttribute('label'),
+            lineWidth: node.getAttribute('lineWidth'),
+            marker: node.getAttribute('marker'),
             name: node.getAttribute('name'),
             type: 'line',
             points: points,
             color: node.getAttribute('color')
         };
-
         return desc;
     };
 
@@ -143,10 +168,7 @@ define(['./Utils'], function (Utils) {
 
         points = node.getAttribute('points').split(';')
             .filter(data => !!data)  // remove any ''
-            .map(pair => {
-                const [x, y] = pair.split(',').map(num => parseFloat(num));
-                return {x, y};
-            });
+            .map(pair => extractPointsArray(pair));
         desc = {
             id: id,
             execId: execId,
@@ -192,6 +214,15 @@ define(['./Utils'], function (Utils) {
     FigureExtractor.prototype.getMetaType = function (node) {
         const metaTypeId = node.getMetaTypeId();
         return this._metaNodesMap[metaTypeId];
+    };
+
+    const extractPointsArray = function (pair) {
+        const pointsArr = pair.split(',').map(num => parseFloat(num));
+        let cartesianPoints = {x: pointsArr[0], y: pointsArr[1]};
+        if (pointsArr.length === 3) {
+            cartesianPoints.z = pointsArr[2];
+        }
+        return cartesianPoints;
     };
 
     return FigureExtractor;

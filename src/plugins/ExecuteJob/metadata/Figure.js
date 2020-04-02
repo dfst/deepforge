@@ -12,11 +12,11 @@ define([
             state.axes.forEach(axes => {
                 const axesNode = this.core.createNode({
                     parent: this.node,
-                    base: Figure.is3D(axes) ? this.META.Plot3D : this.META.Plot2D
+                    base: axes.is3D ? this.META.Plot3D : this.META.Plot2D
                 });
                 this.setAxesProperties(axesNode, axes);
                 this.addAxesLines(axesNode, this.node, axes);
-                if(!Figure.is3D(axes)){
+                if(!axes.is3D){
                     this.addAxesImage(axesNode, this.node, axes);
                 }
                 this.addAxesScatterPoints(axesNode, this.node, axes);
@@ -29,7 +29,7 @@ define([
             this.core.setAttribute(axesNode, 'ylabel', axes.ylabel);
             this.core.setAttribute(axesNode, 'xlim', axes.xlim);
             this.core.setAttribute(axesNode, 'ylim', axes.ylim);
-            if(Figure.is3D(axes)){
+            if(axes.is3D){
                 this.core.setAttribute(axesNode, 'zlabel', axes.zlabel);
                 this.core.setAttribute(axesNode, 'zlim', axes.zlim);
             }
@@ -91,10 +91,6 @@ define([
 
         static getMetaType() {
             return 'Graph';
-        }
-
-        static is3D(axes) {
-            return !!axes.zlabel;
         }
 
     }
