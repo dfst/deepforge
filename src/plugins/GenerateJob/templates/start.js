@@ -114,7 +114,6 @@ requirejs([
             await createBaseEnvironment(jobDir);
         }
         const jobEnvFile = path.join(jobDir, 'environment.yml');
-        await updateCondaEnvironment(jobEnvFile);
         const envName = await updateCondaEnvironment(jobEnvFile);
         return envName;
     }
