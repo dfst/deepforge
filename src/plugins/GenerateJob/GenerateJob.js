@@ -177,16 +177,16 @@ define([
                 const filename = GenerateJob.toSnakeCase(name);
                 const code = this.core.getAttribute(node, 'code');
 
-                return [filename, name, code];
+                return [filename, code];
             });
 
         operations.forEach(tuple => {
-            const [filename, name, code] = tuple;
+            const [filename, code] = tuple;
 
             // Add file to `operations/`
             files.addFile(`operations/${filename}.py`, code);
 
-            files.addFile(`operations/__init__.py`, '');
+            files.addFile('operations/__init__.py', '');
         });
 
         await this.createRunScript(files);
