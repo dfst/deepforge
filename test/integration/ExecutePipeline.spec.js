@@ -12,7 +12,7 @@ describe('Pipeline execution', function () {
     const PluginNodeManager = require('webgme-engine/src/plugin/nodemanager');
     const manager = new PluginNodeManager(null, null, logger, gmeConfig);
 
-    const projectName = 'testProject';
+    const projectName = `testProject_${Date.now()}`;
     const pluginName = 'ExecutePipeline';
     let project,
         gmeAuth,
