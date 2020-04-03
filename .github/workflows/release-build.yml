@@ -14,7 +14,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - run: git fetch --depth=1 origin +refs/tags/*:refs/tags/*
-      - run: tag=$(git describe --tags `git rev-list --tags --max-count=1`) && git checkout $tag -b stable
       - name: Publish to docker hub (Stable-Server)
         uses: elgohr/Publish-Docker-Github-Action@master
         with:
@@ -31,3 +30,14 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
           tags: "stable-demo"
           dockerfile: Dockerfile.kitchensink
+
+      - name: Deploy (editor.deepforge.org)
+        uses: appleboy/ssh-action@master
+        with:
+          username: ${{ secrets.USERNAME }}
+          host: ${{ secrets.HOST }}
+          key: ${{ secrets.KEY }}
+          port: ${{ secrets.PORT }}
+          passphrase: ${{ secrets.PASSPHRASE }}
+          script: |
+            bash -ic deploy-deepforge stable
