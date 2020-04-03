@@ -1,0 +1,24 @@
+name: Release Docker File Build
+
+on:
+  push:
+    branches:
+      - 1516-docker-release-action
+  release:
+    types: [published]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - run: git fetch --depth=1 origin +refs/tags/*:refs/tags/*
+      - name: Checkout latest Tag
+      - run: git checkout $(git describe --tags)
+      - name: Use Node.js CI
+        uses: actions/setup-node@v1
+        with:
+          node-version: 12
+      - run: npm install
+      - run: npm run test-unit
