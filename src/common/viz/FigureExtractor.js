@@ -6,7 +6,7 @@ define(['./Utils'], function (Utils) {
     };
     const EXTRACTORS = {
         GRAPH: 'Graph',
-        SUB_GRAPH: 'SubGraph',
+        SUBGRAPH: 'SubGraph',
         PLOT2D: 'Plot2D',
         PLOT3D: 'Plot3D',
         IMAGE: 'Image',
@@ -27,6 +27,12 @@ define(['./Utils'], function (Utils) {
         } else {
             return this[extractorFn](node);
         }
+    };
+
+    FigureExtractor.prototype.extractChildrenOfType = function(node, metaType) {
+        const children = node.getChildrenIds().map(id => this._client.getNode(id));
+        return children.filter(node => this.getMetaType(node) === metaType)
+            .map(child => this.extract(child));
     };
 
     FigureExtractor.prototype.constructor = FigureExtractor;
@@ -56,7 +62,7 @@ define(['./Utils'], function (Utils) {
     };
 
 
-    FigureExtractor.prototype[EXTRACTORS.SUB_GRAPH] = function(node){
+    FigureExtractor.prototype[EXTRACTORS.SUBGRAPH] = function(node){
         const id = node.getId(),
             graphId = node.getParentId(),
             execId = this.getExecutionId(node);
@@ -76,26 +82,19 @@ define(['./Utils'], function (Utils) {
             ylabel: node.getAttribute('ylabel'),
         };
 
-        const children = node.getChildrenIds().map(id => this._client.getNode(id));
-
-        desc.lines = children.filter(node => this.getMetaType(node) === EXTRACTORS.LINE)
-            .map(lineNode => this.extract(lineNode));
-
-        desc.scatterPoints = children.filter(node => this.getMetaType(node) === EXTRACTORS.SCATTER_POINTS)
-            .map(scatterPointsNode => this.extract(scatterPointsNode));
+        desc.lines = this.extractChildrenOfType(node, EXTRACTORS.LINE);
+        desc.scatterPoints = this.extractChildrenOfType(node, EXTRACTORS.SCATTER_POINTS);
         return desc;
     };
 
     FigureExtractor.prototype[EXTRACTORS.PLOT2D] = function (node) {
-        let desc = this[EXTRACTORS.SUB_GRAPH](node);
-        const children = node.getChildrenIds().map(id => this._client.getNode(id));
-        desc.images = children.filter(node => this.getMetaType(node) === EXTRACTORS.IMAGE)
-            .map(imageNode => this.extract(imageNode));
+        let desc = this[EXTRACTORS.SUBGRAPH](node);
+        desc.images = this.extractChildrenOfType(node, EXTRACTORS.IMAGE);
         return desc;
     };
 
     FigureExtractor.prototype[EXTRACTORS.PLOT3D] = function(node) {
-        let desc = this[EXTRACTORS.SUB_GRAPH](node);
+        let desc = this[EXTRACTORS.SUBGRAPH](node);
         desc.zlim = node.getAttribute('zlim');
         desc.zlabel = node.getAttribute('zlabel');
         return desc;
