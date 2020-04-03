@@ -88,7 +88,7 @@ requirejs([
         }
 
         // Run 'python main.py' and merge the stdout, stderr
-        const [cmd, args] = getJobStartCommand(envName);
+        const [cmd, args] = await getJobStartCommand(envName);
         job = spawn(cmd, args, {detached: true});
         job.stdout.on('data', onStdout.bind(null, job));
         job.stderr.on('data', onStderr);
@@ -133,17 +133,20 @@ requirejs([
         await conda(`env create -n deepforge -f ${envFile}`);
     }
 
-    function getJobStartCommand(envName) {
+    async function getJobStartCommand(envName) {
         if (envName) {
             return [
                 'conda',
                 ['run', '-n', envName, 'python', 'main.py']
             ];
+        } else if (await hasConda()) {
+            return [
+                'conda',
+                ['run', '-n', DEEPFORGE_WORKER_ENV, 'python', 'main.py']
+            ];
         }
-        return [
-            'conda',
-            ['run', '-n', DEEPFORGE_WORKER_ENV, 'python', 'main.py']
-        ];
+
+        return ['python', ['main.py']];
     }
 
     async function uploadOutputData(exitCode) {
