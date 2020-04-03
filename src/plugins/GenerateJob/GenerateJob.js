@@ -339,7 +339,8 @@ define([
         files.addFile(`operations/${filename}.py`, content.code);
         files.appendToFile(
             'operations/__init__.py',
-            `from operations.${filename} import ${content.name}\n`);
+            `from operations.${filename} import ${content.name}\n`
+        );
     };
 
     GenerateJob.validateVariableName = function (word) {
