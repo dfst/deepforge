@@ -14,6 +14,7 @@ const rm_rf = require('rimraf');
 const path = require('path');
 const Config = require('./config.json');
 process.env.DEEPFORGE_HOST = Config.HOST;
+const BASE_CONDA_ENV = 'deepforge';
 
 // Create the stderr only logger
 const logger = {};
@@ -23,7 +24,6 @@ logger.fork = () => logger;
 
 let remainingImageCount = 0;
 let exitCode;
-const DEEPFORGE_WORKER_ENV = 'deepforge';
 
 const requirejs = require('requirejs');
 requirejs([
@@ -111,7 +111,7 @@ requirejs([
             return null;
         }
         const envs = await getCondaEnvironments();
-        if (!envs.includes('deepforge')) {
+        if (!envs.includes(BASE_CONDA_ENV)) {
             await createBaseEnvironment(jobDir);
         }
         const jobEnvFile = path.join(jobDir, 'environment.yml');
@@ -130,7 +130,7 @@ requirejs([
 
     async function createBaseEnvironment(jobDir) {
         const envFile = path.join(jobDir, 'environment.worker.yml');
-        await conda(`env create -n deepforge -f ${envFile}`);
+        await conda(`env create -n ${BASE_CONDA_ENV} -f ${envFile}`);
     }
 
     async function getJobStartCommand(envName) {
@@ -142,7 +142,7 @@ requirejs([
         } else if (await hasConda()) {
             return [
                 'conda',
-                ['run', '-n', DEEPFORGE_WORKER_ENV, 'python', 'main.py']
+                ['run', '-n', BASE_CONDA_ENV, 'python', 'main.py']
             ];
         }
 
@@ -217,8 +217,8 @@ requirejs([
         if (exists) {
             let name;
             try {
-                name = await getCondaEnvironmentName('deepforge');
-                await conda(`create -n ${name} --clone deepforge`);
+                name = await getCondaEnvironmentName(BASE_CONDA_ENV);
+                await conda(`create -n ${name} --clone ${BASE_CONDA_ENV}`);
                 await conda(`env update -n ${name} --file ${filepath}`);
                 return name;
             } catch (err) {
