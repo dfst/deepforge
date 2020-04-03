@@ -14,11 +14,11 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - run: git fetch --depth=1 origin +refs/tags/*:refs/tags/*
-      - name: Checkout latest Tag
-      - run: git checkout $(git describe --tags)
+
       - name: Use Node.js CI
         uses: actions/setup-node@v1
         with:
           node-version: 12
+      - run: git checkout $(git describe --tags)
       - run: npm install
       - run: npm run test-unit
