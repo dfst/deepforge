@@ -15,10 +15,16 @@ jobs:
       - uses: actions/checkout@v2
       - run: git fetch --depth=1 origin +refs/tags/*:refs/tags/*
 
+      - name: Start MongoDB
+        uses: supercharge/mongodb-github-action@1.2.0
+        with:
+          - mongodb-version: 4.2
+
       - name: Use Node.js CI
         uses: actions/setup-node@v1
         with:
           node-version: 12
-      - run: git checkout $(git describe --tags)
+
+      - run: tag=$(git describe --tags `git rev-list --tags --max-count=1`) && git checkout $tag -b latest
       - run: npm install
       - run: npm run test-unit
