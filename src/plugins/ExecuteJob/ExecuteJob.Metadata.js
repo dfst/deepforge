@@ -29,7 +29,7 @@ define([
 
             const lastId = this.lastAppliedCmd[nodeId];
             metadata
-                .filter(node => +this.core.getAttribute(node, 'id') >= lastId)
+                .filter(node => +this.core.getAttribute(node, 'id') > lastId)
                 .forEach(oldMetadata => {
                     this.core.deleteNode(oldMetadata);
                 });
