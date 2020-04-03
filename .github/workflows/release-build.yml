@@ -14,17 +14,25 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - run: git fetch --depth=1 origin +refs/tags/*:refs/tags/*
+      - name: Checkout latest tag
+      - run: tag=$(git describe --tags `git rev-list --tags --max-count=1`) && git checkout $tag -b stable
+      - name: Publish to docker hub (Stable-Server)
+          uses: elgohr/Publish-Docker-Github-Action@master
+          with:
+            name: deepforge/server
+            username: ${{ secrets.DOCKER_USERNAME }}
+            password: ${{ secrets.DOCKER_PASSWORD }}
+            tags: "stable-demo"
 
-      - name: Start MongoDB
-        uses: supercharge/mongodb-github-action@1.2.0
+      - name: Publish to docker hub (kitchen-sink-stable)
+        uses: elgohr/Publish-Docker-Github-Action@master
         with:
-          mongodb-version: 4.2
+          name: deepforge/kitchen-sink
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          tags: "stable-demo"
+          dockerfile: Dockerfile.kitchensink
 
-      - name: Use Node.js CI
-        uses: actions/setup-node@v1
-        with:
-          node-version: 12
+      - name: Publish to npm (Demo)
+        run: npm publish --dry-run
 
-      - run: tag=$(git describe --tags `git rev-list --tags --max-count=1`) && git checkout $tag -b latest
-      - run: npm install
-      - run: npm run test-unit
