@@ -23,6 +23,7 @@ logger.fork = () => logger;
 
 let remainingImageCount = 0;
 let exitCode;
+const DEEPFORGE_WORKER_ENV = 'deepforge';
 
 const requirejs = require('requirejs');
 requirejs([
@@ -140,8 +141,8 @@ requirejs([
             ];
         }
         return [
-            'python',
-            ['main.py']
+            'conda',
+            ['run', '-n', DEEPFORGE_WORKER_ENV, 'python', 'main.py']
         ];
     }
 
