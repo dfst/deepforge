@@ -14,7 +14,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - run: git fetch --depth=1 origin +refs/tags/*:refs/tags/*
-      - name: Checkout latest tag
       - run: tag=$(git describe --tags `git rev-list --tags --max-count=1`) && git checkout $tag -b stable
       - name: Publish to docker hub (Stable-Server)
         uses: elgohr/Publish-Docker-Github-Action@master
@@ -32,7 +31,3 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
           tags: "stable-demo"
           dockerfile: Dockerfile.kitchensink
-
-      - name: Publish to npm (Demo)
-        run: npm publish --dry-run
-
