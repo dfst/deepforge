@@ -37,12 +37,11 @@ define([], function () {
     const createLayout = function (desc) {
         let layout = {
             title: desc.title,
-            height: 500
+            autosize: true
         };
         // Every plot should be drawn as n * 2 Grid??
         if (descHasMultipleSubPlots(desc)) {
             const numRows = Math.ceil(desc.subGraphs.length / 2);
-            layout.height = 250 * numRows;
             let subPlots = [];
             let currentSubplotAxes;
             for (let i = 0; i < numRows * 2; i += 2) {
