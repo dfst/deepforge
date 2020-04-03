@@ -2,7 +2,7 @@ services:
   server_stable:
     entrypoint: /deepforge/.deployment/dev-entrypoint.sh 8889
     environment:
-      - "MONGO_URI=mongodb://mongo:27017/deepforge_stable"
+      - "MONGO_URI=mongodb://mongo:27017/deepforge"
       - "DEEPFORGE_HOST=https://editor.deepforge.org"
       - "DEEPFORGE_PUBLIC_KEY=/token_keys/public_key"
       - "DEEPFORGE_PRIVATE_KEY=/token_keys/private_key"
