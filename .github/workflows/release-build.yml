@@ -23,6 +23,9 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
           tags: "stable-demo"
 
+      - uses: actions/checkout@v2
+      - run: git fetch --depth=1 origin +refs/tags/*:refs/tags/*
+      - run: git checkout 1516-docker-release-action
       - name: Publish to docker hub (kitchen-sink-stable)
         uses: elgohr/Publish-Docker-Github-Action@master
         with:
