@@ -38,8 +38,8 @@ jobs:
           port: ${{ secrets.PORT }}
           passphrase: ${{ secrets.PASSPHRASE }}
           script: |
+            source ~/.bashrc
             rm -rf deepforge && git clone git@github.com:deepforge-dev/deepforge && cd deepforge
             git checkout -b 1596-deployment-script origin/1596-deployment-script
             chmod +x ./.deployment/deploy-deepforge && ./.deployment/deploy-deepforge
-
 
