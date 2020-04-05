@@ -14,6 +14,7 @@ const rm_rf = require('rimraf');
 const path = require('path');
 const Config = require('./config.json');
 process.env.DEEPFORGE_HOST = Config.HOST;
+const BASE_CONDA_ENV = 'deepforge';
 
 // Create the stderr only logger
 const logger = {};
@@ -87,7 +88,7 @@ requirejs([
         }
 
         // Run 'python main.py' and merge the stdout, stderr
-        const [cmd, args] = getJobStartCommand(envName);
+        const [cmd, args] = await getJobStartCommand(envName);
         job = spawn(cmd, args, {detached: true});
         job.stdout.on('data', onStdout.bind(null, job));
         job.stderr.on('data', onStderr);
@@ -110,7 +111,7 @@ requirejs([
             return null;
         }
         const envs = await getCondaEnvironments();
-        if (!envs.includes('deepforge')) {
+        if (!envs.includes(BASE_CONDA_ENV)) {
             await createBaseEnvironment(jobDir);
         }
         const jobEnvFile = path.join(jobDir, 'environment.yml');
@@ -129,20 +130,23 @@ requirejs([
 
     async function createBaseEnvironment(jobDir) {
         const envFile = path.join(jobDir, 'environment.worker.yml');
-        await conda(`env create -n deepforge -f ${envFile}`);
+        await conda(`env create -n ${BASE_CONDA_ENV} -f ${envFile}`);
     }
 
-    function getJobStartCommand(envName) {
+    async function getJobStartCommand(envName) {
         if (envName) {
             return [
                 'conda',
                 ['run', '-n', envName, 'python', 'main.py']
             ];
+        } else if (await hasConda()) {
+            return [
+                'conda',
+                ['run', '-n', BASE_CONDA_ENV, 'python', 'main.py']
+            ];
         }
-        return [
-            'python',
-            ['main.py']
-        ];
+
+        return ['python', ['main.py']];
     }
 
     async function uploadOutputData(exitCode) {
@@ -213,8 +217,8 @@ requirejs([
         if (exists) {
             let name;
             try {
-                name = await getCondaEnvironmentName('deepforge');
-                await conda(`create -n ${name} --clone deepforge`);
+                name = await getCondaEnvironmentName(BASE_CONDA_ENV);
+                await conda(`create -n ${name} --clone ${BASE_CONDA_ENV}`);
                 await conda(`env update -n ${name} --file ${filepath}`);
                 return name;
             } catch (err) {

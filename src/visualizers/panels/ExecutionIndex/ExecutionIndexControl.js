@@ -117,28 +117,49 @@ define([
     };
 
     ExecutionIndexControl.prototype._combineSubGraphsDesc = function (consolidatedDesc, subGraphs, abbr) {
-        let currentSubGraph, imageSubGraphCopy, added=0;
+        let currentSubGraph, imageSubGraphCopy, added=0, subgraphCopy;
         const originalLength = consolidatedDesc.subGraphs.length;
         for (let i = 0; i < originalLength; i++) {
             if (!subGraphs[i]) break;
             currentSubGraph = consolidatedDesc.subGraphs[i+added];
             subGraphs[i].abbr = abbr;
-            if (subGraphs[i].images.length > 0 || currentSubGraph.images.length > 0) {
-                imageSubGraphCopy = JSON.parse(JSON.stringify(subGraphs[i]));
-                imageSubGraphCopy.title = getDisplayTitle(subGraphs[i], true);
-                consolidatedDesc.subGraphs.splice(i+added, 0, imageSubGraphCopy);
+
+            if(subGraphs[i].type !== currentSubGraph.type){
+                subgraphCopy = JSON.parse(JSON.stringify(subGraphs[i]));
+                subgraphCopy.title = getDisplayTitle(subGraphs[i], true);
+                consolidatedDesc.subGraphs.splice(i+added, 0, subgraphCopy);
                 added++;
                 continue;
             }
+            if(currentSubGraph.images && subGraphs[i].images) {
+                if (subGraphs[i].images.length > 0 || currentSubGraph.images.length > 0) {
+                    imageSubGraphCopy = JSON.parse(JSON.stringify(subGraphs[i]));
+                    imageSubGraphCopy.title = getDisplayTitle(subGraphs[i], true);
+                    consolidatedDesc.subGraphs.splice(i+added, 0, imageSubGraphCopy);
+                    added++;
+                    continue;
+                }
+            }
 
             currentSubGraph.title += ` vs. ${getDisplayTitle(subGraphs[i], true)}`;
+            if(currentSubGraph.xlabel !== subGraphs[i].xlabel){
+                currentSubGraph.xlabel += ` ${subGraphs[i].xlabel}`;
+            }
 
+            if(currentSubGraph.ylabel !== subGraphs[i].ylabel){
+                currentSubGraph.ylabel += ` ${subGraphs[i].ylabel}`;
+            }
+
+            if(currentSubGraph.zlabel && currentSubGraph.zlabel !== subGraphs[i].zlabel){
+                currentSubGraph.zlabel += ` ${subGraphs[i].zlabel}`;
+            }
 
             subGraphs[i].lines.forEach((line, index) => {
                 let lineClone = JSON.parse(JSON.stringify(line));
                 lineClone.label = (lineClone.label || `line${index}`) + ` (${abbr})`;
                 currentSubGraph.lines.push(lineClone);
             });
+
             subGraphs[i].scatterPoints.forEach(scatterPoint => {
                 let scatterClone = JSON.parse(JSON.stringify(scatterPoint));
                 currentSubGraph.scatterPoints.push(scatterClone);
@@ -223,10 +244,10 @@ define([
             desc,
             base,
             type;
-        const graphNode = this.figureExtractor.getGraphNode(node),
-            isGraphOrChildren = !!graphNode;
 
         if (node) {
+            const graphNode = this.figureExtractor.getGraphNode(node),
+                isGraphOrChildren = !!graphNode;
             base = this._client.getNode(node.getBaseId());
             type = base.getAttribute('name');
             desc = {

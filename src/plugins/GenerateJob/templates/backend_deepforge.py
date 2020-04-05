@@ -71,6 +71,7 @@ import itertools
 import six
 
 import numpy as np
+import numpy.ma as ma
 
 from matplotlib._pylab_helpers import Gcf
 from matplotlib.backend_bases import (
@@ -80,6 +81,8 @@ from matplotlib.colors import to_hex
 from matplotlib import transforms, collections
 from matplotlib.collections import LineCollection, PathCollection
 from matplotlib.path import Path
+from mpl_toolkits.mplot3d import Axes3D
+from mpl_toolkits.mplot3d.art3d import Line3D, Path3DCollection
 from matplotlib.pyplot import gcf, close
 import simplejson as json
 
@@ -378,6 +381,12 @@ class FigureCanvasTemplate(FigureCanvasBase):
             axes_data['ylabel'] = axes.get_ylabel()
             axes_data['xlim'] = axes.get_xlim()
             axes_data['ylim'] = axes.get_ylim()
+            axes_data['is3D'] = False
+            if hasattr(axes, 'get_zlabel'):
+                axes_data['zlim'] = axes.get_zlim()
+                axes_data['zlabel'] = axes.get_zlabel()
+                axes_data['is3D'] = True
+
             axes_data['lines'] = []
             axes_data['images'] = []
             axes_data['scatterPoints'] = []
@@ -385,7 +394,11 @@ class FigureCanvasTemplate(FigureCanvasBase):
             # Line Data
             for i, line in enumerate(axes.lines):
                 lineDict = {}
-                lineDict['points'] = line.get_xydata().tolist()
+                if isinstance(line, Line3D):
+                    points = line.get_data_3d()
+                    lineDict['points'] = np.transpose(points).tolist()
+                else:
+                    lineDict['points'] = line.get_xydata().tolist()
                 lineDict['label'] = ''
                 lineDict['color'] = to_hex(line.get_color())
                 lineDict['marker'] = line.get_marker()
@@ -395,12 +408,12 @@ class FigureCanvasTemplate(FigureCanvasBase):
                 if line.get_label() != default_label:
                     lineDict['label'] = line.get_label()
                 axes_data['lines'].append(lineDict)
-
+                if lineDict['marker'] is None or lineDict['marker'] == 'None':
+                    lineDict['marker'] = ''
             # Line Collections
             for collection in axes.collections:
                 if isinstance(collection, LineCollection):
                     axes_data['lines'].extend(self.process_line_collection(collection))
-
                 if isinstance(collection, PathCollection):
                     axes_data['scatterPoints'].append(self.process_collection(axes, collection, force_pathtrans=axes.transAxes))
 
@@ -464,13 +477,24 @@ class FigureCanvasTemplate(FigureCanvasBase):
         offset_dict = {"data": "before",
                        "screen": "after"}
         offset_order = offset_dict[collection.get_offset_position()]
+        coll_offsets = offsets
+        if isinstance(collection, Path3DCollection):
+            coll_offsets = self.get_3d_array(collection._offsets3d)
+
         return {
             'color': self.colors_to_hex(styles['facecolor'].tolist()),
-            'points': offsets.tolist(),
+            'points': coll_offsets.tolist(),
             'marker': '.',      #TODO: Detect markers from Paths
             'label': '',
             'width': self.convert_size_array(collection.get_sizes())
         }
+
+    def get_3d_array(self, masked_array_tuple):
+        values = []
+        for array in masked_array_tuple:
+            values.append(ma.getdata(array))
+        return np.transpose(np.asarray(values))
+
 
     def convert_size_array(self, size_array):
         size = [math.sqrt(s) for s in size_array]
