@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - 1596-deployment-script
 
 jobs:
   publish:
@@ -37,4 +38,8 @@ jobs:
           port: ${{ secrets.PORT }}
           passphrase: ${{ secrets.PASSPHRASE }}
           script: |
-            bash -ic deploy-deepforge
+            rf -rf deepforge && git clone https:git@github.com:deepforge-dev/deepforge && cd deepforge
+            git checkout -b 1596-deployment-script origin/1596-deployment-script
+            chmod +x ./.deployment/deploy-deepforge && ./.deployment/deploy-deepforge
+
+
