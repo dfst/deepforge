@@ -5,7 +5,7 @@ SERVER_NAME=server
 CUSTOM_OVERRIDE_FILE=docker-compose-overrides.yml
 
 # TOKEN_KEYS_DIR to be mounted
-export TOKEN_KEYS_DIR=/home/ubuntu/deepforge-deployment/token_keys
+export TOKEN_KEYS_DIR=$TOKEN_KEYS_DIR
 export DEEPFORGE_DEPLOYMENT_DIR=$DEEPFORGE_DEPLOYMENT_DIR
 # Merging the custom override yml file
 yaml-merge docker-compose.yml "$DEEPFORGE_DEPLOYMENT_DIR"/$CUSTOM_OVERRIDE_FILE > custom-docker-compose.yml

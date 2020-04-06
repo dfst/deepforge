@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - 1596-deployment-script
 
 jobs:
   publish:
@@ -30,13 +31,17 @@ jobs:
 
       - name: Deploy (dev.deepforge.org)
         uses: appleboy/ssh-action@master
+        env:
+          TOKEN_KEYS_DIR: ${{ secrets.TOKEN_KEYS_DIR }}
         with:
           username: ${{ secrets.USERNAME }}
           host: ${{ secrets.HOST }}
           key: ${{ secrets.KEY }}
           port: ${{ secrets.PORT }}
           passphrase: ${{ secrets.PASSPHRASE }}
+          envs: TOKEN_KEYS_DIR
           script: |
             rm -rf deepforge && git clone git@github.com:deepforge-dev/deepforge && cd deepforge
+            git checkout -b 1596-deployment-script origin/1596-deployment-script
             chmod +x ./.deployment/deploy-deepforge && ./.deployment/deploy-deepforge
 
