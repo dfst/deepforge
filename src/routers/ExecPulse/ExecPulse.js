@@ -28,7 +28,6 @@ var express = require('express'),
  */
 function initialize(middlewareOpts) {
     var logger = middlewareOpts.logger.fork('ExecPulse'),
-        ensureAuthenticated = middlewareOpts.ensureAuthenticated,
         STALE_THRESHOLD = 7500;
 
     storage = require('../storage')(logger, middlewareOpts.gmeConfig);
@@ -39,9 +38,6 @@ function initialize(middlewareOpts) {
         res.setHeader('X-WebGME-Media-Type', 'webgme.v1');
         next();
     });
-
-    // Use ensureAuthenticated if the routes require authentication. (Can be set explicitly for each route.)
-    router.use('*', ensureAuthenticated);
 
     router.get('/', function (req, res) {
         mongo.find().toArray((err, all) => {

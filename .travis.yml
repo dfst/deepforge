@@ -6,7 +6,7 @@ addons:
     chrome: beta
 sudo: false
 env:
-    - DEEPFORGE_HOST=127.0.0.1:8080
+    - DEEPFORGE_HOST=127.0.0.1:8080 NODE_ENV=test
 script: npm run test-ci
 before_install:
   - docker pull minio/minio

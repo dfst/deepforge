@@ -37,4 +37,5 @@ jobs:
           port: ${{ secrets.PORT }}
           passphrase: ${{ secrets.PASSPHRASE }}
           script: |
-            bash -ic deploy-deepforge
+            rm -rf deepforge && git clone git@github.com:deepforge-dev/deepforge && cd deepforge
+            chmod +x ./.deployment/deploy-deepforge && ./.deployment/deploy-deepforge
