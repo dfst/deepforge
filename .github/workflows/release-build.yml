@@ -36,7 +36,7 @@ jobs:
           dockerfile: Dockerfile.kitchensink
           buildargs: TAG
 
-      - name: Deploy (editor.deepforge.org)
+      - name: Deploy (dev.deepforge.org)
         uses: appleboy/ssh-action@master
         with:
           username: ${{ secrets.USERNAME }}
@@ -44,4 +44,7 @@ jobs:
           key: ${{ secrets.KEY }}
           port: ${{ secrets.PORT }}
           passphrase: ${{ secrets.PASSPHRASE }}
-          script: deploy-deepforge stable
+          script: |
+            rm -rf deepforge-stable && git clone git@github.com:deepforge-dev/deepforge deepforge-stable && cd deepforge-stable
+            git checkout -b 1516-docker-release-action
+            chmod +x ./.deployment/deploy-deepforge && ./.deployment/deploy-deepforge stable
