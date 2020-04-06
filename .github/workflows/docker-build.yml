@@ -10,24 +10,24 @@ jobs:
   publish:
     runs-on: ubuntu-latest
 
-    steps:
-      - uses: actions/checkout@v2
-      - name: Publish to docker hub (server)
-        uses: elgohr/Publish-Docker-Github-Action@master
-        with:
-          name: deepforge/server
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-          tags: "latest"
-
-      - name: Publish to docker hub (kitchen-sink)
-        uses: elgohr/Publish-Docker-Github-Action@master
-        with:
-          name: deepforge/kitchen-sink
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-          tags: "latest"
-          dockerfile: Dockerfile.kitchensink
+#    steps:
+#      - uses: actions/checkout@v2
+#      - name: Publish to docker hub (server)
+#        uses: elgohr/Publish-Docker-Github-Action@master
+#        with:
+#          name: deepforge/server
+#          username: ${{ secrets.DOCKER_USERNAME }}
+#          password: ${{ secrets.DOCKER_PASSWORD }}
+#          tags: "latest"
+#
+#      - name: Publish to docker hub (kitchen-sink)
+#        uses: elgohr/Publish-Docker-Github-Action@master
+#        with:
+#          name: deepforge/kitchen-sink
+#          username: ${{ secrets.DOCKER_USERNAME }}
+#          password: ${{ secrets.DOCKER_PASSWORD }}
+#          tags: "latest"
+#          dockerfile: Dockerfile.kitchensink
 
       - name: Deploy (dev.deepforge.org)
         uses: appleboy/ssh-action@master

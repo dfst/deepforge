@@ -1,14 +1,13 @@
 #!/usr/bin/env bash
 DEEPFORGE_DEPLOYMENT_DIR="$(realpath "$(dirname "$0")")"
-. ~/.nvm/nvm.sh
-SERVER_NAME=server
-CUSTOM_OVERRIDE_FILE=docker-compose-overrides.yml
+export DEEPFORGE_DEPLOYMENT_DIR
 
-# TOKEN_KEYS_DIR to be mounted
-export TOKEN_KEYS_DIR=$TOKEN_KEYS_DIR
-export DEEPFORGE_DEPLOYMENT_DIR=$DEEPFORGE_DEPLOYMENT_DIR
+. ~/.nvm/nvm.sh
+
+SERVER_NAME=server
+
 # Merging the custom override yml file
-yaml-merge docker-compose.yml "$DEEPFORGE_DEPLOYMENT_DIR"/$CUSTOM_OVERRIDE_FILE > custom-docker-compose.yml
+yaml-merge docker-compose.yml "$DEEPFORGE_DEPLOYMENT_DIR"/docker-compose-custom-overrides.yml > custom-docker-compose.yml
 
 # Pulling the latest docker image, stopping the server, removing and restarting it
 docker-compose --file custom-docker-compose.yml pull $SERVER_NAME
