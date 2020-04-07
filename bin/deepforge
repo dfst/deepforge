@@ -275,7 +275,6 @@ program.command('start')
     .option('-p, --port <port>', 'specify the port to use')
     .option('-s, --server', 'start the server')
     .option('-N, --no-conda', 'do not start deepforge server in a conda environment.')
-    .option('-w, --worker [url]', 'start a worker and connect to given url. Defaults to local deepforge')
     .option('-m, --mongo', 'start MongoDB')
     .action(async args => {
         const serverCommand = getDeepForgeServerCommand(args.conda);
@@ -296,21 +295,11 @@ program.command('start')
             });
         }
 
-        if (args.worker) {
-            const main = path.join(__dirname, 'start-worker.js');
-            if (args.worker !== true) {
-                await spawn('node', [main, args.worker]);
-            } else {
-                await spawn('node', [main]);
-            }
-        }
-
-        if (!args.server && !args.worker && !args.mongo) {
-            // Starting everything
+        const startAll = !args.server && !args.mongo;
+        if (startAll) {
             await checkMongo(args);
             startLocal(serverCommand);
         }
-
     });
 
 // update
