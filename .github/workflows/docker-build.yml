@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - master
-      - 1516-docker-release-action
   release:
     types:
       - published
@@ -17,7 +16,7 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: Get Release Tags
-        id: get_version
+        id: get_release_tags
         run: |
           echo "::set-env name=RELEASE_TAG::$(echo ${GITHUB_REF:10})"
           echo "::set-env name=TAG::stable"
@@ -25,7 +24,7 @@ jobs:
         if: github.event_name == 'release'
 
       - name: Get Push Tags
-        id: get_release_tags
+        id: get_push_tags
         run: |
           echo "::set-env name=TAG::latest"
           echo "::set-env name=RELEASE_TAG::$(echo ${GITHUB_REF:11})"
@@ -77,5 +76,6 @@ jobs:
           passphrase: ${{ secrets.PASSPHRASE }}
           script: |
             rm -rf deepforge-stable && git clone git@github.com:deepforge-dev/deepforge-stable && cd deepforge-stable
+            git checkout -b stable $(git tag | tail -1)
             chmod +x ./.deployment/deploy-deepforge && ./.deployment/deploy-deepforge stable
         if: github.event_name == 'release'

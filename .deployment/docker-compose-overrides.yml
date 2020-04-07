@@ -13,7 +13,7 @@ services:
       - "DEEPFORGE_HOST=https://editor.deepforge.org"
       - "DEEPFORGE_PUBLIC_KEY=/token_keys/public_key"
       - "DEEPFORGE_PRIVATE_KEY=/token_keys/private_key"
-    image: deepforge/kitchen-sink:stable-demo
+    image: deepforge/kitchen-sink:stable
     ports:
       - "8889:8889"
     volumes:
