@@ -1,13 +1,13 @@
 services:
   server:
-    entrypoint: /.deployment/dev-entrypoint.sh 8888
+    entrypoint: /.deployment/dev-entrypoint.sh
     volumes:
       - "$HOME/.deepforge/blob:/data/blob"
       - "${TOKEN_KEYS_DIR}:/token_keys"
       - "${DEEPFORGE_DEPLOYMENT_DIR}:/.deployment"
 
   server_stable:
-    entrypoint: /.deployment/dev-entrypoint.sh 8889
+    entrypoint: /.deployment/dev-entrypoint.sh
     environment:
       - "MONGO_URI=mongodb://mongo:27017/deepforge"
       - "DEEPFORGE_HOST=https://editor.deepforge.org"
@@ -15,7 +15,7 @@ services:
       - "DEEPFORGE_PRIVATE_KEY=/token_keys/private_key"
     image: deepforge/kitchen-sink:stable
     ports:
-      - "8889:8889"
+      - "8889:8888"
     volumes:
       - "$HOME/.deepforge/blob:/data/blob"
       - "${TOKEN_KEYS_DIR}:/token_keys"

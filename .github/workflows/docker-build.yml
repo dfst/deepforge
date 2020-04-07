@@ -49,7 +49,7 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
           tags: "${{ env.TAG }},${{ env.RELEASE_TAG }}"
           dockerfile: Dockerfile.kitchensink
-          buildargs: "${{ env.TAG }}"
+          buildargs: "TAG=${{ env.TAG }}"
           tag_semver: "${{ env.TAG_SEMVER }}"
 
 
