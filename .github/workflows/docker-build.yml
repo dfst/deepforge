@@ -18,7 +18,7 @@ jobs:
       - name: Get Release Tags
         id: get_release_tags
         run: |
-          echo "::set-env name=RELEASE_TAG::$(echo ${GITHUB_REF:10})"
+          echo "::set-env name=RELEASE_TAG_NAME::$(echo ${GITHUB_REF} | sed -e "s/refs\/tags\///g" | sed -E "s/v?([0-9]+)\.([0-9+])\.([0-9]+)(-[a-zA-Z]+(\.[0-9]+)?)?/\1.\2.\3\4, \1.\2\4, \1\4/g")"
           echo "::set-env name=TAG::stable"
           echo "::set-env name=TAG_SEMVER::true"
         if: github.event_name == 'release'
