@@ -12,31 +12,31 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-#      - uses: actions/checkout@v2
-#      - run: git fetch --depth=1 origin +refs/tags/*:refs/tags/*
-#      - run: git checkout 1516-docker-release-action
-#      - name: Publish to docker hub (Stable-Server)
-#        uses: elgohr/Publish-Docker-Github-Action@master
-#        with:
-#          name: deepforge/server
-#          username: ${{ secrets.DOCKER_USERNAME }}
-#          password: ${{ secrets.DOCKER_PASSWORD }}
-#          tags: "stable-demo"
-#
-#
-#      - name: Publish to docker hub (kitchen-sink-stable)
-#        uses: elgohr/Publish-Docker-Github-Action@master
-#        env:
-#          TAG: stable-demo
-#        with:
-#          name: deepforge/kitchen-sink
-#          username: ${{ secrets.DOCKER_USERNAME }}
-#          password: ${{ secrets.DOCKER_PASSWORD }}
-#          tags: "stable-demo"
-#          dockerfile: Dockerfile.kitchensink
-#          buildargs: TAG
+      - uses: actions/checkout@v2
+      - run: git fetch --depth=1 origin +refs/tags/*:refs/tags/*
+      - run: git checkout 1516-docker-release-action
+      - name: Publish to docker hub (Stable-Server)
+        uses: elgohr/Publish-Docker-Github-Action@master
+        with:
+          name: deepforge/server
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          tags: "stable-demo"
 
-      - name: Deploy (dev.deepforge.org)
+
+      - name: Publish to docker hub (kitchen-sink-stable)
+        uses: elgohr/Publish-Docker-Github-Action@master
+        env:
+          TAG: stable-demo
+        with:
+          name: deepforge/kitchen-sink
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          tags: "stable-demo"
+          dockerfile: Dockerfile.kitchensink
+          buildargs: TAG
+
+      - name: Deploy (editor.deepforge.org)
         uses: appleboy/ssh-action@master
         with:
           username: ${{ secrets.USERNAME }}

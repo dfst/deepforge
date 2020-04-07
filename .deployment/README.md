@@ -7,8 +7,7 @@ Additionally, this contains a file with customizations to the standard docker-co
 
 The deployment is updated by first creating the custom docker compose file using [yaml-merge](https://github.com/alexlafroscia/yaml-merge):
 ```
-yaml-merge docker-compose.yml .deployment/docker-compose-overrides.yml > custom-docker-compose.yml (for dev.deepforge.org)
-yaml-merge docker-compose.yml .deployment/docker-compose-stable-overrides.yml > custom-docker-compose.yml (for editor.deepforge.org)
+yaml-merge docker-compose.yml .deployment/docker-compose-overrides.yml > custom-docker-compose.yml
 ```
 Next, the generated file can be used with docker-compose:
 ```
