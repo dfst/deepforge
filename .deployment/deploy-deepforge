@@ -7,12 +7,12 @@ export DEEPFORGE_DEPLOYMENT_DIR
 SERVER_NAME=server
 
 # Merging the custom override yml file
-yaml-merge docker-compose.yml "$DEEPFORGE_DEPLOYMENT_DIR"/docker-compose-overrides.yml > custom-docker-compose.yml
+yaml-merge docker/docker-compose.yml "$DEEPFORGE_DEPLOYMENT_DIR"/docker-compose-overrides.yml > custom-docker-compose.yml
 
 # Pulling the latest docker image, stopping the server, removing and restarting it
 docker-compose --file custom-docker-compose.yml pull $SERVER_NAME
-docker-compose stop $SERVER_NAME
-docker-compose rm -f $SERVER_NAME
+docker-compose --file custom-docker-compose.yml stop $SERVER_NAME
+docker-compose --file custom-docker-compose.yml rm -f $SERVER_NAME
 docker-compose --file custom-docker-compose.yml up -d $SERVER_NAME
 
 docker image prune -f
