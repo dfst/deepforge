@@ -20,7 +20,6 @@ jobs:
         run: |
           echo "::set-env name=RELEASE_TAG_NAME::$(echo ${GITHUB_REF} | sed -e "s/refs\/tags\///g" | sed -E "s/v?([0-9]+)\.([0-9+])\.([0-9]+)(-[a-zA-Z]+(\.[0-9]+)?)?/\1.\2.\3\4, \1.\2\4, \1\4/g")"
           echo "::set-env name=TAG::stable"
-          echo "::set-env name=TAG_SEMVER::true"
         if: github.event_name == 'release'
 
       - name: Get Push Tags
@@ -28,7 +27,6 @@ jobs:
         run: |
           echo "::set-env name=TAG::latest"
           echo "::set-env name=RELEASE_TAG::$(echo ${GITHUB_REF:11})"
-          echo "::set-env name=TAG_SEMVER::false"
         if: github.event_name == 'push'
 
       - name: Publish to docker hub (server)
@@ -50,8 +48,6 @@ jobs:
           tags: "${{ env.TAG }},${{ env.RELEASE_TAG }}"
           dockerfile: Dockerfile.kitchensink
           buildargs: "TAG=${{ env.TAG }}"
-          tag_semver: "${{ env.TAG_SEMVER }}"
-
 
       - name: Deploy (dev.deepforge.org)
         uses: appleboy/ssh-action@master
