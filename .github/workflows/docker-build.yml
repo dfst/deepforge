@@ -19,15 +19,17 @@ jobs:
       - name: Get Release Tags
         id: get_version
         run: |
-          echo "::set-env name=RELEASE_TAG_NAME::$(echo ${GITHUB_REF:10})"
-          echo "::set-env name=DEFAULT_TAG_NAME::stable"
+          echo "::set-env name=RELEASE_TAG::$(echo ${GITHUB_REF:10})"
+          echo "::set-env name=TAG::stable"
+          echo "::set-env name=TAG_SEMVER::true"
         if: github.event_name == 'release'
 
       - name: Get Push Tags
         id: get_release_tags
         run: |
-          echo "::set-env name=DEFAULT_TAG_NAME::latest"
-          echo "::set-env name=RELEASE_TAG_NAME::$(echo ${GITHUB_REF:11})"
+          echo "::set-env name=TAG::latest"
+          echo "::set-env name=RELEASE_TAG::$(echo ${GITHUB_REF:11})"
+          echo "::set-env name=TAG_SEMVER::false"
         if: github.event_name == 'push'
 
       - name: Publish to docker hub (server)
@@ -36,7 +38,8 @@ jobs:
           name: deepforge/server
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-          tags: "${{ env.DEFAULT_TAG_NAME }},${{ env.RELEASE_TAG_NAME }}"
+          tags: "${{ env.TAG }},${{ env.RELEASE_TAG }}"
+          tag_semver: "${{ env.TAG_SEMVER }}"
 
       - name: Publish to docker hub (kitchen-sink)
         uses: elgohr/Publish-Docker-Github-Action@master
@@ -45,9 +48,10 @@ jobs:
           name: deepforge/kitchen-sink
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-          tags: "${{ env.DEFAULT_TAG_NAME }},${{ env.RELEASE_TAG_NAME }}"
+          tags: "${{ env.TAG }},${{ env.RELEASE_TAG }}"
           dockerfile: Dockerfile.kitchensink
-          buildargs: "${{ env.DEFAULT_TAG_NAME }}"
+          buildargs: "${{ env.TAG }}"
+          tag_semver: "${{ env.TAG_SEMVER }}"
 
 
       - name: Deploy (dev.deepforge.org)
