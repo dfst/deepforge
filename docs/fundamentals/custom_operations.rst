@@ -122,4 +122,4 @@ After defining the interface and implementation, we can now use the "TrainValida
     :align: center
     :scale: 85 %
 
-    Using the "TrainVisualize" operation in a pipeline
+    Using the "TrainValidate" operation in a pipeline
