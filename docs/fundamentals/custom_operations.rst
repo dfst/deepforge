@@ -27,7 +27,7 @@ The operation editor also provides an interface to specify operation pythhon dep
 .. figure:: operation_environment.png
     :align: center
 
-    The operation environment accepts python dependencies for an operations.
+    The operation environment contains python dependencies for the given operation.
 
 To the left of the operation editor is the implementation editor. The implementation editor is a code editor specially tailored for programming the implementations of operations in DeepForge. It also is synchronized with the interface editor. A section of the implementation is shown below:
 
