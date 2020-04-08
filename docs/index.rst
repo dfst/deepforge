@@ -25,8 +25,8 @@ Welcome to DeepForge's documentation!
    :maxdepth: 1
    :caption: Deployment
 
-   deployment/overview.rst
    deployment/quick_start.rst
+   deployment/overview.rst
    deployment/native.rst
 
 .. toctree::
