@@ -9,9 +9,9 @@ Projects in DeepForge may contain artifacts which reference datasets, trained mo
 This also enables users to "bring their own storage" as they can connect their existing cyberinfrastructure to a public deployment of DeepForge.
 Currently, DeepForge supports 3 different storage adapters:
 
-3. S3 Storage: Object storage with an S3-comptabile API such as `minio <https://play.min.io>`_ or `AWS S3 <https://aws.amazon.com/s3/>`_
+1. S3 Storage: Object storage with an S3-comptabile API such as `minio <https://play.min.io>`_ or `AWS S3 <https://aws.amazon.com/s3/>`_
 2. SciServer Files Service : Files service from `SciServer <https://sciserver.org>`_
-1. WebGME Blob Server : Blob storage provided by `WebGME <https://webgme.org/>`_ 
+3. WebGME Blob Server : Blob storage provided by `WebGME <https://webgme.org/>`_
 
 Compute Adapters
 ----------------

@@ -27,7 +27,7 @@ The operation editor also provides an interface to specify operation pythhon dep
 .. figure:: operation_environment.png
     :align: center
 
-    The operation environment accepts python dependencies for an operations.
+    The operation environment accepts python dependencies for an operation
 
 To the left of the operation editor is the implementation editor. The implementation editor is a code editor specially tailored for programming the implementations of operations in DeepForge. It also is synchronized with the interface editor. A section of the implementation is shown below:
 
@@ -81,7 +81,7 @@ To the left of the operation editor is the implementation editor. The implementa
             # Generates a batch of data
             X1, y1 = list(), list()
             n = 0
-            while 1:
+            while 1:stash@{1}
                 for sample, label in zip(X, y):
                     n += 1
                     X1.append(sample)
@@ -123,3 +123,13 @@ After defining the interface and implementation, we can now use the "TrainValida
     :scale: 85 %
 
     Using the "TrainVisualize" operation in a pipeline
+
+Operation Feedback
+------------------
+Operations in DeepForge can generate metadata about its execution. This metadata is generated during the execution and provided back to the user in real-time. An example of this includes providing real-time plotting feedback. When implementing an operation in DeepForge, this metadata can be created using the :code:`matplotlib` plotting capabilities.
+
+.. figure:: plotloss.png
+    :align: center
+    :scale: 75 %
+
+    An example graph of the loss function while training a neural network.
