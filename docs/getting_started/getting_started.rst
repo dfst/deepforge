@@ -6,7 +6,7 @@ Getting Started
 
 What is DeepForge?
 ------------------
-Deep learning is a very promising, yet complex, area of machine learning. This complexity can both create a barrier to entry for those wanting to get involved in deep learning as well as slow the development of those already comfortable in deep learning.
+Deep learning is a promising, yet complex, area of machine learning. This complexity can both create a barrier to entry for those wanting to get involved in deep learning as well as slow the development of those already comfortable in deep learning.
 
 DeepForge is a development environment for deep learning focused on alleviating these problems. Leveraging principles from Model-Driven Engineering, DeepForge is able to reduce the complexity of using deep learning while providing an opportunity for integrating with other domain specific modeling environments created with WebGME_.
 
@@ -25,7 +25,7 @@ DeepForge provides a collaborative, distributed development environment for deep
 
 Concepts and Terminology
 ~~~~~~~~~~~~~~~~~~~~~~~~
-- *Operation* - essentially a function written in torch (such as `SGD`)
+- *Operation* - essentially a function written in Python (such as training a model, visualizing results, etc)
 - *Pipeline* - directed acyclic graph composed of operations
   - eg, a training pipeline may retrieve and normalize data, train an architecture and return the trained model
 - *Execution* - when a pipeline is run, an "execution" is created and reports the status of each operation as it is run (distributed over a number of worker machines)

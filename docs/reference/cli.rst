@@ -23,14 +23,14 @@ Printing the value of a configuration setting:
 
 .. code-block:: bash
 
-    deepforge config worker.dir
+    deepforge config blob.dir
 
 
-Setting a configuration option, such as :code:`worker.dir` can be done with:
+Setting a configuration option, such as :code:`blob.dir` can be done with:
 
 .. code-block:: bash
 
-    deepforge config worker.dir /some/new/directory
+    deepforge config blob.dir /some/new/directory
 
 
 For more information about the configuration settings, check out the `configuration <configuration.rst>`_ page.
@@ -38,23 +38,13 @@ For more information about the configuration settings, check out the `configurat
 
 Starting DeepForge Components
 -----------------------------
-DeepForge components, such as the server or the workers, can be started with the :code:`deepforge start` command. By default, this command will start all the necessary components to run including the server, a mongo database (if applicable) and a worker.
+The DeepForge server can be started with the :code:`deepforge start` command. By default, this command will start both the server and a mongo database (if applicable).
 
 The server can be started by itself using
 
 .. code-block:: bash
 
     deepforge start --server
-
-
-The worker can be started by itself using
-
-.. code-block:: bash
-
-    deepforge start --worker http://154.95.87.1:7543
-
-
-where `http://154.95.87.1:7543` is the url of the deepforge server.
 
 Update/Uninstall DeepForge
 --------------------------

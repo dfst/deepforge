@@ -55,17 +55,7 @@ By default, DeepForge will start on `http://localhost:8888`. However, the port c
 
 Worker
 ~~~~~~
-The DeepForge worker can be started with
-
-.. code-block:: bash
-
-    deepforge start --worker
-
-To connect to a remote deepforge instance, add the url of the DeepForge server:
-
-.. code-block:: bash
-
-    deepforge start --worker http://myaddress.com:1234
+The DeepForge worker (used with WebGME compute) can be used to enable users to connect their own machines to use for any required computation. This can be installed from `https://github.com/deepforge-dev/worker`. It is recommended to install `Conda <https://conda.io/en/latest/>`_ on the worker machine so any dependencies can be automatically installed.
 
 Updating
 ~~~~~~~~
@@ -108,22 +98,6 @@ To run all components locally start with
 and navigate to `http://localhost:8888` to start using DeepForge!
 
 Alternatively, if jobs are going to be executed on an external worker, run `./bin/deepforge start -s` locally and navigate to `http://localhost:8888`.
-
-DeepForge Worker
-~~~~~~~~~~~~~~~~
-If you are using `./bin/deepforge start -s` you will need to set up a DeepForge worker (`./bin/deepforge start` starts a local worker for you!). DeepForge workers are slave machines connected to DeepForge which execute the provided jobs. This allows the jobs to access the GPU, etc, and provides a number of benefits over trying to perform deep learning tasks in the browser.
-
-Once DeepForge is installed on the worker, start it with
-
-.. code-block:: bash
-
-    ./bin/deepforge start -w
-
-Note: If you are running the worker on a different machine, put the address of the DeepForge server as an argument to the command. For example:
-
-.. code-block:: bash
-
-    ./bin/deepforge start -w http://myaddress.com:1234
 
 Updating
 ~~~~~~~~
