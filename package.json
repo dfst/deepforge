@@ -53,16 +53,16 @@
     "webgme-chflayout": "^2.0.1",
     "webgme-cli": "^2.7.3",
     "webgme-easydag": "github:dfst/webgme-easydag",
-    "webgme-executor-worker": "^1.0.1",
     "webgme-fab": "github:dfst/webgme-fab",
     "webgme-simple-nodes": "^2.1.3"
   },
   "devDependencies": {
-    "nodemon": "^1.9.2",
     "chai": "^3.0.0",
+    "deepforge-worker": "git+https://github.com/deepforge-dev/worker.git",
     "jszip": "^2.5.0",
     "mocha": "^2.2.5",
     "mockery": "^1.7.0",
+    "nodemon": "^1.9.2",
     "skulpt": "^0.11.1"
   }
 }

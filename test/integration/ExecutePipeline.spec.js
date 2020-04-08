@@ -170,8 +170,9 @@ describe('Pipeline execution', function () {
 
     async function startWorker() {
         const url = `http://localhost:${gmeConfig.server.port}`;
-        const workerScript = path.join(testFixture.PROJECT_ROOT, 'bin', 'start-worker.js');
-        const subprocess = spawn('node', [workerScript, url]);
+        const workerBin = require.resolve('deepforge-worker');
+        const args = [ workerBin, '-H', url ];
+        const subprocess = spawn('node', args);
         return new Promise(resolve => {
             let stdout = '';
             subprocess.stdout.on('data', data => {
