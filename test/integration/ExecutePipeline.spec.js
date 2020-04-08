@@ -57,6 +57,7 @@ describe('Pipeline execution', function () {
         await project.createBranch('test', commitHash);
         await server.start();
         worker = await startWorker();
+        console.log('worker has been set!');
     });
 
     after(async function () {
@@ -181,12 +182,14 @@ describe('Pipeline execution', function () {
                     console.log(`stdout is now: ${stdout}`);
                     if (stdout.includes('Connected')) {
                         stdout = null;
+                        console.log('resolving...');
                         return resolve();
                     }
                 }
             });
         };
         await new Promise(connect);
+        console.log('returning subprocess')
         return subprocess;
     }
 
