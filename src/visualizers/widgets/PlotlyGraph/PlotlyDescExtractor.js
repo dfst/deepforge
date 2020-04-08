@@ -28,14 +28,11 @@ define([], function () {
     };
 
     const needsTightLayout = function (desc, label) {
-        let needsTightLayout = false;
-        for(let subGraph of desc.subGraphs){
-            needsTightLayout = !!subGraph.title && !!subGraph[label];
-            if(needsTightLayout){
-                break;
-            }
-        }
-        return needsTightLayout;
+        return !!desc.subGraphs.find(subGraph => hasTitleAndAxisLabel(subGraph, label));
+    };
+
+    const hasTitleAndAxisLabel = function (subGraph, axisLabel) {
+        return subGraph.title && subGraph[axisLabel];
     };
 
     const is3D = function (subGraph) {
