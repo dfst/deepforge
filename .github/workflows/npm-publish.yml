@@ -1,9 +1,6 @@
 name: Publish to NPM
 
 on:
-  push:
-    branches:
-      - 1612-npm-publish-action
   release:
     types:
       - published
@@ -22,7 +19,7 @@ jobs:
           node-version: 12
           registry-url: https://registry.npmjs.org/
       - run: npm ci
-      - run: npm publish --dry-run
+      - run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
