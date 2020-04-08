@@ -60,10 +60,10 @@ describe('Pipeline execution', function () {
     });
 
     after(async function () {
+        worker.kill();
         await storage.closeDatabase();
         await gmeAuth.unload();
         await server.stop();
-        worker.kill();
     });
 
     const storageBackends = Storage.getAvailableBackends();
@@ -173,18 +173,20 @@ describe('Pipeline execution', function () {
         const workerBin = require.resolve('deepforge-worker');
         const args = [ workerBin, '-H', url ];
         const subprocess = spawn('node', args);
-        return new Promise(resolve => {
+        const connect = resolve => {
             let stdout = '';
             subprocess.stdout.on('data', data => {
                 if (stdout !== null) {
                     stdout += data.toString();
-                    if (stdout.includes(`Connected to ${url}`)) {
+                    if (stdout.includes('Connected')) {
                         stdout = null;
-                        return resolve(subprocess);
+                        return resolve();
                     }
                 }
             });
-        });
+        };
+        await new Promise(connect);
+        return subprocess;
     }
 
     function maxDuration(compute) {
