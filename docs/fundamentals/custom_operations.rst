@@ -20,14 +20,14 @@ The interface editor is provided on the right and presents the interface as a di
 
     The TrainValidate operation accepts training data, a model and attributes for setting the batch size, and the number of epochs.
 
-The operation editor also provides an interface to specify operation pythhon dependencies. DeepForge uses
+The operation editor also provides an interface to specify operation python dependencies. DeepForge uses
 :code:`conda` to manage python dependencies for an operation. This pairs well with the integration of various compute platforms that available to the user and the only requirement for a user is to have Conda installed in their computing platform. You can specify operation dependencies using a conda environment `file <https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#create-env-file-manually>`_ as shown in the diagram below:
 
 
 .. figure:: operation_environment.png
     :align: center
 
-    The operation environment accepts python dependencies for an operation
+    The operation environment contains python dependencies for the given operation.
 
 To the left of the operation editor is the implementation editor. The implementation editor is a code editor specially tailored for programming the implementations of operations in DeepForge. It also is synchronized with the interface editor. A section of the implementation is shown below:
 
@@ -122,7 +122,7 @@ After defining the interface and implementation, we can now use the "TrainValida
     :align: center
     :scale: 85 %
 
-    Using the "TrainVisualize" operation in a pipeline
+    Using the "TrainValidate" operation in a pipeline
 
 Operation Feedback
 ------------------

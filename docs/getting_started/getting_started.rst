@@ -27,7 +27,7 @@ Concepts and Terminology
 ~~~~~~~~~~~~~~~~~~~~~~~~
 - *Operation* - essentially a function written in Python (such as training a model, visualizing results, etc)
 - *Pipeline* - directed acyclic graph composed of operations
-  - eg, a training pipeline may retrieve and normalize data, train an architecture and return the trained model
+  - e.g., a training pipeline may retrieve and normalize data, train an architecture and return the trained model
 - *Execution* - when a pipeline is run, an "execution" is created and reports the status of each operation as it is run (distributed over a number of worker machines)
 - *Artifact* - an artifact represents some data (either user uploaded or created during an execution)
 - *Resource* - a domain specific model (provided by a DeepForge extension) to be used by a pipeline such as a neural network architecture

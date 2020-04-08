@@ -9,13 +9,13 @@ Projects in DeepForge may contain artifacts which reference datasets, trained mo
 This also enables users to "bring their own storage" as they can connect their existing cyberinfrastructure to a public deployment of DeepForge.
 Currently, DeepForge supports 3 different storage adapters:
 
-1. S3 Storage: Object storage with an S3-comptabile API such as `minio <https://play.min.io>`_ or `AWS S3 <https://aws.amazon.com/s3/>`_
+1. S3 Storage: Object storage with an S3-compatible API such as `minio <https://play.min.io>`_ or `AWS S3 <https://aws.amazon.com/s3/>`_
 2. SciServer Files Service : Files service from `SciServer <https://sciserver.org>`_
 3. WebGME Blob Server : Blob storage provided by `WebGME <https://webgme.org/>`_
 
 Compute Adapters
 ----------------
-Similar to storage adapters, compute adapters enable DeepForge to integrate with existing cyberinfrastructure used for executing some computation or workflow. This is designed to allow users to leverage their existing HPC or other computational resources with DeepForge. Compute adapters provide an interface through which DeepForge is able to execute workflows (eg, training a neural network) on external machines.
+Similar to storage adapters, compute adapters enable DeepForge to integrate with existing cyberinfrastructure used for executing some computation or workflow. This is designed to allow users to leverage their existing HPC or other computational resources with DeepForge. Compute adapters provide an interface through which DeepForge is able to execute workflows (e.g., training a neural network) on external machines.
 
 Currently, the following compute adapters are available:
 
