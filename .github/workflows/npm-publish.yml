@@ -15,12 +15,22 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Pull Minio
+        env:
+          MINIO_ACCESS_KEY: ${{ secrets.MINIO_ACCESS_KEY }}
+          MINIO_SECRET_KEY: ${{ secrets.MINIO_SECRET_KEY }}
         run: |
           docker pull minio/minio
-          docker run -d -p 9000:9000 --name minio-test -e "MINIO_ACCESS_KEY=${{ secrets.MINIO_ACCESS_KEY }}" -e "MINIO_SECRET_KEY=${{ secrets.MINIO_SECRET_KEY }}" minio/minio server ./data
+          docker run -d -p 9000:9000 --name minio-test -e "MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}" -e "MINIO_SECRET_KEY=${MINIO_SECRET_KEY}" minio/minio server ./data
       - name: Install Conda
         run: |
           source utils/install-conda.sh
+
+      - uses: actions/setup-node@v1
+        with:
+          node-version: 12
+          registry-url: https://registry.npmjs.org/
+      - run: npm ci
+      - run: npm publish --dry-run
 
 
 
