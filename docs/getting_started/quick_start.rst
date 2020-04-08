@@ -1,12 +1,12 @@
 Quick Start
 ===========
-There are two ways to give DeepForge a try: visit the public deployment at https://editor.deepforge.org, or `spin up your own deployment locally <deployment/quick_start.rst>`_.
+There are two ways to give DeepForge a try: visit the public deployment at https://editor.deepforge.org, or `spin up your own deployment locally <../deployment/quick_start.html>`_.
 
 Connecting to the Public Deployment
 -----------------------------------
 **As of this writing, registration is not yet open to the public and is only available upon request.**
 
-After getting an account for https://editor.deepforge.org, the only thing required to get up and running with DeepForge is to determine the `compute and storage adapters <fundamentals/integration.rst>`_ to use. If you already have an account with one of the existing integrations, then you should be able to use those without any further setup!
+After getting an account for https://editor.deepforge.org, the only thing required to get up and running with DeepForge is to determine the `compute and storage adapters <../fundamentals/integration.html>`_ to use. If you already have an account with one of the existing integrations, then you should be able to use those without any further setup!
 
 If not, the easiest way to get started is to connect your own desktop to use for compute and to use the S3 adapter to storage data and trained model weights. Connect your own desktop for computation using the following command (using docker):
 
