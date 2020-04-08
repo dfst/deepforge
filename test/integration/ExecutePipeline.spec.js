@@ -178,6 +178,7 @@ describe('Pipeline execution', function () {
             subprocess.stdout.on('data', data => {
                 if (stdout !== null) {
                     stdout += data.toString();
+                    console.log(`stdout is now: ${stdout}`);
                     if (stdout.includes('Connected')) {
                         stdout = null;
                         return resolve();
