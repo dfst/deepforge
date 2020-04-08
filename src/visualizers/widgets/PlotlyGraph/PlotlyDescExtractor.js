@@ -163,13 +163,14 @@ define([], function () {
     };
 
     const createLayout = function (desc) {
+        const multipleSubPlots = descHasMultipleSubPlots(desc);
         let layout = {
             title: desc.title,
-            autosize: true
+            autosize: !multipleSubPlots
         };
         let axisProperties;
 
-        if(descHasMultipleSubPlots(desc)){
+        if(multipleSubPlots){
             const numRows = Math.ceil(desc.subGraphs.length/2);
             layout.height = numRows === 1 ? 500 : 250 * numRows;
             layout.grid = {
