@@ -170,6 +170,7 @@ describe('Pipeline execution', function () {
     }
 
     async function startWorker() {
+        console.log('startWorker');
         const url = `http://localhost:${gmeConfig.server.port}`;
         const workerBin = require.resolve('deepforge-worker');
         const args = [ workerBin, '-H', url ];
@@ -188,6 +189,7 @@ describe('Pipeline execution', function () {
                 }
             });
         };
+        console.log('about to try to connect');
         await new Promise(connect);
         console.log('returning subprocess')
         return subprocess;
