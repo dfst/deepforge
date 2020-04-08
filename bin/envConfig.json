@@ -1,6 +1,3 @@
 {
-    "DEEPFORGE_BLOB_DIR": "blob.dir",
-    "DEEPFORGE_WORKER_CACHE": "worker.cache.dir",
-    "DEEPFORGE_WORKER_DIR": "worker.dir",
-    "DEEPFORGE_WORKER_USE_BLOB": "worker.cache.useBlob"
+    "DEEPFORGE_BLOB_DIR": "blob.dir"
 }
