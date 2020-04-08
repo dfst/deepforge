@@ -1,12 +1,11 @@
 Operation Feedback
 ==================
-
-Operations can provide real-time graph feedback. DeepForge provides support for subplots, basic 2D and 3D scatter and line plots and images from :code:`matplotlib`.
+Operations can provide a variety of forms of real-time feedback including subplots, 2D and 3D plots and images using :code:`matplotlib`.
 
 
 Graphs
 ------
-Real-time graphs can be created using `matplotlib`. Following example shows a sample 3D Scatter plot and its rendering in `DeepForge`.
+The following example shows a sample 3D scatter plot and its rendering in DeepForge.
 
 .. code-block:: python
 
@@ -17,7 +16,7 @@ Real-time graphs can be created using `matplotlib`. Following example shows a sa
     class Scatter3DPlots():
 
         def execute(self):
-            # Fixing random state for reproducibility
+            # Set random seed for reproducibility
             np.random.seed(19680801)
 
 
@@ -49,11 +48,11 @@ Real-time graphs can be created using `matplotlib`. Following example shows a sa
 .. figure:: 3d_graph.png
     :align: center
 
-    An example rendering for a 3D Plot from matplotlib in DeepForge
+    Example of a 3D scatter plot using matplotlib in DeepForge
 
 Images
 ------
-Image plots from `matplotlib` are supported. The following example shows image plots from the `MNIST fashion dataset`.
+Visualizing images using `matplotlib` is also supported. The following example shows images from the `MNIST fashion dataset`.
 
 .. code-block:: python
 
@@ -64,21 +63,16 @@ Image plots from `matplotlib` are supported. The following example shows image p
 
         def execute(self):
 
-            # load dataset
             (trainX, trainy), (testX, testy) = fashion_mnist.load_data()
             # summarize loaded dataset
             print('Train: X=%s, y=%s' % (trainX.shape, trainy.shape))
             print('Test: X=%s, y=%s' % (testX.shape, testy.shape))
-            # plot first few images
             for i in range(9):
-                # define subplot
-                pyplot.subplot(330 + 1 + i)
-                # plot raw pixel data
-                pyplot.imshow(trainX[i], cmap=pyplot.get_cmap('gray'))
-            # show the figure
+                pyplot.subplot(330 + 1 + i)  # define subplot
+                pyplot.imshow(trainX[i], cmap=pyplot.get_cmap('gray'))  # plot raw pixel data
             pyplot.show()
 
 .. figure:: mnist_fashion.png
     :align: center
 
-    MNIST fashion dataset images as rendered in deepforge
+    Visualizing MNIST fashion images in DeepForge
