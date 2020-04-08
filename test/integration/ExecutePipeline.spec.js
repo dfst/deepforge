@@ -38,6 +38,7 @@ describe('Pipeline execution', function () {
     server.stop = promisify(server.stop);
 
     before(async function () {
+        const startTime = Date.now();
         gmeAuth = await testFixture.clearDBAndGetGMEAuth(gmeConfig, projectName);
         // This uses in memory storage. Use testFixture.getMongoStorage to persist test to database.
         storage = testFixture.getMemoryStorage(logger, gmeConfig, gmeAuth);
@@ -57,13 +58,15 @@ describe('Pipeline execution', function () {
         await project.createBranch('test', commitHash);
         await server.start();
         worker = await startWorker();
-        console.log('worker has been set!');
+        console.log('worker has been set to', worker);
+        console.log('duration:', Date.now() - startTime);
     });
 
     after(async function () {
         await storage.closeDatabase();
         await gmeAuth.unload();
         await server.stop();
+        console.log('about to kill worker:', worker);
         worker.kill();
     });
 
