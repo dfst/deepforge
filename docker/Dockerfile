@@ -17,7 +17,7 @@ ADD . /deepforge
 
 WORKDIR /tmp
 
-RUN curl -O  https://repo.continuum.io/miniconda/$MINICONDA && bash $MINICONDA -b && rm -f $MINICONDA
+RUN curl -O  https://repo.anaconda.com/miniconda/$MINICONDA && bash $MINICONDA -b && rm -f $MINICONDA
 
 ENV PATH /root/miniconda3/bin:$PATH
 ENV NODE_ENV production
