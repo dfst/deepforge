@@ -1,38 +1,25 @@
 Storage and Compute Adapters
 ============================
-With any deeplearning endeavor, there are two biggest challenges that new comers to the field face:
-
-1. As any deeplearning algorithm requires a lot of data, storing the data in local workstation is not feasible.
-2. The computational power required to run a deeplearning algorithm could go well beyond the local workstation for a user.
-
-With this is mind, DeepForge introduces the concept of `Storage` and `Compute` adapters. The abstract goal of these adapters
-is to provide a uniform interface to distributed locations between data and computational resources and couple any `Storage`
-resource with a `Computational` resource while running a DeepForge pipeline.
+DeepForge is designed to integrate with existing computational and storage resources and is not intended to be a competitor to existing HPC or object storage frameworks.
+This integration is made possible through the use of compute and storage adapters. This section provides a brief description of these adapters as well as currently supported integrations.
 
 Storage Adapters
 ----------------
-The storage adapters provide a uniform access to a storage resource, like a S3 Server or any other File service to
-store/access artifacts to and from a storage server. Currently, we support three avenues
-for storage:
+Projects in DeepForge may contain artifacts which reference datasets, trained model weights, or other associated binary data. Although the project code, pipelines, and models are stored in MongoDB, this associated data is stored using a storage adapter. Storage adapters enable DeepForge to store this associated data using an appropriate storage resource, such as a object store w/ an S3-compatible API.
+This also enables users to "bring their own storage" as they can connect their existing cyberinfrastructure to a public deployment of DeepForge.
+Currently, DeepForge supports 3 different storage adapters:
 
-1. WebGME Blob Server : Blob Storage of a `WebGME <https://webgme.org/>`_ server
-2. SciServer Files Service : Files Service from `SciServer <https://sciserver.org>`_
-3. S3 Storage: An `S3` Server like `minio <https://play.min.io>`_, `AWS S3 <https://aws.amazon.com/s3/>`_
-
-With these options, an `artifact` like a deeplearning dataset or results of a training operation can be stored in avenues
-listed above.
-
+3. S3 Storage: Object storage with an S3-comptabile API such as `minio <https://play.min.io>`_ or `AWS S3 <https://aws.amazon.com/s3/>`_
+2. SciServer Files Service : Files service from `SciServer <https://sciserver.org>`_
+1. WebGME Blob Server : Blob storage provided by `WebGME <https://webgme.org/>`_ 
 
 Compute Adapters
 ----------------
-DeepForge `compute adapters` provide flexibility to integrate various computing platforms available to the user.
-With compute adapters, users can run a pipeline in various compute platforms/ machines available to users.
-For example, a user could design a pipeline in DeepForge, execute it in a `local` compute for testing and once satisfied, execute the same pipeline in a more powerful
-compute infrastructure available to the user.
+Similar to storage adapters, compute adapters enable DeepForge to integrate with existing cyberinfrastructure used for executing some computation or workflow. This is designed to allow users to leverage their existing HPC or other computational resources with DeepForge. Compute adapters provide an interface through which DeepForge is able to execute workflows (eg, training a neural network) on external machines.
 
-Currently, we support three forms of compute support:
+Currently, the following compute adapters are available:
 
-1. WebGME Worker: A user machine to run jobs via the `WebGME Executor Framework <https://github.com/webgme/webgme/wiki/GME-Executor-Framework>`_
+1. WebGME Worker: A worker machine which polls for jobs via the `WebGME Executor Framework <https://github.com/webgme/webgme/wiki/GME-Executor-Framework>`_. Registered users can connect their own compute machines enabling them to use their personal desktops with DeepForge.
 2. SciServer-Compute: Compute service offered by `SciServer <https://sciserver.org>`_
-3. Local Compute: Local machine in which server is deployed
+3. Server Compute: Execute the job on the server machine. This is similar to the execution model used by Jupyter notebook servers.
 

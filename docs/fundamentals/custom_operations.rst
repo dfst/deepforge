@@ -10,10 +10,9 @@ Operations are used in pipelines and have named inputs and outputs. When creatin
 .. figure:: operation_editor.png
     :align: center
 
-    Editing the "TrainValidate" operation from the "REDSHIFT" example
+    Editing the "TrainValidate" operation from the "redshift" example
 
-The interface editor is provided on the right and presents the interface as a diagram showing the input data and output
-data as objects flowing into or out of the given operation. Selecting the operation node in the operation interface editor will expand the node and allow the user to add or edit attributes for the given operation. These attributes are exposed when using this operation in a pipeline and can be set at design time - that is, these are set when creating the given pipeline. The interface diagram may also contain light blue nodes flowing into the operation. These nodes represent "references" that the operation accepts as input before running. When using the operation, references will appear alongside the attributes but will allow the user to select from a list of all possible targets when clicked.
+The interface editor is provided on the right and presents the interface as a diagram showing the input data and output data as objects flowing into or out of the given operation. Selecting the operation node in the operation interface editor will expand the node and allow the user to add or edit attributes for the given operation. These attributes are exposed when using this operation in a pipeline and can be set at design time - that is, these are set when creating the given pipeline. The interface diagram may also contain light blue nodes flowing into the operation. These nodes represent "references" that the operation accepts as input before running. When using the operation, references will appear alongside the attributes but will allow the user to select from a list of all possible targets when clicked.
 
 .. figure:: operation_interface.png
     :align: center
