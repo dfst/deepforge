@@ -38,7 +38,7 @@ describe('Pipeline execution', function () {
     server.stop = promisify(server.stop);
 
     before(async function () {
-        const startTime = Date.now();
+        this.timeout(20000);
         gmeAuth = await testFixture.clearDBAndGetGMEAuth(gmeConfig, projectName);
         // This uses in memory storage. Use testFixture.getMongoStorage to persist test to database.
         storage = testFixture.getMemoryStorage(logger, gmeConfig, gmeAuth);
@@ -58,15 +58,12 @@ describe('Pipeline execution', function () {
         await project.createBranch('test', commitHash);
         await server.start();
         worker = await startWorker();
-        console.log('worker has been set to', worker);
-        console.log('duration:', Date.now() - startTime);
     });
 
     after(async function () {
         await storage.closeDatabase();
         await gmeAuth.unload();
         await server.stop();
-        console.log('about to kill worker:', worker);
         worker.kill();
     });
 
@@ -173,7 +170,6 @@ describe('Pipeline execution', function () {
     }
 
     async function startWorker() {
-        console.log('startWorker');
         const url = `http://localhost:${gmeConfig.server.port}`;
         const workerBin = require.resolve('deepforge-worker');
         const args = [ workerBin, '-H', url ];
@@ -183,18 +179,14 @@ describe('Pipeline execution', function () {
             subprocess.stdout.on('data', data => {
                 if (stdout !== null) {
                     stdout += data.toString();
-                    console.log(`stdout is now: ${stdout}`);
                     if (stdout.includes('Connected')) {
                         stdout = null;
-                        console.log('resolving...');
                         return resolve();
                     }
                 }
             });
         };
-        console.log('about to try to connect');
         await new Promise(connect);
-        console.log('returning subprocess')
         return subprocess;
     }
 
