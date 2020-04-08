@@ -18,6 +18,8 @@ Welcome to DeepForge's documentation!
    :caption: Fundamentals
 
    fundamentals/custom_operations.rst
+   fundamentals/integration.rst
+
 
 .. toctree::
    :maxdepth: 1
