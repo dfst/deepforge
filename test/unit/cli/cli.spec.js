@@ -157,15 +157,6 @@ describe('cli', function() {
             };
             cli('start --server');
         });
-
-        it('should start worker if --worker set', function(done) {
-            mocks.childProcess.spawn = (main, args) => {
-                if (args[0].indexOf('start-worker.js') !== -1) {
-                    done();
-                }
-            };
-            cli('start --worker');
-        });
     });
 
     describe('uninstall', function() {

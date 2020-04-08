@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - master
+  release:
+    types:
+      - published
 
 jobs:
   publish:
@@ -11,23 +14,41 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+
+      - name: Get Release Tags
+        id: get_release_tags
+        run: |
+          echo "::set-env name=RELEASE_TAG_NAME::$(echo ${GITHUB_REF} | sed -E 's/.*v?([0-9]+)\.([0-9]+)\.([0-9]+)?/\1.\2.\3,\1.\2,\1/')"
+          echo "::set-env name=TAG::stable"
+        if: github.event_name == 'release'
+
+      - name: Get Push Tags
+        id: get_push_tags
+        run: |
+          echo "::set-env name=TAG::latest"
+          echo "::set-env name=RELEASE_TAG::$(echo ${GITHUB_REF:11})"
+        if: github.event_name == 'push'
+
       - name: Publish to docker hub (server)
         uses: elgohr/Publish-Docker-Github-Action@master
         with:
           name: deepforge/server
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-          tags: "latest"
+          tags: "${{ env.TAG }},${{ env.RELEASE_TAG }}"
+          tag_semver: "${{ env.TAG_SEMVER }}"
           dockerfile: docker/Dockerfile
 
       - name: Publish to docker hub (kitchen-sink)
         uses: elgohr/Publish-Docker-Github-Action@master
+
         with:
           name: deepforge/kitchen-sink
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-          tags: "latest"
+          tags: "${{ env.TAG }},${{ env.RELEASE_TAG }}"
           dockerfile: docker/Dockerfile.kitchensink
+          buildargs: "TAG=${{ env.TAG }}"
 
       - name: Deploy (dev.deepforge.org)
         uses: appleboy/ssh-action@master
@@ -40,3 +61,18 @@ jobs:
           script: |
             rm -rf deepforge && git clone git@github.com:deepforge-dev/deepforge && cd deepforge
             chmod +x ./.deployment/deploy-deepforge && ./.deployment/deploy-deepforge
+        if: github.event_name == 'push'
+
+      - name: Deploy (editor.deepforge.org)
+        uses: appleboy/ssh-action@master
+        with:
+          username: ${{ secrets.USERNAME }}
+          host: ${{ secrets.HOST }}
+          key: ${{ secrets.KEY }}
+          port: ${{ secrets.PORT }}
+          passphrase: ${{ secrets.PASSPHRASE }}
+          script: |
+            rm -rf deepforge-stable && git clone git@github.com:deepforge-dev/deepforge-stable && cd deepforge-stable
+            git checkout -b stable $(git tag | tail -1)
+            chmod +x ./.deployment/deploy-deepforge && ./.deployment/deploy-deepforge stable
+        if: github.event_name == 'release'

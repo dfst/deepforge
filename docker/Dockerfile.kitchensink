@@ -1,3 +1,4 @@
-FROM deepforge/server:latest
+ARG TAG=latest
+FROM deepforge/server:$TAG
 
 RUN deepforge extensions add deepforge-dev/deepforge-keras && deepforge create-env -f

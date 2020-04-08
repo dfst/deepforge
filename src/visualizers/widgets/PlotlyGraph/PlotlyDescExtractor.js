@@ -27,6 +27,14 @@ define([], function () {
         SCATTER_POINTS_3D: 'scatter3d'
     };
 
+    const needsTightLayout = function (desc, label) {
+        return !!desc.subGraphs.find(subGraph => hasTitleAndAxisLabel(subGraph, label));
+    };
+
+    const hasTitleAndAxisLabel = function (subGraph, axisLabel) {
+        return subGraph.title && subGraph[axisLabel];
+    };
+
     const is3D = function (subGraph) {
         return subGraph.type === 'plot3D';
     };
@@ -47,9 +55,13 @@ define([], function () {
             rowCount=0,
             sceneCount=1,
             axisCount=1;
+
+        const xMargin = needsTightLayout(desc, 'xlabel') ? 0.10 : 0.05;
+        const yMargin = needsTightLayout(desc, 'ylabel') ? 0.10 : 0.05;
+
         desc.subGraphs.forEach((subGraph, index) => {
-            const xDomain = [colCount * colSep + 0.05, (colCount + 1) * colSep];
-            const yDomain = [1-(rowCount+1)*rowSep+0.05, 1-rowCount*rowSep];
+            const xDomain = [colCount * colSep + xMargin, (colCount + 1) * colSep];
+            const yDomain = [1-(rowCount+1)*rowSep + yMargin, 1-rowCount*rowSep];
             ++colCount;
             if((index+1) % numCols === 0){
                 colCount = 0;
@@ -163,13 +175,14 @@ define([], function () {
     };
 
     const createLayout = function (desc) {
+        const multipleSubPlots = descHasMultipleSubPlots(desc);
         let layout = {
             title: desc.title,
-            height: 500
+            autosize: !multipleSubPlots
         };
         let axisProperties;
 
-        if(descHasMultipleSubPlots(desc)){
+        if(multipleSubPlots){
             const numRows = Math.ceil(desc.subGraphs.length/2);
             layout.height = numRows === 1 ? 500 : 250 * numRows;
             layout.grid = {
@@ -235,7 +248,8 @@ define([], function () {
 
     const add3dSceneProperties = function (subGraph) {
         const AXES_FONT = {
-            color: '#7f7f7f'
+            color: '#7f7f7f',
+            size: 10
         };
         const props = {
             domain: subGraph.scene.domain,
@@ -269,6 +283,9 @@ define([], function () {
             title: {
                 text: subGraph.xlabel,
                 color: '#7f7f7f',
+                font : {
+                    size: 10,
+                },
                 standoff: 0
             },
             visible: subGraph.images.length === 0
@@ -279,6 +296,9 @@ define([], function () {
             title: {
                 text: subGraph.ylabel,
                 color: '#7f7f7f',
+                font : {
+                    size: 10,
+                },
                 standoff: 0
             },
             visible: subGraph.images.length === 0
@@ -289,9 +309,13 @@ define([], function () {
     // https://github.com/plotly/plotly.js/issues/2746#issuecomment-528342877
     // At present the only hacky way to add subplots title
     const addAnnotations = function (subGraphs) {
-        const evenLength = subGraphs.length % 2 === 0 ? subGraphs.length : subGraphs.length + 1;
-        return subGraphs.map((subGraph, index) => {
-            const yPosMarker = (index % 2 === 0) ? index : index - 1;
+        const average = arr => arr.reduce((runningSum, another) => runningSum + another, 0) / arr.length;
+        if(subGraphs.length === 1){
+            subGraphs[0].title = '';
+        }
+        return subGraphs.map(subGraph => {
+            const midPointX = average(is3D(subGraph) ? subGraph.scene.domain.x : subGraph.xaxis.domain);
+            const yPosition =  (is3D(subGraph) ? subGraph.scene.domain.y[1] : subGraph.yaxis.domain[1]) + 0.005;
             return {
                 text: `<b>${subGraph.title}</b>`,
                 font: {
@@ -303,8 +327,10 @@ define([], function () {
                 xref: 'paper',
                 yref: 'paper',
                 align: 'center',
-                x: (index % 2 === 0) ? 0.15 : 0.85,
-                y: (1 - yPosMarker / evenLength) * 1.1 - 0.06
+                xanchor: 'center',
+                yanchor: 'bottom',
+                x: midPointX,
+                y: yPosition
             };
         });
     };
