@@ -60,10 +60,10 @@ describe('Pipeline execution', function () {
     });
 
     after(async function () {
-        worker.kill();
         await storage.closeDatabase();
         await gmeAuth.unload();
         await server.stop();
+        worker.kill();
     });
 
     const storageBackends = Storage.getAvailableBackends();
