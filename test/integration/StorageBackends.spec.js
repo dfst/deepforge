@@ -8,7 +8,6 @@ describe('Storage Features Test', function () {
     const logger = testFixture.logger.fork('StorageTests');
     const Storage = requirejs('deepforge/storage/index');
     const gmeConfig = testFixture.getGmeConfig();
-    gmeConfig.server.port = 7070;
     const server = new testFixture.WebGME.standaloneServer(gmeConfig);
     server.start = promisify(server.start);
     server.stop = promisify(server.stop);
