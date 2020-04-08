@@ -13,13 +13,11 @@ SHELL ["/bin/bash", "-c"]
 
 ENV MINICONDA Miniconda3-latest-Linux-x86_64.sh
 
-ENV DEEPFORGE_CONDA_ENV deepforge
-
 ADD . /deepforge
 
 WORKDIR /tmp
 
-RUN curl -O  https://repo.continuum.io/miniconda/$MINICONDA && bash $MINICONDA -b && rm -f $MINICONDA
+RUN curl -O  https://repo.anaconda.com/miniconda/$MINICONDA && bash $MINICONDA -b && rm -f $MINICONDA
 
 ENV PATH /root/miniconda3/bin:$PATH
 ENV NODE_ENV production
@@ -35,10 +33,8 @@ RUN npm install -g npm
 
 RUN npm config set unsafe-perm true && npm install && ln -s /deepforge/bin/deepforge /usr/local/bin
 
-RUN echo "source activate ${DEEPFORGE_CONDA_ENV}" > ~/.bashrc
-
 #Set up the data storage
 RUN deepforge config blob.dir /data/blob && \
     deepforge config mongo.dir /data/db
 
-ENTRYPOINT source activate ${DEEPFORGE_CONDA_ENV} && deepforge start --server
+ENTRYPOINT deepforge start --server
