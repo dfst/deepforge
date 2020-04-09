@@ -14,7 +14,6 @@
     "start-authenticated": "NODE_ENV=production ./bin/deepforge start",
     "server": "node ./bin/deepforge start --server",
     "no-conda-server": "node ./bin/deepforge start --server --no-conda",
-    "worker": "node ./bin/start-worker.js",
     "test": "npm run test-unit && npm run test-int",
     "test-unit": "NODE_ENV=test mkdir ./test-tmp; mocha --recursive test/unit",
     "test-int": "NODE_ENV=test mkdir ./test-tmp; mocha --recursive test/integration",
