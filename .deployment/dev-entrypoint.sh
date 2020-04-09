@@ -1,5 +1,10 @@
 #!/bin/bash
-# Remove pypi tensorflow from deepforge-server
+# Remove pypi tensorflow in favor of conda installation
+source activate deepforge
+pip uninstall tensorflow -y
+conda install tensorflow==1.14 -y
+conda env export -n deepforge > src/plugins/GenerateJob/templates/environment.worker.yml
+
 source activate deepforge-server
 pip uninstall tensorflow -y
 conda install tensorflow==1.14 -y
@@ -11,6 +16,7 @@ wget https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64 -O jq &&
 > config/components2.json
 < config/components2.json  ./jq '.Storage.backends=(.Storage.backends | map(select(. != "gme")))' \
 > config/components.json
+rm config/components2.json
 
 deepforge start --server
 
