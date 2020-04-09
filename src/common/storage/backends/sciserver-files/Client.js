@@ -89,5 +89,9 @@ define([
         return BASE_URL + url;
     };
 
+    SciServerFiles.prototype.stat = function(fileName) {
+
+    };
+
     return SciServerFiles;
 });

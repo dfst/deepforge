@@ -116,7 +116,7 @@ define([
     //////////////////// DeepForge places detection ////////////////////
     DeepForge.places = {};
     var TYPE_TO_CONTAINER = {
-        
+
         Code: 'MyUtilities',
         Architecture: 'MyResources',
         Pipeline: 'MyPipelines',
@@ -181,7 +181,7 @@ define([
             nodeIdsByName[node.getAttribute('name')] = node.getId());
 
         PLACE_NAMES.forEach(name => setPlaceId[name](nodeIdsByName[name]));
-        
+
         // Remove the territory
         client.removeUI(placesTerritoryId);
         placesTerritoryId = null;
@@ -250,8 +250,10 @@ define([
     // Creating Artifacts
     const UPLOAD_PLUGIN = 'ImportArtifact';
     const copy = data => JSON.parse(JSON.stringify(data));
-    DeepForge.create.Artifact = async function() {
-        const metadata = copy(WebGMEGlobal.allPluginsMetadata[UPLOAD_PLUGIN]);
+    DeepForge.create.Artifact = async function(excludeFromStructure) {
+        let metadata = copy(WebGMEGlobal.allPluginsMetadata[UPLOAD_PLUGIN]);
+        metadata.configStructure = metadata.configStructure
+            .filter(structure => structure.name !== excludeFromStructure);
 
         metadata.configStructure.unshift({
             name: 'artifactOptions',
@@ -265,13 +267,20 @@ define([
             valueType: 'section'
         });
 
-        const storageMetadata = Storage.getAvailableBackends().map(id => Storage.getStorageMetadata(id));
+        let backends = Storage.getAvailableBackends();
+
+        if(excludeFromStructure === 'dataHash') {
+            backends = backends.filter(backend => backend !== 'gme');
+        }
+
+        const storageMetadata = backends.map(id => Storage.getStorageMetadata(id));
+
         metadata.configStructure.push({
             name: 'storage',
             displayName: 'Storage',
             description: 'Location to store intermediate/generated data.',
             valueType: 'dict',
-            value: Storage.getBackend(Storage.getAvailableBackends()[0]).name,
+            value: Storage.getBackend(backends[0]).name,
             valueItems: storageMetadata,
         });
 

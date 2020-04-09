@@ -83,5 +83,9 @@ define([
         return {backend: this.id, data};
     };
 
+    StorageClient.prototype.stat = async function (/* path */) {
+        throw new Error(`stat not implemented for ${this.name}`);
+    };
+
     return StorageClient;
 });

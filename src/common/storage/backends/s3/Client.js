@@ -104,11 +104,8 @@ define([
         } catch (err) {
             throw new Error(`Unable to upload ${filename}: ${err.message}`);
         }
-        const metadata = await this._stat(filename, this.bucketName);
-        metadata.filename = filename;
-        metadata.size = metadata.ContentLength;
-        metadata.bucketName = this.bucketName;
-        metadata.endpoint = this.config.endpoint;
+        const metadata = await this.stat(filename);
+
         this.logger.debug(`Successfully uploaded file ${filename} to the S3 server.`);
         return this.createDataInfo(metadata);
     };
@@ -176,6 +173,15 @@ define([
             });
         };
     }
+
+    S3Storage.prototype.stat = async function (path) {
+        const metadata = await this._stat(path, this.bucketName);
+        metadata.filename = path;
+        metadata.size = metadata.ContentLength;
+        metadata.bucketName = this.bucketName;
+        metadata.endpoint = this.config.endpoint;
+        return this.createDataInfo(metadata);
+    };
 
     return S3Storage;
 });

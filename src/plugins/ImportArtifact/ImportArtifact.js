@@ -49,7 +49,7 @@ define([
      */
     ImportArtifact.prototype.main = async function (callback) {
         const config = this.getCurrentConfig();
-        const hash = config.dataHash;
+        const hashOrPath = config.dataHash || config.dataPath;
         const baseName = config.dataTypeId;
         const metaDict = this.core.getAllMetaNodes(this.activeNode);
         const metanodes = Object.keys(metaDict).map(id => metaDict[id]);
@@ -66,10 +66,17 @@ define([
         const parent = await this.getArtifactsDir();
         const dataNode = this.core.createNode({base, parent});
 
-        const name = await this.getAssetName(hash) ||
+        const name = await this.getAssetName(hashOrPath) ||
             baseName[0].toLowerCase() + baseName.substring(1);
+        let assetInfo;
 
-        const assetInfo = await this.transfer(hash, config.storage, name);
+        if(config.dataHash){
+            assetInfo = await this.transfer(hashOrPath, config.storage, name);
+        } else {
+
+            assetInfo = await this.symLink(hashOrPath, config.storage, name);
+        }
+
         this.core.setAttribute(dataNode, 'data', JSON.stringify(assetInfo));
         this.core.setAttribute(dataNode, 'type', baseName);
         this.core.setAttribute(dataNode, 'createdAt', Date.now());
@@ -97,10 +104,19 @@ define([
         return await dstStorage.putFile(filename, content);
     };
 
-    ImportArtifact.prototype.getAssetName = async function (hash) {
-        const metadata = await this.blobClient.getMetadata(hash);
-        if (metadata) {
+    ImportArtifact.prototype.symLink = async function(path, storage, name) {
+        const {id, config} = storage;
+        const srcStorage = await Storage.getBackend(id).getClient(this.logger, config);
+        return await srcStorage.stat(path);
+    };
+
+    ImportArtifact.prototype.getAssetName = async function (hashOrPath) {
+        try{
+            const metadata = await this.blobClient.getMetadata(hashOrPath);
             return metadata.name.replace(/\.[^.]*?$/, '');
+        } catch (err) {
+            const pathArray = hashOrPath.split('/');
+            return pathArray[pathArray.length-1].replace(/\.[^.]*?$/, '');
         }
     };
 

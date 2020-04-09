@@ -157,7 +157,17 @@ define([
             {
                 name: 'Upload artifact',
                 icon: 'swap_vert',
-                action: DeepForge.create.Artifact
+                action: function() {
+                    DeepForge.create.Artifact('dataPath');
+                },
+            },
+            {
+                name: 'Import From Storage',
+                icon: 'swap_horiz',
+                color: 'teal',
+                action: function () {
+                    DeepForge.create.Artifact('dataHash');
+                },
             }
         ],
         // Creating prototypes
