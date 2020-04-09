@@ -30,7 +30,6 @@
     "@babel/runtime": "^7.7.2",
     "aws-sdk": "^2.616.0",
     "commander": "^2.20.3",
-    "deepforge-keras": "github:deepforge-dev/deepforge-keras",
     "deepforge-user-management-page": "github:deepforge-dev/user-management-page",
     "dotenv": "^2.0.0",
     "exists-file": "^2.1.0",
