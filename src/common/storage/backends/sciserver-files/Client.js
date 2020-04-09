@@ -42,7 +42,7 @@ define([
             await this.fetch(url, opts);
         } catch (errRes) {
             const contents = await errRes.json();
-            throw new Error(`Operation PutFile For Sciserver Failed with the following response ${JSON.stringify(contents)}`);
+            throw new Error(`SciServerFiles.putFile failed: ${JSON.stringify(contents)}`);
         }
         const metadata = {
             filename: filename,
