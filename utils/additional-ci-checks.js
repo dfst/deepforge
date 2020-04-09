@@ -63,8 +63,45 @@ class SkippedTestsError extends Error {
     }
 }
 
+class ExtensionIncludedError extends Error {
+    constructor(extension, filename) {
+        super(`Extension ${extension} found in ${filename}`);
+    }
+}
+
+function noExtensionsInPackageJson() {
+    return [
+        getExtensionIncludedErrors('package.json'),
+        getExtensionIncludedErrors('package-lock.json'),
+    ].flat();
+}
+
+function getExtensionIncludedErrors(filename) {
+    const extensions = getExtensionDependencies(filename);
+    const errors = extensions
+        .map(name => new ExtensionIncludedError(name, filename));
+    return errors;
+}
+
+function getExtensionDependencies(filename) {
+    const pkgJson = require(`../${filename}`);
+    const deps = Object.keys(pkgJson.dependencies);
+    const DEEPFORGE_HELPERS = [
+        'deepforge-user-management-page',
+        'deepforge-worker',
+    ];
+    const extensions = deps
+        .filter(name => name.startsWith('deepforge-') && !DEEPFORGE_HELPERS.includes(name));
+
+    return extensions;
+}
+
 async function main() {
-    const errors = await noMochaOnlyKeyword();
+    const errors = [
+        await noMochaOnlyKeyword(),
+        noExtensionsInPackageJson(),
+    ].flat();
+
     if (errors.length) {
         console.error('The following additional CI checks failed:\n');
         errors.forEach(err => console.error(err, '\n'));
