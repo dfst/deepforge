@@ -70,18 +70,17 @@ define([
             baseName[0].toLowerCase() + baseName.substring(1);
         let assetInfo;
 
-        if(config.dataHash){
-            assetInfo = await this.transfer(hashOrPath, config.storage, name);
-        } else {
-
-            assetInfo = await this.symLink(hashOrPath, config.storage, name);
-        }
-
-        this.core.setAttribute(dataNode, 'data', JSON.stringify(assetInfo));
-        this.core.setAttribute(dataNode, 'type', baseName);
-        this.core.setAttribute(dataNode, 'createdAt', Date.now());
-
         try {
+            if(config.dataHash){
+                assetInfo = await this.transfer(hashOrPath, config.storage, name);
+            } else if(config.dataPath) {
+
+                assetInfo = await this.symLink(hashOrPath, config.storage);
+            }
+
+            this.core.setAttribute(dataNode, 'data', JSON.stringify(assetInfo));
+            this.core.setAttribute(dataNode, 'type', baseName);
+            this.core.setAttribute(dataNode, 'createdAt', Date.now());
             this.core.setAttribute(dataNode, 'name', name);
             await this.save(`Uploaded "${name}" data`);
             this.result.setSuccess(true);
@@ -89,7 +88,6 @@ define([
         } catch (err) {
             callback(err, this.result);
         }
-
     };
 
     ImportArtifact.prototype.transfer = async function (hash, storage, name) {
@@ -104,8 +102,11 @@ define([
         return await dstStorage.putFile(filename, content);
     };
 
-    ImportArtifact.prototype.symLink = async function(path, storage, name) {
+    ImportArtifact.prototype.symLink = async function(path, storage) {
         const {id, config} = storage;
+        if(path.includes(`${this.projectId}/artifacts`)){
+            throw new Error('Cannot import from project root directory');
+        }
         const srcStorage = await Storage.getBackend(id).getClient(this.logger, config);
         return await srcStorage.stat(path);
     };

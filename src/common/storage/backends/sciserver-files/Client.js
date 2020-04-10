@@ -89,8 +89,21 @@ define([
         return BASE_URL + url;
     };
 
-    SciServerFiles.prototype.stat = function(fileName) {
-
+    SciServerFiles.prototype.stat = async function(path) {
+        const splitPath = path.split('/');
+        const filename = splitPath.pop();
+        const parentDir = splitPath.join('/');
+        const url = `jsontree/Storage/${this.volume}/${parentDir}?level=2`;
+        const response = await this.fetch(url);
+        const files = (await response.json()).root.files || [];
+        const metadata = files.find(file => file.name === filename);
+        if(metadata) {
+            metadata.volume = this.volume;
+            metadata.filename = path;
+        } else {
+            throw new Error(`The file at ${path} doesn't exist in ${this.volume}`);
+        }
+        return this.createDataInfo(metadata);
     };
 
     return SciServerFiles;

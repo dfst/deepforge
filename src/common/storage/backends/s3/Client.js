@@ -180,7 +180,7 @@ define([
         metadata.size = metadata.ContentLength;
         metadata.bucketName = this.bucketName;
         metadata.endpoint = this.config.endpoint;
-        return this.createDataInfo(metadata);
+        return metadata;
     };
 
     return S3Storage;
