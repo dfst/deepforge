@@ -5,6 +5,7 @@ services:
       - "$HOME/.deepforge/blob:/data/blob"
       - "${TOKEN_KEYS_DIR}:/token_keys"
       - "${DEEPFORGE_DEPLOYMENT_DIR}:/.deployment"
+      - "${DEEPFORGE_DEPLOYMENT_DIR}/../config:/deepforge/config"
 
   server_stable:
     entrypoint: /.deployment/dev-entrypoint.sh
@@ -20,5 +21,6 @@ services:
       - "$HOME/.deepforge/blob:/data/blob"
       - "${TOKEN_KEYS_DIR}:/token_keys"
       - "${DEEPFORGE_DEPLOYMENT_DIR}:/.deployment"
+      - "${DEEPFORGE_DEPLOYMENT_DIR}/../config:/deepforge/config"
     depends_on:
       - mongo
