@@ -249,12 +249,14 @@ define([
 
     // Creating Artifacts
     const UPLOAD_PLUGIN = 'ImportArtifact';
+    const IMPORT_PLUGIN = 'ImportStoragePaths';
     const copy = data => JSON.parse(JSON.stringify(data));
-    DeepForge.create.Artifact = async function(excludeFromStructure) {
-        let metadata = copy(WebGMEGlobal.allPluginsMetadata[UPLOAD_PLUGIN]);
-        metadata.configStructure = metadata.configStructure
-            .filter(structure => structure.name !== excludeFromStructure);
+    const storageBackends = Storage.getAvailableBackends();
+    const storageMetadata = storageBackends.map(id => Storage.getStorageMetadata(id));
 
+    const getConfigMetadata = function(pluginName) {
+        const metadata = copy(WebGMEGlobal.allPluginsMetadata[pluginName]);
+        let backends  = storageBackends;
         metadata.configStructure.unshift({
             name: 'artifactOptions',
             displayName: 'New Artifact',
@@ -267,13 +269,9 @@ define([
             valueType: 'section'
         });
 
-        let backends = Storage.getAvailableBackends();
-
-        if(excludeFromStructure === 'dataHash') {
-            backends = backends.filter(backend => backend !== 'gme');
+        if(pluginName === IMPORT_PLUGIN){
+            backends = storageBackends.filter(id => id !== 'gme');
         }
-
-        const storageMetadata = backends.map(id => Storage.getStorageMetadata(id));
 
         metadata.configStructure.push({
             name: 'storage',
@@ -281,9 +279,14 @@ define([
             description: 'Location to store intermediate/generated data.',
             valueType: 'dict',
             value: Storage.getBackend(backends[0]).name,
-            valueItems: storageMetadata,
+            valueItems: storageMetadata.filter(metadata => backends.includes(metadata.id)),
         });
+        return metadata;
+    };
 
+
+    DeepForge.create.Artifact = async function() {
+        const metadata = getConfigMetadata(UPLOAD_PLUGIN);
         const configDialog = new ConfigDialog(client);
         const allConfigs = await configDialog.show(metadata);
         const context = client.getCurrentPluginContext(UPLOAD_PLUGIN);
@@ -292,6 +295,18 @@ define([
             .find(metadata => metadata.name === context.pluginConfig.storage.name)
             .id;
         return await Q.ninvoke(client, 'runBrowserPlugin', UPLOAD_PLUGIN, context);
+    };
+
+    DeepForge.create.ImportPaths = async function() {
+        const metadata = getConfigMetadata(IMPORT_PLUGIN);
+        const configDialog = new ConfigDialog(client);
+        const allConfigs = await configDialog.show(metadata);
+        const context = client.getCurrentPluginContext(IMPORT_PLUGIN);
+        context.pluginConfig = allConfigs[IMPORT_PLUGIN];
+        context.pluginConfig.storage.id = storageMetadata
+            .find(metadata => metadata.name === context.pluginConfig.storage.name)
+            .id;
+        return await Q.ninvoke(client, 'runBrowserPlugin', IMPORT_PLUGIN, context);
     };
 
     //////////////////// DeepForge prev locations ////////////////////
