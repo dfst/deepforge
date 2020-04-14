@@ -10,8 +10,7 @@ define([
     Artifacts.prototype.getArtifactsDir = async function() {
         // Find the artifacts dir
         const children = await this.core.loadChildren(this.rootNode);
-        return children
-                .find(child => this.core.getAttribute(child, 'name') === 'MyArtifacts') ||
+        return children.find(child => this.core.getAttribute(child, 'name') === 'MyArtifacts') ||
             this.activeNode;
     };
 

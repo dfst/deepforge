@@ -4,28 +4,29 @@
   "version": "0.1.0",
   "description": "",
   "icon": {
-    "class": "glyphicon glyphicon-cloud-upload",
+    "class": "glyphicon glyphicon-transfer",
     "src": ""
   },
   "disableServerSideExecution": false,
   "disableBrowserSideExecution": false,
-  "writeAccessRequired": true,
+  "writeAccessRequired": false,
   "configStructure": [
-        {
-            "name": "dataHash",
-            "displayName": "Data to upload",
-            "description": "",
-            "value": "",
-            "valueType": "asset",
-            "readOnly": false
-        },
-        {
-            "name": "dataTypeId",
-            "displayName": "Data Type",
-            "description": "",
-            "value": "",
-            "valueType": "str",
-            "readOnly": false
-        }
+    {
+      "name": "dataPath",
+      "displayName": "Path",
+      "description": "Path to an existing artifact in the storage backend",
+      "value": "",
+      "valueType": "str",
+      "readOnly": false,
+      "required": true
+    },
+    {
+      "name": "dataTypeId",
+      "displayName": "Data Type",
+      "description": "",
+      "value": "",
+      "valueType": "str",
+      "readOnly": false
+    }
   ]
 }

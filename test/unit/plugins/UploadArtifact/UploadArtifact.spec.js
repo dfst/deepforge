@@ -1,12 +1,13 @@
+/*jshint node:true, mocha:true*/
 
-describe.skip('ImportStoragePaths', function () {
-    var testFixture = require('../../../globals');
+describe.skip('UploadArtifact', function () {
+    const testFixture = require('../../../globals');
     var gmeConfig = testFixture.getGmeConfig(),
         expect = testFixture.expect,
-        logger = testFixture.logger.fork('ImportStoragePaths'),
+        logger = testFixture.logger.fork('UploadArtifact'),
         PluginCliManager = testFixture.WebGME.PluginCliManager,
         projectName = 'testProject',
-        pluginName = 'ImportStoragePaths',
+        pluginName = 'UploadArtifact',
         project,
         gmeAuth,
         storage,
@@ -55,18 +56,13 @@ describe.skip('ImportStoragePaths', function () {
                 project: project,
                 commitHash: commitHash,
                 branchName: 'test',
-                activeNode: '/1',
+                activeNode: '/960660211',
             };
 
         manager.executePlugin(pluginName, pluginConfig, context, function (err, pluginResult) {
-            try {
-                expect(err).to.equal(null);
-                expect(typeof pluginResult).to.equal('object');
-                expect(pluginResult.success).to.equal(true);
-            } catch (e) {
-                done(e);
-                return;
-            }
+            expect(err).to.equal(null);
+            expect(typeof pluginResult).to.equal('object');
+            expect(pluginResult.success).to.equal(true);
 
             project.getBranchHash('test')
                 .then(function (branchHash) {

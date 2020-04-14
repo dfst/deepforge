@@ -1,7 +1,7 @@
-/*jshint node:true, mocha:true*/
 
 describe.skip('ImportArtifact', function () {
-    const testFixture = require('../../../globals');
+    'use strict';
+    var testFixture = require('../../globals');
     var gmeConfig = testFixture.getGmeConfig(),
         expect = testFixture.expect,
         logger = testFixture.logger.fork('ImportArtifact'),
@@ -56,13 +56,18 @@ describe.skip('ImportArtifact', function () {
                 project: project,
                 commitHash: commitHash,
                 branchName: 'test',
-                activeNode: '/960660211',
+                activeNode: '/1',
             };
 
         manager.executePlugin(pluginName, pluginConfig, context, function (err, pluginResult) {
-            expect(err).to.equal(null);
-            expect(typeof pluginResult).to.equal('object');
-            expect(pluginResult.success).to.equal(true);
+            try {
+                expect(err).to.equal(null);
+                expect(typeof pluginResult).to.equal('object');
+                expect(pluginResult.success).to.equal(true);
+            } catch (e) {
+                done(e);
+                return;
+            }
 
             project.getBranchHash('test')
                 .then(function (branchHash) {

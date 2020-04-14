@@ -248,8 +248,8 @@ define([
     });
 
     // Creating Artifacts
-    const UPLOAD_PLUGIN = 'ImportArtifact';
-    const IMPORT_PLUGIN = 'ImportStoragePaths';
+    const UPLOAD_PLUGIN = 'UploadArtifact';
+    const IMPORT_PLUGIN = 'ImportArtifact';
     const copy = data => JSON.parse(JSON.stringify(data));
     const storageBackends = Storage.getAvailableBackends();
     const storageMetadata = storageBackends.map(id => Storage.getStorageMetadata(id));
@@ -284,29 +284,25 @@ define([
         return metadata;
     };
 
-
-    DeepForge.create.Artifact = async function() {
-        const metadata = getConfigMetadata(UPLOAD_PLUGIN);
+    const runArtifactPlugin = async function(pluginName) {
+        const metadata = getConfigMetadata(pluginName);
         const configDialog = new ConfigDialog(client);
         const allConfigs = await configDialog.show(metadata);
-        const context = client.getCurrentPluginContext(UPLOAD_PLUGIN);
-        context.pluginConfig = allConfigs[UPLOAD_PLUGIN];
+        const context = client.getCurrentPluginContext(pluginName);
+        context.pluginConfig = allConfigs[pluginName];
         context.pluginConfig.storage.id = storageMetadata
             .find(metadata => metadata.name === context.pluginConfig.storage.name)
             .id;
-        return await Q.ninvoke(client, 'runBrowserPlugin', UPLOAD_PLUGIN, context);
+        return await Q.ninvoke(client, 'runBrowserPlugin', pluginName, context);
+    };
+
+
+    DeepForge.create.Artifact = async function() {
+        await runArtifactPlugin(UPLOAD_PLUGIN);
     };
 
     DeepForge.create.ImportPaths = async function() {
-        const metadata = getConfigMetadata(IMPORT_PLUGIN);
-        const configDialog = new ConfigDialog(client);
-        const allConfigs = await configDialog.show(metadata);
-        const context = client.getCurrentPluginContext(IMPORT_PLUGIN);
-        context.pluginConfig = allConfigs[IMPORT_PLUGIN];
-        context.pluginConfig.storage.id = storageMetadata
-            .find(metadata => metadata.name === context.pluginConfig.storage.name)
-            .id;
-        return await Q.ninvoke(client, 'runBrowserPlugin', IMPORT_PLUGIN, context);
+        await runArtifactPlugin(IMPORT_PLUGIN);
     };
 
     //////////////////// DeepForge prev locations ////////////////////

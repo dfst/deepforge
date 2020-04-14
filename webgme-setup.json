@@ -21,9 +21,9 @@
         "src": "src/plugins/Export",
         "test": "test/plugins/Export"
       },
-      "ImportArtifact": {
-        "src": "src/plugins/ImportArtifact",
-        "test": "test/plugins/ImportArtifact"
+      "UploadArtifact": {
+        "src": "src/plugins/UploadArtifact",
+        "test": "test/plugins/UploadArtifact"
       },
       "ExecuteJob": {
         "src": "src/plugins/ExecuteJob",
@@ -60,6 +60,10 @@
       "TwoPhaseCommit": {
         "src": "src/plugins/TwoPhaseCommit",
         "test": "test/plugins/TwoPhaseCommit"
+      },
+      "ImportArtifact": {
+        "src": "src/plugins/ImportArtifact",
+        "test": "test/plugins/ImportArtifact"
       }
     },
     "layouts": {

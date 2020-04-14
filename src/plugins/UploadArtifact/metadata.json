@@ -1,0 +1,31 @@
+{
+  "id": "UploadArtifact",
+  "name": "Upload Artifact",
+  "version": "0.2.0",
+  "description": "",
+  "icon": {
+    "class": "glyphicon glyphicon-cloud-upload",
+    "src": ""
+  },
+  "disableServerSideExecution": false,
+  "disableBrowserSideExecution": false,
+  "writeAccessRequired": true,
+  "configStructure": [
+        {
+            "name": "dataHash",
+            "displayName": "Data to upload",
+            "description": "",
+            "value": "",
+            "valueType": "asset",
+            "readOnly": false
+        },
+        {
+            "name": "dataTypeId",
+            "displayName": "Data Type",
+            "description": "",
+            "value": "",
+            "valueType": "str",
+            "readOnly": false
+        }
+  ]
+}
