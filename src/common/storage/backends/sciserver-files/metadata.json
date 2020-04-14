@@ -17,7 +17,10 @@
             "value": "",
             "valueType": "string",
             "readOnly": false,
-            "isAuth": true
+            "isAuth": true,
+            "options": {
+                "isPassword": true
+            }
         },
         {
             "name": "volume",
