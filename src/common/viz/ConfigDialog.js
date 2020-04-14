@@ -179,7 +179,7 @@ define([
         return html;
     };
 
-    ConfigDialog.prototype.getEntryForProperty = function (configEntry, prevConfig) {
+    ConfigDialog.prototype.getEntryForProperty = function (configEntry, prevConfig = {}) {
         let entry = null;
         if (ConfigDialog.ENTRIES[configEntry.valueType]) {
             entry = ConfigDialog.ENTRIES[configEntry.valueType].call(this, configEntry, prevConfig);
