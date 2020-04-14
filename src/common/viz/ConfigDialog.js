@@ -25,11 +25,12 @@ define([
 
     ConfigDialog.prototype = Object.create(PluginConfigDialog.prototype);
 
-    ConfigDialog.prototype.show = function(pluginMetadata, options={}) {
+    ConfigDialog.prototype.show = async function(pluginMetadata, options={}) {
         const deferred = Q.defer();
 
         this._pluginMetadata = pluginMetadata;
-        this._initDialog(pluginMetadata, options);
+        const prevConfig = await this.getSavedConfig();
+        this._initDialog(pluginMetadata, prevConfig, options);
 
         this._dialog.on('shown', () => {
             this._dialog.find('input').first().focus();
@@ -53,13 +54,14 @@ define([
         return deferred.promise;
     };
 
-    ConfigDialog.prototype._initDialog = function(metadata, options) {
+    ConfigDialog.prototype._initDialog = function(metadata, prevConfig, options) {
         this._dialog = $(pluginConfigDialogTemplate);
 
         this._btnSave = this._dialog.find('.btn-save');
         this._divContainer = this._dialog.find('.modal-body');
         this._saveConfigurationCb = this._dialog.find('.save-configuration');
         this._modalHeader = this._dialog.find('.modal-header');
+        this._saveConfigurationCb.find('input').prop('checked', true);
 
         // Create the header
         const config = this.getDialogConfig(metadata, options);
@@ -69,8 +71,7 @@ define([
         this._title = this._modalHeader.find('.modal-title');
         this._title.text(config.title);
 
-        // Generate the config options
-        this.generateConfigSection(metadata);
+        this.generateConfigSection(metadata, prevConfig);
     };
 
     ConfigDialog.prototype.getDialogConfig = function(metadata, options) {
@@ -82,9 +83,37 @@ define([
     };
 
     ConfigDialog.prototype.submit = function (callback) {
-        var config = this._getAllConfigValues();
+        const config = this._getAllConfigValues();
+        const saveConfig = this._saveConfigurationCb.find('input')
+            .prop('checked');
+
         this._dialog.modal('hide');
+        if (saveConfig) {
+            this.saveConfigForUser(config);
+        }
         return callback(config);
+    };
+
+    ConfigDialog.prototype.saveConfigForUser = async function (config) {
+        const opts = {
+            method: 'PATCH',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({Dialog: config})
+        };
+        await fetch('/api/user/data', opts);
+    };
+
+    ConfigDialog.prototype.getSavedConfig = async function () {
+        const opts = {
+            method: 'GET',
+            credentials: 'same-origin'
+        };
+        const response = await fetch('/api/user/data', opts);
+        const userData = await response.json();
+        return userData.Dialog;
     };
 
     ConfigDialog.prototype._getAllConfigValues = function () {
@@ -101,12 +130,12 @@ define([
         return settings;
     };
 
-    ConfigDialog.prototype.generateConfigSection = function (metadata, htmlClass) {
-        const html = this.getConfigHtml(metadata, htmlClass);
+    ConfigDialog.prototype.generateConfigSection = function (metadata, prevConfig, htmlClass) {
+        const html = this.getConfigHtml(metadata, prevConfig, htmlClass);
         this._divContainer.append(html);
     };
 
-    ConfigDialog.prototype.getConfigHtml = function (metadata, htmlClass) {
+    ConfigDialog.prototype.getConfigHtml = function (metadata, prevConfig, htmlClass) {
         var len = metadata.configStructure.length,
             pluginConfigEntry,
             pluginSectionEl = PLUGIN_CONFIG_SECTION_BASE.clone(),
@@ -130,7 +159,8 @@ define([
                 pluginConfigEntry.readOnly = true;
             }
 
-            const entry = this.getEntryForProperty(pluginConfigEntry);
+            const config = prevConfig && prevConfig[metadata.id];
+            const entry = this.getEntryForProperty(pluginConfigEntry, config);
             if (pluginConfigEntry.valueType === 'section') {
                 if (i > 0) {
                     const {name} = pluginConfigEntry;
@@ -149,10 +179,10 @@ define([
         return html;
     };
 
-    ConfigDialog.prototype.getEntryForProperty = function (configEntry) {
+    ConfigDialog.prototype.getEntryForProperty = function (configEntry, prevConfig = {}) {
         let entry = null;
         if (ConfigDialog.ENTRIES[configEntry.valueType]) {
-            entry = ConfigDialog.ENTRIES[configEntry.valueType].call(this, configEntry);
+            entry = ConfigDialog.ENTRIES[configEntry.valueType].call(this, configEntry, prevConfig);
         } else {
             const widget = this.getWidgetForProperty(configEntry);
             const el = ENTRY_BASE.clone();
@@ -186,6 +216,10 @@ define([
             entry = {widget, el};
         }
         entry.id = configEntry.name;
+        if (prevConfig.hasOwnProperty(entry.id)) {
+            const prevValue = prevConfig[entry.id];
+            entry.widget.setValue(prevValue);
+        }
         return entry;
     };
 
@@ -205,12 +239,12 @@ define([
         return {el: sectionHeader};
     };
 
-    ConfigDialog.ENTRIES.group = function(configEntry) {
+    ConfigDialog.ENTRIES.group = function(configEntry, config) {
         const widget = {el: null};
         widget.el = $('<div>', {class: configEntry.name});
 
         const entries = configEntry.valueItems
-            .map(item => this.getEntryForProperty(item));
+            .map(item => this.getEntryForProperty(item, config));
 
         entries.forEach(entry => widget.el.append(entry.el));
 
@@ -224,10 +258,19 @@ define([
             return config;
         };
 
+        widget.setValue = config => {
+            entries.forEach(entry => {
+                if (entry.widget) {
+                    entry.widget.setValue(config[entry.id || entry.name]);
+                }
+            });
+            return config;
+        };
+
         return {widget, el: widget.el};
     };
 
-    ConfigDialog.ENTRIES.dict = function(configEntry) {
+    ConfigDialog.ENTRIES.dict = function(configEntry, config) {
         const widget = {el: null, active: null};
         widget.el = $('<div>', {class: configEntry.name});
 
@@ -237,7 +280,7 @@ define([
             const valueItem = configEntry.valueItems[i];
             const entries = valueItem.configStructure
                 .map(item => {
-                    const entry = this.getEntryForProperty(item);
+                    const entry = this.getEntryForProperty(item, config);
                     return entry;
                 });
 
@@ -266,14 +309,18 @@ define([
         const selector = this.getEntryForProperty(configForKeys);
 
         widget.active = defaultValue;
-        selector.el.find('select').on('change', event => {
-            const {value} = event.target;
+        widget.onSetSelector = value => {
             const oldEntries = entriesForItem[widget.active];
             oldEntries.forEach(entry => entry.el.css('display', 'none'));
 
             widget.active = value;
             entriesForItem[widget.active]
                 .forEach(entry => entry.el.css('display', ''));
+        };
+
+        selector.el.find('select').on('change', event => {
+            const {value} = event.target;
+            widget.onSetSelector(value);
         });
 
         widget.getValue = () => {
@@ -283,6 +330,18 @@ define([
             entriesForItem[name].forEach(entry => {
                 if (entry.widget) {
                     config[entry.id] = entry.widget.getValue();
+                }
+            });
+            return {name, config};
+        };
+
+        widget.setValue = value => {
+            const {name, config} = value;
+            selector.widget.setValue(name);
+            widget.onSetSelector(name);
+            entriesForItem[name].forEach(entry => {
+                if (entry.widget) {
+                    entry.widget.setValue(config[entry.id]);
                 }
             });
             return {name, config};

@@ -11,14 +11,15 @@ define([
         StorageClient.apply(this, arguments);
         this.username = config.username;
         this.password = config.password;
+        this.volumePool = config.volumePool;
         this.volume = (config.volume || '').replace(/^Storage\//, '');
     };
 
     SciServerFiles.prototype = Object.create(StorageClient.prototype);
 
     SciServerFiles.prototype.getFile = async function (dataInfo) {
-        const {volume, filename} = dataInfo.data;
-        const url = `file/Storage/${volume}/${filename}`;
+        let {volume, filename, volumePool} = dataInfo.data;
+        const url = `file/${volumePool}/${volume}/${filename}`;
         const response = await this.fetch(url);
         if (require.isBrowser) {
             return await response.arrayBuffer();
@@ -37,7 +38,7 @@ define([
             body: content,
         };
 
-        const url = `file/Storage/${this.volume}/${filename}`;
+        const url = `file/${this.volumePool}/${this.volume}/${filename}`;
         try{
             await this.fetch(url, opts);
         } catch (errRes) {
@@ -48,19 +49,20 @@ define([
             filename: filename,
             volume: this.volume,
             size: content.byteLength,
+            volumePool: this.volumePool
         };
         return this.createDataInfo(metadata);
     };
 
     SciServerFiles.prototype.deleteDir = async function (dirname) {
-        const url = `data/Storage/${this.volume}/${dirname}`;
+        const url = `data/${this.volumePool}/${this.volume}/${dirname}`;
         const opts = {method: 'DELETE'};
         return await this.fetch(url, opts);
     };
 
     SciServerFiles.prototype.deleteFile = async function (dataInfo) {
         const {volume, filename} = dataInfo.data;
-        const url = `data/Storage/${volume}/${filename}`;
+        const url = `data/${this.volumePool}/${volume}/${filename}`;
         const opts = {method: 'DELETE'};
         return await this.fetch(url, opts);
     };

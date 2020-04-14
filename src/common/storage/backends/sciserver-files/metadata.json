@@ -29,6 +29,16 @@
             "value": "USERNAME/deepforge_data",
             "valueType": "string",
             "readOnly": false
+        },
+        {
+            "name": "volumePool",
+            "displayName": "Volume Pool",
+            "description": "Folders and files in User Volumes under “Storage” will be backed up and permanent, but there is a quota limit of 10GB. Folders and files in User Volumes under “Temporary” are not backed up, and will be deleted after a particular time period.",
+            "value": "Storage",
+            "valueItems": [
+                "Storage",
+                "Temporary"
+            ]
         }
     ]
 }
