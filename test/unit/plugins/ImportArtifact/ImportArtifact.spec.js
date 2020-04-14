@@ -1,7 +1,7 @@
 
 describe.skip('ImportArtifact', function () {
     'use strict';
-    var testFixture = require('../../globals');
+    var testFixture = require('../../../globals');
     var gmeConfig = testFixture.getGmeConfig(),
         expect = testFixture.expect,
         logger = testFixture.logger.fork('ImportArtifact'),
