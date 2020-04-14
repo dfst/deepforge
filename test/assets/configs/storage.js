@@ -4,7 +4,7 @@ function getSciServerFilesConfig() {
     const username = getSciServerUsername();
     const password = getSciServerPassword();
     const volume = `${username}/deepforge_test`;
-    const volumePool = 'Storage';
+    const volumePool = 'Temporary';
 
     return {username, password, volume, volumePool};
 }
