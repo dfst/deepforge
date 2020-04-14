@@ -72,6 +72,7 @@ define([
             username: this.username,
             password: this.password,
             volume: this.volume,
+            volumePool: 'Storage'
         };
         const storage = await Storage.getClient('sciserver-files', this.logger, config);
         const files = Object.entries(metadata.content)
