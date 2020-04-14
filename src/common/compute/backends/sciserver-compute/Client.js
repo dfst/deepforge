@@ -52,7 +52,7 @@ define([
             userVolumeId: volume.id,
             needsWriteAccess: SciServerClient.isWritable(volume),
         }));
-        const filepath = `/home/idies/workspace/Storage/${dirname}`;
+        const filepath = `/home/idies/workspace/Temporary/${dirname}`;
 
         return {
             command: `bash ${filepath}/prepare-and-run.sh ${filepath}`,
@@ -72,6 +72,7 @@ define([
             username: this.username,
             password: this.password,
             volume: this.volume,
+            volumePool: 'Temporary'
         };
         const storage = await Storage.getClient('sciserver-files', this.logger, config);
         const files = Object.entries(metadata.content)
