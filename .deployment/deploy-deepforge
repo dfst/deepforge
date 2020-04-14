@@ -3,12 +3,18 @@ DEEPFORGE_DEPLOYMENT_DIR="$(realpath "$(dirname "$0")")"
 export DEEPFORGE_DEPLOYMENT_DIR
 
 . ~/.nvm/nvm.sh
-
 SERVER_NAME="server"
 
 if [[ $1 = "stable" ]]; then
    SERVER_NAME="server_stable"
 fi;
+
+# This will overwrite config/components.json on the local source tree (please use with discretion)
+< config/components.json  jq '.Compute.backends=(.Compute.backends | map(select(. != "local")))' \
+> config/components2.json
+< config/components2.json jq '.Storage.backends=(.Storage.backends | map(select(. != "gme")))' \
+> config/components.json
+rm config/components2.json
 
 # Merging the custom override yml file
 yaml-merge docker/docker-compose.yml "$DEEPFORGE_DEPLOYMENT_DIR"/docker-compose-overrides.yml > custom-docker-compose.yml

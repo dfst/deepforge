@@ -21,7 +21,8 @@ define([
         };
         if (!require.isBrowser) {
             const [url, isHttps] = this.getServerURL();
-            const [server, port='80'] = url.split(':');
+            const defaultPort = isHttps ? '443' : '80';
+            const [server, port=defaultPort] = url.split(':');
             params.server = server;
             params.serverPort = +port;
             params.httpsecure = isHttps;
