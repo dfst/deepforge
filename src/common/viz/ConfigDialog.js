@@ -61,6 +61,7 @@ define([
         this._divContainer = this._dialog.find('.modal-body');
         this._saveConfigurationCb = this._dialog.find('.save-configuration');
         this._modalHeader = this._dialog.find('.modal-header');
+        this._saveConfigurationCb.find('input').prop('checked', true);
 
         // Create the header
         const config = this.getDialogConfig(metadata, options);
