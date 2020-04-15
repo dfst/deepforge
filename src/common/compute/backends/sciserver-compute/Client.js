@@ -26,7 +26,6 @@ define([
         ComputeClient.apply(this, arguments);
         this.username = config.username;
         this.password = config.password;
-        this.volume = config.volume;
         this.computeDomain = config.computeDomain;
         this.previousJobState = {};
         this.consoleOutputLen = {};
@@ -71,7 +70,7 @@ define([
         const config =  {
             username: this.username,
             password: this.password,
-            volume: this.volume,
+            volume: `${this.username}/scratch`,
             volumePool: 'Temporary'
         };
         const storage = await Storage.getClient('sciserver-files', this.logger, config);
