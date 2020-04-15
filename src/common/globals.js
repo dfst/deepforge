@@ -282,7 +282,8 @@ define([
 
     const runArtifactPlugin = async function(pluginName) {
         const pluginMetadata = copy(WebGMEGlobal.allPluginsMetadata[pluginName]);
-        const backends = pluginName === UPLOAD_PLUGIN ? storageBackends : ['sciserver-files', 's3'];
+        const backends = pluginName === UPLOAD_PLUGIN ? storageBackends :
+            storageBackends.filter(backend => backend !== 's3');
         const metadata = pushStorageConfigMetadata(pluginMetadata, backends);
         const configDialog = new ConfigDialog(client);
         const allConfigs = await configDialog.show(metadata);
