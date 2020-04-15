@@ -34,8 +34,8 @@ define([
     SciServerClient.prototype = Object.create(ComputeClient.prototype);
 
     SciServerClient.prototype.createJob = async function(hash) {
-        const dirname = await this._uploadFiles(hash);
-        const job = await this._createJob(dirname);
+        const filesInfo = await this._uploadFiles(hash);
+        const job = await this._createJob(filesInfo);
         const jobInfo = {
             id: job.id,
             hash,
@@ -45,13 +45,14 @@ define([
         return jobInfo;
     };
 
-    SciServerClient.prototype._createConfig = async function(dirname) {
+    SciServerClient.prototype._createConfig = async function(filesInfo) {
+        const {dirname, volumePool, volume} = filesInfo;
         const domain = await this._getComputeDomain();
         const userVolumes = domain.userVolumes.map(volume => ({
             userVolumeId: volume.id,
             needsWriteAccess: SciServerClient.isWritable(volume),
         }));
-        const filepath = `/home/idies/workspace/Temporary/${dirname}`;
+        const filepath = `/home/idies/workspace/${volumePool}/${volume}/${dirname}`;
 
         return {
             command: `bash ${filepath}/prepare-and-run.sh ${filepath}`,
@@ -84,11 +85,13 @@ define([
 
         await storage.putFile(`${dirname}/prepare-and-run.sh`, PREPARE_AND_RUN);
         await Promise.all(files);
-        return `${config.volume}/${dirname}`;
+        const filesInfo = Object.assign({}, config);
+        filesInfo.dirname = dirname;
+        return filesInfo;
     };
 
-    SciServerClient.prototype._createJob = async function(dirname) {
-        const config = await this._createConfig(dirname);
+    SciServerClient.prototype._createJob = async function(filesInfo) {
+        const config = await this._createConfig(filesInfo);
         const url = 'https://apps.sciserver.org/racm//jobm/rest/jobs/docker';
 
         const opts = {
