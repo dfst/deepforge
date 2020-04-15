@@ -61,8 +61,8 @@ define([
     };
 
     SciServerFiles.prototype.deleteFile = async function (dataInfo) {
-        const {volume, filename} = dataInfo.data;
-        const url = `data/${this.volumePool}/${volume}/${filename}`;
+        const {volume, filename, volumePool} = dataInfo.data;
+        const url = `data/${volumePool}/${volume}/${filename}`;
         const opts = {method: 'DELETE'};
         return await this.fetch(url, opts);
     };
@@ -95,12 +95,13 @@ define([
         const splitPath = path.split('/');
         const filename = splitPath.pop();
         const parentDir = splitPath.join('/');
-        const url = `jsontree/Storage/${this.volume}/${parentDir}?level=2`;
+        const url = `jsontree/${this.volumePool}/${this.volume}/${parentDir}?level=2`;
         const response = await this.fetch(url);
         const files = (await response.json()).root.files || [];
         const metadata = files.find(file => file.name === filename);
         if(metadata) {
             metadata.volume = this.volume;
+            metadata.volumePool = this.volumePool;
             metadata.filename = path;
         } else {
             throw new Error(`The file at ${path} doesn't exist in ${this.volume}`);

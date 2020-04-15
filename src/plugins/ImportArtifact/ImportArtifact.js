@@ -32,7 +32,7 @@ define([
 
     ImportArtifact.prototype.main = async function (callback) {
         const config = this.getCurrentConfig();
-        const base = this.getBaseNode();
+        const base = this.getBaseNode('Data');
         const path = config.dataPath;
         const baseName = config.dataTypeId;
 
@@ -41,18 +41,13 @@ define([
             return;
         }
 
-        const parent = await this.getArtifactsDir();
-        const dataNode = this.core.createNode({base, parent});
-
-        const name = await this.getAssetNameFromPath(path) ||
-            baseName[0].toLowerCase() + baseName.substring(1);
-        let assetInfo;
-
         try {
-
-            assetInfo = await this.symLink(path, config.storage);
-            this.assignAssetAttributes(dataNode, {data: assetInfo, name: name, type: baseName});
-            await this.save(`Transferred "${name}" data`);
+            const name = await this.getAssetNameFromPath(path) ||
+                baseName[0].toLowerCase() + baseName.substring(1);
+            const assetInfo = await this.symLink(path, config.storage);
+            const attrs = {data: assetInfo, name: name, type: baseName};
+            await this.createArtifact(base, attrs);
+            await this.save(`Successfully imported ${name} data`);
             this.result.setSuccess(true);
             callback(null, this.result);
         } catch (err) {
@@ -63,11 +58,12 @@ define([
 
     ImportArtifact.prototype.symLink = async function(path, storage) {
         const {id, config} = storage;
-        if(path.includes(`${this.projectId}/artifacts`)){
-            throw new Error('Cannot import from project root directory');
-        }
         const srcStorage = await Storage.getBackend(id).getClient(this.logger, config);
         return await srcStorage.stat(path);
+    };
+
+    ImportArtifact.prototype.getAssetNameFromPath = async function (path) {
+        return path.split('/').pop();
     };
 
     return ImportArtifact;

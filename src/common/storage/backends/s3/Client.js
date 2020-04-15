@@ -104,10 +104,10 @@ define([
         } catch (err) {
             throw new Error(`Unable to upload ${filename}: ${err.message}`);
         }
-        const metadata = await this.stat(filename);
+        const dataInfo = await this.stat(filename);
 
         this.logger.debug(`Successfully uploaded file ${filename} to the S3 server.`);
-        return this.createDataInfo(metadata);
+        return dataInfo;
     };
 
     S3Storage.prototype._stat = async function (path, bucketName) {

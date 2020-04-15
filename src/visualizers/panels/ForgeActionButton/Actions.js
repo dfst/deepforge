@@ -160,9 +160,9 @@ define([
                 action: DeepForge.create.Artifact
             },
             {
-                name: 'Import storage paths',
+                name: 'Import existing data',
                 icon: 'swap_horiz',
-                action: DeepForge.create.ImportPaths
+                action: DeepForge.import.Artifact
             }
         ],
         // Creating prototypes

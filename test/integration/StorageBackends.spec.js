@@ -35,7 +35,7 @@ describe('Storage Features Test', function () {
     for (const backend of storageBackends) {
         it(`should putFile using ${backend}`, async function() {
             this.retries(maxRetries(backend));
-            dataInfo = await clients[backend].putFile(`${TEST_PATH}`,
+            dataInfo = await clients[backend].putFile(TEST_PATH,
                 Buffer.from('A Quick Brown Fox Jumped over a lazy Dog.'));
         });
 

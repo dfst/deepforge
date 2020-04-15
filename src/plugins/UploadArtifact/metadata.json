@@ -24,7 +24,7 @@
             "displayName": "Data Type",
             "description": "",
             "value": "",
-            "valueType": "str",
+            "valueType": "string",
             "readOnly": false
         }
   ]

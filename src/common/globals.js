@@ -230,6 +230,7 @@ define([
 
     DeepForge.last = {};
     DeepForge.create = {};
+    DeepForge.import = {};
     DeepForge.register = {};
     instances.forEach(type => {
         DeepForge.create[type] = function() {
@@ -254,9 +255,8 @@ define([
     const storageBackends = Storage.getAvailableBackends();
     const storageMetadata = storageBackends.map(id => Storage.getStorageMetadata(id));
 
-    const getConfigMetadata = function(pluginName) {
-        const metadata = copy(WebGMEGlobal.allPluginsMetadata[pluginName]);
-        let backends  = storageBackends;
+    const pushStorageConfigMetadata = function(metadata, backends) {
+        backends = backends || storageBackends;
         metadata.configStructure.unshift({
             name: 'artifactOptions',
             displayName: 'New Artifact',
@@ -268,10 +268,6 @@ define([
             displayName: 'Storage',
             valueType: 'section'
         });
-
-        if(pluginName === IMPORT_PLUGIN){
-            backends = storageBackends.filter(id => id !== 'gme');
-        }
 
         metadata.configStructure.push({
             name: 'storage',
@@ -285,7 +281,9 @@ define([
     };
 
     const runArtifactPlugin = async function(pluginName) {
-        const metadata = getConfigMetadata(pluginName);
+        const pluginMetadata = copy(WebGMEGlobal.allPluginsMetadata[pluginName]);
+        const backends = pluginName === UPLOAD_PLUGIN ? storageBackends : ['sciserver-files', 's3'];
+        const metadata = pushStorageConfigMetadata(pluginMetadata, backends);
         const configDialog = new ConfigDialog(client);
         const allConfigs = await configDialog.show(metadata);
         const context = client.getCurrentPluginContext(pluginName);
@@ -301,7 +299,7 @@ define([
         await runArtifactPlugin(UPLOAD_PLUGIN);
     };
 
-    DeepForge.create.ImportPaths = async function() {
+    DeepForge.import.Artifact = async function() {
         await runArtifactPlugin(IMPORT_PLUGIN);
     };
 

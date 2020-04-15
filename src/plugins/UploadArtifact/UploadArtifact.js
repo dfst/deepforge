@@ -54,23 +54,17 @@ define([
         const config = this.getCurrentConfig();
         const hash = config.dataHash;
         const baseName = config.dataTypeId;
-        const base = this.getBaseNode();
+        const base = this.getBaseNode('Data');
 
         if (!base) {
             callback(`Could not find data type "${baseName}"`, this.result);
             return;
         }
         try {
-            const parent = await this.getArtifactsDir();
-            const dataNode = this.core.createNode({base, parent});
-
             const name = await this.getAssetNameFromHash(hash) ||
                 baseName[0].toLowerCase() + baseName.substring(1);
-            let assetInfo;
-
-            assetInfo = await this.transfer(hash, config.storage, name);
-
-            this.assignAssetAttributes(dataNode, {type: baseName, name: name, data: assetInfo});
+            const assetInfo =  await this.transfer(hash, config.storage, name);
+            await this.createArtifact(base, {type: baseName, name: name, data: assetInfo});
             await this.save(`Uploaded "${name}" data`);
             this.result.setSuccess(true);
             callback(null, this.result);
@@ -88,6 +82,13 @@ define([
         const {id, config} = storage;
         const dstStorage = await Storage.getBackend(id).getClient(this.logger, config);
         return await dstStorage.putFile(filename, content);
+    };
+
+    UploadArtifact.prototype.getAssetNameFromHash = async function(hash){
+        const metadata = await this.blobClient.getMetadata(hash);
+        if (metadata) {
+            return metadata.name.replace(/\.[^.]*?$/, '');
+        }
     };
 
     return UploadArtifact;
