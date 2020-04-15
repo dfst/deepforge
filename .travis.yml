@@ -7,7 +7,7 @@ addons:
 sudo: false
 env:
     - DEEPFORGE_HOST=127.0.0.1:8080 NODE_ENV=test
-script: npm run test-ci
+script: travis_wait 30 npm run test-ci
 before_install:
   - docker pull minio/minio
   - docker run -d -p 9000:9000 --name minio-test -e "MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}" -e "MINIO_SECRET_KEY=${MINIO_SECRET_KEY}" minio/minio server ./data
