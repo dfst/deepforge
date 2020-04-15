@@ -54,17 +54,13 @@ define([
         const config = this.getCurrentConfig();
         const hash = config.dataHash;
         const baseName = config.dataTypeId;
-        const base = this.getBaseNode('Data');
 
-        if (!base) {
-            callback(`Could not find data type "${baseName}"`, this.result);
-            return;
-        }
         try {
+            this.ensureCompatibleMeta();
             const name = await this.getAssetNameFromHash(hash) ||
                 baseName[0].toLowerCase() + baseName.substring(1);
             const assetInfo =  await this.transfer(hash, config.storage, name);
-            await this.createArtifact(base, {type: baseName, name: name, data: assetInfo});
+            await this.createArtifact({type: baseName, name: name, data: assetInfo});
             await this.save(`Uploaded "${name}" data`);
             this.result.setSuccess(true);
             callback(null, this.result);

@@ -110,14 +110,6 @@ define([
         return dataInfo;
     };
 
-    S3Storage.prototype._stat = async function (path, bucketName) {
-        const params = {
-            Bucket: bucketName,
-            Key: path
-        };
-        return (await this.getS3Client()).headObject(params);
-    };
-
     S3Storage.prototype.deleteDir = async function (dirname) {
         const s3Client = await this.getS3Client();
         const {Contents} = await s3Client.listObjectsV2({
@@ -175,7 +167,11 @@ define([
     }
 
     S3Storage.prototype.stat = async function (path) {
-        const metadata = await this._stat(path, this.bucketName);
+        const params = {
+            Bucket: this.bucketName,
+            Key: path
+        };
+        const metadata = (await this.getS3Client()).headObject(params);
         metadata.filename = path;
         metadata.size = metadata.ContentLength;
         metadata.bucketName = this.bucketName;

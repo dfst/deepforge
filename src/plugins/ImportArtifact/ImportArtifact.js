@@ -32,21 +32,15 @@ define([
 
     ImportArtifact.prototype.main = async function (callback) {
         const config = this.getCurrentConfig();
-        const base = this.getBaseNode('Data');
         const path = config.dataPath;
         const baseName = config.dataTypeId;
 
-        if (!base) {
-            callback(`Could not find data type "${baseName}"`, this.result);
-            return;
-        }
-
         try {
+            this.ensureCompatibleMeta();
             const name = await this.getAssetNameFromPath(path) ||
                 baseName[0].toLowerCase() + baseName.substring(1);
             const assetInfo = await this.symLink(path, config.storage);
-            const attrs = {data: assetInfo, name: name, type: baseName};
-            await this.createArtifact(base, attrs);
+            await this.createArtifact({data: assetInfo, name: name, type: baseName});
             await this.save(`Successfully imported ${name} data`);
             this.result.setSuccess(true);
             callback(null, this.result);
