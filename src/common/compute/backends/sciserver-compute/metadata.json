@@ -16,7 +16,10 @@
             "description": "SciServer password",
             "value": "",
             "valueType": "string",
-            "readOnly": false
+            "readOnly": false,
+            "options": {
+                "isPassword": true
+            }
         },
         {
             "name": "volume",

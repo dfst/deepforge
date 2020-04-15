@@ -24,6 +24,12 @@ logger.fork = () => logger;
 
 let remainingImageCount = 0;
 let exitCode;
+class DataRetrievalError extends Error {
+    constructor(name, err) {
+        const message = `Data retrieval failed for ${name}: ${err}`;
+        super(message);
+    }
+}
 
 const requirejs = require('requirejs');
 requirejs([
@@ -77,13 +83,18 @@ requirejs([
         await prepareInputsOutputs();
         try {
             const fetchData = inputData
-                .map(tuple => {
+                .map(async tuple => {
                     const [path, dataInfo, config] = tuple;
-                    return getData(workerCacheDir, path, dataInfo, config);
+                    try {
+                        await getData(workerCacheDir, path, dataInfo, config);
+                    } catch (err) {
+                        const [, inputName] = path.split('/');
+                        throw new DataRetrievalError(inputName, err);
+                    }
                 });
             await Promise.all(fetchData);
         } catch (err) {
-            console.log(`Data retrieval failed: ${err}`);
+            console.log(err.message);
             process.exit(1);
         }
 

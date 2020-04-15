@@ -9,19 +9,26 @@ define([
 
     const GMEStorage = function(/*name, logger*/) {
         StorageClient.apply(this, arguments);
+        const params = this.getBlobClientParams();
+        this.blobClient = new BlobClient(params);
+    };
+
+    GMEStorage.prototype = Object.create(StorageClient.prototype);
+
+    GMEStorage.prototype.getBlobClientParams = function() {
         const params = {
             logger: this.logger.fork('BlobClient')
         };
         if (!require.isBrowser) {
             const [url, isHttps] = this.getServerURL();
-            params.server = url.split(':')[0];
-            params.serverPort = +(url.split(':').pop());
+            const defaultPort = isHttps ? '443' : '80';
+            const [server, port=defaultPort] = url.split(':');
+            params.server = server;
+            params.serverPort = +port;
             params.httpsecure = isHttps;
         }
-        this.blobClient = new BlobClient(params);
+        return params;
     };
-
-    GMEStorage.prototype = Object.create(StorageClient.prototype);
 
     GMEStorage.prototype.getFile = async function(dataInfo) {
         const {data} = dataInfo;

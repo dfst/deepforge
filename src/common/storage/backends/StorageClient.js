@@ -22,8 +22,8 @@ define([
 
     StorageHelpers.getServerURL = function () {
         const {port} = gmeConfig.server;
-        let url = require.isBrowser ? window.origin : process.env.DEEPFORGE_HOST;
-        url = url || `127.0.0.1:${port}`;
+        let url = require.isBrowser ? window.origin :
+            (process.env.DEEPFORGE_HOST || `http://127.0.0.1:${port}`);
         return [url.replace(/^https?:\/\//, ''), url.startsWith('https')];
     };
 
