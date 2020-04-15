@@ -260,8 +260,9 @@ define([
 
         widget.setValue = config => {
             entries.forEach(entry => {
-                if (entry.widget) {
-                    entry.widget.setValue(config[entry.id || entry.name]);
+                const value = config[entry.id || entry.name];
+                if (entry.widget && value !== undefined) {
+                    entry.widget.setValue(value);
                 }
             });
             return config;
