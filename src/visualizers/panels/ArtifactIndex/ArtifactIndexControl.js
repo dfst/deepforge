@@ -49,10 +49,13 @@ define([
             const name = node.getAttribute('name');
             const msg = `Deleted "${name}" artifact (${id})`;
 
-            const dataInfo = this.getDataInfo(node);
-            const {backend} = dataInfo;
-            const storage = await Storage.getClient(backend, this._logger, config);
-            await storage.deleteFile(dataInfo);
+            const deleteDataFromStorage = !!config;
+            if (deleteDataFromStorage) {
+                const dataInfo = this.getDataInfo(node);
+                const {backend} = dataInfo;
+                const storage = await Storage.getClient(backend, this._logger, config);
+                await storage.deleteFile(dataInfo);
+            }
 
             this._client.startTransaction(msg);
             this._client.deleteNode(id);

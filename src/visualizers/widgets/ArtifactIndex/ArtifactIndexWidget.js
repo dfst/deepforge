@@ -6,6 +6,7 @@ define([
     './ArtifactModal',
     'panel/FloatingActionButton/styles/Materialize',
     'deepforge/storage/index',
+    'deepforge/viz/ConfirmDialog',
     'text!./Table.html',
     'css!./styles/ArtifactIndexWidget.css'
 ], function (
@@ -13,6 +14,7 @@ define([
     ArtifactModal,
     Materialize,
     Storage,
+    ConfirmDialog,
     TABLE_HTML
 ) {
     'use strict';
@@ -51,7 +53,10 @@ define([
             var node = new ModelItem(this.$list, desc);
             this.nodes[desc.id] = node;
             node.$delete.on('click', async event => {
-                const config = await this.getAuthenticationConfig(desc.dataInfo);
+                const {dataInfo} = desc;
+                const deleteData = await this.askIfDeleteFromStorage(dataInfo);
+                const config = deleteData ?
+                    await this.getAuthenticationConfig(dataInfo) : null;
                 this.onNodeDeleteClicked(desc.id, config);
                 event.stopPropagation();
                 event.preventDefault();
@@ -93,6 +98,15 @@ define([
                 this.artifactModal.showModal(desc);
             });
         }
+    };
+
+    ArtifactIndexWidget.prototype.askIfDeleteFromStorage = async function (dataInfo) {
+        const {backend} = dataInfo;
+        const {name} = Storage.getStorageMetadata(backend);
+        const title = 'Delete associated data?';
+        const body = `Would you also like to delete the associated data from ${name}?`;
+        const dialog = new ConfirmDialog(title, body);
+        return await dialog.show();
     };
 
     ArtifactIndexWidget.prototype.getAuthenticationConfig = async function (dataInfo) {
