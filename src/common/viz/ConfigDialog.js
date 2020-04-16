@@ -75,7 +75,8 @@ define([
     };
 
     ConfigDialog.prototype.getDialogConfig = function(metadata, options) {
-        const defaultTitle = metadata.id + ' v' + metadata.version;
+        const defaultTitle = metadata.name ? `${metadata.name} (v${metadata.version})` :
+            metadata.id + ' v' + metadata.version;
         return {
             title: options.title || defaultTitle,
             iconClass: (metadata.icon && metadata.icon.class) || 'glyphicon glyphicon-cog',
