@@ -11,14 +11,14 @@ define([
         StorageClient.apply(this, arguments);
         this.username = config.username;
         this.password = config.password;
-        this.volumePool = config.volumePool;
+        this.volumePool = config.volumePool || 'Storage';
         this.volume = (config.volume || '').replace(/^Storage\//, '');
     };
 
     SciServerFiles.prototype = Object.create(StorageClient.prototype);
 
     SciServerFiles.prototype.getFile = async function (dataInfo) {
-        let {volume, filename, volumePool} = dataInfo.data;
+        let {volume, filename, volumePool='Storage'} = dataInfo.data;
         const url = `file/${volumePool}/${volume}/${filename}`;
         const response = await this.fetch(url);
         if (require.isBrowser) {
