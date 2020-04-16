@@ -1,6 +1,6 @@
 {
   "id": "ImportArtifact",
-  "name": "Import Artifact",
+  "name": "Import Existing Data",
   "version": "0.1.0",
   "description": "",
   "icon": {
@@ -13,7 +13,7 @@
   "configStructure": [
     {
       "name": "dataPath",
-      "displayName": "Path",
+      "displayName": "File Path",
       "description": "Path to an existing artifact in the storage backend",
       "value": "",
       "valueType": "string",
