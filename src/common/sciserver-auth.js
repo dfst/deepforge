@@ -51,7 +51,7 @@
         tokens[username] = tokens[username] || {};
         if (!tokens[username][password]) {
             tokens[username][password] = fetchNewToken(username, password);
-            setTimeout(clearToken.bind(username, password), 23*hours);
+            setTimeout(clearToken.bind(null, username, password), 23*hours);
         }
         return tokens[username][password];
     }
