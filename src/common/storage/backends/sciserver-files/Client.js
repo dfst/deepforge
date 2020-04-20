@@ -105,7 +105,7 @@ define([
         const filename = splitPath.pop();
         const parentDir = splitPath.join('/');
         const url = `jsontree/${this.volumePool}/${this.volume}/${parentDir}?level=2`;
-        const response = await this.fetch(url);
+        const response = await this.fetch('stat', url);
         const files = (await response.json()).root.files || [];
         const metadata = files.find(file => file.name === filename);
         if(metadata) {
