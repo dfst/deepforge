@@ -20,7 +20,7 @@ define([
     SciServerFiles.prototype.getFile = async function (dataInfo) {
         let {volume, filename, volumePool='Storage'} = dataInfo.data;
         const url = `file/${volumePool}/${volume}/${filename}`;
-        const response = await this.fetch(url);
+        const response = await this.fetch('download', url);
         if (require.isBrowser) {
             return await response.arrayBuffer();
         } else {
@@ -39,12 +39,7 @@ define([
         };
 
         const url = `file/${this.volumePool}/${this.volume}/${filename}`;
-        try{
-            await this.fetch(url, opts);
-        } catch (errRes) {
-            const contents = await errRes.json();
-            throw new Error(`SciServerFiles.putFile failed: ${JSON.stringify(contents)}`);
-        }
+        await this.fetch('upload', url, opts, 'upload');
         const metadata = {
             filename: filename,
             volume: this.volume,
@@ -57,14 +52,14 @@ define([
     SciServerFiles.prototype.deleteDir = async function (dirname) {
         const url = `data/${this.volumePool}/${this.volume}/${dirname}`;
         const opts = {method: 'DELETE'};
-        return await this.fetch(url, opts);
+        return await this.fetch('delete directory', url, opts);
     };
 
     SciServerFiles.prototype.deleteFile = async function (dataInfo) {
         const {volume, filename, volumePool} = dataInfo.data;
         const url = `data/${volumePool}/${volume}/${filename}`;
         const opts = {method: 'DELETE'};
-        return await this.fetch(url, opts);
+        return await this.fetch('delete', url, opts);
     };
 
     SciServerFiles.prototype.getMetadata = async function (dataInfo) {
@@ -77,11 +72,25 @@ define([
         return `${this.id}/${volume}/${filename}`;
     };
 
-    SciServerFiles.prototype.fetch = async function (url, opts = {}) {
+    SciServerFiles.prototype.fetch = async function (action, url, opts = {}) {
         const token = await login(this.username, this.password);
         opts.headers = opts.headers || {};
         opts.headers['X-Auth-Token'] = token;
-        return StorageClient.prototype.fetch.call(this, url, opts);
+        try {
+            return StorageClient.prototype.fetch.call(this, url, opts);
+        } catch (errRes) {
+            const err = await this.getErrorMsg(errRes);
+            throw new Error(`SciServerFiles ${action} failed: ${err}`);
+        }
+    };
+
+    SciServerFiles.prototype.getErrorMsg = async function (response) {
+        try {
+            const contents = await response.json();
+            return JSON.stringify(contents);
+        } catch (err) {
+            return await response.text();
+        }
     };
 
     SciServerFiles.prototype.getURL = function (url) {
