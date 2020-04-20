@@ -78,7 +78,66 @@
         };
     };
 
+    const splitObj = function (obj, nestedKeys) {
+        const selected = {};
+        const remaining = deepCopy(obj);
+        nestedKeys.forEach(keys => {
+            const value = deepGet(obj, keys);
+            deepSet(selected, keys, value);
+            deepDelete(remaining, keys);
+        });
+
+        return [selected, remaining];
+    };
+
+    const deepDelete = function (obj, nestedKeys) {
+        const allButLast = nestedKeys.slice(0, nestedKeys.length - 1);
+        const nestedObj = deepGet(obj, allButLast);
+        const lastKey = nestedKeys.slice().pop();
+        delete nestedObj[lastKey];
+    };
+
+    const deepGet = function (obj, nestedKeys) {
+        return nestedKeys.reduce((value, key) => value[key], obj);
+    };
+
+    const deepSet = function (obj, nestedKeys, value) {
+        const allButLast = nestedKeys.slice(0, nestedKeys.length-1);
+        const nestedObj = createNestedObjs(obj, allButLast);
+        const lastKey = nestedKeys[nestedKeys.length - 1];
+        nestedObj[lastKey] = value;
+    };
+
+    const createNestedObjs = function (obj, nestedKeys) {
+        nestedKeys.forEach(key => {
+            if (!obj[key]) {
+                obj[key] = {};
+            }
+            obj = obj[key];
+        });
+        return obj;
+    };
+
+    const deepCopy = v => JSON.parse(JSON.stringify(v));
+
+    const deepExtend = function (obj1, obj2) {
+        Object.entries(obj2).forEach(entry => {
+            const [key, value] = entry;
+            const mergeRequired = typeof obj1[key] === 'object' &&
+                typeof value === 'object';
+
+            if (mergeRequired) {
+                deepExtend(obj1[key], value);
+            } else {
+                obj1[key] = value;
+            }
+        });
+        return obj1;
+    };
+
     return {
+        deepExtend,
+        splitObj,
         resolveCarriageReturns,
         abbr,
         withTimeout,

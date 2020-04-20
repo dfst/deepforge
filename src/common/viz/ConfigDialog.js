@@ -2,11 +2,13 @@
 define([
     'q',
     'js/Dialogs/PluginConfig/PluginConfigDialog',
+    'deepforge/utils',
     'text!js/Dialogs/PluginConfig/templates/PluginConfigDialog.html',
     'css!./ConfigDialog.css'
 ], function(
     Q,
     PluginConfigDialog,
+    utils,
     pluginConfigDialogTemplate,
 ) {
     var SECTION_DATA_KEY = 'section',
@@ -90,21 +92,47 @@ define([
 
         this._dialog.modal('hide');
         if (saveConfig) {
-            this.saveConfigForUser(config);
+            this.saveConfig(config);
         }
         return callback(config);
     };
 
-    ConfigDialog.prototype.saveConfigForUser = async function (config) {
+    ConfigDialog.prototype.saveConfig = async function (config) {
+        const authKeys = this.getAuthenticationKeys(this._pluginMetadata)
+            .map(keys => [this._pluginMetadata.id].concat(keys));
+        const [secretConfig, publicConfig] = utils.splitObj(config, authKeys);
+
+        await this.saveUserData({Dialog: {__secrets__: secretConfig}}, true);
+        await this.saveUserData({Dialog: publicConfig});
+    };
+
+    ConfigDialog.prototype.saveUserData = async function (config, encrypt=false) {
         const opts = {
             method: 'PATCH',
             credentials: 'same-origin',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({Dialog: config})
+            body: JSON.stringify(config)
         };
-        await fetch('/api/user/data', opts);
+        await fetch(`/api/user/data?${encrypt ? 'encrypt=1' : ''}`, opts);
+    };
+
+    ConfigDialog.prototype.getAuthenticationKeys = function (metadata) {
+        const keys = [];
+        metadata.configStructure.forEach(config => {
+            if (config.isAuth) {
+                keys.push([config.name]);
+            } else if (config.valueType === 'dict') {
+                const nestedKeys = config.valueItems
+                    .flatMap(c => this.getAuthenticationKeys(c))
+                    .map(key => [config.name, 'config'].concat(key));
+
+                keys.push(...nestedKeys);
+            }
+        });
+
+        return keys;
     };
 
     ConfigDialog.prototype.getSavedConfig = async function () {
@@ -112,9 +140,12 @@ define([
             method: 'GET',
             credentials: 'same-origin'
         };
-        const response = await fetch('/api/user/data', opts);
-        const userData = await response.json();
-        return userData.Dialog;
+        let response = await fetch('/api/user/data/Dialog/__secrets__?decrypt=true', opts);
+        const secrets = await response.json();
+
+        response = await fetch('/api/user/data/Dialog', opts);
+        const publicData = await response.json();
+        return utils.deepExtend(publicData, secrets);
     };
 
     ConfigDialog.prototype._getAllConfigValues = function () {
