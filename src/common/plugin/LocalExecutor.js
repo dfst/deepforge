@@ -77,17 +77,21 @@ define([
         const jobLogger = new JobLogger(this.core, this.core.getParent(node));
         jobLogger.log('About to save output artifacts.');
         const saveDir = `${this.projectId}/artifacts/`;
-        const storage = await this.getStorageClient();
-        jobLogger.append(`Saving output data to ${storage.name}...`);
+        const dstStorage = await this.getStorageClient();
+        jobLogger.append(`Saving output data to ${dstStorage.name}...`);
 
         const createParams = {base: this.META.Data, parent: artifactsDir};
         for (let i = dataNodes.length; i--;) {
             const artifact = this.core.createNode(createParams);
-            const name = this.core.getOwnAttribute(node, 'saveName') ||
-                this.core.getAttribute(dataNodes[i], 'name');
             const createdAt = Date.now();
             const originalData = JSON.parse(this.core.getAttribute(dataNodes[i], 'data'));
-            const userAsset = await storage.copy(originalData, saveDir + name);
+
+            const name = this.core.getOwnAttribute(node, 'saveName') ||
+                this.core.getAttribute(dataNodes[i], 'name');
+
+            const srcStorage = await this.getStorageClientForInputData(originalData);
+            const content = await srcStorage.getFile(originalData);
+            const userAsset = await dstStorage.putFile(saveDir + name, content);
 
             this.core.setAttribute(artifact, 'data', JSON.stringify(userAsset));
             this.core.setAttribute(artifact, 'name', name);
@@ -96,7 +100,7 @@ define([
         }
 
         this.logger.info(`Saved ${dataNodes.length} artifacts in ${this.projectId}.`);
-        jobLogger.append(`Saved output data to ${storage.name}`);
+        jobLogger.append(`Saved output data to ${dstStorage.name}`);
     };
 
     // Helper methods

@@ -209,6 +209,24 @@ define([
         return await backend.getClient(this.logger, storage.config);
     };
 
+    ExecuteJob.prototype.getInputStorageConfigs = async function () {
+        const inputs = Object.entries(this.getCurrentConfig().inputs || {});
+        const [nodeIds=[], configs=[]] = _.unzip(inputs);
+
+        const nodes = await Promise.all(nodeIds.map(id => this.core.loadByPath(this.rootNode, id)));
+        const dataInfos = nodes.map(node => this.core.getAttribute(node, 'data'));
+
+        const config = _.object(_.zip(dataInfos, configs));
+        return config;
+    };
+
+    ExecuteJob.prototype.getStorageClientForInputData = async function (dataInfo) {
+        const configDict = await this.getInputStorageConfigs();
+        const config = configDict[JSON.stringify(dataInfo)];
+        const client = await Storage.getClient(dataInfo.backend, null, config);
+        return client;
+    };
+
     ExecuteJob.prototype.getJobId = function (node) {
         return this.getJobInfo(node).hash;
     };
