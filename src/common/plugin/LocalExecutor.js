@@ -89,7 +89,9 @@ define([
             const name = this.core.getOwnAttribute(node, 'saveName') ||
                 this.core.getAttribute(dataNodes[i], 'name');
 
-            const srcStorage = await this.getStorageClientForInputData(originalData);
+            const srcStorage = this.isPipelineInput(dataNodes[i]) ?
+                await this.getStorageClientForInputData(originalData)
+                : dstStorage;
             const content = await srcStorage.getFile(originalData);
             const userAsset = await dstStorage.putFile(saveDir + name, content);
 
@@ -101,6 +103,10 @@ define([
 
         this.logger.info(`Saved ${dataNodes.length} artifacts in ${this.projectId}.`);
         jobLogger.append(`Saved output data to ${dstStorage.name}`);
+    };
+
+    LocalExecutor.prototype.isPipelineInput = function(node) {
+        return this.isMetaTypeOf(node, this.META.Input);
     };
 
     // Helper methods
