@@ -77,9 +77,11 @@ define([
         opts.headers = opts.headers || {};
         opts.headers['X-Auth-Token'] = token;
         try {
-            return StorageClient.prototype.fetch.call(this, url, opts);
+            const response = await StorageClient.prototype.fetch.call(this, url, opts);
+            return response;
         } catch (errRes) {
-            const err = await this.getErrorMsg(errRes);
+            const err = errRes instanceof Error ? errRes :
+                await this.getErrorMsg(errRes);
             throw new Error(`SciServerFiles ${action} failed: ${err}`);
         }
     };
