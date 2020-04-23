@@ -136,16 +136,20 @@ define([
     };
 
     ConfigDialog.prototype.getSavedConfig = async function () {
+        const secrets = await this.getConfigFromUserData(['Dialog', '__secrets__'], true) || {};
+        const publicData = await this.getConfigFromUserData(['Dialog']) || {};
+        return utils.deepExtend(publicData, secrets);
+    };
+
+    ConfigDialog.prototype.getConfigFromUserData = async function (keys, encrypted) {
         const opts = {
             method: 'GET',
             credentials: 'same-origin'
         };
-        let response = await fetch('/api/user/data/Dialog/__secrets__?decrypt=true', opts);
-        const secrets = await response.json();
-
-        response = await fetch('/api/user/data/Dialog', opts);
-        const publicData = await response.json();
-        return utils.deepExtend(publicData, secrets);
+        const url = `/api/user/data/${keys.map(encodeURIComponent).join('/')}`;
+        const queryString = encrypted ? 'decrypt=true' : '';
+        const response = await fetch(`${url}?${queryString}`, opts);
+        return response.status < 399 ? await response.json() : null;
     };
 
     ConfigDialog.prototype._getAllConfigValues = function () {
