@@ -120,13 +120,20 @@ define([
 
     ConfigDialog.prototype.getAuthenticationKeys = function (metadata) {
         const keys = [];
-        metadata.configStructure.forEach(config => {
+        const configItems = metadata.configStructure || metadata.valueItems;
+
+        configItems.forEach(config => {
             if (config.isAuth) {
                 keys.push([config.name]);
             } else if (config.valueType === 'dict') {
                 const nestedKeys = config.valueItems
                     .flatMap(c => this.getAuthenticationKeys(c))
                     .map(key => [config.name, 'config'].concat(key));
+
+                keys.push(...nestedKeys);
+            } else if (config.valueType === 'group') {
+                const nestedKeys = this.getAuthenticationKeys(config)
+                    .map(key => [config.name].concat(key));
 
                 keys.push(...nestedKeys);
             }
