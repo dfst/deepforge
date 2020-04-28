@@ -221,11 +221,10 @@ define([
         return [];
     };
 
-    CreateExecution.prototype.snapshotNode = function (op, dst) {
+    CreateExecution.prototype.snapshotNode = async function (op, dst) {
         // If we are making a snapshot, we should copy the base operation
         // and set the attributes, add the child nodes, etc
         var base = this.core.getBase(this.core.getBase(op)),
-            names,
             values,
             snapshot = this.core.createNode({
                 base: base,
@@ -233,54 +232,56 @@ define([
             });
 
         // Copy over the attributes
-        names = this.core.getValidAttributeNames(op);
+        const names = this.core.getValidAttributeNames(op);
         values = names.map(name => this.core.getAttribute(op, name));
         names.forEach((name, i) =>
             this.core.setAttribute(snapshot, name, values[i]));
 
         // Copy the pointers
-        names = this.core.getValidPointerNames(op);
-        return Q.all(names
-            .map(name => this.core.getPointerPath(op, name))
-            .map(id => this.core.loadByPath(this.rootNode, id)))
-        .then(values => {
+        const ptrNames = this.core.getValidPointerNames(op);
+        const setPointers = Promise.all(
+            ptrNames.map(async name => {
+                const targetPath = this.core.getPointerPath(op, name);
+                if (targetPath) {
+                    const target = await this.core.loadByPath(this.rootNode, targetPath);
+                    this.core.setPointer(snapshot, name, target);
+                }
+            })
+        );
+        await setPointers;
 
-            names.forEach((name, i) =>
-                this.core.setPointer(snapshot, name, values[i]));
+        // Copy the data I/O
+        var srcCntrs = this.core.getChildrenPaths(op),
+            dstCntrs = this.core.getChildrenPaths(snapshot);
 
-            // Copy the data I/O
-            var srcCntrs = this.core.getChildrenPaths(op),
-                dstCntrs = this.core.getChildrenPaths(snapshot);
+        return Q.all([srcCntrs, dstCntrs].map(ids =>
+            Q.all(ids.map(id => this.core.loadByPath(this.rootNode, id)))))
+            .then(cntrs => {
+                var srcCntrs,
+                    dstCntrs;
 
-            return Q.all([srcCntrs, dstCntrs].map(ids =>
-                Q.all(ids.map(id => this.core.loadByPath(this.rootNode, id)))));
-        })
-        .then(cntrs => {
-            var srcCntrs,
-                dstCntrs;
+                // Sort all containers by metatype id
+                cntrs.map(l => l.sort((a, b) => {
+                    var aId = this.core.getPath(this.core.getMetaType(a)),
+                        bId = this.core.getPath(this.core.getMetaType(b));
 
-            // Sort all containers by metatype id
-            cntrs.map(l => l.sort((a, b) => {
-                var aId = this.core.getPath(this.core.getMetaType(a)),
-                    bId = this.core.getPath(this.core.getMetaType(b));
+                    return aId < bId ? -1 : 1;
+                }));
 
-                return aId < bId ? -1 : 1;
-            }));
-
-            srcCntrs = cntrs[0];
-            dstCntrs = cntrs[1];
-            return Q.all(srcCntrs.map(ctr => Q.all(this.core.getChildrenPaths(ctr)
+                srcCntrs = cntrs[0];
+                dstCntrs = cntrs[1];
+                return Q.all(srcCntrs.map(ctr => Q.all(this.core.getChildrenPaths(ctr)
                     .map(id => this.core.loadByPath(this.rootNode, id)))))
-                .then(cntrs =>
-                    cntrs.map((nodes, i) =>
-                        nodes.map(n => [n, this.copyDataNode(n, dstCntrs[i])]))
-                );
-        })
-        .then(nodes => {
-            nodes = nodes.reduce((l1, l2) => l1.concat(l2), []);
-            nodes.push([op, snapshot]);
-            return nodes;
-        });
+                    .then(cntrs =>
+                        cntrs.map((nodes, i) =>
+                            nodes.map(n => [n, this.copyDataNode(n, dstCntrs[i])]))
+                    );
+            })
+            .then(nodes => {
+                nodes = nodes.reduce((l1, l2) => l1.concat(l2), []);
+                nodes.push([op, snapshot]);
+                return nodes;
+            });
     };
 
     CreateExecution.prototype.copyDataNode = function (original, dst) {
