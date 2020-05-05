@@ -15,6 +15,13 @@ Welcome to DeepForge's documentation!
 
 .. toctree::
    :maxdepth: 1
+   :caption: Tutorials
+
+   tutorials/creating_project.rst
+   tutorials/storage.rst
+
+.. toctree::
+   :maxdepth: 1
    :caption: Fundamentals
 
    fundamentals/custom_operations.rst
