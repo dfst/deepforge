@@ -79,19 +79,9 @@ define([
                 event.stopPropagation();
                 event.preventDefault();
             });
-            node.$name.on('dblclick', event => {
-                const name = $(event.target);
-                name.editInPlace({
-                    css: {
-                        'z-index': 1000
-                    },
-                    onChange: (oldVal, newVal) => {
-                        if (newVal && newVal !== oldVal) {
-                            this.onNameChange(desc.id, newVal);
-                        }
-                    }
-                });
-            });
+            node.$name.on('dblclick', {id : desc.id, attr: 'name'}, this.editInPlace.bind(this));
+
+            node.$type.on('dblclick', {id: desc.id, attr: 'type'}, this.editInPlace.bind(this));
 
             node.$info.on('click', event => {
                 event.stopPropagation();
@@ -137,6 +127,22 @@ define([
         if (desc && desc.parentId === this.currentNode) {
             this.nodes[desc.id].update(desc);
         }
+    };
+
+    ArtifactIndexWidget.prototype.editInPlace = function(event) {
+        const el = $(event.target);
+        const id = event.data.id;
+        const attr = event.data.attr;
+        el.editInPlace({
+            css: {
+                'z-index' : 1000
+            },
+            onChange: (oldVal, newVal) => {
+                if (newVal && newVal !== oldVal) {
+                    this.onAttributeChange(id, attr, newVal);
+                }
+            }
+        });
     };
 
     /* * * * * * * * Visualizer event handlers * * * * * * * */
