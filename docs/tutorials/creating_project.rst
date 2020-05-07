@@ -18,7 +18,7 @@ To create a new project, first open DeepForge in your browser as shown below. In
 
     DeepForge Start Page
 
-As shown in the figure above, the interface (shown above) loads the existing projects in the deployment from there you can either navigate to an existing project or create a new one. To create a project, click on `Create new...` button highlighted in the figure above and provide a name for your project.
+The interface (shown above) loads the existing projects in the deployment. From here you can either open an existing project or create a new one. To create a project, click on `Create new...` button highlighted in the figure above and provide a name for your project.
 
 .. figure:: project_name.png
     :align: center
