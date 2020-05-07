@@ -18,7 +18,7 @@ To create a new project, first open DeepForge in your browser as shown below. In
 
     DeepForge Start Page
 
-The interface (shown above) loads the existing projects in the deployment. From here you can either open an existing project or create a new one. To create a project, click on `Create new...` button highlighted in the figure above and provide a name for your project.
+The interface (shown above) loads the existing projects in the deployment. From here you can either open an existing project or create a new one. To create a project, click on the `Create new...` button highlighted in the figure above and enter a name for the project.
 
 .. figure:: project_name.png
     :align: center
@@ -27,9 +27,9 @@ The interface (shown above) loads the existing projects in the deployment. From 
 
 After you provide a valid name for your project, you have three options:
 
-1. You can choose a project seed (Default)
-2. You can duplicate an existing project
-3. You can import a project from local file system
+1. Create a project from an existing seed. This will essentially create a new project populated with the contents of the given seed.
+2. Duplicate an existing project
+3. Import a project from local file system
 
 For an empty new project, select default project seed and click on `Create` button as shown in the figure below:
 
@@ -38,7 +38,7 @@ For an empty new project, select default project seed and click on `Create` butt
 
     Empty New Project
 
-Upon success, you will be redirected to the pipelines tab and you can start creating your `pipelines`.
+After creation, the project will be opened and will display the defined pipelines. Pipelines define some computation to be executed such as training or evaluating a neural network.
 
 .. figure:: new_project_page.png
     :align: center
@@ -56,7 +56,7 @@ Alternatively, you can also click the DeepForge icon on the top left corner and 
 
 Importing an Existing Project
 ------------------------------
-You can also import an existing project into DeepForge. Let's import a CIFAR-10 classification project in `DeepForge Examples`_. In order to import the project, download `cifar10.webgmex` file from the `DeepForge Examples`_ repo:
+In this section, we will import an example project which trains a model on the CIFAR-10 dataset. First, download the project file from the `DeepForge Examples`_ repo:
 
 
 .. code-block:: bash
