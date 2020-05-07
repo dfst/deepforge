@@ -4,21 +4,21 @@ Managing Projects
 .. _WebGME: https://webgme.org
 .. _DeepForge Examples: https://github.com/deepforge-dev/examples/tree/master/cifar10
 
-In this tutorial, we will look into creating, importing  and exporting `DeepForge` projects. Built on top of WebGME_, `DeepForge` projects natively support version control, branching and collaborative editing.
+In this tutorial, we will look into creating, importing, and exporting DeepForge projects. Built on top of WebGME_, DeepForge projects natively support version control, branching, and collaborative editing.
 
 
 
-Creating a new Project
+Creating a New Project
 ----------------------
 
-In order to create a new project, open `DeepForge` webpage on your browser as shown below (Here, we open a local deployment of `DeepForge` at http://localhost:8888 ):
+To create a new project, first open DeepForge in your browser as shown below. In this example, I will be connecting to a local deployment of DeepForge at http://localhost:8888:
 
 .. figure:: open_project.png
     :align: center
 
     DeepForge Start Page
 
-As shown in the figure above, the interface loads the existing projects in the deployment from there you can either navigate to an existing project or create a new one. To create a project, click on `Create new...` button highlighted in the figure above and provide a name for your project.
+As shown in the figure above, the interface (shown above) loads the existing projects in the deployment from there you can either navigate to an existing project or create a new one. To create a project, click on `Create new...` button highlighted in the figure above and provide a name for your project.
 
 .. figure:: project_name.png
     :align: center
@@ -45,7 +45,7 @@ Upon success, you will be redirected to the pipelines tab and you can start crea
 
     New Project Page
 
-Alternatively, you can also click the `DeepForge` icon on the top left corner and click on `+ New Project` option  to create a new project.
+Alternatively, you can also click the DeepForge icon on the top left corner and click on `+ New Project` option  to create a new project.
 
 .. figure:: alternate_project_creation.png
     :align: center
@@ -56,14 +56,14 @@ Alternatively, you can also click the `DeepForge` icon on the top left corner an
 
 Importing an Existing Project
 ------------------------------
-You can also import an existing project into `DeepForge`. Let's import a CIFAR-10 classification project in `DeepForge Examples`_. In order to import the project, download `cifar10.webgmex` file from the `DeepForge Examples`_ repo:
+You can also import an existing project into DeepForge. Let's import a CIFAR-10 classification project in `DeepForge Examples`_. In order to import the project, download `cifar10.webgmex` file from the `DeepForge Examples`_ repo:
 
 
 .. code-block:: bash
 
     wget https://github.com/deepforge-dev/examples/raw/master/cifar10/cifar10.webgmex
 
-After downloading the file, follow the steps shown in :ref:`Creating a new Project`, but instead of selecting an empty project seed select the `Import` tab and upload the file `cifar10.webgmex` as shown below:
+After downloading the file, follow the steps shown in :ref:`Creating a New Project`, but instead of selecting an empty project seed select the `Import` tab and upload the file `cifar10.webgmex` as shown below:
 
 .. figure:: import_cifar.png
     :align: center

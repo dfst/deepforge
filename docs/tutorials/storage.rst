@@ -1,9 +1,9 @@
 Managing Data in DeepForge
 ==========================
 
-In any machine learning/ scientific workflow endeavour, `datasets` play a major role. In `DeepForge`, the results/inputs of/to an operation can be saved into different storage backends enabled on the deployment.
+In any machine learning/ scientific workflow endeavour, `datasets` play a major role. In DeepForge, the results/inputs of/to an operation can be saved into different storage backends enabled on the deployment.
 
-In this tutorial, we will look into managing artifacts (data) for a `DeepForge` Operation. Before starting, `create a new empty project <./creating_project.html#creating-a-new-project>`_.
+In this tutorial, we will look into managing artifacts (data) for a DeepForge Operation. Before starting, `create a new empty project <./creating_project.html#creating-a-new-project>`_.
 
 .. note::
 
@@ -12,7 +12,7 @@ In this tutorial, we will look into managing artifacts (data) for a `DeepForge` 
 Loading a pickled file
 ----------------------
 
-Let's load in a pickled file and visualize the contents of the file in `DeepForge`. Use the following ``code`` to generate the pickle  file ``mnist_sample.pkl``.
+Let's load in a pickled file and visualize the contents of the file in DeepForge. Use the following ``code`` to generate the pickle  file ``mnist_sample.pkl``.
 
 .. code-block:: python
 
@@ -50,9 +50,9 @@ After you click on `Upload artifact`, you will be prompted with the following Mo
 .. figure:: upload_sample_data.png
     :align: center
 
-    Uploading Sample Data in `DeepForge`
+    Uploading Sample Data in DeepForge
 
-Upon success, the artifact(`mnist_sample`) will be displayed in the `My Artifacts` and will be available in your `DeepForge` pipeline:
+Upon success, the artifact(`mnist_sample`) will be displayed in the `My Artifacts` and will be available in your DeepForge pipeline:
 
 .. figure:: artifact_index.png
     :align: center
@@ -96,7 +96,7 @@ The code for the operation is shown below:
             # show the figure
             pyplot.show()
 
-Any `argument` to the execute method for an operation can use the artifacts available in a `DeepForge` project. To use the `mnist_sample` for visualizing the images in the pickle file add an `Input` node to the pipeline:
+Any `argument` to the execute method for an operation can use the artifacts available in a DeepForge project. To use the `mnist_sample` for visualizing the images in the pickle file add an `Input` node to the pipeline:
 
 .. figure:: input_node.png
     :align: center
@@ -121,9 +121,9 @@ After that, the data will be available to use in the operation, The following fi
 Visualizing a FITS file with custom serialization
 -------------------------------------------------
 
-By default, `DeepForge` uses pickle to serialize `artifacts` and load them on operations. In this example, we will look into how to visualize fits images using a custom serialization in `DeepForge`. The FITS files we will use are available to download `here <http://www.astropy.org/astropy-data/visualization/reprojected_sdss_r.fits.bz2>`_, `here <http://www.astropy.org/astropy-data/visualization/reprojected_sdss_g.fits.bz2>`_ and `here <http://www.astropy.org/astropy-data/visualization/reprojected_sdss_i.fits.bz2>`_. Before we start uploading the FITS files, we have to write a custom serializer for the FITS file, which can then be utilized for consumption in our operation.
+By default, DeepForge uses pickle to serialize `artifacts` and load them on operations. In this example, we will look into how to visualize fits images using a custom serialization in DeepForge. The FITS files we will use are available to download `here <http://www.astropy.org/astropy-data/visualization/reprojected_sdss_r.fits.bz2>`_, `here <http://www.astropy.org/astropy-data/visualization/reprojected_sdss_g.fits.bz2>`_ and `here <http://www.astropy.org/astropy-data/visualization/reprojected_sdss_i.fits.bz2>`_. Before we start uploading the FITS files, we have to write a custom serializer for the FITS file, which can then be utilized for consumption in our operation.
 
-For visualizing FITS files, we will be using the `astropy <https://github.com/astropy/astropy>`_ python library. Function ``astropy.io.fits.open``, is able to handle a raw compressed binary FITS file or a simple filename. To visualize the file in `DeepForge` you can register a serializer for FITS file by writing a new class for handling them. For that, navigate to `My Utilities` and add a new python module called ``fits_file.py`` as highlighted in the figure below:
+For visualizing FITS files, we will be using the `astropy <https://github.com/astropy/astropy>`_ python library. Function ``astropy.io.fits.open``, is able to handle a raw compressed binary FITS file or a simple filename. To visualize the file in DeepForge you can register a serializer for FITS file by writing a new class for handling them. For that, navigate to `My Utilities` and add a new python module called ``fits_file.py`` as highlighted in the figure below:
 
 .. figure:: custom_utils.png
     :align: center
@@ -180,9 +180,9 @@ The `pipeline` has a single operation called `VisualizeFITS` that uses the FITS 
 
 Using data available different storage backends
 -----------------------------------------------
-In `DeepForge` there are several options to upload/import an artifact to/from.
+In DeepForge there are several options to upload/import an artifact to/from.
 
-In this example, we will look into importing an existing file in `sciserver-files <https://apps.sciserver.org/dashboard/files/uservolumes>`_ for use in `DeepForge`. If you have a file called `dataset.npz` in sciserver-files, in a user volume called `Datasets` in the `Storage Volume Pool` and you want to Import it in `DeepForge`, Select `Import existing data` from the Artifact Index as highlighted below:
+In this example, we will look into importing an existing file in `sciserver-files <https://apps.sciserver.org/dashboard/files/uservolumes>`_ for use in DeepForge. If you have a file called `dataset.npz` in sciserver-files, in a user volume called `Datasets` in the `Storage Volume Pool` and you want to Import it in DeepForge, Select `Import existing data` from the Artifact Index as highlighted below:
 
 .. figure:: import_existing_data.png
     :align: center
@@ -196,7 +196,7 @@ After you click on Import Existing Data, a Modal as shown below will pop up, sel
 
     SciServer File Import
 
-Upon Success, the artifact will be available for use in `DeepForge`.
+Upon Success, the artifact will be available for use in DeepForge.
 
 .. note::
     See `Storage and Compute Adapters <../fundamentals/integration.html>`_ for more information on storage backends.
