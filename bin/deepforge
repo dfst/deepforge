@@ -243,6 +243,15 @@ program.command('start')
     .option('-N, --no-conda', 'do not start deepforge server in a conda environment.')
     .option('-m, --mongo', 'start MongoDB')
     .action(async args => {
+        if(args.conda){
+            try {
+                Conda.check();
+            } catch (e) {
+                console.log('Warning: option to use a conda is selected but conda installation ' +
+                            `check failed with error: ${e}\nContinuing without using conda`);
+                args.conda = false;
+            }
+        }
         const serverCommand = getDeepForgeServerCommand(args.conda);
         const startAll = !args.server && !args.mongo;
         if (startAll) {
