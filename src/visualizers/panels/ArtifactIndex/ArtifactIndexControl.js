@@ -73,8 +73,10 @@ define([
         this._widget.getConfigDialog = () => new ConfigDialog(this._client);
 
         this._widget.onAttributeChange = (id, attr, newValue) => {
-            const attrValue = this._client.getNode(id).getAttribute(attr),
-                msg = `Changed "${attr}'s" value from ${attrValue}" to "${newValue}"`;
+            const node = this._client.getNode(id);
+            const name = node.getAttribute('name');
+            const oldValue = node.getAttribute(attr),
+                msg = `Set ${name} artifact's ${attr} to ${newValue} (from ${oldValue})`;
             this._client.startTransaction(msg);
             this._client.setAttribute(id, attr, newValue);
             this._client.completeTransaction();

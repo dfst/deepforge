@@ -79,9 +79,19 @@ define([
                 event.stopPropagation();
                 event.preventDefault();
             });
-            node.$name.on('dblclick', {id : desc.id, attr: 'name'}, this.editInPlace.bind(this));
+            node.$name.on('dblclick', event => this.editInPlace(event,{
+                nodeId : desc.id,
+                targetAttribute : 'name',
+                nodeName : node.$name.text(),
+                confirmation : null
+            }));
 
-            node.$type.on('dblclick', {id: desc.id, attr: 'type'}, this.editInPlace.bind(this));
+            node.$type.on('dblclick', event => this.editInPlace(event, {
+                nodeId : desc.id,
+                targetAttribute : 'type',
+                confirmation : this.confirmArtifactTypeChange,
+                nodeName: node.$name.text()
+            }));
 
             node.$info.on('click', event => {
                 event.stopPropagation();
@@ -99,12 +109,20 @@ define([
         return await dialog.show();
     };
 
+    ArtifactIndexWidget.prototype.confirmArtifactTypeChange = async function(target, values) {
+        const { newValue, oldValue } = values;
+        const title = `Change data type for <code>${target}</code>?`;
+        const body = `Changing the data type from <code>${oldValue}</code> to <code>${newValue}</code> 
+            will not change the underlying data and can cause deserialization errors when used in a pipeline. Continue?`;
+        const dialog = new ConfirmDialog(title, body);
+        return await dialog.show();
+    };
+
     ArtifactIndexWidget.prototype.getAuthenticationConfig = async function (dataInfo) {
         const {backend} = dataInfo;
         const metadata = Storage.getStorageMetadata(backend);
         metadata.configStructure = metadata.configStructure
             .filter(option => option.isAuth);
-
         if (metadata.configStructure.length) {
             const configDialog = this.getConfigDialog();
             const title = `Authenticate with ${metadata.name}`;
@@ -129,17 +147,26 @@ define([
         }
     };
 
-    ArtifactIndexWidget.prototype.editInPlace = function(event) {
+    ArtifactIndexWidget.prototype.editInPlace = function(event, opts) {
         const el = $(event.target);
-        const id = event.data.id;
-        const attr = event.data.attr;
+        const id = opts.nodeId;
+        const attr = opts.targetAttribute;
+
         el.editInPlace({
             css: {
                 'z-index' : 1000
             },
-            onChange: (oldVal, newVal) => {
+            onChange: async (oldVal, newVal) => {
                 if (newVal && newVal !== oldVal) {
-                    this.onAttributeChange(id, attr, newVal);
+                    const confirmed = opts.confirmation ? await opts.confirmation.call(this,
+                        opts.nodeName,
+                        {newValue: newVal, oldValue: oldVal}
+                    ) : true;
+                    if(confirmed) {
+                        this.onAttributeChange(id, attr, newVal);
+                    } else {
+                        el.text(oldVal);
+                    }
                 }
             }
         });
