@@ -19,6 +19,8 @@ define([
         // Initialize core collections and variables
         this._widget = options.widget;
 
+        this._embedded = options.embedded;
+
         this._currentNodeId = null;
         this._currentNodeParentId = undefined;
 
@@ -63,10 +65,12 @@ define([
     // This next function retrieves the relevant node information for the widget
     PlotlyGraphControl.prototype._getObjectDescriptor = function (nodeId) {
         let node = this._client.getNode(nodeId),
-            desc;
-        const graphNode = this.figureExtractor.getGraphNode(node);
-
-        if(graphNode) {
+            desc, graphNode, hasGraph;
+        if(node) {
+            graphNode = this.figureExtractor.getGraphNode(node);
+            hasGraph = !!graphNode;
+        }
+        if(hasGraph){
             desc = this.figureExtractor.extract(graphNode);
         }
         return desc;
@@ -128,11 +132,15 @@ define([
 
     PlotlyGraphControl.prototype._attachClientEventListeners = function () {
         this._detachClientEventListeners();
-        WebGMEGlobal.State.on('change:' + CONSTANTS.STATE_ACTIVE_OBJECT, this._stateActiveObjectChanged, this);
+        if (!this._embedded) {
+            WebGMEGlobal.State.on('change:' + CONSTANTS.STATE_ACTIVE_OBJECT, this._stateActiveObjectChanged, this);
+        }
     };
 
     PlotlyGraphControl.prototype._detachClientEventListeners = function () {
-        WebGMEGlobal.State.off('change:' + CONSTANTS.STATE_ACTIVE_OBJECT, this._stateActiveObjectChanged);
+        if(!this._embedded){
+            WebGMEGlobal.State.off('change:' + CONSTANTS.STATE_ACTIVE_OBJECT, this._stateActiveObjectChanged);
+        }
     };
 
     PlotlyGraphControl.prototype.onActivate = function () {
