@@ -34,6 +34,7 @@ define([
             this.$ok.on('click', () => resolve(true));
             this.$cancel.on('click', () => resolve(false));
             this.$el.modal('show');
+            this.$el.on('hidden.bs.modal', () => resolve(false));
         });
     };
 
