@@ -82,15 +82,13 @@ define([
             node.$name.on('dblclick', event => this.editInPlace(event,{
                 nodeId : desc.id,
                 targetAttribute : 'name',
-                nodeName : node.$name.text(),
                 confirmation : null
             }));
 
             node.$type.on('dblclick', event => this.editInPlace(event, {
                 nodeId : desc.id,
                 targetAttribute : 'type',
-                confirmation : this.confirmArtifactTypeChange,
-                nodeName: node.$name.text()
+                confirmation : this.confirmArtifactTypeChange.bind(this, node.$name.text()),
             }));
 
             node.$info.on('click', event => {
@@ -159,7 +157,6 @@ define([
             onChange: async (oldVal, newVal) => {
                 if (newVal && newVal !== oldVal) {
                     const confirmed = opts.confirmation ? await opts.confirmation.call(this,
-                        opts.nodeName,
                         {newValue: newVal, oldValue: oldVal}
                     ) : true;
                     if(confirmed) {
