@@ -107,8 +107,7 @@ define([
         return await dialog.show();
     };
 
-    ArtifactIndexWidget.prototype.confirmArtifactTypeChange = async function(target, values) {
-        const { newValue, oldValue } = values;
+    ArtifactIndexWidget.prototype.confirmArtifactTypeChange = async function(target, newValue, oldValue) {
         const title = `Change data type for <code>${target}</code>?`;
         const body = `Changing the data type from <code>${oldValue}</code> to <code>${newValue}</code> 
             will not change the underlying data and can cause deserialization errors when used in a pipeline. Continue?`;
@@ -156,9 +155,8 @@ define([
             },
             onChange: async (oldVal, newVal) => {
                 if (newVal && newVal !== oldVal) {
-                    const confirmed = opts.confirmation ? await opts.confirmation.call(this,
-                        {newValue: newVal, oldValue: oldVal}
-                    ) : true;
+                    const confirmed = opts.confirmation ? await opts.confirmation.call(
+                        this, newVal, oldVal) : true;
                     if(confirmed) {
                         this.onAttributeChange(id, attr, newVal);
                     } else {
