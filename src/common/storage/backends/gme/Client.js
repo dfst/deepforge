@@ -1,7 +1,7 @@
 /* globals define */
 define([
     '../StorageClient',
-    'blob/BlobClient'
+    'deepforge/StreamBlobClient'
 ], function(
     StorageClient,
     BlobClient
@@ -9,34 +9,30 @@ define([
 
     const GMEStorage = function(/*name, logger*/) {
         StorageClient.apply(this, arguments);
-        const params = this.getBlobClientParams();
-        this.blobClient = new BlobClient(params);
+        this.blobClient = new BlobClient(this.logger);
     };
 
     GMEStorage.prototype = Object.create(StorageClient.prototype);
-
-    GMEStorage.prototype.getBlobClientParams = function() {
-        const params = {
-            logger: this.logger.fork('BlobClient')
-        };
-        if (!require.isBrowser) {
-            const [url, isHttps] = this.getServerURL();
-            const defaultPort = isHttps ? '443' : '80';
-            const [server, port=defaultPort] = url.split(':');
-            params.server = server;
-            params.serverPort = +port;
-            params.httpsecure = isHttps;
-        }
-        return params;
-    };
 
     GMEStorage.prototype.getFile = async function(dataInfo) {
         const {data} = dataInfo;
         return await this.blobClient.getObject(data);
     };
 
+    GMEStorage.prototype.getStream = async function(dataInfo) {
+        const url = await this.getDownloadURL(dataInfo);
+        const response = await this.fetch(url, {method: 'GET'});
+        return response.body;
+    };
+
     GMEStorage.prototype.putFile = async function(filename, content) {
         const hash = await this.blobClient.putFile(filename, content);
+        return this.createDataInfo(hash);
+    };
+
+    GMEStorage.prototype.putStream = async function(filename, stream) {
+        await this.checkStreamsInBrowser();
+        const hash = await this.blobClient.putStream(filename, stream);
         return this.createDataInfo(hash);
     };
 

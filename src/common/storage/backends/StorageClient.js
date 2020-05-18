@@ -1,14 +1,13 @@
 /* globals define*/
 define([
     'client/logger',
-    'deepforge/gmeConfig'
+    'deepforge/gmeConfig',
+    'deepforge/StorageHelpers'
 ], function(
     Logger,
-    gmeConfig
+    gmeConfig,
+    StorageHelpers
 ) {
-    const fetch = require.isBrowser ? window.fetch :
-        require.nodeRequire('node-fetch');
-    const Headers = require.isBrowser ? window.Headers : fetch.Headers;
     const StorageClient = function(id, name, logger) {
         this.id = id;
         this.name = name;
@@ -18,38 +17,22 @@ define([
         this.logger = logger.fork(`storage:${id}`);
     };
 
-    const StorageHelpers = {};
-
-    StorageHelpers.getServerURL = function () {
-        const {port} = gmeConfig.server;
-        let url = require.isBrowser ? window.origin :
-            (process.env.DEEPFORGE_HOST || `http://127.0.0.1:${port}`);
-        return [url.replace(/^https?:\/\//, ''), url.startsWith('https')];
-    };
-
-    StorageHelpers.getURL = function (url) {
-        return url;
-    };
-
-    StorageHelpers.fetch = async function (url, opts = {}) {
-        url = this.getURL(url);
-        opts.headers = new Headers(opts.headers || {});
-        const response = await fetch(url, opts);
-        const {status} = response;
-        if (status > 399) {
-            return Promise.reject(response);
-        }
-        return response;
-    };
-
     Object.assign(StorageClient.prototype, StorageHelpers);
 
     StorageClient.prototype.getFile = async function(/*dataInfo*/) {
         throw new Error(`File download not implemented for ${this.name}`);
     };
 
+    StorageClient.prototype.getStream = async function(/*dataInfo*/) {
+        throw new Error(`Stream downloads not implemented for ${this.name}`);
+    };
+
     StorageClient.prototype.putFile = async function(/*filename, content*/) {
         throw new Error(`File upload not supported by ${this.name}`);
+    };
+
+    StorageClient.prototype.putStream = async function(/*filename, stream*/) {
+        throw new Error(`Stream uploads not implemented for ${this.name}`);
     };
 
     StorageClient.prototype.deleteFile = async function(/*dataInfo*/) {
@@ -85,6 +68,12 @@ define([
 
     StorageClient.prototype.stat = async function (/*path*/) {
         throw new Error(`stat not implemented for ${this.name}`);
+    };
+
+    StorageClient.prototype.checkStreamsInBrowser = async function() {
+        if(require.isBrowser) {
+            throw new Error('Streams are not supported in browser');
+        }
     };
 
     return StorageClient;

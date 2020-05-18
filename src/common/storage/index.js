@@ -72,6 +72,11 @@ define([
         return client.getFile(dataInfo);
     };
 
+    Storage.getStream = async function(dataInfo, logger, configs) {
+        const client = await this.getClientForDataInfo(dataInfo, logger, configs);
+        return client.getStream(dataInfo);
+    };
+
     Storage.deleteFile = async function(dataInfo, logger, configs) {
         const client = await this.getClientForDataInfo(dataInfo, logger, configs);
         return client.deleteFile(dataInfo);
