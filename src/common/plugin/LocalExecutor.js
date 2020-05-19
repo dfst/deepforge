@@ -80,7 +80,6 @@ define([
         const dstStorage = await this.getStorageClient();
         jobLogger.append(`Saving output data to ${dstStorage.name}...`);
 
-        const createParams = {base: this.META.Data, parent: artifactsDir};
         for (let i = dataNodes.length; i--;) {
             const artifact = this.core.copyNode(dataNodes[i], artifactsDir);
             const createdAt = Date.now();

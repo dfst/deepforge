@@ -32,7 +32,6 @@ define([
                 ptrNames.map(async name => {
                     const targetPath = this.core.getPointerPath(node, name);
                     if (targetPath) {
-                        // TODO: Test the copy stuff
                         const target = await this.core.loadByPath(this.rootNode, targetPath);
                         const targetCopy = this.core.copyNode(target, snapshot);
                         this.core.setPointer(snapshot, name, targetCopy);

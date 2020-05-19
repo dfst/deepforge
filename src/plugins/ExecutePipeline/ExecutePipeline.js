@@ -563,14 +563,11 @@ define([
             let hash = this.core.getAttribute(result, 'data');
             this.core.setAttribute(next, 'data', hash);
 
-            // TODO: Copy the provenance to the next node
             const provInfoId = this.core.getPointerPath(result, 'provenance', true);
-            console.log('\n\nProvenance ID:', provInfoId, this.core.getPath(result));
             if (provInfoId) {
                 const provNode = await this.core.loadByPath(result, provInfoId);
                 const provCopy = this.core.copyNode(provNode, next);
                 this.core.setPointer(next, 'provenance', provCopy);
-                console.log('Copied provenance to:', this.core.getPath(provCopy));
             }
 
             this.logger.info(`forwarding data (${dataType}) from ${this.core.getPath(result)} ` +
