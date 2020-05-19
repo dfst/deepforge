@@ -262,6 +262,8 @@ define([
         let path = null;
         if (!(node instanceof CreatedNode)) {
             path = this.core.getPointerPath(node, name);
+        } else if (name === 'base') {
+            path = this.getPath(node.base);
         }
 
         this._forAllNodeChanges(
