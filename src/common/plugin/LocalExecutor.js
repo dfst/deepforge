@@ -82,7 +82,7 @@ define([
 
         const createParams = {base: this.META.Data, parent: artifactsDir};
         for (let i = dataNodes.length; i--;) {
-            const artifact = this.core.createNode(createParams);
+            const artifact = this.core.copyNode(dataNodes[i], artifactsDir);
             const createdAt = Date.now();
             const originalData = JSON.parse(this.core.getAttribute(dataNodes[i], 'data'));
 
@@ -98,7 +98,6 @@ define([
             this.core.setAttribute(artifact, 'data', JSON.stringify(userAsset));
             this.core.setAttribute(artifact, 'name', name);
             this.core.setAttribute(artifact, 'createdAt', createdAt);
-            this.core.setPointer(artifact, 'origin', inputs[0][2]);
         }
 
         this.logger.info(`Saved ${dataNodes.length} artifacts in ${this.projectId}.`);
