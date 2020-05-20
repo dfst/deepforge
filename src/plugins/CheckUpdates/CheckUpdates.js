@@ -9,7 +9,6 @@ define([
     'module',
     'path',
     'fs',
-    'util',
 ], function (
     Updates,
     Version,
@@ -18,11 +17,10 @@ define([
     module,
     path,
     fs,
-    util,
 ) {
     'use strict';
 
-    const writeFile = util.promisify(fs.writeFile);
+    fs = fs.promises;
     /**
      * Initializes a new instance of CheckUpdates.
      * @class
@@ -126,7 +124,13 @@ define([
     };
 
     CheckUpdates.prototype.getSeedVersionPath = function (name) {
-        return path.join(this.getSeedDir(name), 'version.txt');
+        return path.join(this.getSeedDir(name), 'releases.jsonl');
+    };
+
+    CheckUpdates.prototype.getSeedVersion = async function (name) {
+        const versionPath = this.getSeedVersionPath(name);
+        const version = await fs.readFile(versionPath, 'utf8').trim();
+        return version && new Version(version);
     };
 
     CheckUpdates.prototype.getLibraryHash = async function (name, version) {
@@ -144,7 +148,7 @@ define([
         if (!hash) {
             this.logger.info(`Uploading new version of ${name} (${version})`);
             hash = await this.uploadSeed(name);
-            await writeFile(this.getSeedHashPath(name), `${hash} ${version}`);
+            await fs.writeFile(this.getSeedHashPath(name), `${hash} ${version}`);
         }
         return hash;
     };
@@ -179,11 +183,10 @@ define([
         for (let i = names.length; i--;) {
             const name = names[i];
             try {
-                const versionPath = this.getSeedVersionPath(name);
-                const version = fs.readFileSync(versionPath, 'utf8').trim();
+                const version = await this.getSeedVersion(name);
                 this.logger.debug(`${name} version is ${version}`);
                 if (version) {
-                    libraries.push([name, new Version(version)]);
+                    libraries.push([name, version]);
                 } else {
                     this.logger.debug(`Invalid version for ${name}: "${version}"`);
                 }
