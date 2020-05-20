@@ -15,7 +15,6 @@ define([
 
     S3Storage.prototype = Object.create(StorageClient.prototype);
 
-
     S3Storage.prototype.initialize = async function () {
         if (require.isBrowser) {
             await new Promise((resolve, reject) => {
@@ -29,21 +28,16 @@ define([
         }
     };
 
-    S3Storage.prototype.initializeS3Client = function (AWS, config) {
-        const s3Client = new AWS.S3(config);
-        return s3Client;
-    };
-
     S3Storage.prototype.getS3Client = async function (config) {
         await this.ready;
         if(!config){
             if(!this.defaultClient){
-                this.defaultClient = this.initializeS3Client(this.AWS, this.config);
+                this.defaultClient = new this.AWS.S3(this.config);
             }
             return this.defaultClient;
         } else {
             config = this.createS3Config(config);
-            return this.initializeS3Client(this.AWS, config);
+            return new this.AWS.S3(config);
         }
     };
 
@@ -69,6 +63,7 @@ define([
                 this.logger.error(`Failed to create bucket ${this.bucketName} in S3 server.`);
                 throw err;
             }
+
         }
     };
 
@@ -83,19 +78,15 @@ define([
         return data.Body;
     };
 
-    S3Storage.prototype.getStream = async function(dataInfo) {
-        const {endpoint, bucketName, filename} = dataInfo.data;
-        const {accessKeyId, secretAccessKey} = this.config;
-        const s3Client = await this.getS3Client({endpoint, accessKeyId, secretAccessKey});
-        return s3Client.getObject({
-            Bucket: bucketName,
-            Key: filename
-        }).createReadStream();
-    };
-
     S3Storage.prototype.putFile = async function (filename, content) {
         const s3Client = await this.getS3Client();
-        const params = await this.getUploadParams(s3Client, filename, content);
+        await this.createBucketIfNeeded(s3Client);
+        this.logger.debug(`Created bucket ${this.bucketName}`);
+        const params = {
+            Body: require.isBrowser ? new Blob([content]) : content,
+            Bucket: this.bucketName,
+            Key: filename,
+        };
         try {
             await s3Client.putObject(params).promise();
         } catch (err) {
@@ -105,30 +96,6 @@ define([
 
         this.logger.debug(`Successfully uploaded file ${filename} to the S3 server.`);
         return dataInfo;
-    };
-
-    S3Storage.prototype.putStream = async function(filename, stream) {
-        await this.checkStreamsInBrowser();
-        const s3Client = await this.getS3Client();
-        const params = await this.getUploadParams(s3Client, filename, stream);
-        try {
-            await s3Client.upload(params).promise();
-        } catch (err) {
-            throw new Error(`Unable to upload ${stream}: ${err.message}`);
-        }
-        const dataInfo = await this.stat(filename);
-        this.logger.debug(`Successfully uploaded file ${filename} to the S3 server using stream`);
-        return dataInfo;
-    };
-
-    S3Storage.prototype.getUploadParams = async function(s3Client, filename, body) {
-        await this.createBucketIfNeeded(s3Client);
-        this.logger.debug(`Created bucket ${this.bucketName}`);
-        return {
-            Body: require.isBrowser ? new Blob([body]) : body,
-            Bucket: this.bucketName,
-            Key: filename,
-        };
     };
 
     S3Storage.prototype.deleteDir = async function (dirname) {
@@ -175,7 +142,8 @@ define([
             Bucket: this.bucketName,
             Key: path
         };
-        const metadata = await ((await this.getS3Client()).headObject(params).promise());
+        const metadata = await ((await this.getS3Client())
+            .headObject(params).promise());
         metadata.filename = path;
         metadata.size = metadata.ContentLength;
         metadata.bucketName = this.bucketName;
