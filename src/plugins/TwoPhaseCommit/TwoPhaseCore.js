@@ -3,10 +3,12 @@ define([
     './StagedChanges',
     './CreatedNode',
     'common/util/assert',
+    'underscore',
 ], function(
     StagedChanges,
     CreatedNode,
     assert,
+    _,
 ) {
     function TwoPhaseCore(logger, core) {
         this.logger = logger;
@@ -30,12 +32,9 @@ define([
 
     passToCore('persist');
     passToCore('loadRoot');
-    passToCore('loadByPath');
     passToCore('loadSubTree');
-    passToCore('getPointerPath');
     passToCore('getParent');
     passToCore('getNamespace');
-    passToCore('getMetaType');
     passToCore('getChildrenMeta');
     passToCore('getChildrenPaths');
     passToCore('addMember');
@@ -43,6 +42,100 @@ define([
     passToCore('getOwnRegistry');
     passToCore('getOwnAttribute');
     passToCore('getAttributeNames');
+    passToCore('getValidAttributeNames');
+    passToCore('getValidPointerNames');
+
+    TwoPhaseCore.prototype.loadByPath = async function (node, id) {
+        ensureNode(node, 'loadByPath');
+        if (CreatedNode.isCreateId(id)) {
+            const changesets = this.queuedChanges.concat(this);
+            for (let i = 0; i < changesets.length; i++) {
+                const createdNodes = changesets[i].createdNodes;
+                const node = createdNodes.find(node => node.id === id);
+                if (node) {
+                    return node;
+                }
+            }
+        } else {
+            return this.core.loadByPath(node, id);
+        }
+    };
+
+    TwoPhaseCore.prototype.getMetaType = function (node) {
+        ensureNode(node, 'getMetaType');
+        while (node instanceof CreatedNode) {
+            node = node.base;
+        }
+        return this.core.getMetaType(node);
+    };
+
+    TwoPhaseCore.prototype.getOwnAttributeNames = function (node) {
+        ensureNode(node, 'getOwnAttributeNames');
+        const isNewNode = node instanceof CreatedNode;
+        let names = [];
+        if (!isNewNode) {
+            names = this.core.getOwnAttributeNames(node);
+        }
+
+        function updateAttributeNames(changes={attr:{}}, names) {
+            const [setAttrs, delAttrs] = Object.entries(changes.attr)
+                .reduce((setAndDel, attr) => {
+                    const [sets, dels] = setAndDel;
+                    const [name, value] = attr;
+                    if (value === null) {
+                        dels.push(name);
+                    } else {
+                        sets.push(name);
+                    }
+                    return setAndDel;
+                }, [[], []]);
+            names = _.union(names, setAttrs);
+            names = _.without(names, ...delAttrs);
+            return names;
+        }
+
+        this._forAllNodeChanges(
+            node,
+            changes => names = updateAttributeNames(changes, names)
+        );
+
+        return names;
+    };
+
+    TwoPhaseCore.prototype.getOwnPointerNames = function (node) {
+        ensureNode(node, 'getOwnPointerNames');
+        const isNewNode = node instanceof CreatedNode;
+        let names = [];
+        if (!isNewNode) {
+            names = this.core.getOwnPointerNames(node);
+        }
+
+        function updatePointerNames(changes={ptr:{}}, names) {
+            const ptrNames = Object.keys(changes.ptr);
+            return _.union(names, ptrNames);
+        }
+
+        this._forAllNodeChanges(
+            node,
+            changes => names = updatePointerNames(changes, names)
+        );
+
+        return names;
+    };
+
+    TwoPhaseCore.prototype._forAllNodeChanges = function (node, fn) {
+        const nodeId = this.getPath(node);
+        for (let i = 0; i < this.queuedChanges.length; i++) {
+            const changes = this.queuedChanges[i].getNodeEdits(nodeId);
+            if (changes) {
+                fn(changes);
+            }
+        }
+        const changes = this.getChangesForNode(node);
+        if (changes) {
+            fn(changes);
+        }
+    };
 
     TwoPhaseCore.prototype.getBase = function (node) {
         ensureNode(node, 'getBase');
@@ -100,6 +193,17 @@ define([
         return this.changes[nodeId];
     };
 
+    TwoPhaseCore.prototype.copyNode = function (node, parent) {
+        assert(node, 'Cannot copy invalid node');
+        assert(parent, 'Cannot copy node without parent');
+        ensureNode(node, 'copyNode');
+        ensureNode(parent, 'copyNode');
+
+        const newNode = new CreatedNode(node, parent);
+        this.createdNodes.push(newNode);
+        return newNode;
+    };
+
     TwoPhaseCore.prototype.createNode = function (desc) {
         const {parent, base} = desc;
         assert(parent, 'Cannot create node without parent');
@@ -128,7 +232,9 @@ define([
             .reduce((l1, l2) => l1.concat(l2));
 
         let children = allCreatedNodes.filter(node => getId(node.parent) === nodeId);
-        if (!(node instanceof CreatedNode)) {
+        if (node instanceof CreatedNode) {
+            children = children.concat(await node.getInheritedChildren(this.core));
+        } else {
             children = children.concat(await this.core.loadChildren(node));
         }
         return children;
@@ -149,6 +255,28 @@ define([
         this.logger.info(`setting ${attr} to ${value}`);
         const changes = this.getChangesForNode(node);
         changes.attr[attr] = value;
+    };
+
+    TwoPhaseCore.prototype.getPointerPath = function (node, name) {
+        ensureNode(node, 'getPointerPath');
+        let path = null;
+        if (!(node instanceof CreatedNode)) {
+            path = this.core.getPointerPath(node, name);
+        } else if (name === 'base') {
+            path = this.getPath(node.base);
+        }
+
+        this._forAllNodeChanges(
+            node,
+            changes => {
+                if (changes.ptr.hasOwnProperty(name)) {
+                    const target = changes.ptr[name];
+                    path = target && this.getPath(target);
+                }
+            }
+        );
+
+        return path;
     };
 
     TwoPhaseCore.prototype.getAttribute = function (node, attr) {

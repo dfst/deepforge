@@ -15,7 +15,6 @@ define([
 
     S3Storage.prototype = Object.create(StorageClient.prototype);
 
-
     S3Storage.prototype.initialize = async function () {
         if (require.isBrowser) {
             await new Promise((resolve, reject) => {
@@ -29,27 +28,16 @@ define([
         }
     };
 
-    S3Storage.prototype.initializeS3Client = function (AWS, config) {
-        const s3Client = new AWS.S3(config);
-        promisifyMethod(s3Client, 'createBucket');
-        promisifyMethod(s3Client, 'getObject');
-        promisifyMethod(s3Client, 'putObject');
-        promisifyMethod(s3Client, 'deleteObject');
-        promisifyMethod(s3Client, 'headObject');
-        promisifyMethod(s3Client, 'listObjectsV2');
-        return s3Client;
-    };
-
     S3Storage.prototype.getS3Client = async function (config) {
         await this.ready;
         if(!config){
             if(!this.defaultClient){
-                this.defaultClient = this.initializeS3Client(this.AWS, this.config);
+                this.defaultClient = new this.AWS.S3(this.config);
             }
             return this.defaultClient;
         } else {
             config = this.createS3Config(config);
-            return this.initializeS3Client(this.AWS, config);
+            return new this.AWS.S3(config);
         }
     };
 
@@ -69,7 +57,7 @@ define([
         try {
             await s3Client.createBucket({
                 Bucket: this.bucketName
-            });
+            }).promise();
         } catch (err) {
             if (err['statusCode'] !== BUCKET_EXISTS_CODE) {
                 this.logger.error(`Failed to create bucket ${this.bucketName} in S3 server.`);
@@ -86,7 +74,7 @@ define([
         const data = await s3Client.getObject({
             Bucket: bucketName,
             Key: filename
-        });
+        }).promise();
         return data.Body;
     };
 
@@ -100,7 +88,7 @@ define([
             Key: filename,
         };
         try {
-            await s3Client.putObject(params);
+            await s3Client.putObject(params).promise();
         } catch (err) {
             throw new Error(`Unable to upload ${filename}: ${err.message}`);
         }
@@ -116,14 +104,14 @@ define([
             Bucket: this.bucketName,
             MaxKeys: 1000,
             Prefix: dirname
-        });
+        }).promise();
 
         for (const file of Contents) {
             const params = {
                 Bucket: this.bucketName,
                 Key: file.Key
             };
-            await s3Client.deleteObject(params);
+            await s3Client.deleteObject(params).promise();
         }
         this.logger.debug(`Successfully deleted directory ${dirname} from the S3 server`);
     };
@@ -136,7 +124,7 @@ define([
             Bucket: bucketName,
             Key: filename
         };
-        await s3Client.deleteObject(params);
+        await s3Client.deleteObject(params).promise();
     };
 
     S3Storage.prototype.getMetadata = async function (dataInfo) {
@@ -149,29 +137,13 @@ define([
         return `${this.id}/${bucketName}/${filename}`;
     };
 
-    function promisifyMethod(object, method) {
-        const fn = object[method];
-        object[method] = function () {
-            return new Promise((resolve, reject) => {
-                const args = Array.prototype.slice.call(arguments);
-                const callback = function (err, result) {
-                    if (err) {
-                        return reject(err);
-                    }
-                    resolve(result);
-                };
-                args.push(callback);
-                fn.apply(object, args);
-            });
-        };
-    }
-
     S3Storage.prototype.stat = async function (path) {
         const params = {
             Bucket: this.bucketName,
             Key: path
         };
-        const metadata = (await this.getS3Client()).headObject(params);
+        const metadata = await ((await this.getS3Client())
+            .headObject(params).promise());
         metadata.filename = path;
         metadata.size = metadata.ContentLength;
         metadata.bucketName = this.bucketName;
