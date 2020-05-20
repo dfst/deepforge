@@ -1,20 +1,15 @@
-/*jshint node:true, mocha:true*/
-
-describe('CreateExecution', function () {
+describe('ExecutionHelpers', function() {
     const testFixture = require('../../../globals');
-    const assert = require('assert');
-    var gmeConfig = testFixture.getGmeConfig(),
-        logger = testFixture.logger.fork('CreateExecution'),
-        PluginCliManager = testFixture.WebGME.PluginCliManager,
-        manager = new PluginCliManager(null, logger, gmeConfig),
-        projectName = 'testProject',
-        pluginName = 'CreateExecution',
-        project,
+    const ExecutionHelpers = testFixture.requirejs('deepforge/plugin/ExecutionHelpers');
+    const gmeConfig = testFixture.getGmeConfig();
+    const logger = testFixture.logger.fork('ExecutionHelpers');
+    let project,
         gmeAuth,
         storage,
         commitHash;
 
     before(async function () {
+        const projectName = 'testProject';
         gmeAuth = await testFixture.clearDBAndGetGMEAuth(gmeConfig, projectName);
         storage = testFixture.getMemoryStorage(logger, gmeConfig, gmeAuth);
         await storage.openDatabase();
@@ -37,7 +32,7 @@ describe('CreateExecution', function () {
         await gmeAuth.unload();
     });
 
-    const preparePlugin = async function(nodeId = '/f/h') {
+    const createPlugin = async function(nodeId = '/f/h') {
         var context = {
             project: project,
             commitHash: commitHash,
@@ -46,28 +41,32 @@ describe('CreateExecution', function () {
             activeNode: nodeId
         };
 
+        const pluginName = 'CreateExecution';
+        const PluginCliManager = testFixture.WebGME.PluginCliManager;
+        const manager = new PluginCliManager(null, logger, gmeConfig);
         const plugin = await manager.initializePlugin(pluginName);
         await manager.configurePlugin(plugin, {}, context);
         return plugin;
     };
 
-    describe('getUniqueExecName', function() {
-        let plugin;
-
-        before(async () => plugin = await preparePlugin());
-
-        it('should trim whitespace', async function() {
-            const originalName = '   abc   ';
-            const name = await plugin.getUniqueExecName(originalName);
-            assert.equal(name, originalName.trim());
+    describe('snapshotOperation', function() {
+        let helpers, activeNode, META;
+        before(async () => {
+            const plugin = await createPlugin();
+            const {core, rootNode} = plugin;
+            activeNode = plugin.activeNode;
+            META = plugin.META;
+            helpers = new ExecutionHelpers(core, rootNode);
         });
 
-        it('should replace whitespace with _', async function() {
-            const originalName = 'a b c';
+        it('should be able to snapshot node w/ unset ptr', async () => {
+            const {core, rootNode} = helpers;
+            const helloWorldNode = await core.loadByPath(rootNode, '/f/h/d');
+            core.setPointerMetaLimits(helloWorldNode, 'testPtr', 1, 1);
+            core.setPointerMetaTarget(helloWorldNode, 'testPtr', META.Job, 1, 1);
 
-            const name = await plugin.getUniqueExecName(originalName);
-            assert.equal(name, 'a_b_c');
+            await helpers.snapshotOperation(helloWorldNode, activeNode);
         });
-
     });
+
 });
