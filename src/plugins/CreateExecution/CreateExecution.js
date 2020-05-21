@@ -3,12 +3,14 @@
 
 define([
     'q',
+    'deepforge/plugin/ExecutionHelpers',
     'deepforge/plugin/LocalExecutor',
     'text!./metadata.json',
     'underscore',
     'plugin/PluginBase'
 ], function (
     Q,
+    ExecutionHelpers,
     LocalExecutor,
     pluginMetadata,
     _,
@@ -72,7 +74,7 @@ define([
         const ctnrCtnr = this.core.getParent(pipelineContainer) || this.rootNode;
         return this.core.loadChildren(ctnrCtnr)
             .then(children => {
-                var execPath = this.core.getPath(this.META.Execution);
+                const execPath = this.core.getPath(this.META.Execution);
 
                 // Find a node in the root that can contain only executions
                 return children.find(child => {
@@ -195,23 +197,24 @@ define([
             });
     };
 
-    CreateExecution.prototype.copyOperations = function (nodes, dst) {
-        var snapshot = !this.getCurrentConfig().debug;
+    CreateExecution.prototype.copyOperations = async function (nodes, dst) {
+        const snapshot = !this.getCurrentConfig().debug;
 
         if (snapshot) {
+            const helpers = new ExecutionHelpers(this.core, this.rootNode);
             this.logger.debug('Execution is a snapshot -> severing the inheritance');
-            return Q.all(nodes.map(node => {
+
+            return Promise.all(nodes.map(async node => {
                 if (this.isLocalOperation(node) ||
                     this.isMetaTypeOf(node, this.META.Transporter)) {
 
                     return [[node, this.core.copyNode(node, dst)]];
                 } else if (this.isMetaTypeOf(node, this.META.Operation)) {
-                    return this.snapshotNode(node, dst);
+                    const {pairs} = await helpers.snapshotOperation(node, dst, this.META.Operation);
+                    return pairs;
                 }
             }))
-            .then(pairs => pairs.filter(pair => !!pair)
-                .reduce((l1, l2) => l1.concat(l2))
-            );
+            .then(pairs => pairs.filter(pair => !!pair).flat());
 
         } else if (nodes.length) {
             this.logger.debug('Execution is not a snapshot -> doing a simple copy');
@@ -219,86 +222,6 @@ define([
             return nodes.map((node, i) => [node, copies[i]]);
         }
         return [];
-    };
-
-    CreateExecution.prototype.snapshotNode = async function (op, dst) {
-        // If we are making a snapshot, we should copy the base operation
-        // and set the attributes, add the child nodes, etc
-        var base = this.core.getBase(this.core.getBase(op)),
-            values,
-            snapshot = this.core.createNode({
-                base: base,
-                parent: dst
-            });
-
-        // Copy over the attributes
-        const names = this.core.getValidAttributeNames(op);
-        values = names.map(name => this.core.getAttribute(op, name));
-        names.forEach((name, i) =>
-            this.core.setAttribute(snapshot, name, values[i]));
-
-        // Copy the pointers
-        const ptrNames = this.core.getValidPointerNames(op);
-        const setPointers = Promise.all(
-            ptrNames.map(async name => {
-                const targetPath = this.core.getPointerPath(op, name);
-                if (targetPath) {
-                    const target = await this.core.loadByPath(this.rootNode, targetPath);
-                    this.core.setPointer(snapshot, name, target);
-                }
-            })
-        );
-        await setPointers;
-
-        // Copy the data I/O
-        var srcCntrs = this.core.getChildrenPaths(op),
-            dstCntrs = this.core.getChildrenPaths(snapshot);
-
-        return Q.all([srcCntrs, dstCntrs].map(ids =>
-            Q.all(ids.map(id => this.core.loadByPath(this.rootNode, id)))))
-            .then(cntrs => {
-                var srcCntrs,
-                    dstCntrs;
-
-                // Sort all containers by metatype id
-                cntrs.map(l => l.sort((a, b) => {
-                    var aId = this.core.getPath(this.core.getMetaType(a)),
-                        bId = this.core.getPath(this.core.getMetaType(b));
-
-                    return aId < bId ? -1 : 1;
-                }));
-
-                srcCntrs = cntrs[0];
-                dstCntrs = cntrs[1];
-                return Q.all(srcCntrs.map(ctr => Q.all(this.core.getChildrenPaths(ctr)
-                    .map(id => this.core.loadByPath(this.rootNode, id)))))
-                    .then(cntrs =>
-                        cntrs.map((nodes, i) =>
-                            nodes.map(n => [n, this.copyDataNode(n, dstCntrs[i])]))
-                    );
-            })
-            .then(nodes => {
-                nodes = nodes.reduce((l1, l2) => l1.concat(l2), []);
-                nodes.push([op, snapshot]);
-                return nodes;
-            });
-    };
-
-    CreateExecution.prototype.copyDataNode = function (original, dst) {
-        // Create new node of the given type
-        var attrNames = this.core.getAttributeNames(original),
-            values,
-            copy = this.core.createNode({
-                base: this.core.getMetaType(original),
-                parent: dst
-            });
-
-        // Set the 'name', 'data' attributes
-        values = attrNames.map(name => this.core.getAttribute(original, name));
-        attrNames.forEach((name, i) =>
-            this.core.setAttribute(copy, name, values[i]));
-
-        return copy;
     };
 
     CreateExecution.prototype.addDataToMap = function (srcOp, dstOp, map) {

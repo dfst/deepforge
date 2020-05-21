@@ -204,7 +204,7 @@ define([
 
         return Q.all(allJobs.map(job => this.initializeMetadata(job, true)))
             .then(() => Q.all(jobs.success.map(job => this.getOperation(job))))
-            .then(ops => ops.forEach(op => this.updateJobCompletionRecords(op)))
+            .then(ops => Promise.all(ops.map(op => this.updateJobCompletionRecords(op))))
             .then(() => this.save(`Resuming pipeline execution: ${name}`))
             .then(() => {
 
@@ -217,7 +217,7 @@ define([
                     return this.executeReadyOperations();
                 }
             })
-            .fail(err => this._callback(err));
+            .catch(err => this._callback(err));
     };
 
     ExecutePipeline.prototype.startPipeline = async function () {
@@ -522,7 +522,7 @@ define([
         this.logger.info(`There are now ${this.runningJobs} running jobs`);
         this.logger.debug(`Making a commit from ${this.currentHash}`);
 
-        const counts = this.updateJobCompletionRecords(opNode);
+        const counts = await this.updateJobCompletionRecords(opNode);
 
         await this.save(`Operation "${name}" in ${this.pipelineName} completed successfully`);
         const hasReadyOps = counts.indexOf(0) > -1;
@@ -540,41 +540,43 @@ define([
         }
     };
 
-    ExecutePipeline.prototype.updateJobCompletionRecords = function (opNode) {
-        var nextPortIds = this.getOperationOutputIds(opNode),
-            resultPorts,
-            counts;
+    ExecutePipeline.prototype.updateJobCompletionRecords = async function (opNode) {
+        const nextPortIds = this.getOperationOutputIds(opNode);
 
         // Transport the data from the outputs to any connected inputs
         //   - Get all the connections from each outputId
         //   - Get the corresponding dst outputs
         //   - Use these new ids for checking 'hasReadyOps'
 
-        resultPorts = nextPortIds.map(id => this.inputPortsFor[id])  // dst -> src port
+        const resultPorts = nextPortIds.map(id => this.inputPortsFor[id])  // dst -> src port
             .reduce((l1, l2) => l1.concat(l2), []);
 
-        resultPorts
-            .map((id, i) => [this.nodes[id], this.nodes[nextPortIds[i]]])
-            .forEach(pair => {  // [ resultPort, nextPort ]
-                var result = pair[0],
-                    next = pair[1];
+        const portPairs = resultPorts
+            .map((id, i) => [this.nodes[id], this.nodes[nextPortIds[i]]]);
 
-                let dataType = this.core.getAttribute(result, 'type');
-                this.core.setAttribute(next, 'type', dataType);
+        const forwardData = portPairs.map(async pair => {  // [ resultPort, nextPort ]
+            const [result, next] = pair;
 
-                let hash = this.core.getAttribute(result, 'data');
-                this.core.setAttribute(next, 'data', hash);
+            let dataType = this.core.getAttribute(result, 'type');
+            this.core.setAttribute(next, 'type', dataType);
 
-                this.core.setPointer(next, 'origin', result);
+            let hash = this.core.getAttribute(result, 'data');
+            this.core.setAttribute(next, 'data', hash);
 
-                this.logger.info(`forwarding data (${dataType}) from ${this.core.getPath(result)} ` +
-                    `to ${this.core.getPath(next)}`);
+            const provInfoId = this.core.getPointerPath(result, 'provenance', true);
+            if (provInfoId) {
+                const provNode = await this.core.loadByPath(result, provInfoId);
+                const provCopy = this.core.copyNode(provNode, next);
+                this.core.setPointer(next, 'provenance', provCopy);
+            }
 
-                //this.logger.info(`Setting ${jobId} data to ${hash}`);
-            });
+            this.logger.info(`forwarding data (${dataType}) from ${this.core.getPath(result)} ` +
+                `to ${this.core.getPath(next)}`);
+        });
+        await forwardData;
 
         // For all the nextPortIds, decrement the corresponding operation's incoming counts
-        counts = nextPortIds.map(id => this.getSiblingIdContaining(id))
+        const counts = nextPortIds.map(id => this.getSiblingIdContaining(id))
             .reduce((l1, l2) => l1.concat(l2), [])
 
             // decrement the incoming counts for each operation id

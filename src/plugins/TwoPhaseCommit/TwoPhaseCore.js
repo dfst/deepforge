@@ -42,8 +42,6 @@ define([
     passToCore('getOwnRegistry');
     passToCore('getOwnAttribute');
     passToCore('getAttributeNames');
-    passToCore('getValidAttributeNames');
-    passToCore('getValidPointerNames');
 
     TwoPhaseCore.prototype.loadByPath = async function (node, id) {
         ensureNode(node, 'loadByPath');
@@ -67,6 +65,22 @@ define([
             node = node.base;
         }
         return this.core.getMetaType(node);
+    };
+
+    TwoPhaseCore.prototype.getValidPointerNames = function (node) {
+        ensureNode(node, 'getValidPointerNames');
+        while (node instanceof CreatedNode) {
+            node = node.base;
+        }
+        return this.core.getValidPointerNames(node);
+    };
+
+    TwoPhaseCore.prototype.getValidAttributeNames = function (node) {
+        ensureNode(node, 'getValidAttributeNames');
+        while (node instanceof CreatedNode) {
+            node = node.base;
+        }
+        return this.core.getValidAttributeNames(node);
     };
 
     TwoPhaseCore.prototype.getOwnAttributeNames = function (node) {

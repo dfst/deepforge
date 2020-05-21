@@ -23,6 +23,14 @@
           ],
           "valueType": "string",
           "readOnly": false
+      },
+      {
+          "name": "changelog",
+          "displayName": "Changelog",
+          "description": "Describe the changes made in this release",
+          "value": "",
+          "valueType": "string",
+          "readOnly": false
       }
   ]
 }
