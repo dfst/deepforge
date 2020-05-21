@@ -1,0 +1,7 @@
+[
+  {
+    "name" : "BrowserAssetWidget",
+    "type": "userAsset",
+    "path" : "deepforge/viz/widgets/BrowserAssetWidget"
+  }
+]

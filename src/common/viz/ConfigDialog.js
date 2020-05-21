@@ -4,12 +4,14 @@ define([
     'js/Dialogs/PluginConfig/PluginConfigDialog',
     'deepforge/utils',
     'text!js/Dialogs/PluginConfig/templates/PluginConfigDialog.html',
+    'text!./CustomConfigWidgets.json',
     'css!./ConfigDialog.css'
 ], function(
     Q,
     PluginConfigDialog,
     utils,
     pluginConfigDialogTemplate,
+    CustomWidgets
 ) {
     var SECTION_DATA_KEY = 'section',
         ATTRIBUTE_DATA_KEY = 'attribute',
@@ -20,36 +22,56 @@ define([
         DESCRIPTION_BASE = $('<div class="desc muted col-sm-8"></div>'),
         SECTION_HEADER = $('<h6 class="config-section-header">');
 
+    const CUSTOM_WIDGETS = JSON.parse(CustomWidgets);
+
     var ConfigDialog = function(client) {
         PluginConfigDialog.call(this, {client: client});
         this._widgets = {};
+        this.imported = this._registerCustomWidgets(CUSTOM_WIDGETS);
     };
 
     ConfigDialog.prototype = Object.create(PluginConfigDialog.prototype);
 
+    ConfigDialog.prototype._registerCustomWidgets = async function(customWidgets) {
+        const self = this;
+
+        const promises = customWidgets.map(widgetInfo => {
+           return new Promise((resolve, reject) => {
+               require([widgetInfo.path], function(customWidget) {
+                   const targetType = widgetInfo.type;
+                   self._propertyGridWidgetManager
+                       .registerWidgetForType(targetType, customWidget);
+                   resolve();
+               }, reject);
+           });
+        });
+
+        return Promise.all(promises);
+    };
+
     ConfigDialog.prototype.show = async function(pluginMetadata, options={}) {
         const deferred = Q.defer();
-
         this._pluginMetadata = pluginMetadata;
         const prevConfig = await this.getSavedConfig();
+        await this.imported;
         this._initDialog(pluginMetadata, prevConfig, options);
 
         this._dialog.on('shown', () => {
             this._dialog.find('input').first().focus();
         });
 
-        this._btnSave.on('click', event => {
-            this.submit(deferred.resolve);
+        this._btnSave.on('click', async event => {
+            await this.submit(deferred.resolve);
             event.stopPropagation();
             event.preventDefault();
         });
 
         //save&run on CTRL + Enter
-        this._dialog.on('keydown.PluginConfigDialog', event => {
+        this._dialog.on('keydown.PluginConfigDialog', async event => {
             if (event.keyCode === 13 && (event.ctrlKey || event.metaKey)) {
                 event.stopPropagation();
                 event.preventDefault();
-                this.submit(deferred.resolve);
+                await this.submit(deferred.resolve);
             }
         });
         this._dialog.modal('show');
@@ -63,6 +85,7 @@ define([
         this._divContainer = this._dialog.find('.modal-body');
         this._saveConfigurationCb = this._dialog.find('.save-configuration');
         this._modalHeader = this._dialog.find('.modal-header');
+        this._modalFooter = this._dialog.find('.modal-footer');
         this._saveConfigurationCb.find('input').prop('checked', true);
 
         // Create the header
@@ -85,8 +108,9 @@ define([
         };
     };
 
-    ConfigDialog.prototype.submit = function (callback) {
-        const config = this._getAllConfigValues();
+    ConfigDialog.prototype.submit = async function (callback) {
+        this._btnSave.attr('disabled', true);
+        const config = await this._getAllConfigValues();
         const saveConfig = this._saveConfigurationCb.find('input')
             .prop('checked');
 
@@ -159,9 +183,9 @@ define([
         return response.status < 399 ? await response.json() : null;
     };
 
-    ConfigDialog.prototype._getAllConfigValues = function () {
+    ConfigDialog.prototype._getAllConfigValues = async function () {
         var settings = {};
-
+        const basedir = `${this._client.getActiveProjectId()}/artifacts`;
         Object.keys(this._widgets).forEach(namespace => {
             settings[namespace] = {};
 
@@ -169,6 +193,16 @@ define([
                 settings[namespace][name] = this._widgets[namespace][name].getValue();
             });
         });
+
+        // Second pass necessary to resolve value from functions
+        for (const namespace of Object.keys(this._widgets)){
+            for(const name of Object.keys(this._widgets[namespace])){
+                if(this._widgets[namespace][name].beforeSubmit){
+                    await this._widgets[namespace][name].beforeSubmit(basedir, settings);
+                    settings[namespace][name] = this._widgets[namespace][name].getValue();
+                }
+            }
+        }
 
         return settings;
     };
