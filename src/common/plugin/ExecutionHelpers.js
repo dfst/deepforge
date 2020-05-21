@@ -21,13 +21,13 @@ define([
                 parent: dst
             });
 
-            const names = this.core.getOwnAttributeNames(node)
-                .concat(this.core.getOwnAttributeNames(base));
+            const names = this.core.getValidAttributeNames(node);
             const values = names.map(name => this.core.getAttribute(node, name));
             names.forEach((name, i) =>
                 this.core.setAttribute(snapshot, name, values[i]));
 
-            const ptrNames = this.core.getOwnPointerNames(node).filter(name => name !== 'base');
+            const ptrNames = this.core.getValidPointerNames(node)
+                .filter(name => name !== 'base');
             const setPointers = Promise.all(
                 ptrNames.map(async name => {
                     const targetPath = this.core.getPointerPath(node, name);
