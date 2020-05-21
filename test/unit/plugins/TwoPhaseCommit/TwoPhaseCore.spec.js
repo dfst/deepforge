@@ -1,6 +1,7 @@
 /*eslint-env node, mocha*/
 
 describe('TwoPhaseCore', function() {
+    const path = require('path');
     const testFixture = require('../../../globals');
     const assert = require('assert');
     const gmeConfig = testFixture.getGmeConfig();
@@ -21,8 +22,10 @@ describe('TwoPhaseCore', function() {
         gmeAuth = await testFixture.clearDBAndGetGMEAuth(gmeConfig, projectName);
         storage = testFixture.getMemoryStorage(logger, gmeConfig, gmeAuth);
         await storage.openDatabase();
+
+        const projectSeed = path.join(testFixture.DF_SEED_DIR, 'devProject', 'devProject.webgmex');
         const importParam = {
-            projectSeed: testFixture.path.join(testFixture.SEED_DIR, 'EmptyProject.webgmex'),
+            projectSeed,
             projectName: projectName,
             branchName: 'master',
             logger: logger,
@@ -130,6 +133,50 @@ describe('TwoPhaseCore', function() {
 
                 const baseId = core.getPointerPath(newNode, 'base');
                 assert.equal(baseId, core.getPath(base));
+            });
+        });
+
+        describe('getValidAttributeNames', function() {
+            it('should get names for existing node', async function() {
+                const {META, rootNode, core} = plugin;
+                const base = META['pipeline.Operation'];
+                const parent = rootNode;
+                const newNode = core.unwrap().createNode({base, parent});
+
+                const names = core.getValidAttributeNames(newNode);
+                assert(names.includes('code'));
+            });
+
+            it('should get names for new node', async function() {
+                const {META, rootNode, core} = plugin;
+                const base = META['pipeline.Operation'];
+                const parent = rootNode;
+                const newNode = core.createNode({base, parent});
+
+                const names = core.getValidAttributeNames(newNode);
+                assert(names.includes('code'));
+            });
+        });
+
+        describe('getValidPointerNames', function() {
+            it('should get names for existing node', async function() {
+                const {META, rootNode, core} = plugin;
+                const base = META['pipeline.Transporter'];
+                const parent = rootNode;
+                const newNode = core.unwrap().createNode({base, parent});
+
+                const names = core.getValidPointerNames(newNode);
+                assert(names.includes('src'));
+            });
+
+            it('should get names for new node', async function() {
+                const {META, rootNode, core} = plugin;
+                const base = META['pipeline.Transporter'];
+                const parent = rootNode;
+                const newNode = core.createNode({base, parent});
+
+                const names = core.getValidPointerNames(newNode);
+                assert(names.includes('src'));
             });
         });
     });
