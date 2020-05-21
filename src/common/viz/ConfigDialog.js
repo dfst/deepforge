@@ -34,18 +34,16 @@ define([
 
     ConfigDialog.prototype._registerCustomWidgets = async function(customWidgets) {
         const self = this;
-
         const promises = customWidgets.map(widgetInfo => {
-           return new Promise((resolve, reject) => {
-               require([widgetInfo.path], function(customWidget) {
-                   const targetType = widgetInfo.type;
-                   self._propertyGridWidgetManager
-                       .registerWidgetForType(targetType, customWidget);
-                   resolve();
-               }, reject);
-           });
+            return new Promise((resolve, reject) => {
+                require([widgetInfo.path], function(customWidget) {
+                    const targetType = widgetInfo.type;
+                    self._propertyGridWidgetManager
+                        .registerWidgetForType(targetType, customWidget);
+                    resolve();
+                }, reject);
+            });
         });
-
         return Promise.all(promises);
     };
 

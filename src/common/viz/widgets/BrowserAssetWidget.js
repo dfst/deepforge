@@ -3,9 +3,11 @@ define([
     'js/Controls/PropertyGrid/Widgets/WidgetBase',
     'js/logger',
     'deepforge/storage/index'
-], function (WidgetBase,
-             Logger,
-             Storage) {
+], function (
+    WidgetBase,
+    Logger,
+    Storage
+) {
     'use strict';
 
     const BTN_ATTACH = $('<a class="btn btn-mini btn-dialog-open"><i class="glyphicon glyphicon-file"/></a>'),
@@ -67,16 +69,16 @@ define([
             });
 
             this.fileDropTarget.on('dragleave', e => {
-               e.stopPropagation();
-               e.preventDefault();
-               this.fileDropTarget.removeClass('hover');
+                e.stopPropagation();
+                e.preventDefault();
+                this.fileDropTarget.removeClass('hover');
             });
 
             this.fileDropTarget.on('drop', e => {
-               e.stopPropagation();
-               e.preventDefault();
-               this.fileDropTarget.removeClass('hover');
-               this.fileSelectHandler(e.originalEvent);
+                e.stopPropagation();
+                e.preventDefault();
+                this.fileDropTarget.removeClass('hover');
+                this.fileSelectHandler(e.originalEvent);
             });
         }
 
