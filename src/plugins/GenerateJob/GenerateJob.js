@@ -90,7 +90,7 @@ define([
      * @param {function(string, plugin.PluginResult)} callback - the result callback
      */
     GenerateJob.prototype.main = async function (callback) {
-        const name = this.getAttribute(this.activeNode, 'name');
+        const name = this.core.getAttribute(this.activeNode, 'name');
         const opId = this.core.getPath(this.activeNode);
 
         const files = await this.createOperationFiles(this.activeNode);
@@ -212,7 +212,7 @@ define([
         files.addFile('deepforge/serialization.py', serializeTpl(CONSTANTS));
         files.addFile('deepforge/__init__.py', Templates.DEEPFORGE_INIT);
         //const outputs = await this.getOutputs(node);
-        //const name = this.getAttribute(node, 'name');
+        //const name = this.core.getAttribute(node, 'name');
         //const content = {};
 
         // inputs and outputs
@@ -274,7 +274,7 @@ define([
         // For each input,
         //  - store the data in /inputs/<name>
         const inputs = allInputs
-            .filter(pair => !!this.getAttribute(pair[2], 'data'));  // remove empty inputs
+            .filter(pair => !!this.core.getAttribute(pair[2], 'data'));  // remove empty inputs
 
         const storage = this.getStorageConfig();
         const jobId = this.core.getPath(this.activeNode).replace(/\//g, '_');
@@ -294,7 +294,7 @@ define([
         files.addFile('backend_deepforge.py', Templates.MATPLOTLIB_BACKEND);
 
         inputs.forEach(pair => {
-            const dataInfo = this.getAttribute(pair[2], 'data');
+            const dataInfo = this.core.getAttribute(pair[2], 'data');
             const datapath = DATA_DIR + pair[0];
             files.addUserAsset(datapath, dataInfo);
         });
@@ -305,8 +305,8 @@ define([
     GenerateJob.prototype.createMainFile = async function (node, files) {
         this.logger.info('Creating main file...');
         const inputs = await this.getInputs(node);
-        const name = this.getAttribute(node, 'name');
-        const code = this.getAttribute(node, 'code');
+        const name = this.core.getAttribute(node, 'name');
+        const code = this.core.getAttribute(node, 'code');
         const filename = GenerateJob.toSnakeCase(name);
 
         // Add remaining code
@@ -321,8 +321,8 @@ define([
         content.inputs = inputs
             .map(pair => [  // [name, type, isNone?]
                 pair[0],
-                this.getAttribute(pair[2], 'type'),
-                !this.getAttribute(pair[2], 'data')
+                this.core.getAttribute(pair[2], 'type'),
+                !this.core.getAttribute(pair[2], 'data')
             ]);  // remove empty inputs
         content.outputs = outputs.map(output => output[0]);
         content.arguments = this.getOperationArguments(node)
@@ -391,7 +391,7 @@ define([
     };
 
     GenerateJob.prototype.getOperationArguments = function (node) {
-        const code = this.getAttribute(node, 'code');
+        const code = this.core.getAttribute(node, 'code');
         const operation = new OperationCode(code);
         const pointers = this.core.getPointerNames(node).filter(name => name !== 'base');
 
@@ -409,7 +409,7 @@ define([
                 arg.rawValue = this.core.getPointerPath(node, name);
                 arg.value = arg.rawValue ? name : 'None';
             } else {  // get the attribute and it's value
-                arg.rawValue = this.getAttribute(node, name);
+                arg.rawValue = this.core.getAttribute(node, name);
                 arg.value = GenerateJob.getAttributeString(arg.rawValue);
             }
             return arg;
@@ -426,7 +426,7 @@ define([
             .filter(id => this.core.getPointerPath(node, id) !== null);
 
         const targetIds = pointers.map(p => this.core.getPointerPath(node, p));
-        const name = this.getAttribute(node, 'name');
+        const name = this.core.getAttribute(node, 'name');
         return Q.all(targetIds.map(nId => this.getPtrCode(nId)))
             .then(resultContents => {
                 this.logger.info(`Pointer generation for ${name} FINISHED!`);
@@ -439,17 +439,9 @@ define([
                 return references;
             })
             .fail(e => {
-                this.logger.error(`Could not generate resource files for ${this.getAttribute(node, 'name')}: ${e.toString()}`);
+                this.logger.error(`Could not generate resource files for ${this.core.getAttribute(node, 'name')}: ${e.toString()}`);
                 throw e;
             });
-    };
-
-    GenerateJob.prototype.getAttribute = function (node, attr) {
-        return this.core.getAttribute(node, attr);
-    };
-
-    GenerateJob.prototype.setAttribute = function (node, attr, value) {
-        return this.core.setAttribute(node, attr, value);
     };
 
     _.extend(
