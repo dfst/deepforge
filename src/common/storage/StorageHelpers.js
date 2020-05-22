@@ -1,7 +1,9 @@
 /* globals define */
 define([
+    'client/logger',
     'deepforge/gmeConfig'
 ], function (
+    Logger,
     gmeConfig
 ) {
     const fetch = require.isBrowser ? window.fetch :
@@ -30,6 +32,25 @@ define([
             return Promise.reject(response);
         }
         return response;
+    };
+
+    StorageHelpers.getBlobClientParams = function(logger) {
+        logger = logger ?
+            Logger.create('gme:StreamBlobClient', gmeConfig.client.log) :
+            logger.fork('StreamBlobClient');
+
+        const params = {
+            logger: logger
+        };
+        if (!require.isBrowser) {
+            const [url, isHttps] = this.getServerURL();
+            const defaultPort = isHttps ? '443' : '80';
+            const [server, port=defaultPort] = url.split(':');
+            params.server = server;
+            params.serverPort = +port;
+            params.httpsecure = isHttps;
+        }
+        return params;
     };
 
     return StorageHelpers;

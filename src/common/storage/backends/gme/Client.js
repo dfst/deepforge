@@ -9,7 +9,8 @@ define([
 
     const GMEStorage = function(/*name, logger*/) {
         StorageClient.apply(this, arguments);
-        this.blobClient = new BlobClient(this.logger);
+        const params = this.getBlobClientParams(this.logger);
+        this.blobClient = new BlobClient(params);
     };
 
     GMEStorage.prototype = Object.create(StorageClient.prototype);
@@ -31,7 +32,7 @@ define([
     };
 
     GMEStorage.prototype.putStream = async function(filename, stream) {
-        await this.checkStreamsInBrowser();
+        this.ensureStreamSupport();
         const hash = await this.blobClient.putStream(filename, stream);
         return this.createDataInfo(hash);
     };

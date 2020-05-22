@@ -1,4 +1,4 @@
-describe.skip('GME Storage Adapter', function() {
+describe('GME Storage Adapter', function() {
     const testFixture = require('../../../../../globals');
     const assert = require('assert');
     const Storage = testFixture.requirejs('deepforge/storage/index');

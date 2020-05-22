@@ -5,7 +5,8 @@ describe('Storage Features Test', function () {
     const fs = require('fs');
     const testFixture = require('../globals');
     const {promisify} = require('util');
-    const pipeline = promisify(require('stream').pipeline);
+    let {Writable, pipeline} = require('stream');
+    pipeline = promisify(pipeline);
     const {requirejs} = testFixture;
     const TEST_STORAGE = 'storageFeaturesSpec';
     const TEST_PATH = `${TEST_STORAGE}/dummyFile`;
@@ -17,6 +18,7 @@ describe('Storage Features Test', function () {
     const server = new testFixture.WebGME.standaloneServer(gmeConfig);
     server.start = promisify(server.start);
     server.stop = promisify(server.stop);
+    const { StringDecoder } =require('string_decoder');
 
 
     const storageBackends = Storage.getAvailableBackends();
@@ -86,7 +88,7 @@ describe('Storage Features Test', function () {
     }
 
     after(async function () {
-        removeTemporaryFile();
+        fs.unlinkSync(TEST_FILE_NAME);
         await server.stop();
     });
 
@@ -98,14 +100,27 @@ describe('Storage Features Test', function () {
     }
 
     async function verifyStreamContent(inputStream) {
-        const outputFile = `${TEST_FILE_NAME}_COPY`;
-        const outputStream = fs.createWriteStream(outputFile);
+        const outputStream = new StringWritable();
         await pipeline(inputStream, outputStream);
-        assert(fs.readFileSync(outputFile).toString() === CONTENT);
-        removeTemporaryFile(outputFile);
+        assert(outputStream.data === CONTENT);
     }
 
-    function removeTemporaryFile(filename) {
-        fs.unlinkSync(filename || TEST_FILE_NAME);
+    class StringWritable extends Writable {
+        constructor(options) {
+            super(options);
+            this._decoder = new StringDecoder(options && options.defaultEncoding);
+            this.data = '';
+        }
+        _write(chunk, encoding, callback) {
+            if (encoding === 'buffer') {
+                chunk = this._decoder.write(chunk);
+            }
+            this.data += chunk;
+            callback();
+        }
+        _final(callback) {
+            this.data += this._decoder.end();
+            callback();
+        }
     }
 });

@@ -2,7 +2,7 @@
 define([
     'client/logger',
     'deepforge/gmeConfig',
-    'deepforge/StorageHelpers'
+    '../StorageHelpers'
 ], function(
     Logger,
     gmeConfig,
@@ -70,7 +70,7 @@ define([
         throw new Error(`stat not implemented for ${this.name}`);
     };
 
-    StorageClient.prototype.checkStreamsInBrowser = async function() {
+    StorageClient.prototype.ensureStreamSupport = function() {
         if(require.isBrowser) {
             throw new Error('Streams are not supported in browser');
         }

@@ -53,7 +53,7 @@ define([
     };
 
     SciServerFiles.prototype.putStream = async function(filename, stream) {
-        await this.checkStreamsInBrowser();
+        this.ensureStreamSupport();
         await this.putFile(filename, stream);
         // stat necessary because of byteLength
         return await this.stat(filename);
