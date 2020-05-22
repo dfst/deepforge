@@ -34,10 +34,10 @@ define([
         return response;
     };
 
-    StorageHelpers.getBlobClientParams = function(logger) {
-        logger = logger ?
+    StorageHelpers.getBlobClientParams = function() {
+        const logger = this.logger ?
             Logger.create('gme:StreamBlobClient', gmeConfig.client.log) :
-            logger.fork('StreamBlobClient');
+            this.logger.fork('StreamBlobClient');
 
         const params = {
             logger: logger
