@@ -52,7 +52,9 @@ define([
         }
 
         async clearSubGraphs() {
-            const subGraphs = await this.core.loadChildren(this.node);
+            const provPath = this.core.getPointerPath(this.node, 'provenance');
+            const subGraphs = (await this.core.loadChildren(this.node))
+                .filter(node => this.core.getPath(node) !== provPath);
             subGraphs.forEach(subGraph => this.core.deleteNode(subGraph));
         }
 
