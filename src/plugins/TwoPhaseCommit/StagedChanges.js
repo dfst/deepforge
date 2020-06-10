@@ -58,8 +58,13 @@ define([
         return this.changes;
     };
 
-    StagedChanges.prototype.resolveCreateId = function(id) {
+    StagedChanges.prototype.tryResolveCreateId = function(id) {
         const gmeId = this._createdGMEIds[id];
+        return gmeId;
+    };
+
+    StagedChanges.prototype.resolveCreateId = function(id) {
+        const gmeId = this.tryResolveCreateId(id);
         assert(gmeId, `Creation id not resolved to actual id: ${id}`);
 
         return gmeId;
@@ -67,6 +72,15 @@ define([
 
     StagedChanges.prototype.getNodeEdits = function(id) {
         id = CreatedNode.isCreateId(id) ? this.resolveCreateId(id) : id;
+
+        return this.changes[id];
+    };
+
+    StagedChanges.prototype.tryGetNodeEdits = function(id) {
+        id = CreatedNode.isCreateId(id) ? this.tryResolveCreateId(id) : id;
+        if (id) {
+            return null;
+        }
 
         return this.changes[id];
     };

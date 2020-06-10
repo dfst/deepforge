@@ -140,7 +140,7 @@ define([
     TwoPhaseCore.prototype._forAllNodeChanges = function (node, fn) {
         const nodeId = this.getPath(node);
         for (let i = 0; i < this.queuedChanges.length; i++) {
-            const changes = this.queuedChanges[i].getNodeEdits(nodeId);
+            const changes = this.queuedChanges[i].tryGetNodeEdits(nodeId);
             if (changes) {
                 fn(changes);
             }
