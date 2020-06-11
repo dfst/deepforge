@@ -74,8 +74,8 @@ define([
         addAxesScatterPoints (parent, job, axes) {
             axes.scatterPoints.forEach(scatterPoint => {
                 const scatterPointsNode = this.core.createNode({
-                   parent: parent,
-                   base: this.META.ScatterPoints,
+                    parent: parent,
+                    base: this.META.ScatterPoints,
                 });
                 this.core.setAttribute(scatterPointsNode, 'color', scatterPoint.color);
                 this.core.setAttribute(scatterPointsNode, 'label', scatterPoint.label);
