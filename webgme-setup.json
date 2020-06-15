@@ -281,6 +281,13 @@
         "panel": "src/visualizers/panels/OperationDepEditor",
         "secondary": false,
         "widget": "src/visualizers/widgets/OperationDepEditor"
+      },
+      "MonacoEditor": {
+        "src": "panels/MonacoEditor/MonacoEditorPanel",
+        "title": "MonacoEditor",
+        "panel": "src/visualizers/panels/MonacoEditor",
+        "secondary": false,
+        "widget": "src/visualizers/widgets/MonacoEditor"
       }
     },
     "addons": {},

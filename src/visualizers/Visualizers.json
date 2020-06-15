@@ -148,5 +148,11 @@
     "title": "OperationDepEditor",
     "panel": "panels/OperationDepEditor/OperationDepEditorPanel",
     "DEBUG_ONLY": false
+  },
+  {
+    "id": "MonacoEditor",
+    "title": "MonacoEditor",
+    "panel": "panels/MonacoEditor/MonacoEditorPanel",
+    "DEBUG_ONLY": false
   }
 ]

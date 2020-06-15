@@ -40,6 +40,8 @@
     "lodash.merge": "^4.5.1",
     "lodash.template": "^4.4.0",
     "minimatch": "^3.0.4",
+    "monaco-editor": "^0.20.0",
+    "monaco-themes": "^0.3.3",
     "mongodb": "^2.2.10",
     "node-fetch": "^2.6.0",
     "npm": "^4.0.5",

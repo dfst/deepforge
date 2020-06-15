@@ -1,0 +1,24 @@
+/**
+ * This file is for any css that you may want for this visualizer.
+ *
+ * Ideally, you would use the scss file also provided in this directory
+ * and then generate this file automatically from that. However, you can
+ * simply write css if you prefer
+ */
+
+.monaco-editor {
+    outline: none;
+    padding: 0px;
+    text-align: left !important;
+}
+
+.vs-dark {
+    background-color: #1e1e1e;
+    border: none;
+    color: #ffffff;
+}
+
+.nav-display-menu {
+    background-color: #1e1e1e;
+    border: none;
+}
