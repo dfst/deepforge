@@ -26,6 +26,8 @@ define([
         'hc-black': '#000000'
     };
 
+    const AVAILABLE_KEYBINDINGS = ['default', 'vim'];
+
     const TAB_NAV = `<ul class="nav nav-tabs nav-display-menu">
                         <li class="pull-right nav-item">
                         </li>
@@ -42,14 +44,19 @@ define([
         this.modelURI = config.modelURI || 'inmemory://code.py';
         this.monacoURI = monaco.Uri.parse(this.modelURI);
         this.language = config.language || 'python';
+        this.keyBindingAdapter = null;
 
         this._el = container;
         this._el.css({height: '100%'});
         this._el.append($(TAB_NAV));
 
         this.$editor = $('<div/>');
+        this.$status = $('<div/>');
         this.$editor.css({height: '100%'});
         this._el.append(this.$editor[0]);
+        this._el.append(this.$status[0]);
+
+        this.readOnly = config.readOnly || false;
 
         // register context menu to display settings and ComponentSettings
         this._registerContextMenu();
@@ -60,10 +67,20 @@ define([
         // Create editor with value provided by constructor
         const value = config.value  || "def dummy_python_func():\n\tpass";
         this.editor = this._createEditor(value);
+        this.DELAY = 750;
 
+        this.editor.onDidChangeModelContent(() => {
+            if(!this.silent) {
+                this.saving = true;
+                this.onChange();
+            }
+        });
 
+        this.onChange = _.debounce(this.saveText.bind(this), this.DELAY);
+        this.currentHeader = '';
+        this.activeNode = null;
 
-        this._el = container;
+        this.$settingsBtn = this._el.find(`.${DISPLAY_MENU_CLASS}`);
 
         this.nodes = {};
         this._initialize();
@@ -72,7 +89,10 @@ define([
     }
 
     MonacoEditorWidget.prototype._createEditor = function (value) {
-        console.log(this.displaySettings);
+        if (!DEFAULT_THEMES.includes(this.displaySettings.theme)) {
+            this.importTheme(this.displaySettings.theme, ThemeList[this.displaySettings.theme]);
+            this.setNavColor(this.displaySettings.navColor);
+        }
         const editor = monaco.editor.create(
             this.$editor[0],
             {
@@ -81,11 +101,11 @@ define([
                 lightbulb: {
                     enabled: true
                 },
-                theme: this.displaySettings.theme,
-                fontSize: this.displaySettings.fontSize
+                fontSize: this.displaySettings.fontSize,
+                readOnly: this.readOnly
             }
         );
-        this.setNavColor(this.displaySettings.navColor);
+        this.activateKeyBinding(this.displaySettings.keybindings);
         return editor;
     };
 
@@ -112,13 +132,8 @@ define([
     };
 
     MonacoEditorWidget.prototype.getMenuItemsFor = function () {
-        const fontSizes = [8, 10, 11, 12, 14],
+        const fontSizes = [8, 10, 11, 12, 14, 16],
             themes = DEFAULT_THEMES.concat(Object.keys(ThemeList)),
-            keybindings = [
-                'default',
-                'vim',
-                'emacs'
-            ],
             menuItems = {
                 setKeybindings: {
                     name: 'Keybindings...',
@@ -182,16 +197,15 @@ define([
                         }
 
                         await this.importTheme(themeName, ThemeList[theme]);
-
-                        this.displaySettings.theme = name;
-                        this.onUpdateDisplaySettings();
                     }
+                    this.displaySettings.theme = theme;
+                    this.onUpdateDisplaySettings();
                 },
                 className: 'vs-dark'
             };
         });
 
-        keybindings.forEach(name => {
+        AVAILABLE_KEYBINDINGS.forEach(name => {
             const handler = name.toLowerCase().replace(/ /g, '_'),
                 isSet = handler === this.displaySettings.keybindings;
 
@@ -202,7 +216,11 @@ define([
             menuItems.setKeybindings.items[handler] = {
                 name: name,
                 isHtmlName: isSet,
-                callback: () => {},
+                callback: () => {
+                    this.activateKeyBinding(handler);
+                    this.displaySettings.keybindings = handler;
+                    this.onUpdateDisplaySettings();
+                },
                 className: 'vs-dark',
             };
         });
@@ -212,6 +230,9 @@ define([
 
     MonacoEditorWidget.prototype.setNavColor = function (color) {
         const $tabNav = this._el.find('.nav-display-menu');
+        $tabNav.css({
+            'background-color': ''
+        });
         $tabNav.css({
             'background-color': color
         });
@@ -235,6 +256,31 @@ define([
                 resolve();
             }, reject);
         });
+    };
+
+    MonacoEditorWidget.prototype.activateKeyBinding = function(keybinding) {
+        if (keybinding === 'default' && this.displaySettings.keybindings === 'vim') {
+            this.disposeVimMode();
+        } else if(keybinding === 'vim') {
+            this.initVimMode();
+        }
+    };
+
+    MonacoEditorWidget.prototype.initVimMode = function () {
+        const self = this;
+        return new Promise((resolve, reject) => {
+            require(['MonacoVim'], function (MonacoVim) {
+                self.keyBindingAdapter = MonacoVim.initVimMode(self.editor, self.$status[0]);
+                resolve();
+            }, reject);
+        });
+    };
+
+    MonacoEditorWidget.prototype.disposeVimMode = function() {
+        if(this.keyBindingAdapter) {
+            this.keyBindingAdapter.dispose();
+            this.keyBindingAdapter = null;
+        }
     };
 
     MonacoEditorWidget.prototype._registerLanguages = function() {
@@ -263,7 +309,7 @@ define([
             contextMenuGroupId: 'settings',
             contextMenuOrder: 1.5,
             run: () => {
-                this.$b.show();
+                this.$settingsBtn.click();
             }
         });
 
@@ -275,26 +321,27 @@ define([
 
     // Adding/Removing/Updating items
     MonacoEditorWidget.prototype.addNode = function (desc) {
-        if (desc) {
-            // Add node to a table of nodes
-            var node = document.createElement('div'),
-                label = 'children';
+        const header = this.getHeader(desc),
+            newContent = header ? header + '\n' + desc.text : desc.text;
 
-            if (desc.childrenIds.length === 1) {
-                label = 'child';
-            }
+        this.activeNode = desc.id;
 
-            this.nodes[desc.id] = desc;
-            node.innerHTML = 'Adding node "' + desc.name + '" (click to view). It has ' +
-                desc.childrenIds.length + ' ' + label + '.';
+        this.silent = true;
 
-            this._el.append(node);
-            node.onclick = this.onNodeClick.bind(this, desc.id);
-        }
+        this.editor.setValue(newContent);
+
+        this.silent = false;
+        this.currentHeader = header;
     };
 
     MonacoEditorWidget.prototype.removeNode = function (gmeId) {
-        // if(this.activeNode == )
+        if (this.activeNode === gmeId) {
+            if(this.saving){
+                this.saveText();
+            }
+            this.editor.setValue('');
+            this.activeNode = null;
+        }
     };
 
     MonacoEditorWidget.prototype.getText = function () {
@@ -303,7 +350,24 @@ define([
     };
 
     MonacoEditorWidget.prototype.saveText = function () {
+        let text;
+        this.saving = false;
 
+        if(this.readOnly) {
+            return;
+        }
+
+        text = this.editor.getValue();
+
+        if(this.currentHeader) {
+            text = text.replace(this.currentHeader + '\n', '');
+        }
+
+        if(typeof  this.activeNode === 'string') {
+            this.saveTextFor(this.activeNode, text);
+        } else {
+            this._logger.error(`Active node is invalid! (${this.activeNode})`);
+        }
     };
 
     MonacoEditorWidget.prototype.getComponentId = function () {
@@ -311,10 +375,17 @@ define([
     };
 
     MonacoEditorWidget.prototype.updateNode = function (desc) {
-        if (desc) {
-            this._logger.debug('Updating node:', desc);
-            this._el.append('<div>Updating node "' + desc.name + '"</div>');
+        const shouldUpdate = this.readOnly ||
+            (!this.saving && this.editor.hasTextFocus()) ||
+            (this.activeNode === desc.id && this.getHeader(desc) !== this.currentHeader);
+
+        if(shouldUpdate){
+            this.addNode(desc);
         }
+    };
+
+    MonacoEditorWidget.prototype.getHeader = function() {
+        return '';
     };
 
     MonacoEditorWidget.prototype.getDefaultDisplayOptions = function () {
@@ -327,7 +398,6 @@ define([
 
     MonacoEditorWidget.prototype.getDefaultEditorOptions = function() {
         return {
-            // model: monaco.editor.createModel(this.modelURI),
             glyphMargin: true,
             lightbulb: {
                 enabled: true,
@@ -343,17 +413,6 @@ define([
             this.displaySettings,
             err => err && this._logger.error(`Could not save editor settings: ${err}`)
         );
-    };
-
-    /* * * * * * * * Visualizer event handlers * * * * * * * */
-
-    MonacoEditorWidget.prototype.onNodeClick = function (/*id*/) {
-        // This currently changes the active node to the given id and
-        // this is overridden in the controller.
-    };
-
-    MonacoEditorWidget.prototype.onBackgroundDblClick = function () {
-        this._el.append('<div>Background was double-clicked!!</div>');
     };
 
     /* * * * * * * * Visualizer life cycle callbacks * * * * * * * */
