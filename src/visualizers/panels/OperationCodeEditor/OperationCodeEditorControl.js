@@ -2,14 +2,14 @@
 /*jshint browser: true*/
 
 define([
-    'panels/TextEditor/TextEditorControl',
+    'panels/MonacoEditor/MonacoEditorControl',
     'deepforge/viz/OperationControl',
     'deepforge/OperationCode',
     'deepforge/viz/Execute',
     'deepforge/Constants',
     'underscore'
 ], function (
-    TextEditorControl,
+    MonacoEditorControl,
     OperationControl,
     OperationCode,
     Execute,
@@ -23,7 +23,7 @@ define([
 
     OperationCodeEditorControl = function (options) {
         options.attributeName = 'code';
-        TextEditorControl.call(this, options);
+        MonacoEditorControl.call(this, options);
         Execute.call(this, this._client, this._logger);
         this.currentJobId = null;
     };
@@ -31,19 +31,19 @@ define([
     _.extend(
         OperationCodeEditorControl.prototype,
         OperationControl.prototype,
-        TextEditorControl.prototype,
+        MonacoEditorControl.prototype,
         Execute.prototype
     );
 
     OperationCodeEditorControl.prototype._initWidgetEventHandlers = function () {
-        TextEditorControl.prototype._initWidgetEventHandlers.call(this);
+        MonacoEditorControl.prototype._initWidgetEventHandlers.call(this);
         this._widget.getOperationAttributes = this.getOperationAttributes.bind(this);
         this._widget.executeOrStopJob = this.executeOrStopJob.bind(this);
     };
 
     OperationCodeEditorControl.prototype.TERRITORY_RULE = {children: 3};
     OperationCodeEditorControl.prototype._getObjectDescriptor = function (id) {
-        var desc = TextEditorControl.prototype._getObjectDescriptor.call(this, id),
+        var desc = MonacoEditorControl.prototype._getObjectDescriptor.call(this, id),
             node = this._client.getNode(id);
 
         // Add the inputs, outputs, references, and attributes
@@ -67,7 +67,7 @@ define([
     // input/output updates are actually activeNode updates
     OperationCodeEditorControl.prototype._onUpdate = function (id) {
         if (id === this._currentNodeId || this.hasMetaName(id, 'Data')) {
-            TextEditorControl.prototype._onUpdate.call(this, this._currentNodeId);
+            MonacoEditorControl.prototype._onUpdate.call(this, this._currentNodeId);
         }
     };
 
@@ -137,11 +137,11 @@ define([
                 output => this.removeOutputData(this._currentNodeId, output)
             );
 
-            TextEditorControl.prototype.saveTextFor.call(this, id, code, true);
+            MonacoEditorControl.prototype.saveTextFor.call(this, id, code, true);
             this._client.completeTransaction();
         } catch (e) {
             this._logger.debug(`failed parsing operation: ${e}`);
-            return TextEditorControl.prototype.saveTextFor.call(this, id, code);
+            return MonacoEditorControl.prototype.saveTextFor.call(this, id, code);
         }
     };
 
@@ -197,7 +197,7 @@ define([
     };
 
     OperationCodeEditorControl.prototype.destroy = function () {
-        TextEditorControl.prototype.destroy.call(this);
+        MonacoEditorControl.prototype.destroy.call(this);
         if (this._offsetUI) {
             this._client.removeUI(this._offsetUI);
         }

@@ -11,7 +11,8 @@
     ],
     "mimetypes": [
       "application/text"
-    ]
+    ],
+    "comment":  "#"
   },
   "javascript": {
     "id": "javascript",
@@ -21,7 +22,8 @@
     ],
     "mimetypes": [
       "application/text"
-    ]
+    ],
+    "comment": "//"
   },
   "yaml": {
     "id": "yaml",
@@ -37,7 +39,8 @@
     ],
     "mimetypes": [
       "application/text"
-    ]
+    ],
+    "comment": "#"
   }
 }
 

@@ -49,7 +49,7 @@ define([
     };
 
     MonacoEditorControl.prototype.saveTextFor = function (id, text, inTransaction) {
-        var node = this._client.getNode(this._currentNodeId),
+        const node = this._client.getNode(this._currentNodeId),
             name = node.getAttribute('name'),
             msg = `Updating ${this.ATTRIBUTE_NAME} of ${name} (${id})`;
 
@@ -121,6 +121,20 @@ define([
         return this.defaultTemplate(nodeData);
     };
 
+    MonacoEditorControl.prototype._getObjectDescriptor = function (nodeId) {
+        const node = this._client.getNode(nodeId);
+
+        if (node) {
+            return {
+                id: node.getId(),
+                name: node.getAttribute(nodePropertyNames.Attributes.name),
+                parentId: node.getParentId(),
+                text: node.getAttribute(this.ATTRIBUTE_NAME) || this._getDefaultText(node),
+                ownText: node.getOwnAttribute(this.ATTRIBUTE_NAME),
+            };
+        }
+    };
+
     /* * * * * * * * Node Event Handling * * * * * * * */
     MonacoEditorControl.prototype._eventCallback = function (events) {
         var i = events ? events.length : 0,
@@ -147,20 +161,6 @@ define([
         }
 
         this._logger.debug('_eventCallback \'' + events.length + '\' items - DONE');
-    };
-
-    MonacoEditorControl.prototype._getObjectDescriptor = function (nodeId) {
-        const node = this._client.getNode(nodeId);
-
-        if (node) {
-            return {
-                id: node.getId(),
-                name: node.getAttribute(nodePropertyNames.Attributes.name),
-                parentId: node.getParentId(),
-                text: node.getAttribute(this.ATTRIBUTE_NAME) || this._getDefaultText(node),
-                ownText: node.getOwnAttribute(this.ATTRIBUTE_NAME),
-            };
-        }
     };
 
     MonacoEditorControl.prototype._onLoad = function (gmeId) {
@@ -190,9 +190,6 @@ define([
     /* * * * * * * * Visualizer life cycle callbacks * * * * * * * */
     MonacoEditorControl.prototype.destroy = function () {
         this._detachClientEventListeners();
-        this._widget.editor.getModel().dispose();
-        this._widget.editor.dispose();
-
         if (this._territoryId) {
             this._client.removeUI(this._territoryId);
         }
@@ -224,9 +221,7 @@ define([
 
     MonacoEditorControl.prototype.onDeactivate = function () {
         this._detachClientEventListeners();
-        this._widget.editor.getModel().dispose();
-        this._widget.editor.dispose();
-        this._hideToolbarItems();
+        // this._widget.destroy();
     };
 
     return MonacoEditorControl;

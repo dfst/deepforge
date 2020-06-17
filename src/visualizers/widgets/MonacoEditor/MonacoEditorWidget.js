@@ -1,4 +1,4 @@
-/*globals define, WebGMEGlobal, monaco, _*/
+/*globals define, WebGMEGlobal, _*/
 
 define([
     'js/Utils/ComponentSettings',
@@ -59,6 +59,8 @@ define([
         this.readOnly = config.readOnly || false;
 
         // register context menu to display settings and ComponentSettings
+        // Currently there's no submenu in monaco-editor and context menu is used
+        // to add display settings. See https://github.com/microsoft/monaco-editor/issues/1947
         this._registerContextMenu();
 
         // register languages to the monaco editor
@@ -66,12 +68,18 @@ define([
 
         // Create editor with value provided by constructor
         const value = config.value  || "def dummy_python_func():\n\tpass";
-        this.editor = this._createEditor(value);
-        this.DELAY = 750;
+        this.model = monaco.editor.getModel(this.monacoURI) ||
+            monaco.editor.createModel(
+                value,
+                this.language,
+                this.monacoURI
+            );
+        const dontDisplayMiniMap =  config.dontDisplayMiniMap || false;
+        this.editor = this._createEditor(dontDisplayMiniMap);
+        this.DELAY = 1000;
 
         this.editor.onDidChangeModelContent(() => {
             if(!this.silent) {
-                this.saving = true;
                 this.onChange();
             }
         });
@@ -88,7 +96,7 @@ define([
         this._logger.debug('ctor finished');
     }
 
-    MonacoEditorWidget.prototype._createEditor = function (value) {
+    MonacoEditorWidget.prototype._createEditor = function (dontDisplayMiniMap) {
         if (!DEFAULT_THEMES.includes(this.displaySettings.theme)) {
             this.importTheme(this.displaySettings.theme, ThemeList[this.displaySettings.theme]);
             this.setNavColor(this.displaySettings.navColor);
@@ -96,13 +104,19 @@ define([
         const editor = monaco.editor.create(
             this.$editor[0],
             {
-                model: monaco.editor.createModel(value, this.language, this.monacoURI),
+                model: this.model,
                 automaticLayout: true,
                 lightbulb: {
                     enabled: true
                 },
                 fontSize: this.displaySettings.fontSize,
-                readOnly: this.readOnly
+                readOnly: this.readOnly,
+                minimap: {
+                    enabled: !dontDisplayMiniMap
+                },
+                scrollbar: {
+                    vertical: "hidden"
+                }
             }
         );
         this.activateKeyBinding(this.displaySettings.keybindings);
@@ -325,10 +339,10 @@ define([
             newContent = header ? header + '\n' + desc.text : desc.text;
 
         this.activeNode = desc.id;
-
         this.silent = true;
-
+        const prevPosition = this.editor.getPosition();
         this.editor.setValue(newContent);
+        this.editor.setPosition(prevPosition);
 
         this.silent = false;
         this.currentHeader = header;
@@ -407,6 +421,14 @@ define([
         };
     };
 
+    MonacoEditorWidget.prototype.comment = function(text) {
+        const commentToken = MonacoLanguages[this.language].comment + ' ';
+        return text.replace(
+            new RegExp('^(' + commentToken + ')?','mg'),
+            commentToken
+        );
+    };
+
     MonacoEditorWidget.prototype.onUpdateDisplaySettings = function () {
         ComponentSettings.overwriteComponentSettings(
             this.getComponentId(),
@@ -417,6 +439,9 @@ define([
 
     /* * * * * * * * Visualizer life cycle callbacks * * * * * * * */
     MonacoEditorWidget.prototype.destroy = function () {
+        this.model.dispose();
+        this.editor.dispose();
+        // console.log(this.model);
     };
 
     MonacoEditorWidget.prototype.onActivate = function () {

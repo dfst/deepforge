@@ -2,11 +2,11 @@
 /*jshint browser: true*/
 
 define([
-    'widgets/TextEditor/TextEditorWidget',
+    'widgets/MonacoEditor/MonacoEditorWidget',
     'underscore',
     'css!./styles/OperationCodeEditorWidget.css'
 ], function (
-    TextEditorWidget,
+    MonacoEditorWidget,
     _
 ) {
     'use strict';
@@ -15,20 +15,20 @@ define([
         //WIDGET_CLASS = 'operation-editor';
 
     OperationCodeEditorWidget = function (logger, container) {
-        TextEditorWidget.call(this, logger, container);
+        MonacoEditorWidget.call(this, logger, container);
         this.lineOffset = 0;
         // Add the shift-enter command
-        this.editor.commands.addCommand({
-            name: 'executeOrStopJob',
-            bindKey: {
-                mac: 'Shift-Enter',
-                win: 'Shift-Enter'
-            },
-            exec: () => this.executeOrStopJob()
-        });
+        // this.editor.commands.addCommand({
+        //     name: 'executeOrStopJob',
+        //     bindKey: {
+        //         mac: 'Shift-Enter',
+        //         win: 'Shift-Enter'
+        //     },
+        //     exec: () => this.executeOrStopJob()
+        // });
     };
 
-    _.extend(OperationCodeEditorWidget.prototype, TextEditorWidget.prototype);
+    _.extend(OperationCodeEditorWidget.prototype, MonacoEditorWidget.prototype);
 
     OperationCodeEditorWidget.prototype.getHeader = function (desc) {
         // Add comment about the inputs, attributes and references
@@ -43,7 +43,8 @@ define([
     };
 
     OperationCodeEditorWidget.prototype.addNode = function (desc) {
-        TextEditorWidget.prototype.addNode.call(this, desc);
+        // console.log(desc);
+        MonacoEditorWidget.prototype.addNode.call(this, desc);
         this.updateOffset();
     };
 
@@ -60,11 +61,11 @@ define([
 
         lines = this.currentHeader.match(/\n/g);
         actualOffset = this.lineOffset - (lines ? lines.length : 0);
-        this.editor.setOption('firstLineNumber', actualOffset);
+        // this.editor.setOption('firstLineNumber', actualOffset);
     };
 
     OperationCodeEditorWidget.prototype.getCompleter = function () {
-        var completer = TextEditorWidget.prototype.getCompleter.call(this),
+        var completer = MonacoEditorWidget.prototype.getCompleter.call(this),
             getBasicCompletions = completer.getCompletionsFor,
             self = this;
 
