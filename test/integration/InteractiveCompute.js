@@ -11,6 +11,9 @@ describe('InteractiveCompute', function() {
     before(async function() {
         await server.start();
     });
+    after(async function() {
+        await server.stop();
+    });
 
     beforeEach(async function() {
         const Session = testFixture.requirejs('deepforge/compute/interactive/session-with-queue');
