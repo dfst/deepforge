@@ -79,11 +79,13 @@ function initialize(middlewareOpts) {
 }
 
 function start(callback) {
+    console.log('>>> start');
     broker.listen(gmeConfig.server.port + 1);
     callback();
 }
 
 function stop(callback) {
+    console.log('>>> stop');
     broker.stop();
     callback();
 }
