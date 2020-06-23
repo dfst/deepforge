@@ -43,7 +43,7 @@
     "minimatch": "^3.0.4",
     "mongodb": "^2.2.10",
     "node-fetch": "^2.6.0",
-    "npm": "^4.0.5",
+    "pacote": "^11.1.10",
     "q": "1.4.1",
     "rimraf": "^2.4.0",
     "tcp-port-used": "^0.1.2",
