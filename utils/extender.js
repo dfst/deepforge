@@ -10,7 +10,8 @@ const pacote = require('pacote');
 const rm_rf = require('rimraf');
 const exists = require('exists-file');
 const makeTpl = require('lodash.template');
-const {exec} = require('child_process');
+const {promisify} = require('util');
+const exec = promisify(require('child_process').exec);
 const HOME_DIR = require('os').homedir();
 const CONFIG_DIR = path.join(HOME_DIR, '.deepforge');
 const EXT_CONFIG_NAME = 'deepforge-extension.json';
@@ -65,11 +66,7 @@ extender.getInstalledConfigType = function(name) {
 
 
 extender.install = async function(projectName, isReinstall) {
-    const {exitCode, stderr} = await exec('npm', ['install', projectName]);
-    if (!exitCode) {
-        console.error(stderr);
-        throw new Error(`Unable to install ${projectName}`);
-    }
+    await exec(`npm install ${projectName}`);
     const {name} = await pacote.manifest(projectName);
     const extRoot = path.join(__dirname, '..', 'node_modules', name);
 
