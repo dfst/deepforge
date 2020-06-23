@@ -65,11 +65,11 @@ extender.getInstalledConfigType = function(name) {
 
 
 extender.install = async function(projectName, isReinstall) {
-    // Install the project
-    console.log(`npm install ${projectName}`);
-    const {exitCode} = await exec('npm', ['install', projectName]);
-    console.log(exitCode);
-    console.log(await pacote.manifest(projectName));
+    const {exitCode, stderr} = await exec('npm', ['install', projectName]);
+    if (!exitCode) {
+        console.error(stderr);
+        throw new Error(`Unable to install ${projectName}`);
+    }
     const {name} = await pacote.manifest(projectName);
     const extRoot = path.join(__dirname, '..', 'node_modules', name);
 
