@@ -39,9 +39,12 @@ describe('Pipeline execution', function () {
 
     before(async function () {
         this.timeout(20000);
+        console.log('getting gmeAuth');
         gmeAuth = await testFixture.clearDBAndGetGMEAuth(gmeConfig, projectName);
         // This uses in memory storage. Use testFixture.getMongoStorage to persist test to database.
+        console.log('getting storage');
         storage = testFixture.getMemoryStorage(logger, gmeConfig, gmeAuth);
+        console.log('opening db');
         await storage.openDatabase();
         const importParam = {
             projectSeed: path.join(testFixture.DF_SEED_DIR, 'devProject', 'devProject.webgmex'),
@@ -51,12 +54,16 @@ describe('Pipeline execution', function () {
             gmeConfig: gmeConfig
         };
 
+        console.log('importing...');
         const result = await testFixture.importProject(storage, importParam);
         project = result.project;
         commitHash = result.commitHash;
 
+        console.log('creating branch');
         await project.createBranch('test', commitHash);
+        console.log('starting server');
         await server.start();
+        console.log('starting worker');
         worker = await startWorker();
     });
 
