@@ -17,6 +17,7 @@ Welcome to DeepForge's documentation!
    :maxdepth: 1
    :caption: Fundamentals
 
+   fundamentals/interface.rst
    fundamentals/custom_operations.rst
    fundamentals/integration.rst
 
@@ -28,6 +29,13 @@ Welcome to DeepForge's documentation!
    deployment/quick_start.rst
    deployment/overview.rst
    deployment/native.rst
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Example Projects
+   
+   examples/rs-tutorial.rst
+   examples/redshift.rst
 
 .. toctree::
    :maxdepth: 1
