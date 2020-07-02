@@ -52,6 +52,7 @@ define([
         Execute.call(this, this.client, this.logger);
         this.initializeKeyListener();
         this.logger.debug('ctor finished');
+        DeepForge.registerActionButton(this);
     };
 
     // inherit from PanelBaseWithHeader
@@ -151,14 +152,34 @@ define([
         for (i = this._actions.length; i--;) {
             delete this.buttons[this._actions[i].name];
         }
+        this._actions = [];
 
         // Get node name and look up actions
         for (i = actions.length; i--;) {
-            this.buttons[actions[i].name] = actions[i];
+            this.addAction(actions[i], false);
         }
 
-        this._actions = actions;
         this.update();
+    };
+
+    ForgeActionButton.prototype.addAction = function(action, update=true) {
+        this.buttons[action.name] = action;
+        this._actions.push(action);
+        if (update) {
+            this.update();
+        }
+    };
+
+    ForgeActionButton.prototype.removeAction = function(name, update=true) {
+        const action = this.buttons[name];
+        const index = this._actions.indexOf(action);
+        if (index > -1) {
+            this._actions.indexOf(action);
+        }
+        delete this.buttons[name];
+        if (update) {
+            this.update();
+        }
     };
 
     // Helper functions REMOVE! FIXME

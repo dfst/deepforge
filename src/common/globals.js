@@ -21,7 +21,7 @@ define([
     _,
     Q
 ) {
-    var DeepForge = {},
+    var DeepForge = {_actions: []},
         placesTerritoryId,
         client = WebGMEGlobal.Client,
         GetOperationCode = _.template(DefaultCodeTpl),
@@ -308,6 +308,27 @@ define([
         metadata.configStructure.unshift(storageOpts);
 
         await runArtifactPlugin(IMPORT_PLUGIN, metadata);
+    };
+
+    DeepForge.registerActionButton = function(button) {
+        DeepForge._actionButton = button;
+        while (this._actions.length) {
+            this.registerAction(...this._actions.shift());
+        }
+    };
+
+    DeepForge.registerAction = function(name, icon='add', priority=2, action) {
+        if (this._actionButton) {
+            this._actionButton.addAction({name, icon, priority, action});
+        } else {
+            this._actions.push(arguments);
+        }
+    };
+
+    DeepForge.unregisterAction = function(name) {
+        if (this._actionButton) {
+            this._actionButton.removeAction(name);
+        }
     };
 
     //////////////////// DeepForge prev locations ////////////////////
