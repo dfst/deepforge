@@ -1,6 +1,7 @@
 /*globals define*/
 // TODO: Show an error if not running on the server...
 define([
+    '../../../utils',
     'common/util/assert',
     '../ComputeClient',
     '../JobResults',
@@ -12,6 +13,7 @@ define([
     'os',
     'path',
 ], function(
+    utils,
     assert,
     ComputeClient,
     JobResults,
@@ -56,12 +58,15 @@ define([
             this.canceled = false;
         }
 
-        cancelJob (jobInfo) {
+        async cancelJob (jobInfo) {
             const {hash} = jobInfo;
 
             if (this.currentJob === hash) {
                 this.canceled = true;
                 this.subprocess.kill();
+                await utils.waitUntil(
+                    async () => this.CANCELED === await this.getStatus(jobInfo)
+                );
             } else if (this.jobQueue.includes(hash)) {
                 const i = this.jobQueue.indexOf(hash);
                 this.jobQueue.splice(i, 1);
