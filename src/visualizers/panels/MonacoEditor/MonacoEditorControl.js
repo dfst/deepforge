@@ -1,13 +1,15 @@
-/*globals define, _*/
+/*globals defines*/
 
 define([
     'js/Constants',
     'js/Utils/GMEConcepts',
-    'js/NodePropertyNames'
+    'js/NodePropertyNames',
+    'underscore'
 ], function (
     CONSTANTS,
     GMEConcepts,
-    nodePropertyNames
+    nodePropertyNames,
+    _
 ) {
 
     'use strict';
@@ -164,7 +166,7 @@ define([
     };
 
     MonacoEditorControl.prototype._onLoad = function (gmeId) {
-        if (this._currentNodeId == gmeId) {
+        if (this._currentNodeId === gmeId) {
             var description = this._getObjectDescriptor(gmeId);
             this._widget.addNode(description);
         }
@@ -193,7 +195,6 @@ define([
         if (this._territoryId) {
             this._client.removeUI(this._territoryId);
         }
-
     };
 
     MonacoEditorControl.prototype._attachClientEventListeners = function () {
@@ -221,7 +222,6 @@ define([
 
     MonacoEditorControl.prototype.onDeactivate = function () {
         this._detachClientEventListeners();
-        // this._widget.destroy();
     };
 
     return MonacoEditorControl;

@@ -17,6 +17,7 @@ config.requirejsPaths.ace = './src/visualizers/widgets/TextEditor/lib/ace';
 config.requirejsPaths.vs = './node_modules/monaco-editor/min/vs';
 config.requirejsPaths.MonacoThemes = './src/visualizers/widgets/MonacoEditor/styles/themes';
 config.requirejsPaths.MonacoVim = './node_modules/monaco-vim/dist/monaco-vim';
+config.requirejsPaths.Chance = './node_modules/chance/dist/chance.min';
 
 config.seedProjects.defaultProject = 'project';
 

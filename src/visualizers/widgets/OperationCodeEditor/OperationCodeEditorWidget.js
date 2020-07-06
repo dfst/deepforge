@@ -17,15 +17,13 @@ define([
     OperationCodeEditorWidget = function (logger, container) {
         MonacoEditorWidget.call(this, logger, container);
         this.lineOffset = 0;
-        // Add the shift-enter command
-        // this.editor.commands.addCommand({
-        //     name: 'executeOrStopJob',
-        //     bindKey: {
-        //         mac: 'Shift-Enter',
-        //         win: 'Shift-Enter'
-        //     },
-        //     exec: () => this.executeOrStopJob()
-        // });
+        this.editor.addCommand(
+            monaco.KeyMod.Shift | monaco.KeyCode.Enter,
+            this.executeOrStopJob
+        );
+        this.editor.updateOptions({
+            lineNumbers: this.updateOffset.bind(this)
+        });
     };
 
     _.extend(OperationCodeEditorWidget.prototype, MonacoEditorWidget.prototype);
@@ -43,48 +41,22 @@ define([
     };
 
     OperationCodeEditorWidget.prototype.addNode = function (desc) {
-        // console.log(desc);
         MonacoEditorWidget.prototype.addNode.call(this, desc);
-        this.updateOffset();
     };
 
     OperationCodeEditorWidget.prototype.setLineOffset = function (offset) {
         if (this.lineOffset !== offset) {
             this.lineOffset = offset;
-            this.updateOffset();
         }
     };
 
-    OperationCodeEditorWidget.prototype.updateOffset = function () {
+    OperationCodeEditorWidget.prototype.updateOffset = function (originalLineNumber) {
         var lines,
             actualOffset;
 
         lines = this.currentHeader.match(/\n/g);
-        actualOffset = this.lineOffset - (lines ? lines.length : 0);
-        // this.editor.setOption('firstLineNumber', actualOffset);
-    };
-
-    OperationCodeEditorWidget.prototype.getCompleter = function () {
-        var completer = MonacoEditorWidget.prototype.getCompleter.call(this),
-            getBasicCompletions = completer.getCompletionsFor,
-            self = this;
-
-        // TODO: update completions for python stuff
-        completer.getCompletionsFor = function(obj) {
-            if (obj === 'attributes') {
-                return self.getOperationAttributes().map(attr => {
-                    return {
-                        name: attr,
-                        value: attr,
-                        score: 4,
-                        meta: 'operation'
-                    };
-                });
-            } else {
-                return getBasicCompletions.apply(this, arguments);
-            }
-        };
-        return completer;
+        actualOffset = this.lineOffset - (lines ? lines.length + 1 : 0);
+        return (originalLineNumber + actualOffset);
     };
 
     return OperationCodeEditorWidget;

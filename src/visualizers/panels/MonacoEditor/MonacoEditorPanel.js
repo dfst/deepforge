@@ -65,7 +65,7 @@ define([
     MonacoEditorPanel.prototype.onReadOnlyChanged = function (isReadOnly) {
         //apply parent's onReadOnlyChanged
         PanelBaseWithHeader.prototype.onReadOnlyChanged.call(this, isReadOnly);
-
+        this.widget.setReadOnly(isReadOnly);
     };
 
     MonacoEditorPanel.prototype.onResize = function (width, height) {
