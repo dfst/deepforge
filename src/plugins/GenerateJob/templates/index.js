@@ -4,7 +4,7 @@ define([
     'text!./run-debug.js',
     'text!./main.ejs',
     'text!./deepforge.ejs',
-    'text!./backend_deepforge.py',
+    'text!./plotly_backend.py',
     'text!./deepforge__init__.py',
     'text!./serialize.ejs',
     'text!./deserialize.ejs',

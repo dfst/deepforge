@@ -57,7 +57,7 @@ define([
             });
 
             // Update the territory
-            self._selfPatterns[nodeId] = {children: 3};
+            self._selfPatterns[nodeId] = {children: 1};
             self._client.updateTerritory(self._territoryId, self._selfPatterns);
         }
     };
@@ -71,7 +71,9 @@ define([
             hasGraph = !!graphNode;
         }
         if(hasGraph){
-            desc = this.figureExtractor.extract(graphNode);
+            desc = {
+                plotlyData: graphNode.getAttribute('data')
+            };
         }
         return desc;
     };

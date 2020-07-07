@@ -103,7 +103,7 @@ define([
         this.result.setSuccess(true);
         this.result.addArtifact(hash);
         callback(null, this.result);
-    }; 
+    };
 
     GenerateJob.prototype.createRunScript = async function (files) {
         let runDebug = Templates.RUN_DEBUG;
@@ -291,7 +291,7 @@ define([
         files.addFile('config.json', JSON.stringify(configs));
         files.addFile('start.js', Templates.START);
         files.addFile('utils.build.js', Templates.UTILS);
-        files.addFile('backend_deepforge.py', Templates.MATPLOTLIB_BACKEND);
+        files.addFile('plotly_backend.py', Templates.MATPLOTLIB_BACKEND);
 
         inputs.forEach(pair => {
             const dataInfo = this.core.getAttribute(pair[2], 'data');

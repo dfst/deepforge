@@ -6,21 +6,7 @@ define([
 ) {
     class Figure extends Metadata {
         async update(state) {
-            this.core.setAttribute(this.node, 'title', state.title);
-            await this.clearSubGraphs();
-
-            state.axes.forEach(axes => {
-                const axesNode = this.core.createNode({
-                    parent: this.node,
-                    base: axes.is3D ? this.META.Plot3D : this.META.Plot2D
-                });
-                this.setAxesProperties(axesNode, axes);
-                this.addAxesLines(axesNode, this.node, axes);
-                if(!axes.is3D){
-                    this.addAxesImage(axesNode, this.node, axes);
-                }
-                this.addAxesScatterPoints(axesNode, this.node, axes);
-            });
+            this.core.setAttribute(this.node, 'data', state);
         }
 
         setAxesProperties(axesNode, axes){
