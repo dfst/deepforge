@@ -218,10 +218,6 @@ describe('ExecuteJob', function () {
                 base: plugin.META.Graph,
                 parent: plugin.activeNode
             });
-            plugin.core.createNode({
-                base: plugin.META.Line,
-                parent: graph
-            });
 
             await plugin.save();
             await plugin.prepare(true);
