@@ -8,6 +8,7 @@ define([
     'use strict';
 
     const WIDGET_CLASS = 'plotly-graph';
+    const PLOT_BG_COLOR = '#EEEEEE';
 
     function PlotlyGraphWidget(logger, container) {
         this.logger = logger.fork('widget');
@@ -58,13 +59,13 @@ define([
     PlotlyGraphWidget.prototype.addOrUpdateNode = function (desc) {
         if (desc) {
             this.plotlyJSONS = Array.isArray(desc) ?
-                desc.map(descr => descr.plotlyData) : [desc];
+                desc.map(descr => descr.plotlyData) : [desc.plotlyData];
 
             this.plotlyJSONS.forEach(json => {
                 json.layout.autosize = true;
                 json.layout.width = this.$el.width();
-                json.layout.plot_bgcolor = '#EEEEEE';
-                json.layout.paper_bgcolor = '#EEEEEE';
+                json.layout.plot_bgcolor = PLOT_BG_COLOR;
+                json.layout.paper_bgcolor = PLOT_BG_COLOR;
             });
             this.setTextVisibility(false);
             this.refreshChart();
