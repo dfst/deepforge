@@ -60,15 +60,6 @@ define([
             this._client.completeTransaction();
         };
 
-        this._widget.getDownloadURL = async (id, config) => {
-            const node = this._client.getNode(id);
-            const dataInfo = this.getDataInfo(node);
-            const {backend} = dataInfo;
-            const storage = await Storage.getClient(backend, this._logger, config);
-
-            return await storage.getDownloadURL(dataInfo);
-        };
-
         this._widget.onAttributeChange = (id, attr, newValue) => {
             const node = this._client.getNode(id);
             const name = node.getAttribute('name');

@@ -9,7 +9,6 @@ define([
     'deepforge/globals',
     'deepforge/viz/TextPrompter',
     'deepforge/viz/StorageHelpers',
-    'deepforge/storage/index',
 ], function(
     LibraryDialog,
     Materialize,
@@ -18,7 +17,6 @@ define([
     DeepForge,
     TextPrompter,
     StorageHelpers,
-    Storage,
 ) {
     var returnToLast = (place) => {
         var returnId = DeepForge.last[place];
@@ -155,36 +153,13 @@ define([
                 name: 'Download',
                 icon: 'play_for_work',
                 action: async function() {
+                    const node = this.client.getNode(this._currentNodeId);
+                    const artifactName = node.getAttribute('name');
                     try {
-                        const node = this.client.getNode(this._currentNodeId);
                         const dataInfo = JSON.parse(node.getAttribute('data'));
-
-                        const config = await StorageHelpers.getAuthenticationConfig(dataInfo);
-                        const storageAdapter = await Storage.getClient(dataInfo.backend, null, config);
-                        const storageName = Storage.getStorageMetadata(dataInfo.backend).name;
-                        const artifactName = node.getAttribute('name');
-
-                        Materialize.toast(`Fetching ${artifactName} from ${storageName}...`, 2000);
-                        let reminders = setInterval(
-                            () => Materialize.toast(`Still fetching ${artifactName} from ${storageName}...`, 5000),
-                            10000
-                        );
-                        const url = await storageAdapter.getDownloadURL(dataInfo);
-                        clearInterval(reminders);
-
-                        const save = document.createElement('a');
-
-                        save.href = url;
-                        save.target = '_self';
-                        const hasExtension = artifactName.includes('.');
-                        const filename = hasExtension ? artifactName :
-                            artifactName + '.dat';
-                        save.download = filename;
-                        save.click();
-                        (window.URL || window.webkitURL).revokeObjectURL(save.href);
-
+                        await StorageHelpers.download(dataInfo, artifactName);
                     } catch (err) {
-                        Materialize.toast(`Unable to download: ${err.message}`);
+                        Materialize.toast(`Unable to download ${artifactName}: ${err.message}`);
                     }
                 }
             }
