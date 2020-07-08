@@ -3,12 +3,10 @@
 
 define([
     'deepforge/storage/index',
-    'deepforge/viz/ConfigDialog',
     'blob/BlobClient',
     'js/Constants'
 ], function (
     Storage,
-    ConfigDialog,
     BlobClient,
     CONSTANTS
 ) {
@@ -70,7 +68,6 @@ define([
 
             return await storage.getDownloadURL(dataInfo);
         };
-        this._widget.getConfigDialog = () => new ConfigDialog(this._client);
 
         this._widget.onAttributeChange = (id, attr, newValue) => {
             const node = this._client.getNode(id);
