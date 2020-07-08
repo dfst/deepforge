@@ -111,7 +111,7 @@ describe('ExecutePipeline', function () {
                 commitHash: commitHash,
                 namespace: 'pipeline',
                 branchName: 'test',
-                activeNode: '/K/2'  // hello world job's execution
+                activeNode: '/K/n'  // hello world job's execution
             };
             plugin = await preparePlugin(config, context);
         });
@@ -152,7 +152,7 @@ describe('ExecutePipeline', function () {
             plugin.pulseClient.update = nopPromise;
             plugin.resumePipeline = () => done(shouldResume ? null : 'Should not resume pipeline!');
             plugin.executePipeline = () => done(shouldResume ? 'Should resume pipeline!' : null);
-                
+
             plugin.main();
         };
 

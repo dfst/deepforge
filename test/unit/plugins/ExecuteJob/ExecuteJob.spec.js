@@ -74,7 +74,7 @@ describe('ExecuteJob', function () {
                 commitHash: commitHash,
                 namespace: 'pipeline',
                 branchName: 'test',
-                activeNode: '/K/2/U'  // hello world job
+                activeNode: '/K/n/q'  // hello world job
             };
 
             plugin = await manager.initializePlugin(pluginName);
@@ -172,7 +172,7 @@ describe('ExecuteJob', function () {
             plugin.pulseClient.update = nopPromise;
             plugin.resumeJob = () => done(shouldResume ? null : 'Should not resume job!');
             plugin.executeJob = () => done(shouldResume ? 'Should resume job!' : null);
-                
+
             plugin.main();
         };
 

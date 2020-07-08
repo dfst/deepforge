@@ -219,7 +219,6 @@ define([
             execAbbr = this.abbrFor[desc.execId] || this._getObjectDescriptor(desc.execId).abbr;
             desc.name = `${desc.name} (${execAbbr})`;
             desc.abbr = execAbbr;
-            desc.apple = '1';
         }
         return desc;
     };
