@@ -3,12 +3,10 @@
 
 define([
     'deepforge/storage/index',
-    'deepforge/viz/ConfigDialog',
     'blob/BlobClient',
     'js/Constants'
 ], function (
     Storage,
-    ConfigDialog,
     BlobClient,
     CONSTANTS
 ) {
@@ -61,16 +59,6 @@ define([
             this._client.deleteNode(id);
             this._client.completeTransaction();
         };
-
-        this._widget.getDownloadURL = async (id, config) => {
-            const node = this._client.getNode(id);
-            const dataInfo = this.getDataInfo(node);
-            const {backend} = dataInfo;
-            const storage = await Storage.getClient(backend, this._logger, config);
-
-            return await storage.getDownloadURL(dataInfo);
-        };
-        this._widget.getConfigDialog = () => new ConfigDialog(this._client);
 
         this._widget.onAttributeChange = (id, attr, newValue) => {
             const node = this._client.getNode(id);
