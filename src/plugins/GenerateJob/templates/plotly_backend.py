@@ -9,11 +9,13 @@ import base64
 import math
 
 import numpy as np
+import numpy.ma as ma
 
 import matplotlib
 from matplotlib._pylab_helpers import Gcf
 from matplotlib.backend_bases import (
-     FigureCanvasBase, FigureManagerBase, GraphicsContextBase, RendererBase)
+     FigureCanvasBase, FigureManagerBase, GraphicsContextBase, RendererBase
+)
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 from matplotlib import transforms, collections
