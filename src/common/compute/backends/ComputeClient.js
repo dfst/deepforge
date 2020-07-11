@@ -8,23 +8,23 @@ define([], function() {
             this._events = {};
         }
 
-        cancelJob (/*job*/) {
+        async cancelJob (/*job*/) {
             unimplemented(this.logger, 'cancelJob');
         }
 
-        createJob (/*hash*/) {
+        async createJob (/*hash*/) {
             unimplemented(this.logger, 'createJob');
         }
 
-        getStatus (/*jobInfo*/) {
+        async getStatus (/*jobInfo*/) {
             unimplemented(this.logger, 'getStatus');
         }
 
-        getResultsInfo (/*jobInfo*/) {
+        async getResultsInfo (/*jobInfo*/) {
             unimplemented(this.logger, 'getResultsInfo');
         }
 
-        getConsoleOutput (/*hash*/) {
+        async getConsoleOutput (/*hash*/) {
             unimplemented(this.logger, 'getConsoleOutput');
         }
 
