@@ -8,8 +8,6 @@ services:
   server:
     environment:
       - "MONGO_URI=mongodb://mongo:27017/deepforge"
-      - "DEEPFORGE_HOST=https://dev.deepforge.org"
-      - "DEEPFORGE_INTERACTIVE_COMPUTE_HOST=https://dev-compute.deepforge.org"
       - "DEEPFORGE_PUBLIC_KEY=/token_keys/public_key"
       - "DEEPFORGE_PRIVATE_KEY=/token_keys/private_key"
     image: deepforge/kitchen-sink:latest
