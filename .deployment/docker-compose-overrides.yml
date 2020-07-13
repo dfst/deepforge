@@ -20,7 +20,7 @@ services:
       - "DEEPFORGE_PRIVATE_KEY=/token_keys/private_key"
     image: deepforge/kitchen-sink:stable
     ports:
-      - "8889:8888"
+      - "9000:8888"
     volumes:
       - "$HOME/.deepforge/blob:/data/blob"
       - "${TOKEN_KEYS_DIR}:/token_keys"
