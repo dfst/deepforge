@@ -74,7 +74,7 @@ describe('ExecuteJob', function () {
                 commitHash: commitHash,
                 namespace: 'pipeline',
                 branchName: 'test',
-                activeNode: '/K/n/q'  // hello world job
+                activeNode: '/K/2/U'  // hello world job
             };
 
             plugin = await manager.initializePlugin(pluginName);
