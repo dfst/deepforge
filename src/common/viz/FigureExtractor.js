@@ -1,4 +1,4 @@
-/*globals define, _*/
+/* globals define */
 define(['./Utils'], function (Utils) {
     const BASE_METADATA_TYPE = 'Metadata';
     const EXTRACTORS = {
