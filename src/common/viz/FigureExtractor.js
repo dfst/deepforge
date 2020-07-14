@@ -1,9 +1,5 @@
 /*globals define, _*/
 define(['./Utils'], function (Utils) {
-    const FigureExtractor = function (client) {
-        this._client = client;
-        this._metaNodesMap = this._initializeMetaNodesMap();
-    };
     const BASE_METADATA_TYPE = 'Metadata';
     const EXTRACTORS = {
         GRAPH: 'Graph',
@@ -19,11 +15,18 @@ define(['./Utils'], function (Utils) {
         return Object.values(EXTRACTORS).includes(metaType);
     };
 
+    const FigureExtractor = function (client) {
+        this._client = client;
+        this._metaNodesMap = this._initializeMetaNodesMap();
+    };
+
     FigureExtractor.prototype._initializeMetaNodesMap = function () {
         const metaNodes = this._client.getAllMetaNodes();
         const idsAndTypes = metaNodes.map(node => [node.getId(), node.getAttribute('name')]);
         return _.object(idsAndTypes);
     };
+
+    FigureExtractor.prototype.constructor = FigureExtractor;
 
     FigureExtractor.prototype.extract = function(node) {
         const extractorFn = this.getMetaType(node);
@@ -35,12 +38,12 @@ define(['./Utils'], function (Utils) {
     };
 
     FigureExtractor.prototype.extractChildrenOfType = function(node, metaType) {
-        const children = node.getChildrenIds().map(id => this._client.getNode(id));
+        const children = this.getMetadataChildrenIds(node).map(id => this._client.getNode(id));
         return children.filter(node => this.getMetaType(node) === metaType)
             .map(child => this.extract(child));
     };
 
-    FigureExtractor.prototype.constructor = FigureExtractor;
+
 
     FigureExtractor.prototype[EXTRACTORS.GRAPH] = function(node) {
         const id = node.getId(),
@@ -55,12 +58,7 @@ define(['./Utils'], function (Utils) {
             title: node.getAttribute('title'),
         };
 
-        const metadataBaseNodePath = Object.keys(this._metaNodesMap)
-            .filter(id => this._metaNodesMap[id] === BASE_METADATA_TYPE).pop();
-
-        let childrenIds = node.getChildrenIds().filter(id => {
-            return this._client.isTypeOf(id, metadataBaseNodePath);
-        });
+        let childrenIds = this.getMetadataChildrenIds(node);
 
         let childNode, childNodeFn;
         desc.subGraphs = childrenIds.map((childId) => {
@@ -192,6 +190,13 @@ define(['./Utils'], function (Utils) {
         if (executionNode){
             return executionNode.getId();
         }
+    };
+
+    FigureExtractor.prototype.getMetadataChildrenIds = function (node) {
+        const metadataBaseNodePath = Object.keys(this._metaNodesMap)
+            .filter(id => this._metaNodesMap[id] === BASE_METADATA_TYPE).pop();
+
+        return node.getChildrenIds().filter(id => this._client.isTypeOf(id, metadataBaseNodePath));
     };
 
     FigureExtractor.prototype.getGraphNode = function(node) {
