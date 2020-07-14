@@ -11,30 +11,22 @@ define(['./Utils'], function (Utils) {
         SCATTER_POINTS: 'ScatterPoints'
     };
 
-    const canExtractMetadata = function(metaType) {
-        return Object.values(EXTRACTORS).includes(metaType);
+    const ensureCanExtract = function(metaType) {
+        if(!Object.values(EXTRACTORS).includes(metaType)) {
+            throw new Error(`Node of type ${metaType} is not supported yet.`);
+        }
     };
 
     const FigureExtractor = function (client) {
         this._client = client;
-        this._metaNodesMap = this._initializeMetaNodesMap();
-    };
-
-    FigureExtractor.prototype._initializeMetaNodesMap = function () {
-        const metaNodes = this._client.getAllMetaNodes();
-        const idsAndTypes = metaNodes.map(node => [node.getId(), node.getAttribute('name')]);
-        return _.object(idsAndTypes);
     };
 
     FigureExtractor.prototype.constructor = FigureExtractor;
 
     FigureExtractor.prototype.extract = function(node) {
         const extractorFn = this.getMetaType(node);
-        if (!canExtractMetadata(extractorFn)){
-            throw new Error(`Node of type ${extractorFn} is not supported yet.`);
-        } else {
-            return this[extractorFn](node);
-        }
+        ensureCanExtract(extractorFn);
+        return this[extractorFn](node);
     };
 
     FigureExtractor.prototype.extractChildrenOfType = function(node, metaType) {
@@ -42,8 +34,6 @@ define(['./Utils'], function (Utils) {
         return children.filter(node => this.getMetaType(node) === metaType)
             .map(child => this.extract(child));
     };
-
-
 
     FigureExtractor.prototype[EXTRACTORS.GRAPH] = function(node) {
         const id = node.getId(),
@@ -64,15 +54,12 @@ define(['./Utils'], function (Utils) {
         desc.subGraphs = childrenIds.map((childId) => {
             childNode = this._client.getNode(childId);
             childNodeFn = this.getMetaType(childNode);
-            if(!canExtractMetadata(childNodeFn)){
-                throw new Error(`Node of type ${childNodeFn} is not supported yet.`);
-            }
+            ensureCanExtract(childNodeFn);
             return this[childNodeFn](childNode);
         });
         desc.subGraphs.sort(this.compareSubgraphIDs);
         return desc;
     };
-
 
     FigureExtractor.prototype[EXTRACTORS.SUBGRAPH] = function(node){
         const id = node.getId(),
@@ -193,10 +180,15 @@ define(['./Utils'], function (Utils) {
     };
 
     FigureExtractor.prototype.getMetadataChildrenIds = function (node) {
-        const metadataBaseNodePath = Object.keys(this._metaNodesMap)
-            .filter(id => this._metaNodesMap[id] === BASE_METADATA_TYPE).pop();
+        const allMetaNodes = this._client.getAllMetaNodes();
+        const metadataBaseNode = allMetaNodes
+            .find(node => node.getAttribute('name') === BASE_METADATA_TYPE);
 
-        return node.getChildrenIds().filter(id => this._client.isTypeOf(id, metadataBaseNodePath));
+        if(metadataBaseNode) {
+            return node.getChildrenIds().filter(id => {
+                return this._client.isTypeOf(id, metadataBaseNode.getId());
+            });
+        }
     };
 
     FigureExtractor.prototype.getGraphNode = function(node) {
@@ -216,7 +208,7 @@ define(['./Utils'], function (Utils) {
 
     FigureExtractor.prototype.getMetaType = function (node) {
         const metaTypeId = node.getMetaTypeId();
-        return this._metaNodesMap[metaTypeId];
+        return this._client.getNode(metaTypeId).getAttribute('name');
     };
 
     const extractPointsArray = function (pair) {
