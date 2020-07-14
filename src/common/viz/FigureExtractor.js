@@ -4,6 +4,7 @@ define(['./Utils'], function (Utils) {
         this._client = client;
         this._metaNodesMap = this._initializeMetaNodesMap();
     };
+    const BASE_METADATA_TYPE = 'Metadata';
     const EXTRACTORS = {
         GRAPH: 'Graph',
         SUBGRAPH: 'SubGraph',
@@ -14,6 +15,10 @@ define(['./Utils'], function (Utils) {
         SCATTER_POINTS: 'ScatterPoints'
     };
 
+    const canExtractMetadata = function(metaType) {
+        return Object.values(EXTRACTORS).includes(metaType);
+    };
+
     FigureExtractor.prototype._initializeMetaNodesMap = function () {
         const metaNodes = this._client.getAllMetaNodes();
         const idsAndTypes = metaNodes.map(node => [node.getId(), node.getAttribute('name')]);
@@ -22,7 +27,7 @@ define(['./Utils'], function (Utils) {
 
     FigureExtractor.prototype.extract = function(node) {
         const extractorFn = this.getMetaType(node);
-        if (!Object.values(EXTRACTORS).includes(extractorFn)){
+        if (!canExtractMetadata(extractorFn)){
             throw new Error(`Node of type ${extractorFn} is not supported yet.`);
         } else {
             return this[extractorFn](node);
@@ -50,11 +55,20 @@ define(['./Utils'], function (Utils) {
             title: node.getAttribute('title'),
         };
 
-        let childrenIds = node.getChildrenIds();
+        const metadataBaseNodePath = Object.keys(this._metaNodesMap)
+            .filter(id => this._metaNodesMap[id] === BASE_METADATA_TYPE).pop();
+
+        let childrenIds = node.getChildrenIds().filter(id => {
+            return this._client.isTypeOf(id, metadataBaseNodePath);
+        });
+
         let childNode, childNodeFn;
         desc.subGraphs = childrenIds.map((childId) => {
             childNode = this._client.getNode(childId);
             childNodeFn = this.getMetaType(childNode);
+            if(!canExtractMetadata(childNodeFn)){
+                throw new Error(`Node of type ${childNodeFn} is not supported yet.`);
+            }
             return this[childNodeFn](childNode);
         });
         desc.subGraphs.sort(this.compareSubgraphIDs);
