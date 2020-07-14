@@ -188,6 +188,8 @@ define(['./Utils'], function (Utils) {
             return node.getChildrenIds().filter(id => {
                 return this._client.isTypeOf(id, metadataBaseNode.getId());
             });
+        } else {
+            return [];
         }
     };
 
