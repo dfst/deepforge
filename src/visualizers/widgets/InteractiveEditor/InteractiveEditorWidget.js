@@ -93,6 +93,13 @@ define([
         async createInteractiveSession(computeId, config) {
             this.session = await Session.new(computeId, config);
         }
+
+        destroy() {
+            const features = this.getCapabilities();
+            if (features.save) {
+                DeepForge.unregisterAction('Save');
+            }
+        }
     }
 
     return InteractiveEditorWidget;

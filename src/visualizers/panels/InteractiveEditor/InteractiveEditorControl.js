@@ -179,6 +179,7 @@ define([
         /* * * * * * * * Visualizer life cycle callbacks * * * * * * * */
         destroy () {
             this._detachClientEventListeners();
+            this._widget.destroy();
         }
 
         _attachClientEventListeners () {
