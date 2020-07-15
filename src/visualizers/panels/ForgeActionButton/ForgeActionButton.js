@@ -41,10 +41,11 @@ define([
     'use strict';
 
     var NEW_OPERATION_ID = '__NEW_OPERATION__';
-    var ForgeActionButton= function (layoutManager, params) {
+    var ForgeActionButton = function (layoutManager, params) {
         PluginButton.call(this, layoutManager, params);
         this._client = this.client;
         this._actions = [];
+        this._registry = [];
         this._blobClient = new BlobClient({
             logger: this.logger.fork('BlobClient')
         });
@@ -124,7 +125,7 @@ define([
             }
         }
 
-        return actions;
+        return actions.concat(this._registry);
     };
 
     ForgeActionButton.prototype.getDefinedActionsFor = function(basename, node) {
@@ -170,13 +171,17 @@ define([
         }
     };
 
-    ForgeActionButton.prototype.removeAction = function(name, update=true) {
-        const action = this.buttons[name];
-        const index = this._actions.indexOf(action);
+    ForgeActionButton.prototype.registerAction = function(action, update=true) {
+        this._registry.push(action);
+        this.addAction(action, update);
+    };
+
+    ForgeActionButton.prototype.unregisterAction = function(name, update=true) {
+        const index = this._registry.findIndex(action => action.name === name);
         if (index > -1) {
-            this._actions.indexOf(action);
+            this._actions.splice(index, 1);
         }
-        delete this.buttons[name];
+
         if (update) {
             this.update();
         }

@@ -319,7 +319,7 @@ define([
 
     DeepForge.registerAction = function(name, icon='add', priority=2, action) {
         if (this._actionButton) {
-            this._actionButton.addAction({name, icon, priority, action});
+            this._actionButton.registerAction({name, icon, priority, action});
         } else {
             this._actions.push(arguments);
         }
@@ -327,7 +327,7 @@ define([
 
     DeepForge.unregisterAction = function(name) {
         if (this._actionButton) {
-            this._actionButton.removeAction(name);
+            this._actionButton.unregisterAction(name);
         }
     };
 
