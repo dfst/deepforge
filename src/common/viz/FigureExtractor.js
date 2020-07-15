@@ -167,23 +167,23 @@ define(['./Utils'], function (Utils) {
             return desc;
         }
 
-        getExecutionId (node) {
+        getExecutionId (/* node */) {
             throw new Error('getExecutionId is not implemented');
         }
 
-        getGraphNode (node) {
+        getGraphNode (/* node */) {
             throw new Error('getGraphNode is not implemented');
         }
 
-        _getContainmentParentNodeAt (node, metaType) {
+        _getContainmentParentNodeAt (/* node, metaType */) {
             throw new Error('_getContainmentParentNodeAt is not implemented');
         }
 
-        getMetaType (node) {
+        getMetaType (/* node */) {
             throw new Error('getMetaType is not implmented');
         }
 
-        GMENodeToMetadataJSON (node, shallow=false) {
+        GMENodeToMetadataJSON (/* node, shallow=false */) {
             throw new Error('GMENodeTOMetadataJSON is not implemented');
         }
     }
