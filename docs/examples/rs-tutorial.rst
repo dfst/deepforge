@@ -1,8 +1,9 @@
 Tutorial Project - Redshift
 ===========================
+The project described on this page can be found in the `deepforge examples repository <https://github.com/deepforge-dev/examples>`_ on GitHub under the name **redshift-tutorial.webgmex**
 
-Pipeline list
--------------
+Pipeline Overview
+-----------------
 1. `Basic Input/Output`_
 2. `Display Random Image`_
 3. `Display Random CIFAR-10`_
@@ -20,6 +21,8 @@ Pipelines
 Basic Input/Output
 ~~~~~~~~~~~~~~~~~~
 This pipeline provides one of the simplest examples of a pipeline possible in DeepForge. Its sole purpose is to create an array of numbers, pass the array from the first node to the second node, and print the array to the output console.
+
+The **Output** operation shown is a special built-in operation that will save the data that is provided to it to the selected storage backend. This data will then be available within the same project as an artifact and can be accessed by other pipelines using the special built-in **Input** operation.
 
 .. figure:: basic-io.png
     :align: center
@@ -134,13 +137,13 @@ Train-Test
 .. figure:: train-basic.png
     :align: center
 
-This pipeline provides an example of how one might train and evaluate a redshift estimation model.For the training process, there are two primary additions that should be noted.
+This pipeline provides an example of how one might train and evaluate a redshift estimation model. In particular, the procedure implemented here is a simplified version of work by `Pasquet et. al. (2018) <https://www.aanda.org/articles/aa/abs/2019/01/aa33617-18/aa33617-18.html>`_. For readers unfamiliar with cosmological redshift, `this article <https://earthsky.org/astronomy-essentials/what-is-a-redshift>`_ provides a simple and brief introduction to the topic. For the training process, there are two primary additions that should be noted.
 
-First, the **Train** class has been given a function named **to_categorical**.  Because we are using categorization models for redshift estimation in this tutorial, the keras model expects the output labels to be either one-hot vectors or a single integer where the position/value indicates the range in which the true redshift value falls. This function converts the continuous redshift values into the necessary discrete, categorical format.
+First, the **Train** class has been given a function named **to_categorical**. In line with the Paquet et. al. method linked above, this tutorial uses a classification model rather than a regression model for estimation. Because we are using classification models, the keras model expects the output labels to be either one-hot vectors or a single integer where the position/value indicates the range in which the true redshift value falls. This function converts the continuous redshift values into the necessary discrete, categorical format.
 
-Second, a class has been provided to give examples of how researchers may dene their own Sequence for training. Sequences are helpful in that they allow alterations to be made to the data during3 training. In the example given here, the **SdssSequence** class provides the ability to rotate or flip images before every epoch, which will hopefully improve the robustness of the final model.
+Second, a class has been provided to give examples of how researchers may define their own `keras Sequence <https://keras.io/api/utils/python_utils/#sequence-class>`_ for training. Sequences are helpful in that they allow alterations to be made to the data during training. In the example given here, the **SdssSequence** class provides the ability to rotate or flip images before every epoch, which will hopefully improve the robustness of the final model.
 
-The evaluation node has also been updated to provide metrics more in line with redshift estimation. Specifically, it calculates the fraction of outlier predictions, the model’s prediction bias, thedeviation in the MAD scores of the model output, and the average Continuous Ranked Probability Score (CRPS) of the output.
+The evaluation node has also been updated to provide metrics more in line with redshift estimation. Specifically, it calculates the fraction of outlier predictions, the model’s prediction bias, the deviation in the MAD scores of the model output, and the average Continuous Ranked Probability Score (CRPS) of the output.
 
 
 .. Visualize Predictions
