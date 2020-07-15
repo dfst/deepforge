@@ -32,16 +32,11 @@ define([
             widget.getConfigDialog = () => new ConfigDialog(this.client);
         }
 
-        /* * * * * * * * Visualizer content update callbacks * * * * * * * */
-        // One major concept here is with managing the territory. The territory
-        // defines the parts of the project that the visualizer is interested in
-        // (this allows the browser to then only load those relevant parts).
         selectedObjectChanged (nodeId) {
             const desc = this.getObjectDescriptor(nodeId);
 
             this._logger.debug('activeObject nodeId \'' + nodeId + '\'');
 
-            // Remove current territory patterns
             if (this._currentNodeId) {
                 this.client.removeUI(this._territoryId);
             }
@@ -49,7 +44,6 @@ define([
             this._currentNodeId = nodeId;
 
             if (typeof this._currentNodeId === 'string') {
-                // Put new node's info into territory rules
                 const territory = this.getTerritory(nodeId);
                 this._widget.setTitle(desc.name.toUpperCase());
 
@@ -78,17 +72,16 @@ define([
                 });
         }
 
-
-        createNode(desc, parent) {
-            if (!parent) {
-                parent = this.client.getNode(this._currentNodeId);
+        createNode(desc, parentId) {
+            if (!parentId) {
+                parentId = this._currentNodeId;
             }
             desc.pointers = desc.pointers || {};
             desc.attributes = desc.attributes || {};
 
             const base = this.getMetaNode(desc.type) || this.client.getNode(desc.pointers.base);
             const nodeId = this.client.createNode({
-                parentId: parent.getId(),
+                parentId: parentId,
                 baseId: base.getId()
             });
 
@@ -109,15 +102,14 @@ define([
 
         save() {
             this.client.startTransaction();
-            const nodeId = this.createNode(this._widget.getSnapshot());
-            const implicitOp = this.createNode(this._widget.getEditorState(), data);
-            this.client.setPointer(data.getId(), 'provenance', implicitOp.getId());
-            const operation = this.createNode(this._widget.getOperation(), implicitOp);
-            this.client.setPointer(implicitOp.getId(), 'operation', operation.getId());
+            const dataId = this.createNode(this._widget.getSnapshot());
+            const implicitOpId = this.createNode(this._widget.getEditorState(), dataId);
+            this.client.setPointer(dataId, 'provenance', implicitOpId);
+            const operationId = this.createNode(this._widget.getOperation(), implicitOpId);
+            this.client.setPointer(implicitOpId, 'operation', operationId);
             this.client.completeTransaction();
         }
 
-        // This next function retrieves the relevant node information for the widget
         getObjectDescriptor (nodeId) {
             const node = this.client.getNode(nodeId);
 

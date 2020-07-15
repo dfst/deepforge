@@ -57,7 +57,7 @@ Then, connect to the running container:
 
 .. code-block:: bash
 
-    docker -it exec <container ID> /bin/bash
+    docker exec -it <container ID> /bin/bash
 
 and create the admin account
 
