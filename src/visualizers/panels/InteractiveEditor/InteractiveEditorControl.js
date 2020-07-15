@@ -44,7 +44,6 @@ define([
             this._currentNodeId = nodeId;
 
             if (typeof this._currentNodeId === 'string') {
-                // Put new node's info into territory rules
                 const territory = this.getTerritory(nodeId);
                 this._widget.setTitle(desc.name.toUpperCase());
 
