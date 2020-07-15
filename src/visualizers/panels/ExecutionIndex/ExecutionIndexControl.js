@@ -14,6 +14,7 @@ define([
 ) {
 
     'use strict';
+    const ClientFigureExtractor = FigureExtractor.ClientFigureExtractor;
 
     var ExecutionIndexControl;
 
@@ -32,7 +33,7 @@ define([
         this._graphsForExecution = {};
         this._graphToExec = {};
         this._pipelineNames = {};
-        this.figureExtractor = new FigureExtractor(this._client);
+        this.figureExtractor = new ClientFigureExtractor(this._client);
         this.abbrToId = {};
         this.abbrFor = {};
 
@@ -284,7 +285,8 @@ define([
 
     ExecutionIndexControl.prototype.getGraphDesc = function (graphNode) {
         let id = graphNode.getId();
-        let desc = this.figureExtractor.extract(graphNode);
+        const graphInfo = this.figureExtractor.GMENodeToMetadataJSON(graphNode);
+        let desc = this.figureExtractor.extract(graphInfo);
 
         if (!this._graphToExec[id]) {
             this._graphsForExecution[desc.execId] = id;

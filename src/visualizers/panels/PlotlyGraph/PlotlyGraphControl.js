@@ -9,6 +9,7 @@ define([
 ) {
 
     'use strict';
+    const ClientFigureExtractor = FigureExtractor.ClientFigureExtractor;
 
     function PlotlyGraphControl(options) {
 
@@ -24,7 +25,7 @@ define([
         this._currentNodeId = null;
         this._currentNodeParentId = undefined;
 
-        this.figureExtractor = new FigureExtractor(this._client);
+        this.figureExtractor = new ClientFigureExtractor(this._client);
 
         this._logger.debug('ctor finished');
     }
@@ -71,7 +72,9 @@ define([
             hasGraph = !!graphNode;
         }
         if(hasGraph){
-            desc = this.figureExtractor.extract(graphNode);
+            const graphInfo = this.figureExtractor.GMENodeToMetadataJSON(graphNode);
+            console.log(graphInfo);
+            desc = this.figureExtractor.extract(graphInfo);
         }
         return desc;
     };
