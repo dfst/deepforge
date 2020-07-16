@@ -39,10 +39,9 @@ describe('FigureExtractor', function() {
     it('should convert graphNode to JSON', async () => {
         const graphNode = await core.loadByPath(rootNode, GRAPH_NODE_PATH);
         const figureExtractor =  new FigureExtractor(core, graphNode);
-        assert(figureExtractor.getMetaType(graphNode) === 'Graph');
-        const exportedJSON = (await figureExtractor.GMENodeToMetadataJSON(graphNode));
+        const exportedJSON = (await figureExtractor.toJSON(graphNode));
         const referenceJSON = JSON.parse(fs.readFileSync(REFERENCE_JSON));
-        assert.deepEqual(exportedJSON, referenceJSON);
+        assert.deepStrictEqual(exportedJSON, referenceJSON);
     });
 
     after(async function () {

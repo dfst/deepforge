@@ -15,6 +15,8 @@ define([
 
     'use strict';
     const ClientFigureExtractor = FigureExtractor.ClientFigureExtractor;
+    const GRAPH = ['Graph'];
+    const SUBGRAPHS = ['Plot2D', 'Plot3D'];
 
     var ExecutionIndexControl;
 
@@ -247,8 +249,6 @@ define([
             type;
 
         if (node) {
-            const graphNode = this.figureExtractor.getGraphNode(node),
-                isGraphOrChildren = !!graphNode;
             base = this._client.getNode(node.getBaseId());
             type = base.getAttribute('name');
             desc = {
@@ -256,6 +256,8 @@ define([
                 type: type,
                 name: node.getAttribute('name')
             };
+
+            const isGraphOrChildren = GRAPH.concat(SUBGRAPHS).includes(type);
 
             if (type === 'Execution') {
                 desc.status = node.getAttribute('status');
@@ -277,6 +279,10 @@ define([
                 desc.execs = node.getMemberIds('executions');
                 this._pipelineNames[desc.id] = desc.name;
             } else if (isGraphOrChildren) {
+                let graphNode = node;
+                if (SUBGRAPHS.includes(type)){
+                    graphNode = this._client.getNode(node.getParentId());
+                }
                 desc = this.getGraphDesc(graphNode);
             }
         }
@@ -285,8 +291,7 @@ define([
 
     ExecutionIndexControl.prototype.getGraphDesc = function (graphNode) {
         let id = graphNode.getId();
-        const graphInfo = this.figureExtractor.GMENodeToMetadataJSON(graphNode);
-        let desc = this.figureExtractor.extract(graphInfo);
+        let desc = this.figureExtractor.extract(graphNode);
 
         if (!this._graphToExec[id]) {
             this._graphsForExecution[desc.execId] = id;

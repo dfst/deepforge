@@ -27,21 +27,27 @@ define(['./Utils'], function (Utils) {
     };
 
     class AbstractFigureExtractor {
-        extract (nodeInfo) {
-            const extractorFn = nodeInfo.meta_type;
+
+        extract(node) {
+            const nodeInfo = this.toJSON(node);
+            return this._extract(nodeInfo);
+        }
+
+        _extract (nodeInfo) {
+            const extractorFn = this.getMetaType(nodeInfo);
             ensureCanExtract(extractorFn);
             return this[extractorFn](nodeInfo);
         }
 
         extractChildrenOfType (nodeInfo, metaType) {
             const children = nodeInfo.children;
-            return children.filter(childInfo => childInfo.meta_type === metaType)
-                .map(childInfo => this.extract(childInfo));
+            return children.filter(childInfo => this.getMetaType(childInfo) === metaType)
+                .map(childInfo => this._extract(childInfo));
         }
 
         [EXTRACTORS.GRAPH] (nodeInfo) {
             const id = nodeInfo.id,
-                execId = nodeInfo.execution_id;
+                execId = this.getExecutionId(nodeInfo);
 
             let desc = {
                 id: id,
@@ -53,23 +59,24 @@ define(['./Utils'], function (Utils) {
             };
 
             desc.subGraphs = nodeInfo.children.map((childInfo) => {
-                const childNodeFn = childInfo.meta_type;
+                const childNodeFn = this.getMetaType(childInfo);
                 ensureCanExtract(childNodeFn);
                 return this[childNodeFn](childInfo);
             });
+
             return desc;
         }
 
         [EXTRACTORS.SUBGRAPH] (nodeInfo) {
             const id = nodeInfo.id,
-                graphId = nodeInfo.parent_id,
-                execId = this.execution_id;
+                graphId = nodeInfo.parent.id,
+                execId = this.getExecutionId(nodeInfo);
             let desc;
 
             desc = {
                 id: id,
                 execId: execId,
-                type: nodeInfo.meta_type === EXTRACTORS.PLOT3D ? 'plot3D' : 'plot2D',
+                type: this.getMetaType(nodeInfo) === EXTRACTORS.PLOT3D ? 'plot3D' : 'plot2D',
                 graphId: graphId,
                 subgraphId: nodeInfo.attributes.id,
                 subgraphName: nodeInfo.attributes.name,
@@ -101,7 +108,7 @@ define(['./Utils'], function (Utils) {
 
         [EXTRACTORS.LINE] (nodeInfo) {
             const id = nodeInfo.id,
-                execId = nodeInfo.execution_id;
+                execId = this.getExecutionId(nodeInfo);
             let points, desc;
 
             points = nodeInfo.attributes.points.split(';')
@@ -111,7 +118,7 @@ define(['./Utils'], function (Utils) {
             desc = {
                 id: id,
                 execId: execId,
-                subgraphId: nodeInfo.parent_id,
+                subgraphId: nodeInfo.parent.id,
                 lineName: nodeInfo.attributes.name,
                 label:  nodeInfo.attributes.label,
                 lineWidth: nodeInfo.attributes.lineWidth,
@@ -126,7 +133,7 @@ define(['./Utils'], function (Utils) {
 
         [EXTRACTORS.IMAGE] (nodeInfo) {
             const id = nodeInfo.id,
-                execId = nodeInfo.execution_id,
+                execId = this.getExecutionId(nodeInfo),
                 imageHeight = nodeInfo.attributes.height,
                 imageWidth = nodeInfo.attributes.width,
                 numChannels = nodeInfo.attributes.numChannels;
@@ -134,7 +141,7 @@ define(['./Utils'], function (Utils) {
             return {
                 id: id,
                 execId: execId,
-                subgraphId: nodeInfo.parent_id,
+                subgraphId: nodeInfo.parent.id,
                 type: 'image',
                 width: imageWidth,
                 height: imageHeight,
@@ -146,7 +153,7 @@ define(['./Utils'], function (Utils) {
 
         [EXTRACTORS.SCATTER_POINTS] (nodeInfo) {
             const id = nodeInfo.id,
-                execId = nodeInfo.execution_id;
+                execId = this.getExecutionId(nodeInfo);
             let points, desc;
 
             points = nodeInfo.attributes.points.split(';')
@@ -167,23 +174,28 @@ define(['./Utils'], function (Utils) {
             return desc;
         }
 
-        getExecutionId (/* node */) {
-            throw new Error('getExecutionId is not implemented');
+        getExecutionId (nodeInfo) {
+            return this._getContainmentParentNodeInfoAt(nodeInfo, 'Execution').id;
         }
 
-        getGraphNode (/* node */) {
-            throw new Error('getGraphNode is not implemented');
+        _getContainmentParentNodeInfoAt (nodeInfo, metaType) {
+            let currentNodeInfo = nodeInfo,
+                parentId = currentNodeInfo.parent.id;
+            const isMetaType = nodeInfo => this.getMetaType(nodeInfo) === metaType;
+            while (parentId && !isMetaType(currentNodeInfo)) {
+                currentNodeInfo = currentNodeInfo.parent;
+                parentId = currentNodeInfo.parent.id;
+            }
+            return isMetaType(currentNodeInfo) ? currentNodeInfo : null;
         }
 
-        _getContainmentParentNodeAt (/* node, metaType */) {
-            throw new Error('_getContainmentParentNodeAt is not implemented');
+        getMetaType (nodeInfo) {
+            if(nodeInfo.base) {
+                return nodeInfo.base.attributes.name;
+            }
         }
 
-        getMetaType (/* node */) {
-            throw new Error('getMetaType is not implmented');
-        }
-
-        GMENodeToMetadataJSON (/* node, shallow=false */) {
+        toJSON (/* node, shallow=false */) {
             throw new Error('GMENodeTOMetadataJSON is not implemented');
         }
     }
@@ -192,13 +204,6 @@ define(['./Utils'], function (Utils) {
         constructor(client) {
             super();
             this._client = client;
-        }
-
-        getExecutionId (node) {
-            const executionNode = this._getContainmentParentNodeAt(node, 'Execution');
-            if (executionNode){
-                return executionNode.getId();
-            }
         }
 
         getMetadataChildrenIds (node) {
@@ -215,54 +220,29 @@ define(['./Utils'], function (Utils) {
             }
         }
 
-        getGraphNode (node) {
-            return this._getContainmentParentNodeAt(node, 'Graph');
-        }
-
-        _getContainmentParentNodeAt (node, metaType) {
-            let currentNode = node,
-                parentId = currentNode.getParentId();
-            const isMetaType = node => this.getMetaType(node) === metaType;
-            while (parentId !== null && !isMetaType(currentNode)) {
-                currentNode = this._client.getNode(parentId);
-                parentId = currentNode.getParentId();
+        toJSON (node, shallow=false, cache={}) {
+            if (cache[node.getId()]) {
+                return cache[node.getId()];
             }
-            return isMetaType(currentNode) ? currentNode : null;
-        }
-
-        getMetaType (node) {
-            const metaTypeId = node.getMetaTypeId();
-            const metaNode = this._client.getNode(metaTypeId);
-            if(metaNode) {
-                return metaNode.getAttribute('name');
-            }
-        }
-
-        GMENodeToMetadataJSON (node, shallow=false) {
+            const parentNode = this._client.getNode(node.getParentId());
+            const baseNode = this._client.getNode(node.getBaseId());
             const json = {
                 id: node.getId(),
-                parent_id: node.getParentId(),
-                execution_id: this.getExecutionId(node),
-                meta_type: this.getMetaType(node),
                 attributes: {},
-                attributes_meta: {}
             };
-
             node.getOwnAttributeNames().forEach(name => {
                 json.attributes[name] = node.getAttribute(name);
             });
-
-            node.getOwnValidAttributeNames().forEach(name => {
-                json.attributes_meta[name] = node.getAttribute(name);
-            });
-
             if(!shallow) {
                 json.children = [];
                 const children = this.getMetadataChildrenIds(node).map(id => this._client.getNode(id));
                 children.forEach(node => {
-                    json.children.push(this.GMENodeToMetadataJSON(node));
+                    json.children.push(this.toJSON(node, false, cache));
                 });
             }
+            json.parent = parentNode ? this.toJSON(parentNode, true, cache): null;
+            json.base = baseNode ? this.toJSON(baseNode, true, cache): null;
+            cache[node.getId()] = json;
             return json;
         }
     }
@@ -274,18 +254,11 @@ define(['./Utils'], function (Utils) {
             this._rootNode = rootNode;
         }
 
-        getExecutionId (node) {
-            const executionNode = this._getContainmentParentNodeAt(node, 'Execution');
-            if(executionNode) {
-                return this._core.getPath(executionNode);
-            }
-        }
-
         async getMetadataChildren (node) {
             const children = await this._core.loadChildren(node);
             const allMetaNodes = this._core.getAllMetaNodes(this._rootNode);
             const metadataNodePath = Object.keys(allMetaNodes).find(nodeId => {
-                return this.getMetaType(allMetaNodes[nodeId]) === BASE_METADATA_TYPE;
+                return this._core.getAttribute(allMetaNodes[nodeId], 'name') === BASE_METADATA_TYPE;
             });
 
             return children.filter(
@@ -294,54 +267,29 @@ define(['./Utils'], function (Utils) {
                 }
             );
         }
-
-        getGraphNode (node) {
-            return this._getContainmentParentNodeAt(node, 'Graph');
-        }
-
-        _getContainmentParentNodeAt (node, metaType) {
-            let currentNode = node,
-                parent = this._core.getParent(node);
-            const isMetaType = node => this.getMetaType(node) === metaType;
-
-            while(parent != null && !isMetaType(currentNode)){
-                currentNode = parent;
-                parent = this._core.getParent(currentNode);
-            }
-            return isMetaType(currentNode) ? currentNode : null;
-        }
-
-        getMetaType (node) {
-            if (node) {
-                return this._core.getAttribute(this._core.getMetaType(node), 'name');
-            }
-        }
-
-        async GMENodeToMetadataJSON (node, shallow=false) {
+        async toJSON (node, shallow=false, cache={}) {
             const json = {
                 id: this._core.getPath(node),
-                parent_id: this._core.getPath(this._core.getParent(node)),
-                execution_id: this.getExecutionId(node),
-                meta_type: this.getMetaType(node),
                 attributes: {},
-                attributes_meta: {}
             };
 
             this._core.getOwnAttributeNames(node).forEach(name => {
                 json.attributes[name] = this._core.getAttribute(node, name);
             });
 
-            this._core.getOwnValidAttributeNames(node).forEach(name => {
-                json.attributes_meta[name] = this._core.getAttribute(node, name);
-            });
+            const parentNode = this._core.getParent(node);
+            const baseNode = this._core.getBase(node);
 
             if(!shallow) {
                 json.children = [];
                 const children = await this.getMetadataChildren(node);
                 for (let i = 0; i < children.length; i++) {
-                    json.children.push(await this.GMENodeToMetadataJSON(children[i]));
+                    json.children.push(await this.toJSON(children[i]));
                 }
             }
+            json.parent = parentNode ? await this.toJSON(parentNode, true, cache): null;
+            json.base = baseNode ? await this.toJSON(baseNode, true, cache): null;
+            cache[this._core.getPath(node)] = json;
             return json;
         }
     }
