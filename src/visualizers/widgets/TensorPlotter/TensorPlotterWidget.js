@@ -9,7 +9,7 @@ define([
     './ArtifactLoader',
     'underscore',
     'text!./files/explorer_helpers.py',
-    'text!./OperationTemplate.py',
+    'deepforge/viz/InformDialog',
     'css!./styles/TensorPlotterWidget.css',
 ], function (
     InteractiveExplorerWidget,
@@ -20,12 +20,11 @@ define([
     ArtifactLoader,
     _,
     HELPERS_PY,
-    OPERATION_TPL_TEXT,
+    InformDialog,
 ) {
     'use strict';
 
     const WIDGET_CLASS = 'tensor-plotter';
-    const OperationTpl = _.template(OPERATION_TPL_TEXT);
 
     class TensorPlotterWidget extends InteractiveExplorerWidget {
         constructor(logger, container) {
