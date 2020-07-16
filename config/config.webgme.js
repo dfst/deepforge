@@ -51,6 +51,11 @@ config.rest.components['SciServerAuth'] = {
   mount: 'routers/SciServerAuth',
   options: {}
 };
+config.rest.components['InteractiveCompute'] = {
+  src: __dirname + '/../src/routers/InteractiveCompute/InteractiveCompute.js',
+  mount: 'routers/InteractiveCompute',
+  options: {}
+};
 
 // Visualizer descriptors
 config.visualization.visualizerDescriptors.push(__dirname + '/../src/visualizers/Visualizers.json');

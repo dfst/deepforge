@@ -5,8 +5,8 @@ describe('ExecPulse', function() {
         superagent = testFixture.superagent,
         expect = testFixture.expect,
         gmeConfig = testFixture.getGmeConfig(),
-        server = testFixture.WebGME.standaloneServer(gmeConfig),
         mntPt = require('../../../../webgme-setup.json').components.routers.ExecPulse.mount,
+        server,
         urlFor = function(action) {
             return [
                 server.getUrl(),
@@ -20,6 +20,7 @@ describe('ExecPulse', function() {
         };
 
     before(function(done) {
+        server = testFixture.WebGME.standaloneServer(gmeConfig),
         server.start(done);
     });
 

@@ -41,10 +41,11 @@ define([
     'use strict';
 
     var NEW_OPERATION_ID = '__NEW_OPERATION__';
-    var ForgeActionButton= function (layoutManager, params) {
+    var ForgeActionButton = function (layoutManager, params) {
         PluginButton.call(this, layoutManager, params);
         this._client = this.client;
         this._actions = [];
+        this._registry = [];
         this._blobClient = new BlobClient({
             logger: this.logger.fork('BlobClient')
         });
@@ -52,6 +53,7 @@ define([
         Execute.call(this, this.client, this.logger);
         this.initializeKeyListener();
         this.logger.debug('ctor finished');
+        DeepForge.registerActionButton(this);
     };
 
     // inherit from PanelBaseWithHeader
@@ -123,7 +125,7 @@ define([
             }
         }
 
-        return actions;
+        return actions.concat(this._registry);
     };
 
     ForgeActionButton.prototype.getDefinedActionsFor = function(basename, node) {
@@ -151,14 +153,38 @@ define([
         for (i = this._actions.length; i--;) {
             delete this.buttons[this._actions[i].name];
         }
+        this._actions = [];
 
         // Get node name and look up actions
         for (i = actions.length; i--;) {
-            this.buttons[actions[i].name] = actions[i];
+            this.addAction(actions[i], false);
         }
 
-        this._actions = actions;
         this.update();
+    };
+
+    ForgeActionButton.prototype.addAction = function(action, update=true) {
+        this.buttons[action.name] = action;
+        this._actions.push(action);
+        if (update) {
+            this.update();
+        }
+    };
+
+    ForgeActionButton.prototype.registerAction = function(action, update=true) {
+        this._registry.push(action);
+        this.addAction(action, update);
+    };
+
+    ForgeActionButton.prototype.unregisterAction = function(name, update=true) {
+        const index = this._registry.findIndex(action => action.name === name);
+        if (index > -1) {
+            this._actions.splice(index, 1);
+        }
+
+        if (update) {
+            this.update();
+        }
     };
 
     // Helper functions REMOVE! FIXME

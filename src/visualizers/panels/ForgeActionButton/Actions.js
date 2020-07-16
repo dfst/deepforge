@@ -7,40 +7,17 @@ define([
     'q',
     'js/RegistryKeys',
     'deepforge/globals',
-    'deepforge/viz/TextPrompter'
+    'deepforge/viz/TextPrompter',
+    'deepforge/viz/StorageHelpers',
 ], function(
     LibraryDialog,
     Materialize,
     Q,
     REGISTRY_KEYS,
     DeepForge,
-    TextPrompter
+    TextPrompter,
+    StorageHelpers,
 ) {
-    ////////////// Downloading files //////////////
-    var downloadAttrs = [
-            'data',
-            'execFiles'
-        ],
-        download = {};
-
-    downloadAttrs.forEach(attr => {
-        download[attr] = function() {
-            return downloadButton.call(this, attr);
-        };
-    });
-
-    // Add download model button
-    var downloadButton = function(attr) {
-        var id = this._currentNodeId,
-            node = this.client.getNode(id),
-            hash = node.getAttribute(attr);
-
-        if (hash) {
-            return '/rest/blob/download/' + hash;
-        }
-        return null;
-    };
-
     var returnToLast = (place) => {
         var returnId = DeepForge.last[place];
         WebGMEGlobal.State.registerActiveObject(returnId);
@@ -175,7 +152,16 @@ define([
             {
                 name: 'Download',
                 icon: 'play_for_work',
-                href: download.data  // function to create href url
+                action: async function() {
+                    const node = this.client.getNode(this._currentNodeId);
+                    const artifactName = node.getAttribute('name');
+                    try {
+                        const dataInfo = JSON.parse(node.getAttribute('data'));
+                        await StorageHelpers.download(dataInfo, artifactName);
+                    } catch (err) {
+                        Materialize.toast(`Unable to download ${artifactName}: ${err.message}`);
+                    }
+                }
             }
         ],
         Job: [
@@ -184,7 +170,16 @@ define([
                 name: 'Download Execution Files',
                 icon: 'play_for_work',
                 priority: 1,
-                href: download.execFiles
+                href: function() {
+                    const id = this._currentNodeId;
+                    const node = this.client.getNode(id);
+                    const hash = node.getAttribute('execFiles');
+
+                    if (hash) {
+                        return '/rest/blob/download/' + hash;
+                    }
+                    return null;
+                }
             },
             // Stop execution button
             {

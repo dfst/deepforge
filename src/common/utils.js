@@ -135,6 +135,18 @@
         return obj1;
     };
 
+    async function sleep(duration) {
+        const deferred = defer();
+        setTimeout(deferred.resolve, duration);
+        return deferred.promise;
+    }
+
+    async function waitUntil(fn, interval=50) {
+        while (!await fn()) {
+            await sleep(interval);
+        }
+    }
+
     return {
         deepExtend,
         splitObj,
@@ -142,5 +154,7 @@
         abbr,
         withTimeout,
         defer,
+        sleep,
+        waitUntil,
     };
 }));

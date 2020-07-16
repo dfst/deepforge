@@ -16,7 +16,7 @@ define([
         const nodeId = this.core.getPath(job);
         this.lastAppliedCmd[nodeId] = 0;
         const metadata = await this.getMetadataNodes(job);
-        await Promise.all(metadata.map(node => this.resetMetadataNode(node)));
+        await Promise.all(metadata.map(node => this.resetMetadataNode(node, job)));
     };
 
     ExecuteJob.prototype.clearOldMetadata = async function (job) {
@@ -39,13 +39,16 @@ define([
         }
     };
 
-    ExecuteJob.prototype.resetMetadataNode = async function (node) {
+    ExecuteJob.prototype.resetMetadataNode = async function (node, job) {
         const children = await this.core.loadChildren(node);
         children.forEach(child => this.core.deleteNode(child));
 
         const attributes = this.core.getAttributeNames(node)
             .filter(attr => attr !== 'id');
         attributes.forEach(attr => this.core.delAttribute(node, attr));
+
+        const op = await this.getOperation(job);
+        await this.recordProvenance(node, op);
     };
 
     ExecuteJob.prototype.getMetadataNodes = async function (job) {
@@ -100,13 +103,14 @@ define([
         const MetadataClass = Metadata.getClassForCommand(cmd);
         const metadata = await this.getMetadataNodes(job);
         const node = metadata.find(node => this.core.getAttribute(node, 'id')) ||
-            this.createNodeForMetadata(MetadataClass, job, id);
+            await this.createNodeForMetadata(MetadataClass, job, id);
 
         const md = new MetadataClass(node, this.core, this.META);
         await md.update(content);
     };
 
-    ExecuteJob.prototype.createNodeForMetadata = function (MetadataClass, job, id) {
+    ExecuteJob.prototype.createNodeForMetadata = async function (MetadataClass, job, id) {
+        const op = await this.getOperation(job);
         const base = this.META[MetadataClass.getMetaType()];
         const msg = `Metadata type not found for ${MetadataClass.name}: ` +
             `${MetadataClass.getMetaType()}`;
@@ -115,6 +119,7 @@ define([
 
         const node = this.core.createNode({base, parent: job});
         this.core.setAttribute(node, 'id', id);
+        await this.recordProvenance(node, op);
         return node;
     };
 

@@ -7,6 +7,7 @@ define([
     'panel/FloatingActionButton/styles/Materialize',
     'deepforge/storage/index',
     'deepforge/viz/ConfirmDialog',
+    'deepforge/viz/StorageHelpers',
     'text!./Table.html',
     'css!./styles/ArtifactIndexWidget.css'
 ], function (
@@ -15,6 +16,7 @@ define([
     Materialize,
     Storage,
     ConfirmDialog,
+    StorageHelpers,
     TABLE_HTML
 ) {
     'use strict';
@@ -53,31 +55,28 @@ define([
             var node = new ModelItem(this.$list, desc);
             this.nodes[desc.id] = node;
             node.$delete.on('click', async event => {
+                event.stopPropagation();
+                event.preventDefault();
                 const {dataInfo} = desc;
                 const deleteData = await this.askIfDeleteFromStorage(dataInfo);
                 const config = deleteData ?
-                    await this.getAuthenticationConfig(dataInfo) : null;
+                    await StorageHelpers.getAuthenticationConfig(dataInfo) : null;
                 this.onNodeDeleteClicked(desc.id, config);
-                event.stopPropagation();
-                event.preventDefault();
             });
             node.$download.on('click', async event => {
-                const config = await this.getAuthenticationConfig(desc.dataInfo);
+                event.stopPropagation();
+                event.preventDefault();
                 try {
-                    const url = await this.getDownloadURL(desc.id, config);
-                    const filename = desc.name.includes('.') ? desc.name : desc.name + '.dat';
-                    this.download(filename, url);
+                    await StorageHelpers.download(desc.dataInfo, desc.name);
                 } catch (err) {
-                    const msg = `Unable to fetch data: ${err.message}`;
+                    const msg = `Unable to fetch ${desc.name}: ${err.message}`;
                     Materialize.toast(msg, 4000);
                 }
-                event.stopPropagation();
-                event.preventDefault();
             });
             node.$el.on('click', event => {
-                this.onNodeClick(desc.id);
                 event.stopPropagation();
                 event.preventDefault();
+                this.onNodeClick(desc.id);
             });
             node.$name.on('dblclick', event => this.editInPlace(event,{
                 nodeId : desc.id,
@@ -113,21 +112,6 @@ define([
             will not change the underlying data and can cause deserialization errors when used in a pipeline. Continue?`;
         const dialog = new ConfirmDialog(title, body);
         return await dialog.show();
-    };
-
-    ArtifactIndexWidget.prototype.getAuthenticationConfig = async function (dataInfo) {
-        const {backend} = dataInfo;
-        const metadata = Storage.getStorageMetadata(backend);
-        metadata.configStructure = metadata.configStructure
-            .filter(option => option.isAuth);
-        if (metadata.configStructure.length) {
-            const configDialog = this.getConfigDialog();
-            const title = `Authenticate with ${metadata.name}`;
-            const iconClass = `glyphicon glyphicon-download-alt`;
-            const config = await configDialog.show(metadata, {title, iconClass});
-
-            return config[backend];
-        }
     };
 
     ArtifactIndexWidget.prototype.removeNode = function (gmeId) {
@@ -178,17 +162,6 @@ define([
     };
 
     ArtifactIndexWidget.prototype.onDeactivate = function () {
-    };
-
-    ArtifactIndexWidget.prototype.download = function (filename, url) {
-        const element = document.createElement('a');
-        element.style.display = 'none';
-        document.body.appendChild(element);
-        element.href = url;
-        element.target = '_self';
-        element.setAttribute('download', filename);
-        element.click();
-        document.body.removeChild(element);
     };
 
     return ArtifactIndexWidget;

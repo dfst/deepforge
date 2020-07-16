@@ -1,13 +1,13 @@
 /*jshint node:true, mocha:true*/
 
 'use strict';
-var testFixture = require('../../globals'),
-    path = testFixture.path,
-    assert = require('assert'),
-    SEED_DIR = testFixture.DF_SEED_DIR,
-    fs = require('fs');
+describe('misc utils', function () {
+    var testFixture = require('../../globals'),
+        path = testFixture.path,
+        assert = require('assert'),
+        SEED_DIR = testFixture.DF_SEED_DIR,
+        fs = require('fs');
 
-describe('utils', function () {
     var gmeConfig = testFixture.getGmeConfig(),
         GraphChecker = testFixture.requirejs('deepforge/GraphChecker'),
         MODELS_DIR = path.join(__dirname, '..', 'test-cases', 'models'),
@@ -22,58 +22,37 @@ describe('utils', function () {
         commitHash,
         checker;
 
-    before(function (done) {
-        testFixture.clearDBAndGetGMEAuth(gmeConfig, projectName)
-            .then(function (gmeAuth_) {
-                gmeAuth = gmeAuth_;
-                // This uses in memory storage. Use testFixture.getMongoStorage to persist test to database.
-                storage = testFixture.getMemoryStorage(logger, gmeConfig, gmeAuth);
-                return storage.openDatabase();
-            })
-            .then(function () {
-                var importParam = {
-                    projectSeed: path.join(SEED_DIR, 'devUtilTests', 'devUtilTests.webgmex'),
-                    projectName: projectName,
-                    branchName: 'master',
-                    logger: logger,
-                    gmeConfig: gmeConfig
-                };
+    before(async function () {
+        gmeAuth = await testFixture.clearDBAndGetGMEAuth(gmeConfig, projectName);
+        storage = testFixture.getMemoryStorage(logger, gmeConfig, gmeAuth);
+        await storage.openDatabase();
+        const importParam = {
+            projectSeed: path.join(SEED_DIR, 'devUtilTests', 'devUtilTests.webgmex'),
+            projectName: projectName,
+            branchName: 'master',
+            logger: logger,
+            gmeConfig: gmeConfig
+        };
 
-                return testFixture.importProject(storage, importParam);
-            })
-            .then(function (importResult) {
-                project = importResult.project;
-                core = importResult.core;
-                checker = new GraphChecker({
-                    core: core,
-                    ignore: {
-                        attributes: ['calculateDimensionality', 'dimensionalityTransform']
-                    }
-                });
-                commitHash = importResult.commitHash;
-                return project.createBranch('test', commitHash);
-            })
-            .then(function () {
-                return project.getBranchHash('test');
-            })
-            .then(function (branchHash) {
-                return Q.ninvoke(project, 'loadObject', branchHash);
-            })
-            .then(function (commitObject) {
-                return Q.ninvoke(core, 'loadRoot', commitObject.root);
-            })
-            .then(function (root) {
-                rootNode = root;
-            })
-            .nodeify(done);
+        const importResult = await testFixture.importProject(storage, importParam);
+        project = importResult.project;
+        core = importResult.core;
+        checker = new GraphChecker({
+            core: core,
+            ignore: {
+                attributes: ['calculateDimensionality', 'dimensionalityTransform']
+            }
+        });
+        commitHash = importResult.commitHash;
+        await project.createBranch('test', commitHash);
+        const branchHash = await project.getBranchHash('test');
+        const commitObject = await Q.ninvoke(project, 'loadObject', branchHash);
+        rootNode = await Q.ninvoke(core, 'loadRoot', commitObject.root);
     });
 
-    after(function (done) {
-        storage.closeDatabase()
-            .then(function () {
-                return gmeAuth.unload();
-            })
-            .nodeify(done);
+    after(async function () {
+        await storage.closeDatabase();
+        await gmeAuth.unload();
     });
 
     var run = function(nodePath, filename, result, done) {
