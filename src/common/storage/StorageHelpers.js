@@ -34,24 +34,5 @@ define([
         return response;
     };
 
-    StorageHelpers.getBlobClientParams = function() {
-        const logger = this.logger ?
-            Logger.create('gme:StreamBlobClient', gmeConfig.client.log) :
-            this.logger.fork('StreamBlobClient');
-
-        const params = {
-            logger: logger
-        };
-        if (!require.isBrowser) {
-            const [url, isHttps] = this.getServerURL();
-            const defaultPort = isHttps ? '443' : '80';
-            const [server, port=defaultPort] = url.split(':');
-            params.server = server;
-            params.serverPort = +port;
-            params.httpsecure = isHttps;
-        }
-        return params;
-    };
-
     return StorageHelpers;
 });

@@ -1,7 +1,7 @@
 /* globals define */
 define([
     '../StorageClient',
-    'deepforge/StreamBlobClient'
+    'blob/BlobClient'
 ], function(
     StorageClient,
     BlobClient
@@ -9,11 +9,26 @@ define([
 
     const GMEStorage = function(/*name, logger*/) {
         StorageClient.apply(this, arguments);
-        const params = this.getBlobClientParams(this.logger);
+        const params = this.getBlobClientParams();
         this.blobClient = new BlobClient(params);
     };
 
     GMEStorage.prototype = Object.create(StorageClient.prototype);
+
+    GMEStorage.prototype.getBlobClientParams = function() {
+        const params = {
+            logger: this.logger.fork('BlobClient')
+        };
+        if (!require.isBrowser) {
+            const [url, isHttps] = this.getServerURL();
+            const defaultPort = isHttps ? '443' : '80';
+            const [server, port=defaultPort] = url.split(':');
+            params.server = server;
+            params.serverPort = +port;
+            params.httpsecure = isHttps;
+        }
+        return params;
+    };
 
     GMEStorage.prototype.getFile = async function(dataInfo) {
         const {data} = dataInfo;
@@ -33,7 +48,7 @@ define([
 
     GMEStorage.prototype.putStream = async function(filename, stream) {
         this.ensureStreamSupport();
-        const hash = await this.blobClient.putStream(filename, stream);
+        const hash = await this.blobClient.putFile(filename, stream);
         return this.createDataInfo(hash);
     };
 
