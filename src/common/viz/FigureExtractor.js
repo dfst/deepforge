@@ -230,6 +230,9 @@ define(['./Utils'], function (Utils) {
                 id: node.getId(),
                 attributes: {},
             };
+
+            cache[node.getId()] = json;
+
             node.getOwnAttributeNames().forEach(name => {
                 json.attributes[name] = node.getAttribute(name);
             });
@@ -242,7 +245,6 @@ define(['./Utils'], function (Utils) {
             }
             json.parent = parentNode ? this.toJSON(parentNode, true, cache): null;
             json.base = baseNode ? this.toJSON(baseNode, true, cache): null;
-            cache[node.getId()] = json;
             return json;
         }
     }
@@ -272,18 +274,24 @@ define(['./Utils'], function (Utils) {
                 }
             );
         }
+
         async toJSON (node, shallow=false, cache={}) {
+            if (cache[this._core.getPath(node)]) {
+                return cache[this._core.getPath(node)];
+            }
+            const parentNode = this._core.getParent(node);
+            const baseNode = this._core.getBase(node);
+
             const json = {
                 id: this._core.getPath(node),
                 attributes: {},
             };
 
+            cache[this._core.getPath(node)] = json;
+
             this._core.getOwnAttributeNames(node).forEach(name => {
                 json.attributes[name] = this._core.getAttribute(node, name);
             });
-
-            const parentNode = this._core.getParent(node);
-            const baseNode = this._core.getBase(node);
 
             if(!shallow) {
                 json.children = [];
@@ -294,7 +302,6 @@ define(['./Utils'], function (Utils) {
             }
             json.parent = parentNode ? await this.toJSON(parentNode, true, cache): null;
             json.base = baseNode ? await this.toJSON(baseNode, true, cache): null;
-            cache[this._core.getPath(node)] = json;
             return json;
         }
     }
