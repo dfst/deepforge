@@ -191,7 +191,7 @@ define(['./Utils'], function (Utils) {
         }
 
         toJSON (/* node, shallow=false */) {
-            throw new Error('GMENodeTOMetadataJSON is not implemented');
+            throw new Error('toJSON is not implemented');
         }
     }
 
