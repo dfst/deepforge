@@ -269,12 +269,13 @@ define([
         getSnapshot() {
             const plotlyJSON = this.currentPlotData || {};
             const data = this.plotEditor.data();
+            const name = data.title ? `Graph of ${data.title}` : 'Graph';
 
             return {
                 type: 'pipeline.Graph',
                 attributes: {
-                    name: `Graph of ${data.title}`,
-                    title: data.title,
+                    name,
+                    title: data.title || '',
                     data: JSON.stringify(plotlyJSON)
                 },
             };
