@@ -39,7 +39,7 @@ describe('FigureExtractor', function() {
     it('should convert graphNode to JSON', async () => {
         const graphNode = await core.loadByPath(rootNode, GRAPH_NODE_PATH);
         const figureExtractor =  new FigureExtractor(core, graphNode);
-        const exportedJSON = (await figureExtractor.toJSON(graphNode));
+        const exportedJSON = JSON.parse(JSON.stringify(await figureExtractor.extract(graphNode)));
         const referenceJSON = JSON.parse(fs.readFileSync(REFERENCE_JSON));
         assert.deepStrictEqual(exportedJSON, referenceJSON);
     });

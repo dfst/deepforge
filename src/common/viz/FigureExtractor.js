@@ -28,11 +28,6 @@ define(['./Utils'], function (Utils) {
 
     class AbstractFigureExtractor {
 
-        extract(node) {
-            const nodeInfo = this.toJSON(node);
-            return this._extract(nodeInfo);
-        }
-
         _extract (nodeInfo) {
             const extractorFn = this.getMetaType(nodeInfo);
             ensureCanExtract(extractorFn);
@@ -162,7 +157,7 @@ define(['./Utils'], function (Utils) {
             desc = {
                 id: id,
                 execId: execId,
-                subgraphId: nodeInfo.parent_id,
+                subgraphId: nodeInfo.parent.id,
                 marker: nodeInfo.attributes.marker,
                 name: nodeInfo.attributes.name,
                 type: 'scatterPoints',
@@ -204,6 +199,11 @@ define(['./Utils'], function (Utils) {
         constructor(client) {
             super();
             this._client = client;
+        }
+
+        extract(node) {
+            const nodeInfo = this.toJSON(node);
+            return this._extract(nodeInfo);
         }
 
         getMetadataChildrenIds (node) {
@@ -252,6 +252,11 @@ define(['./Utils'], function (Utils) {
             super();
             this._core = core;
             this._rootNode = rootNode;
+        }
+
+        async extract (node) {
+            const nodeInfo = await this.toJSON(node);
+            return this._extract(nodeInfo);
         }
 
         async getMetadataChildren (node) {
