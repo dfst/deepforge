@@ -87,36 +87,51 @@ define([
 
         async initSession () {
             await this.session.whenConnected();
-            // TODO: Prepend initialization code?
+            const initCode = await this.getInitializationCode();
+            await this.session.addFile('utils/init.py', initCode);
             await this.session.addFile('utils/explorer_helpers.py', HELPERS_PY);
+        }
+
+        async exec(cmd) {
+            try {
+                const {stdout} = await this.session.exec(cmd);
+                return stdout;
+            } catch (err) {
+                const prettyCmd = cmd.split(';').join('\n');
+                const {stderr} = err.jobResult;
+                const msg = `Command:\n\n${prettyCmd}\nError logs:\n\n${stderr}`;
+                const dialog = new InformDialog('Command failed.', msg);
+                dialog.show();
+                throw err;
+            }
         }
 
         async getPoints (lineInfo) {
             const {data, dataSlice=''} = lineInfo;
-            const [artifactName] = data.split('[');
+            const [artifactName, ...accessors] = data.split('[');
+            const accessor = accessors.length ? '[' + accessors.join('[') : '';
             const command = [
-                `from artifacts.${artifactName} import data as ${artifactName}`,
-                `from utils.explorer_helpers import tolist`,
-                'import json',
-                `print(json.dumps(tolist(${data}${dataSlice})))`
+                'import utils.init',
+                `from artifacts.${artifactName} import data`,
+                'from utils.explorer_helpers import print_points',
+                `print_points(data${accessor}${dataSlice})`
             ].join(';');
-            const {stdout} = await this.session.exec(`python -c '${command}'`);  // TODO: Add error handling
+            const stdout = await this.exec(`python -c '${command}'`);
             return JSON.parse(stdout);
         }
 
         async getColorValues (lineInfo) {
             const {colorData, colorDataSlice='', startColor, endColor} = lineInfo;
-            const [artifactName] = colorData.split('[');
+            const [artifactName, ...accessors] = colorData.split('[');
+            const accessor = accessors.length ? '[' + accessors.join('[') : '';
             const command = [
-                `from artifacts.${artifactName} import data as ${artifactName}`,
-                `from utils.explorer_helpers import tolist, scale_colors`,
-                'import json',
-                `data = ${colorData}${colorDataSlice}`,
-                `colors = scale_colors(data, "${startColor}", "${endColor}")`,
-                `print(json.dumps(colors))`
+                'import utils.init',
+                `from artifacts.${artifactName} import data`,
+                'from utils.explorer_helpers import print_colors',
+                `data = data${accessor}${colorDataSlice}`,
+                `print_colors(data, "${startColor}", "${endColor}")`
             ].join(';');
-            const {stdout, stderr} = await this.session.exec(`python -c '${command}'`);  // TODO: Add error handling
-            if (stderr) console.log('stderr:', stderr);
+            const stdout = await this.exec(`python -c '${command}'`);
             return JSON.parse(stdout);
         }
 
@@ -124,13 +139,12 @@ define([
             const {name} = desc;
             const pyName = name.replace(/\..*$/, '');
             const command = [
+                'import utils.init',
                 `from artifacts.${pyName} import data`,
-                'from utils.explorer_helpers import metadata',
-                'import json',
-                `print(json.dumps(metadata("${name}", data)))`
+                'from utils.explorer_helpers import print_metadata',
+                `print_metadata("${name}", data)`,
             ].join(';');
-            const {stdout, stderr} = await this.session.exec(`python -c '${command}'`);  // TODO: Add error handling
-            if (stderr) console.log('stderr:', stderr);
+            const stdout = await this.exec(`python -c '${command}'`);
             return JSON.parse(stdout);
         }
 
@@ -225,7 +239,7 @@ define([
         // Adding/Removing/Updating items
         async addNode (desc) {
             this.artifactLoader.register(desc);
-            Plotly.react(this.$plot[0]);  // FIXME
+            Plotly.react(this.$plot[0]);
         }
 
         removeNode (gmeId) {

@@ -1,3 +1,5 @@
+import json
+
 def metadata(name, data):
     info = {}
     info['name'] = name
@@ -34,3 +36,13 @@ def set_range_0_to_1(array):
     array = array - array.min()
     array = array / array.max()
     return array
+
+def print_points(data):
+    print(json.dumps(tolist(data)))
+
+def print_colors(data, start_color, end_color):
+    colors = scale_colors(data, start_color, end_color)
+    print(json.dumps(colors))
+
+def print_metadata(name, data):
+    print(json.dumps(metadata(name, data)))
