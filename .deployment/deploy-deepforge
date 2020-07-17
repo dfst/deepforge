@@ -17,7 +17,8 @@ fi;
 rm config/components2.json
 
 # Merging the custom override yml file
-yaml-merge docker/docker-compose.yml "$DEEPFORGE_DEPLOYMENT_DIR"/docker-compose-overrides.yml > custom-docker-compose.yml
+yq d docker/docker-compose.yml services.server.environment[0] > custom-docker-compose.yml
+yq m -ai custom-docker-compose.yml "$DEEPFORGE_DEPLOYMENT_DIR"/docker-compose-overrides.yml
 
 # Pulling the latest docker image, stopping the server, removing and restarting it
 docker-compose --file custom-docker-compose.yml -p deepforge pull $SERVER_NAME

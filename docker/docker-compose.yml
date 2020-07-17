@@ -7,6 +7,7 @@ services:
       - "$HOME/.deepforge/data:/data/db"
   server:
     environment:
+      - "NODE_ENV=default"
       - "MONGO_URI=mongodb://mongo:27017/deepforge"
       - "DEEPFORGE_PUBLIC_KEY=/token_keys/public_key"
       - "DEEPFORGE_PRIVATE_KEY=/token_keys/private_key"
@@ -16,6 +17,5 @@ services:
       - "8889:8889"
     volumes:
       - "$HOME/.deepforge/blob:/data/blob"
-      - "${TOKEN_KEYS_DIR}:/token_keys"
     depends_on:
       - mongo
