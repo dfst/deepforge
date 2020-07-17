@@ -29,7 +29,8 @@ First, generate a public and private key pair
     openssl rsa -in deepforge_keys/private_key -pubout > deepforge_keys/public_key
     export TOKEN_KEYS_DIR="$(pwd)/deepforge_keys"
 
-Then create file called ``production-docker-compose.yml`` for using the token-keys generated above:
+Then create file called ``production-docker-compose.yml`` (for using the keys generated above) with the following
+content:
 
 .. code-block:: yaml
 
