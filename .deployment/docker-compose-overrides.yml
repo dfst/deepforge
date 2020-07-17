@@ -2,11 +2,9 @@ services:
   server:
     entrypoint: /.deployment/dev-entrypoint.sh
     environment:
-      - "NODE_ENV=production"
       - "DEEPFORGE_HOST=https://dev.deepforge.org"
       - "DEEPFORGE_INTERACTIVE_COMPUTE_HOST=https://dev-compute.deepforge.org"
     volumes:
-      - "${TOKEN_KEYS_DIR}:/token_keys"
       - "${DEEPFORGE_DEPLOYMENT_DIR}:/.deployment"
       - "${DEEPFORGE_DEPLOYMENT_DIR}/../config/components.json:/deepforge/config/components.json"
 

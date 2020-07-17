@@ -12,11 +12,11 @@ Next, you must decide if you would like authentication to be enabled. For produc
 
 Without User Accounts
 ---------------------
-Start the docker containers with
+Start the docker containers with ``docker-compose run`` :
 
 .. code-block:: bash
 
-    docker-compose up
+    docker-compose --file docker-compose.yml run -p 8888:8888 -p 8889:8889 -e "NODE_ENV=default" server
 
 User Authentication Enabled
 ---------------------------
@@ -29,37 +29,11 @@ First, generate a public and private key pair
     openssl rsa -in deepforge_keys/private_key -pubout > deepforge_keys/public_key
     export TOKEN_KEYS_DIR="$(pwd)/deepforge_keys"
 
-Then create file called ``production-docker-compose.yml`` (for using the keys generated above) with the following
-content:
-
-.. code-block:: yaml
-
-    version: "3"
-    services:
-      mongo:
-        image: mongo
-        volumes:
-          - "$HOME/.deepforge/data:/data/db"
-      server:
-        environment:
-          - "MONGO_URI=mongodb://mongo:27017/deepforge"
-          - "DEEPFORGE_PUBLIC_KEY=/token_keys/public_key"
-          - "DEEPFORGE_PRIVATE_KEY=/token_keys/private_key"
-        image: deepforge/kitchen-sink:latest
-        ports:
-          - "8888:8888"
-          - "8889:8889"
-        volumes:
-          - "$HOME/.deepforge/blob:/data/blob"
-          - "${TOKEN_KEYS_DIR}:/token_keys"
-        depends_on:
-          - mongo
-
-Then start DeepForge using docker-compose:
+Then start DeepForge using ``docker-compose run``:
 
 .. code-block:: bash
 
-    docker-compose --file production-docker-compose.yml up
+    docker-compose --file docker-compose.yml run -v "${TOKEN_KEYS_DIR}:/token_keys" -p  8888:8888 -p 8889:8889 -e "NODE_ENV=production" server
 
 Finally, create the admin user by connecting to the server's docker container. First, get the ID of the container using:
 
