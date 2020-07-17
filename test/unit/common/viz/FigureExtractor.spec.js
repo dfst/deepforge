@@ -13,7 +13,9 @@ describe('FigureExtractor', function() {
         storage,
         commitHash,
         rootNode,
-        core;
+        core,
+        graphNode,
+        figureExtractor;
 
     before(async function () {
         const projectName = 'testProject';
@@ -34,11 +36,20 @@ describe('FigureExtractor', function() {
         core = importResult.core;
         rootNode = importResult.rootNode;
         await project.createBranch('test', commitHash);
+        graphNode = await core.loadByPath(rootNode, GRAPH_NODE_PATH);
+        figureExtractor =  new FigureExtractor(core, graphNode);
     });
 
     it('should convert graphNode to JSON', async () => {
-        const graphNode = await core.loadByPath(rootNode, GRAPH_NODE_PATH);
-        const figureExtractor =  new FigureExtractor(core, graphNode);
+        const graphNodeJSON = await figureExtractor.toJSON(graphNode);
+        graphNodeJSON.children.forEach(child => {
+            assert.equal(child.parent.id, graphNodeJSON.id);
+            assert.deepStrictEqual(child.parent.attributes, graphNodeJSON.attributes);
+            assert.deepStrictEqual(child.parent.base, graphNodeJSON.base);
+        });
+    });
+
+    it('should convert graphNode to desc', async () => {
         const exportedJSON = JSON.parse(JSON.stringify(await figureExtractor.extract(graphNode)));
         const referenceJSON = JSON.parse(fs.readFileSync(REFERENCE_JSON));
         assert.deepStrictEqual(exportedJSON, referenceJSON);
