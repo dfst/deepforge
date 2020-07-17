@@ -92,14 +92,15 @@ define([
             await this.session.addFile('utils/explorer_helpers.py', HELPERS_PY);
         }
 
-        async exec(cmd) {
+        async execPy(code) {
             try {
-                const {stdout} = await this.session.exec(cmd);
+                await this.session.addFile('last_cmd.py', code);
+                const {stdout} = await this.session.exec('python last_cmd.py');
                 return stdout;
             } catch (err) {
-                const prettyCmd = cmd.split(';').join('\n');
                 const {stderr} = err.jobResult;
-                const msg = `Command:\n\n${prettyCmd}\nError logs:\n\n${stderr}`;
+                const msg = `Command:\n\n${code}\nError logs:\n\n${stderr}`
+                    .replace('\n', '</br>');
                 const dialog = new InformDialog('Command failed.', msg);
                 dialog.show();
                 throw err;
@@ -108,44 +109,53 @@ define([
 
         async getPoints (lineInfo) {
             const {data, dataSlice=''} = lineInfo;
-            const [artifactName, ...accessors] = data.split('[');
-            const accessor = accessors.length ? '[' + accessors.join('[') : '';
+            const {pyImport, varName} = this.getImportCode(data);
             const command = [
                 'import utils.init',
-                `from artifacts.${artifactName} import data`,
+                pyImport,
                 'from utils.explorer_helpers import print_points',
-                `print_points(data${accessor}${dataSlice})`
-            ].join(';');
-            const stdout = await this.exec(`python -c '${command}'`);
+                `print_points(${varName}${dataSlice})`
+            ].join('\n');
+            const stdout = await this.execPy(command);
             return JSON.parse(stdout);
         }
 
         async getColorValues (lineInfo) {
             const {colorData, colorDataSlice='', startColor, endColor} = lineInfo;
-            const [artifactName, ...accessors] = colorData.split('[');
-            const accessor = accessors.length ? '[' + accessors.join('[') : '';
+            const {pyImport, varName} = this.getImportCode(colorData);
             const command = [
                 'import utils.init',
-                `from artifacts.${artifactName} import data`,
+                pyImport,
                 'from utils.explorer_helpers import print_colors',
-                `data = data${accessor}${colorDataSlice}`,
+                `data = ${varName}${colorDataSlice}`,
                 `print_colors(data, "${startColor}", "${endColor}")`
-            ].join(';');
-            const stdout = await this.exec(`python -c '${command}'`);
+            ].join('\n');
+            const stdout = await this.execPy(command);
             return JSON.parse(stdout);
         }
 
         async getMetadata (desc) {
             const {name} = desc;
-            const pyName = name.replace(/\..*$/, '');
+            const {pyImport, varName} = this.getImportCode(name);
             const command = [
                 'import utils.init',
-                `from artifacts.${pyName} import data`,
+                pyImport,
                 'from utils.explorer_helpers import print_metadata',
-                `print_metadata("${name}", data)`,
-            ].join(';');
-            const stdout = await this.exec(`python -c '${command}'`);
+                `print_metadata("${varName}", ${varName})`,
+            ].join('\n');
+            const stdout = await this.execPy(command);
             return JSON.parse(stdout);
+        }
+
+        getImportCode (artifactName) {
+            const pyName = artifactName.replace(/\..*$/, '');
+            const [modName, ...accessors] = pyName.split('[');
+            const pyImport = `from artifacts.${modName} import data as ${modName}`;
+            const accessor = accessors.length ? '[' + accessors.join('[') : '';
+            const varName = modName + accessor;
+            return {
+                pyImport, varName
+            };
         }
 
         async getPlotData (line) {
