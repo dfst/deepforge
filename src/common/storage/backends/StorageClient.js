@@ -9,6 +9,7 @@ define([
     const fetch = require.isBrowser ? window.fetch :
         require.nodeRequire('node-fetch');
     const Headers = require.isBrowser ? window.Headers : fetch.Headers;
+    const stream = require.isBrowser ? null : require.nodeRequire('stream');
     const StorageClient = function(id, name, logger) {
         this.id = id;
         this.name = name;
@@ -98,6 +99,12 @@ define([
     StorageClient.prototype.ensureStreamSupport = function() {
         if(require.isBrowser) {
             throw new Error('Streams are not supported in browser');
+        }
+    };
+
+    StorageClient.prototype.ensureReadableStream = function (obj) {
+        if(stream && !(obj instanceof stream.Readable)) {
+            throw new Error(`${obj} should be an instance of a readable stream`);
         }
     };
 

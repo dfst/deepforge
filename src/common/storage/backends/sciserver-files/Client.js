@@ -54,6 +54,7 @@ define([
 
     SciServerFiles.prototype.putStream = async function(filename, stream) {
         this.ensureStreamSupport();
+        this.ensureReadableStream(stream);
         await this.putFile(filename, stream);
         // stat necessary because of byteLength
         return await this.stat(filename);

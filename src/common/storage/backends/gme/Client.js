@@ -48,6 +48,7 @@ define([
 
     GMEStorage.prototype.putStream = async function(filename, stream) {
         this.ensureStreamSupport();
+        this.ensureReadableStream(stream);
         const hash = await this.blobClient.putFile(filename, stream);
         return this.createDataInfo(hash);
     };

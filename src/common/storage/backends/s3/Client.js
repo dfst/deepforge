@@ -109,6 +109,7 @@ define([
 
     S3Storage.prototype.putStream = async function(filename, stream) {
         this.ensureStreamSupport();
+        this.ensureReadableStream(stream);
         const s3Client = await this.getS3Client();
         const params = await this.getUploadParams(s3Client, filename, stream);
         try {
