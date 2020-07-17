@@ -43,9 +43,7 @@ describe('FigureExtractor', function() {
     it('should convert graphNode to JSON', async () => {
         const graphNodeJSON = await figureExtractor.toJSON(graphNode);
         graphNodeJSON.children.forEach(child => {
-            assert.equal(child.parent.id, graphNodeJSON.id);
-            assert.deepStrictEqual(child.parent.attributes, graphNodeJSON.attributes);
-            assert.deepStrictEqual(child.parent.base, graphNodeJSON.base);
+            assert(graphNodeJSON === child.parent);
         });
     });
 

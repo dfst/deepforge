@@ -297,7 +297,7 @@ define(['./Utils'], function (Utils) {
                 json.children = [];
                 const children = await this.getMetadataChildren(node);
                 for (let i = 0; i < children.length; i++) {
-                    json.children.push(await this.toJSON(children[i]));
+                    json.children.push(await this.toJSON(children[i], false, cache));
                 }
             }
             json.parent = parentNode ? await this.toJSON(parentNode, true, cache): null;
