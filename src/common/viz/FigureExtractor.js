@@ -190,7 +190,7 @@ define(['./Utils'], function (Utils) {
             }
         }
 
-        toJSON (/* node, shallow=false */) {
+        toJSON (/* node, shallow=false, cache={} */) {
             throw new Error('toJSON is not implemented');
         }
     }
