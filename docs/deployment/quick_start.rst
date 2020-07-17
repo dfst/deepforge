@@ -33,7 +33,7 @@ Then start DeepForge using ``docker-compose run``:
 
 .. code-block:: bash
 
-    docker-compose --file docker-compose.yml run -v "${TOKEN_KEYS_DIR}:/token_keys" -p  8888:8888 -p 8889:8889 -e "NODE_ENV=production" server
+    docker-compose --file docker-compose.yml run -v "${TOKEN_KEYS_DIR}:/token_keys" -p  8888:8888 -p 8889:8889 -e server
 
 Finally, create the admin user by connecting to the server's docker container. First, get the ID of the container using:
 
