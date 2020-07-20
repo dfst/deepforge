@@ -3,9 +3,11 @@
 define([
     'deepforge/viz/ConfigDialog',
     'js/Constants',
+    'q',
 ], function (
     ConfigDialog,
     CONSTANTS,
+    Q,
 ) {
 
     'use strict';
@@ -30,6 +32,42 @@ define([
                 widget.save = () => this.save();
             }
             widget.getConfigDialog = () => new ConfigDialog(this.client);
+            widget.getInitializationCode = () => this.getInitializationCode();
+        }
+
+        async getInitializationCode () {
+            const deferred = Q.defer();
+            const territory = {'': {children: 1}};
+            const territoryId = this.client.addUI(this, events => {
+                const codeType = this.getMetaNode('pipeline.Code');
+                const libraryCode = this.getMetaNode('LibraryCode');
+                if (!codeType || !libraryCode) {
+                    this._logger.warn('Unsupported project. Could not find Code and LibraryCode meta node.');
+                    return;
+                }
+
+                const nodeIds = events
+                    .filter(event => event.etype === CONSTANTS.TERRITORY_EVENT_LOAD)
+                    .map(event => event.eid);
+
+                const codeNodeIds = nodeIds
+                    .filter(id => this.client.isTypeOf(id, codeType.getId()));
+
+                const initCode = codeNodeIds
+                    .sort((n1, n2) => {  // move library code to be in the front
+                        const v1 = this.client.isTypeOf(n1, libraryCode.getId()) ? 1 : 0;
+                        const v2 = this.client.isTypeOf(n2, libraryCode.getId()) ? 1 : 0;
+                        return v2 - v1;
+                    })
+                    .map(nodeId => this.client.getNode(nodeId).getAttribute('code'))
+                    .join('\n');
+
+                this.client.removeUI(territoryId);
+                deferred.resolve(initCode);
+            });
+            this.client.updateTerritory(territoryId, territory);
+
+            return deferred.promise;
         }
 
         selectedObjectChanged (nodeId) {
