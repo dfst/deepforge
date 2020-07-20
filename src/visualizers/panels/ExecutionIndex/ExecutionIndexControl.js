@@ -14,6 +14,9 @@ define([
 ) {
 
     'use strict';
+    const ClientFigureExtractor = FigureExtractor.ClientFigureExtractor;
+    const GRAPH = ['Graph'];
+    const SUBGRAPHS = ['Plot2D', 'Plot3D'];
 
     var ExecutionIndexControl;
 
@@ -32,7 +35,7 @@ define([
         this._graphsForExecution = {};
         this._graphToExec = {};
         this._pipelineNames = {};
-        this.figureExtractor = new FigureExtractor(this._client);
+        this.figureExtractor = new ClientFigureExtractor(this._client);
         this.abbrToId = {};
         this.abbrFor = {};
 
@@ -246,8 +249,6 @@ define([
             type;
 
         if (node) {
-            const graphNode = this.figureExtractor.getGraphNode(node),
-                isGraphOrChildren = !!graphNode;
             base = this._client.getNode(node.getBaseId());
             type = base.getAttribute('name');
             desc = {
@@ -255,6 +256,8 @@ define([
                 type: type,
                 name: node.getAttribute('name')
             };
+
+            const isGraphOrChildren = GRAPH.concat(SUBGRAPHS).includes(type);
 
             if (type === 'Execution') {
                 desc.status = node.getAttribute('status');
@@ -276,6 +279,10 @@ define([
                 desc.execs = node.getMemberIds('executions');
                 this._pipelineNames[desc.id] = desc.name;
             } else if (isGraphOrChildren) {
+                let graphNode = node;
+                if (SUBGRAPHS.includes(type)){
+                    graphNode = this._client.getNode(node.getParentId());
+                }
                 desc = this.getGraphDesc(graphNode);
             }
         }

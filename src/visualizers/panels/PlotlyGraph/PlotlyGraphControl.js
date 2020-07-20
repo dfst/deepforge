@@ -9,6 +9,9 @@ define([
 ) {
 
     'use strict';
+    const ClientFigureExtractor = FigureExtractor.ClientFigureExtractor;
+    const GRAPH = ['Graph'];
+    const SUBGRAPHS = ['Plot2D', 'Plot3D'];
 
     function PlotlyGraphControl(options) {
 
@@ -24,7 +27,7 @@ define([
         this._currentNodeId = null;
         this._currentNodeParentId = undefined;
 
-        this.figureExtractor = new FigureExtractor(this._client);
+        this.figureExtractor = new ClientFigureExtractor(this._client);
 
         this._logger.debug('ctor finished');
     }
@@ -65,13 +68,18 @@ define([
     // This next function retrieves the relevant node information for the widget
     PlotlyGraphControl.prototype._getObjectDescriptor = function (nodeId) {
         let node = this._client.getNode(nodeId),
-            desc, graphNode, hasGraph;
+            desc, graphNode;
         if(node) {
-            graphNode = this.figureExtractor.getGraphNode(node);
-            hasGraph = !!graphNode;
-        }
-        if(hasGraph){
-            desc = this.figureExtractor.extract(graphNode);
+            const baseNode = this._client.getNode(node.getBaseId());
+            const type = baseNode.getAttribute('name');
+            const isGraph = GRAPH.concat(SUBGRAPHS).includes(type);
+            if(isGraph){
+                graphNode = node;
+                if (SUBGRAPHS.includes(type)) {
+                    graphNode = this._client.getNode(node.getParentId());
+                }
+                desc = this.figureExtractor.extract(graphNode);
+            }
         }
         return desc;
     };
