@@ -67,16 +67,16 @@ describe('Storage Features Test', function () {
             }
         });
 
-        it(`should putStream using ${backend}`, async function () {
+        it(`should putFileStream using ${backend}`, async function () {
             this.retries(maxRetries([backend]));
             const stream = fs.createReadStream(TEST_FILE_NAME);
             const pathInStorageBackend = `${TEST_STORAGE}/${TEST_FILE_NAME}`;
-            dataInfoStream = await clients[backend].putStream(pathInStorageBackend, stream);
+            dataInfoStream = await clients[backend].putFileStream(pathInStorageBackend, stream);
         });
 
-        it(`should getStream using ${backend}`, async function () {
+        it(`should getFileStream using ${backend}`, async function () {
             this.retries(maxRetries([backend]));
-            const inputStream = await clients[backend].getStream(dataInfoStream);
+            const inputStream = await clients[backend].getFileStream(dataInfoStream);
             await verifyStreamContent(inputStream);
         });
 

@@ -35,7 +35,7 @@ define([
         return await this.blobClient.getObject(data);
     };
 
-    GMEStorage.prototype.getStream = async function(dataInfo) {
+    GMEStorage.prototype.getFileStream = async function(dataInfo) {
         const url = await this.getDownloadURL(dataInfo);
         const response = await this.fetch(url, {method: 'GET'});
         return response.body;
@@ -46,7 +46,7 @@ define([
         return this.createDataInfo(hash);
     };
 
-    GMEStorage.prototype.putStream = async function(filename, stream) {
+    GMEStorage.prototype.putFileStream = async function(filename, stream) {
         this.ensureStreamSupport();
         this.ensureReadableStream(stream);
         const hash = await this.blobClient.putFile(filename, stream);

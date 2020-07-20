@@ -77,7 +77,7 @@ define([
         return data.Body;
     };
 
-    S3Storage.prototype.getStream = async function(dataInfo) {
+    S3Storage.prototype.getFileStream = async function(dataInfo) {
         const {endpoint, bucketName, filename} = dataInfo.data;
         const {accessKeyId, secretAccessKey} = this.config;
         const s3Client = await this.getS3Client({endpoint, accessKeyId, secretAccessKey});
@@ -107,7 +107,7 @@ define([
         return dataInfo;
     };
 
-    S3Storage.prototype.putStream = async function(filename, stream) {
+    S3Storage.prototype.putFileStream = async function(filename, stream) {
         this.ensureStreamSupport();
         this.ensureReadableStream(stream);
         const s3Client = await this.getS3Client();

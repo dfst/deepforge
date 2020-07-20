@@ -49,7 +49,7 @@ define([
         throw new Error(`File download not implemented for ${this.name}`);
     };
 
-    StorageClient.prototype.getStream = async function(/*dataInfo*/) {
+    StorageClient.prototype.getFileStream = async function(/*dataInfo*/) {
         throw new Error(`Stream downloads not implemented for ${this.name}`);
     };
 
@@ -57,7 +57,7 @@ define([
         throw new Error(`File upload not supported by ${this.name}`);
     };
 
-    StorageClient.prototype.putStream = async function(/*filename, stream*/) {
+    StorageClient.prototype.putFileStream = async function(/*filename, stream*/) {
         throw new Error(`Stream uploads not implemented for ${this.name}`);
     };
 

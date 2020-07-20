@@ -26,7 +26,7 @@ define([
         }
     };
 
-    SciServerFiles.prototype.getStream = async function(dataInfo) {
+    SciServerFiles.prototype.getFileStream = async function(dataInfo) {
         const response = await this.getDownloadResponse(dataInfo);
         return response.body;
     };
@@ -52,7 +52,7 @@ define([
         return this.createDataInfo(metadata);
     };
 
-    SciServerFiles.prototype.putStream = async function(filename, stream) {
+    SciServerFiles.prototype.putFileStream = async function(filename, stream) {
         this.ensureStreamSupport();
         this.ensureReadableStream(stream);
         await this.putFile(filename, stream);
