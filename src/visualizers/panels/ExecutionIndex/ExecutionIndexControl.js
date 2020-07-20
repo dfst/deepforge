@@ -4,17 +4,14 @@
 define([
     'js/Constants',
     'deepforge/utils',
-    'deepforge/viz/Execute',
-    'deepforge/viz/FigureExtractor'
+    'deepforge/viz/Execute'
 ], function (
     CONSTANTS,
     utils,
-    Execute,
-    FigureExtractor
+    Execute
 ) {
 
     'use strict';
-
     var ExecutionIndexControl;
 
     ExecutionIndexControl = function (options) {
@@ -32,7 +29,6 @@ define([
         this._graphsForExecution = {};
         this._graphToExec = {};
         this._pipelineNames = {};
-        this.figureExtractor = new FigureExtractor(this._client);
         this.abbrToId = {};
         this.abbrFor = {};
 
@@ -97,7 +93,7 @@ define([
     };
 
     const getDisplayTitle = function (desc, includeAbbr = false) {
-        let title = 'Graph';
+        let title = desc.plotlyData.layout.title ? desc.plotlyData.layout.title : 'Graph';
         if (includeAbbr) {
             title = `${title} (${desc.abbr})`;
         }
@@ -165,8 +161,6 @@ define([
             type;
 
         if (node) {
-            const graphNode = this.figureExtractor.getGraphNode(node),
-                isGraphOrChildren = !!graphNode;
             base = this._client.getNode(node.getBaseId());
             type = base.getAttribute('name');
             desc = {
@@ -174,6 +168,7 @@ define([
                 type: type,
                 name: node.getAttribute('name')
             };
+
 
             if (type === 'Execution') {
                 desc.status = node.getAttribute('status');
@@ -194,8 +189,8 @@ define([
             } else if (type === 'Pipeline') {
                 desc.execs = node.getMemberIds('executions');
                 this._pipelineNames[desc.id] = desc.name;
-            } else if (isGraphOrChildren) {
-                desc = this.getGraphDesc(graphNode);
+            } else if (type === 'Graph') {
+                desc = this.getGraphDesc(node);
             }
         }
         return desc;
@@ -203,9 +198,10 @@ define([
 
     ExecutionIndexControl.prototype.getGraphDesc = function (graphNode) {
         let id = graphNode.getId();
+        const execId = this._client.getNode(graphNode.getParentId()).getParentId();
         let desc = {
-            execId: this.figureExtractor.getExecutionId(graphNode),
-            plotlyData: graphNode.getAttribute('data')
+            execId: execId,
+            plotlyData: JSON.parse(graphNode.getAttribute('data'))
         };
 
         if (!this._graphToExec[id]) {

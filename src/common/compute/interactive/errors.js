@@ -9,6 +9,7 @@ define([
                 `Command "${cmd}" failed with exit code ${exitCode}:\n${stderr}` :
                 `Command "${cmd}" failed with exit code ${exitCode}.`;
             super(msg);
+            this.jobResult = result;
         }
     }
 

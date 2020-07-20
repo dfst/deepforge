@@ -1,12 +1,12 @@
 /* globals define */
 define([
-    './Metadata',
+    './Metadata'
 ], function(
-    Metadata,
+    Metadata
 ) {
     class Figure extends Metadata {
         async update(state) {
-            this.core.setAttribute(this.node, 'data', state);
+            this.core.setAttribute(this.node, 'data', JSON.stringify(state));
         }
 
         setAxesProperties(axesNode, axes){

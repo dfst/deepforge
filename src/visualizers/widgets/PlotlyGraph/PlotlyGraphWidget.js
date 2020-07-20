@@ -24,9 +24,6 @@ define([
         this.$el.append(this.$defaultTextDiv);
         this.$el.css('overflow', 'auto');
         this.$el.addClass(WIDGET_CLASS);
-        this.nodes = {};
-        this.plotlyJSONS = null;
-        this.layout = {};
         this.plots = [];
         this.created = false;
         this.logger.debug('ctor finished');
@@ -51,24 +48,23 @@ define([
     };
 
     PlotlyGraphWidget.prototype.removeNode = function () {
-        this.plotlyJSONS = null;
         this.refreshChart();
         this.setTextVisibility(true);
     };
 
     PlotlyGraphWidget.prototype.addOrUpdateNode = function (desc) {
         if (desc) {
-            this.plotlyJSONS = Array.isArray(desc) ?
+            const plotlyJSONs = Array.isArray(desc) ?
                 desc.map(descr => descr.plotlyData) : [desc.plotlyData];
 
-            this.plotlyJSONS.forEach(json => {
+            plotlyJSONs.forEach(json => {
                 json.layout.autosize = true;
                 json.layout.width = this.$el.width();
                 json.layout.plot_bgcolor = PLOT_BG_COLOR;
                 json.layout.paper_bgcolor = PLOT_BG_COLOR;
             });
             this.setTextVisibility(false);
-            this.refreshChart();
+            this.refreshChart(plotlyJSONs);
         }
     };
 
@@ -77,25 +73,25 @@ define([
         this.addOrUpdateNode(desc);
     };
 
-    PlotlyGraphWidget.prototype.createOrUpdateChart = function () {
-        if (!this.plotlyJSONS) {
+    PlotlyGraphWidget.prototype.createOrUpdateChart = function (plotlyJSONs) {
+        if (!plotlyJSONs) {
             this.deleteChart();
         } else {
-            if (!this.created && !_.isEmpty(this.plotlyJSONS)) {
-                this.createChartSlider();
+            if (!this.created && !_.isEmpty(plotlyJSONs)) {
+                this.createChartSlider(plotlyJSONs);
                 this.created = true;
 
-            } else if(!_.isEmpty(this.plotlyJSONS)) {
+            } else if(!_.isEmpty(plotlyJSONs)) {
                 // Currently in plotly, ImageTraces have no react support
                 // This will be updated when there's additional support
                 // for react with responsive layout
-                this.createChartSlider();
+                this.createChartSlider(plotlyJSONs);
             }
         }
     };
 
-    PlotlyGraphWidget.prototype.createChartSlider = function() {
-        this.plotlyJSONS.forEach(plotlyJSON => {
+    PlotlyGraphWidget.prototype.createChartSlider = function(plotlyJSONs) {
+        plotlyJSONs.forEach(plotlyJSON => {
             const plotlyDiv = $('<div/>');
             Plotly.newPlot(plotlyDiv[0], plotlyJSON);
             this.plots.push(plotlyDiv);
@@ -106,7 +102,6 @@ define([
     PlotlyGraphWidget.prototype.refreshChart = _.debounce(PlotlyGraphWidget.prototype.createOrUpdateChart, 50);
 
     PlotlyGraphWidget.prototype.deleteChart = function () {
-        this.plotlyJSONS = null;
         if (this.created) {
             this.plots.forEach($plot => {
                 Plotly.purge($plot[0]);

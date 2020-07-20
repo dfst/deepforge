@@ -1,0 +1,22 @@
+/**
+ * This file is for any scss that you may want for this visualizer.
+ */
+.interactive-editor {
+  outline: none; }
+
+.compute-shield {
+  background-color: #00000099;
+  bottom: 0;
+  left: 0;
+  position: fixed;
+  right: 0;
+  top: 0;
+  z-index: 100; }
+
+.compute-shield span {
+  color: whitesmoke;
+  display: block;
+  font-size: 2em;
+  margin: auto;
+  padding-top: 25%;
+  text-align: center; }

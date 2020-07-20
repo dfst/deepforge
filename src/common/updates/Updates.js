@@ -1,13 +1,27 @@
 /* globals define */
 define([
     'deepforge/storage/index',
+    'deepforge/viz/PlotlyDescExtractor',
+    'deepforge/viz/FigureExtractor',
     './Version',
     'q'
 ], function(
     Storage,
+    PlotlyDescExtractor,
+    FigureExtractor,
     Version,
     Q
 ) {
+    const GRAPH = 'Graph';
+    const getGraphNode = async function(core, rootNode, graphNodes={}) {
+        const children = await core.loadChildren(rootNode);
+        for(let i = 0; i < children.length; i++) {
+            if (core.getAttribute(children[i], 'name') === GRAPH && !core.isMetaNode(children[i])) {
+                graphNodes[core.getPath(children[i])] = children[i];
+            }
+            await getGraphNode(core, children[i], graphNodes);
+        }
+    };
 
     const allUpdates = [
         {
@@ -21,7 +35,7 @@ define([
                     });
             },
             apply: function(core, rootNode, META) {
-                // Create 'MyUtilities' node
+                // Create 'MyUtilities' nodeupdate
                 const utils = core.createNode({
                     parent: rootNode,
                     base: META.FCO
@@ -70,6 +84,37 @@ define([
                         const dataInfo = storageClient.createDataInfo(hash);
                         core.setAttribute(node, 'data', JSON.stringify(dataInfo));
                     }
+                }
+            }
+        },
+        {
+            name: 'UpdateGraphContainment',
+            isNeeded: async function(core, rootNode) {
+                const pipelineRoot = core.getLibraryRoot(rootNode, 'pipeline');
+                const hasPipelineLibrary = !!pipelineRoot;
+                if (hasPipelineLibrary) {
+                    const versionString = core.getAttribute(pipelineRoot, 'version');
+                    const version = new Version(versionString);
+                    return version.lessThan(new Version('0.22.0')) &&
+                           version.greaterThan(new Version('0.19.1'));
+                }
+            },
+            apply: async function(core, rootNode, META) {
+                let graphNodes = {};
+                await getGraphNode(core, rootNode, graphNodes);
+                const graphNodeKeys = Object.keys(graphNodes);
+                const coreFigureExtractor = new FigureExtractor.CoreFigureExtractor(core, rootNode);
+                for (let i = 0; i < graphNodeKeys.length; i++){
+                    const graphNode = graphNodes[graphNodeKeys[i]];
+                    const desc = await coreFigureExtractor.extract(graphNode);
+                    const plotlyJSON = PlotlyDescExtractor.descToPlotlyJSON(desc);
+                    const parentNode = core.getParent(graphNode);
+                    const updatedGraphNode = core.createNode({
+                        parent: parentNode,
+                        base: META['pipeline.Graph']
+                    });
+                    core.setAttribute(updatedGraphNode, 'data', JSON.stringify(plotlyJSON));
+                    core.deleteNode(graphNode);
                 }
             }
         }
