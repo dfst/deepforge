@@ -1,6 +1,6 @@
 Tutorial Project - Redshift
 ===========================
-The project described on this page can be found in the `deepforge examples repository <https://github.com/deepforge-dev/examples/tree/master/redshift-tutorial>`_ on GitHub under the name **Redshift-Tutorial.webgmex**
+The project described on this page can be found in the `examples repo <https://github.com/deepforge-dev/examples/tree/master/redshift-tutorial>`_ on GitHub under the name **Redshift-Tutorial.webgmex**
 
 Pipeline Overview
 -----------------
@@ -66,7 +66,7 @@ Display Random CIFAR-10
 .. figure:: display-cifar.png
     :align: center
 
-As  with  the  previous  pipeline,  this  pipeline  simply  displays  a  single  image.   The  image  from  this pipeline, however, is more meaningful, as it is drawn from the commonly used CIFAR-10 dataset. This pipeline seeks to provide an example of the input being used in the next pipeline while providing an example of how the data can be obtained. This is important for users who seek to develop their own pipelines, as CIFAR-10 data generally serves as an effective baseline for testing and development of new CNN architectures or training processes.
+As  with  the  previous  pipeline,  this  pipeline  simply  displays  a  single  image.   The  image  from  this pipeline, however, is more meaningful, as it is drawn from the commonly used `CIFAR-10 dataset <http://www.cs.toronto.edu/~kriz/cifar.html>`_. This pipeline seeks to provide an example of the input being used in the next pipeline while providing an example of how the data can be obtained. This is important for users who seek to develop their own pipelines, as CIFAR-10 data generally serves as an effective baseline for testing and development of new CNN architectures or training processes.
 
 Also note, as shown in the figure above, that it is not necessary to utilize all of the outputs of a given node. Unless specifically handled, however, it is generally inappropriate for an input to be left undefined.
 

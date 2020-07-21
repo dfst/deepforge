@@ -1,6 +1,6 @@
 Interface Overview
 ==================
-The Deepforge editor interface is separated into six views for defining all of the necessary features of your desired project. The details of each interface tab are detailed below. You can switch to any of the views at any time by clicking the appropriate icon on the left side of the screen. In order, the tabs are:
+The DeepForge editor interface is separated into six views for defining all of the necessary features of your desired project. The details of each interface tab are detailed below. You can switch to any of the views at any time by clicking the appropriate icon on the left side of the screen. In order, the tabs are:
 
 +---------------+--------------------------+
 | |tabs|        | - Pipelines_             |
@@ -27,7 +27,7 @@ Pipeline editing
     :align: center
     :width: 50%
 
-Deepforge pipelines are directed acyclic graphs of operations, where each operation is an isolated python module. Operations are added to a pipeline using the red plus button in the bottom right of the workspace. Any operations that have previously been defined in the project can be added to the pipeline, or new operations can be created when needed. Arrows in the workspace indicate the passing of data between operations. These arrows can be created by clicking on the desired output (bottom circles) of the first operation before clicking on the desired input (top circles) of the second operation. Clicking on a operation also gives the options to delete (red X), edit (blue </>), or change attributes. Information on the editing of operations can be found in `Custom Operations <custom_operations.rst>`_
+DeepForge pipelines are directed acyclic graphs of operations, where each operation is an isolated python module. Operations are added to a pipeline using the red plus button in the bottom right of the workspace. Any operations that have previously been defined in the project can be added to the pipeline, or new operations can be created when needed. Arrows in the workspace indicate the passing of data between operations. These arrows can be created by clicking on the desired output (bottom circles) of the first operation before clicking on the desired input (top circles) of the second operation. Clicking on a operation also gives the options to delete (red X), edit (blue </>), or change attributes. Information on the editing of operations can be found in `Custom Operations <custom_operations.rst>`_
 
 Pipelines are executed by clicking the yellow play button in the bottom right of the workspace. In the window that appears, you can name the execution, select a computation platform, and select a storage platform. Computation platforms specify what the compute resources used for execution of the operations, such as `SciServer Compute <https://apps.sciserver.org/compute/>`_, will be. Supported storage platforms, such as endpoints with an S3-compatible API, are used to store intermediate and output data. The provided storage option will be used for storing both the output objects defined in the pipeline, as well as all files used in execution of the pipeline.
 
@@ -60,7 +60,7 @@ Resources
     :align: center
     :width: 75%
 
-This view shows the resources available for use in pipelines. Different types of resources are made available through DeepForge extensions and enable the introduction of new concepts into the project. One such example is `deepforge-keras <https://github.com/deepforge-dev/deepforge-keras>`_ which enables users to make neural networks architectures with a custom visual editor. The created architectures can then be referenced and used by operations for tasks such as training.From this view, resources can be created, deleted, and renamed. Resources are arranged by the deepforge system and cannot by manually reordered.
+This view shows the resources available for use in pipelines. Different types of resources are made available through DeepForge extensions and enable the introduction of new concepts into the project. One such example is `deepforge-keras <https://github.com/deepforge-dev/deepforge-keras>`_ which enables users to make neural networks architectures with a custom visual editor. The created architectures can then be referenced and used by operations for tasks such as training. From this view, resources can be created, deleted, and renamed.
 
 .. figure:: neural_network.png
     :align: center
@@ -74,7 +74,7 @@ Artifacts
     :align: center
     :width: 75%
 
-In this view, you can see all artifacts that are available to your pipelines. These artifacts can be used in any pipeline through the inclusion of the built in **Input** operation. Artifacts are pieces of saved data that may be associated with some Python data type. Any arbitrary type of data may be used for creating an artifact, but If a data type is not specified, or if a data type is not provided with a `custom serialization <Custom Serialization_>`_, the artifact will be treated as a `pickle object <https://docs.python.org/3/library/pickle.html>`_. If you have data that cannot be opened with Python's pickle module, you will need to create a custom serialization as described below. Some deepforge extenstions may also support additional data types by default. Deepforge-keras, for example, supports saved keras models, in addition to the standard pickle objects, without the need for custome serializtion.
+In this view, you can see all artifacts that are available to your pipelines. These artifacts can be used in any pipeline through the inclusion of the built in **Input** operation. Artifacts are pieces of saved data that may be associated with some Python data type. Any arbitrary type of data may be used for creating an artifact, but if a data type is not specified, or if a data type is not provided with a `custom serialization <Custom Serialization_>`_, the artifact will be treated as a `pickle object <https://docs.python.org/3/library/pickle.html>`_. If you have data that cannot be opened with Python's pickle module, you will need to create a custom serialization as described below. Some deepforge extenstions may also support additional data types by default. DeepForge-Keras, for example, supports saved keras models, in addition to the standard pickle objects, without the need for custom serialization.
 
 A new artifact can be created in one of three ways. First, artifacts are automatically created during the execution of any pipeline that includes the built-in **Output** operation. Second, artifacts can be directly uploaded in this view using the red upload button in the bottom right of the workspace. Using this option will also upload the artifact to the storage platform specified in the popup window. Finally, artifacts that already exist in one of the storage platforms can be imported using the blue import button in the bottom right of the workspace.
 

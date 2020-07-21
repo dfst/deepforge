@@ -1,9 +1,9 @@
 Redshift Estimation
 ===================
 
-The project described on this page can be found in the `deepforge examples repository <https://github.com/deepforge-dev/examples/tree/master/redshift-tutorial>`_ on GitHub under the name **Redshift-Application.webgmex**
+The project described on this page can be found in the `examples repo <https://github.com/deepforge-dev/examples/tree/master/redshift-tutorial>`_ on GitHub under the name **Redshift-Application.webgmex**
 
-This project provides a small collection of generalized pipelines for the training and utilization of redshift estimation models. This branch is designed to allow simple use by only requiring that the configuration parameters of individual nodes be defined where necessary. The most involved alterations that should be necessary for most users is the definition of additional architectures in the **Resources** tab. It should be noted that any newly defined architecture should have an output length and input shape that match the *num_bins* and *input_shape* configuration parameters being used in the various pipelines.
+This project provides a small collection of generalized pipelines for the training and utilization of redshift estimation models. This project is designed to allow simple use by only requiring that the configuration parameters of individual nodes be defined where necessary. The most involved alterations that should be necessary for most users is the definition of additional architectures in the **Resources** tab. It should be noted that any newly defined architecture should have an output length and input shape that match the *num_bins* and *input_shape* configuration parameters being used in the various pipelines.
 
 Pipeline Overview
 -----------------
@@ -29,7 +29,7 @@ Pipelines
 
 Train Test Single
 ~~~~~~~~~~~~~~~~~
-Trains and evaluates a single CNN model.  Uses predefined artifacts that contain the training and testing data. For this and all training pipelines, the artifacts should each contain a single numpy array. Input arrays should be a 4D array of shape **(n, y, x, c)** where n=number of images, y=image height,x=image width, and c=number of color channels. Output (label) arrays should be of shape **(n,)** .
+Trains and evaluates a single CNN model.  Uses predefined artifacts that contain the training and testing data. For this and all training pipelines, the artifacts should each contain a single numpy array. Input arrays should be a 4D array of shape **(n, y, x, c)** where n=number of images, y=image height, x=image width, and c=number of color channels. Output (label) arrays should be of shape **(n,)** .
 
 .. Visualize Predictions
 .. ~~~~~~~~~~~~~~~~~~~~~
