@@ -46,38 +46,25 @@ define([
      *
      * @param {function(string, plugin.PluginResult)} callback - the result callback
      */
-    ImportLibrary.prototype.main = function (callback) {
+    ImportLibrary.prototype.main = async function (callback) {
         const config = this.getCurrentConfig();
         const libraryInfo = config.libraryInfo;
 
-        return this.addSeedToBranch(libraryInfo.seed)
-            .then(branchName => this.createGMELibraryFromBranch(branchName, libraryInfo))
-            .then(branchInfo => this.removeTemporaryBranch(branchInfo))
-            .then(() => this.updateMetaForLibrary(libraryInfo))
-            .then(() => this.addLibraryInitCode(libraryInfo))
-            .then(() => this.save(`Imported ${libraryInfo.name} library`))
-            .then(() => {
-                this.result.setSuccess(true);
-                callback(null, this.result);
-            })
-            .catch(err => {
-                this.logger.error(`Could not check the libraries: ${err}`);
-                callback(err, this.result);
-            });
+        const {branchInfo, rootHash, libraryData} = await this.createGMELibraryFromSeed(libraryInfo.seed);
+        // FIXME: libraryData isn't very good...
+        await this.core.addLibrary(this.rootNode, libraryInfo.name, rootHash, libraryData);
+        await this.removeTemporaryBranch(branchInfo);
+
+        await this.updateMetaForLibrary(libraryInfo);
+        await this.addLibraryInitCode(libraryInfo);
+        await this.save(`Imported ${libraryInfo.name} library`);
+        this.result.setSuccess(true);
+        callback(null, this.result);
     };
 
-    ImportLibrary.prototype.getUniqueBranchName = function (basename) {
-        return this.project.getBranches()
-            .then(branches => {
-                let name = basename;
-                let i = 2;
-
-                while (branches[name]) {
-                    name = `${basename}${i}`;
-                    i++;
-                }
-                return name;
-            });
+    ImportLibrary.prototype.createGMELibraryFromSeed = async function (name) {
+        const branchName = await this.addSeedToBranch(name);
+        return await this.createGMELibraryFromBranch(branchName, name);
     };
 
     ImportLibrary.prototype.addSeedToBranch = async function (name) {
@@ -91,8 +78,19 @@ define([
         return branch;
     };
 
-    ImportLibrary.prototype.createGMELibraryFromBranch = async function (branchName, libraryInfo) {
-        const name = libraryInfo.name;
+    ImportLibrary.prototype.getUniqueBranchName = async function (basename) {
+        const branches = await this.project.getBranches();
+        let name = basename;
+        let i = 2;
+
+        while (branches[name]) {
+            name = `${basename}${i}`;
+            i++;
+        }
+        return name;
+    };
+
+    ImportLibrary.prototype.createGMELibraryFromBranch = async function (branchName) {
         const libraryData = {
             projectId: this.projectId,
             branchName: branchName,
@@ -101,15 +99,15 @@ define([
 
         // Get the rootHash and commitHash from the commit on the tmp branch
         const commits = await this.project.getHistory(branchName, 1);
-        let commit = commits[0];
-        let rootHash = commit.root;
+        const commit = commits[0];
+        const rootHash = commit.root;
 
         libraryData.commitHash = commit._id;
-        await this.core.addLibrary(this.rootNode, name, rootHash, libraryData);
-        return {
+        const branchInfo = {
             name: branchName,
             hash: commit._id
         };
+        return {branchInfo, rootHash, libraryData};
     };
 
     ImportLibrary.prototype.removeTemporaryBranch = function (branch) {

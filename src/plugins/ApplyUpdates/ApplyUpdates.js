@@ -4,60 +4,62 @@
 define([
     'deepforge/updates/Updates',
     'text!./metadata.json',
-    'plugin/PluginBase'
+    'plugin/ImportLibrary/ImportLibrary/ImportLibrary',
 ], function (
     Updates,
     pluginMetadata,
-    PluginBase
+    PluginBase,
 ) {
     'use strict';
 
     pluginMetadata = JSON.parse(pluginMetadata);
 
-    /**
-     * Initializes a new instance of ApplyUpdates.
-     * @class
-     * @augments {PluginBase}
-     * @classdesc This class represents the plugin ApplyUpdates.
-     * @constructor
-     */
-    var ApplyUpdates = function () {
-        // Call base class' constructor.
+    const ApplyUpdates = function () {
         PluginBase.call(this);
         this.pluginMetadata = pluginMetadata;
     };
 
-    /**
-     * Metadata associated with the plugin. Contains id, name, version, description, icon, configStructue etc.
-     * This is also available at the instance at this.pluginMetadata.
-     * @type {object}
-     */
     ApplyUpdates.metadata = pluginMetadata;
 
     // Prototypical inheritance from PluginBase.
     ApplyUpdates.prototype = Object.create(PluginBase.prototype);
     ApplyUpdates.prototype.constructor = ApplyUpdates;
 
-    /**
-     * Main function for the plugin to execute. This will perform the execution.
-     * Notes:
-     * - Always log with the provided logger.[error,warning,info,debug].
-     * - Do NOT put any user interaction logic UI, etc. inside this method.
-     * - callback always has to be called even if error happened.
-     *
-     * @param {function(string, plugin.PluginResult)} callback - the result callback
-     */
     ApplyUpdates.prototype.main = async function (callback) {
         // Retrieve the updates to apply
         const config = this.getCurrentConfig();
-        const updateNames = config.updates || [];
-
-        if (!updateNames.length) {
+        if (!config.updates.length) {
             this.result.setSuccess(true);
             return callback(null, this.result);
         }
 
-        // Apply each of the updates
+        const [libUpdates, migrations] = partition(
+            config.updates,
+            update => update.type === Updates.SEED
+        );
+        await this.applyLibraryUpdates(libUpdates);
+        await this.applyMigrations(migrations);
+        const updateDisplayNames = config.updates
+            .map(update => update.type === Updates.SEED ? `${update.name} (library)` : update.name)
+            .join(', ');
+
+        await this.save(`Applied project updates: ${updateDisplayNames}`);
+
+        this.result.setSuccess(true);
+        callback(null, this.result);
+    };
+
+    ApplyUpdates.prototype.applyLibraryUpdates = async function (updates) {
+        for (let i = 0; i < updates.length; i++) {
+            const {name} = updates[i];
+            const {branchInfo, rootHash, libraryData} = await this.createGMELibraryFromSeed(name);
+            await this.core.updateLibrary(this.rootNode, name, rootHash, libraryData);
+            await this.removeTemporaryBranch(branchInfo);
+        }
+    };
+
+    ApplyUpdates.prototype.applyMigrations = async function (migrations) {
+        const updateNames = migrations.map(migration => migration.name);
         const updates = Updates.getUpdates(updateNames);
 
         for (let i = 0, len = updates.length; i < len; i++) {
@@ -66,12 +68,17 @@ define([
             await update.apply(this.core, this.rootNode, this.META);
         }
 
-        // Save the project
-        await this.save(`Applied project updates: ${updateNames.join(",")}`);
-
-        this.result.setSuccess(true);
-        callback(null, this.result);
     };
+
+    function partition(data, fn) {
+        const partitioned = [[], []];
+        data.forEach(datum => {
+            const partitionIndex = fn(datum) ? 0 : 1;
+            const partition = partitioned[partitionIndex];
+            partition.push(datum);
+        });
+        return partitioned;
+    }
 
     return ApplyUpdates;
 });

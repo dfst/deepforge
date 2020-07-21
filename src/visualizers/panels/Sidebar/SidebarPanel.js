@@ -164,30 +164,20 @@ define([
             });
     };
 
-    SidebarPanel.prototype.applyUpdates = function (updates) {
-        // Seed Updates should apply the
-        const seedUpdates = updates.filter(update => update.type === Updates.SEED);
-        const promises = seedUpdates.map(update => {
-            const {name, hash} = update;
-            return Q.ninvoke(this._client, 'updateLibrary', name, hash);
-        });
-
-        // Apply the migrations
+    SidebarPanel.prototype.applyUpdates = async function (updates) {
         const pluginId = 'ApplyUpdates';
         const migrations = updates
             .filter(update => update.type === Updates.MIGRATION)
             .map(update => update.name);
 
-        const context = this._client.getCurrentPluginContext(pluginId);
-        context.pluginConfig = {
-            updates: migrations
-        };
+        if (migrations.length) {
+            const context = this._client.getCurrentPluginContext(pluginId);
+            context.pluginConfig = {
+                updates: updates
+            };
 
-        promises.push(
-            Q.ninvoke(this._client, 'runServerPlugin', pluginId, context)
-        );
-
-        return Q.all(promises);
+            await Q.ninvoke(this._client, 'runServerPlugin', pluginId, context);
+        }
     };
 
     return SidebarPanel;
