@@ -13,6 +13,14 @@ define([
             throw new Error('not implemented!');
         }
 
+        async loadChildren() {
+            const provPath = this.core.getPointerPath(this.node, 'provenance');
+            const children = (await this.core.loadChildren(this.node))
+                .filter(node => this.core.getPath(node) !== provPath);
+
+            return children;
+        }
+
         static getCommand() {
             throw new Error('not implemented!');
         }

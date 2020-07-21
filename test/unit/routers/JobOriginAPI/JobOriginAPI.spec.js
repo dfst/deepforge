@@ -2,18 +2,12 @@ var testFixture = require('../../../globals'),
     superagent = testFixture.superagent,
     expect = testFixture.expect,
     gmeConfig = testFixture.getGmeConfig(),
-    server = testFixture.WebGME.standaloneServer(gmeConfig),
     mntPt = 'job/origins';
 
 describe('JobOriginAPI', function() {
-    var hashes = {},
-        getUrl = function(hash) {
-            return [
-                server.getUrl(),
-                mntPt,
-                hash
-            ].join('/');
-        },
+    var server,
+        getUrl,
+        hashes = {},
         getJobInfo = function() {
             var hash = 'hash'+Math.ceil(Math.random()*100000);
 
@@ -33,6 +27,14 @@ describe('JobOriginAPI', function() {
         };
 
     before(function(done) {
+        server = testFixture.WebGME.standaloneServer(gmeConfig);
+        getUrl = function(hash) {
+            return [
+                server.getUrl(),
+                mntPt,
+                hash
+            ].join('/');
+        };
         server.start(done);
     });
 

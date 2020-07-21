@@ -32,11 +32,12 @@ describe('ExecutePipeline', function () {
     Pipeline.ComplexPipeline = '/f/3';
     Pipeline.ExportPlugin = '/f/s';
 
-    const server = new testFixture.WebGME.standaloneServer(gmeConfig);
-    server.start = promisify(server.start);
-    server.stop = promisify(server.stop);
+    let server;
 
     before(async function () {
+        server = new testFixture.WebGME.standaloneServer(gmeConfig);
+        server.start = promisify(server.start);
+        server.stop = promisify(server.stop);
         gmeAuth = await testFixture.clearDBAndGetGMEAuth(gmeConfig, projectName);
         // This uses in memory storage. Use testFixture.getMongoStorage to persist test to database.
         storage = testFixture.getMemoryStorage(logger, gmeConfig, gmeAuth);

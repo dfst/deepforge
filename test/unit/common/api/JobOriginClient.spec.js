@@ -1,18 +1,13 @@
 var testFixture = require('../../../globals'),
     expect = testFixture.expect,
     gmeConfig = testFixture.getGmeConfig(),
-    server = testFixture.WebGME.standaloneServer(gmeConfig),
     Logger = require('webgme-engine/src/server/logger'),
     logger = Logger.createWithGmeConfig('gme', gmeConfig, true),
     JobOriginClient = testFixture.requirejs('deepforge/api/JobOriginClient');
 
 describe('JobOriginClient', function() {
-    var client = new JobOriginClient({
-            logger: logger,
-            origin: server.getUrl(),
-            projectId: 'testProject',
-            branchName: 'master'
-        }),
+    var server,
+        client,
         hashes = {},
         getJobInfo = function() {
             var hash = 'hashOrigin'+Math.ceil(Math.random()*100000);
@@ -31,6 +26,13 @@ describe('JobOriginClient', function() {
         };
 
     before(function(done) {
+        server = testFixture.WebGME.standaloneServer(gmeConfig),
+        client = new JobOriginClient({
+            logger: logger,
+            origin: server.getUrl(),
+            projectId: 'testProject',
+            branchName: 'master'
+        });
         server.start(done);
     });
 

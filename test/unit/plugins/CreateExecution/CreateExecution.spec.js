@@ -51,20 +51,6 @@ describe('CreateExecution', function () {
         return plugin;
     };
 
-    describe('snapshotNode', function() {
-        let plugin;
-        before(async () => plugin = await preparePlugin());
-
-        it('should be able to snapshot node w/ unset ptr', async () => {
-            const {core, rootNode, META} = plugin;
-            const helloWorldNode = await core.loadByPath(rootNode, '/f/h/d');
-            core.setPointerMetaLimits(helloWorldNode, 'testPtr', 1, 1);
-            core.setPointerMetaTarget(helloWorldNode, 'testPtr', META.Job, 1, 1);
-
-            await plugin.snapshotNode(helloWorldNode, plugin.activeNode);
-        });
-    });
-
     describe('getUniqueExecName', function() {
         let plugin;
 

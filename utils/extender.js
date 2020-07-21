@@ -6,11 +6,12 @@
 //
 const path = require('path');
 const fs = require('fs');
-const npm = require('npm');
-const Q = require('q');
+const pacote = require('pacote');
 const rm_rf = require('rimraf');
 const exists = require('exists-file');
 const makeTpl = require('lodash.template');
+const {promisify} = require('util');
+const exec = promisify(require('child_process').exec);
 const HOME_DIR = require('os').homedir();
 const CONFIG_DIR = path.join(HOME_DIR, '.deepforge');
 const EXT_CONFIG_NAME = 'deepforge-extension.json';
@@ -64,70 +65,63 @@ extender.getInstalledConfigType = function(name) {
 };
 
 
-extender.install = function(projectName, isReinstall) {
-    // Install the project
-    return Q.ninvoke(npm, 'load', {})
-        .then(() => Q.ninvoke(npm, 'install', projectName))
-        .then(results => {
-            let installed = results[0];
-            // FIXME: fails if already installed
-            let [extProject, extRoot] = installed.pop();
+extender.install = async function(projectName, isReinstall) {
+    await exec(`npm install ${projectName}`);
+    const {name} = await pacote.manifest(projectName);
+    const extRoot = path.join(__dirname, '..', 'node_modules', name);
 
-            // Check for the extensions.json in the project (look up type, etc)
-            var extConfigPath = path.join(extRoot, extender.EXT_CONFIG_NAME),
-                extConfig,
-                extType;
+    // Check for the extensions.json in the project (look up type, etc)
+    var extConfigPath = path.join(extRoot, extender.EXT_CONFIG_NAME),
+        extConfig,
+        extType;
 
-            // Check that the extensions file exists
-            if (!exists.sync(extConfigPath)) {
-                throw [
-                    `Could not find ${extender.EXT_CONFIG_NAME} for ${projectName}.`,
-                    '',
-                    `This is likely an issue with the deepforge extension (${projectName})`
-                ].join('\n');
-            }
+    // Check that the extensions file exists
+    if (!exists.sync(extConfigPath)) {
+        throw [
+            `Could not find ${extender.EXT_CONFIG_NAME} for ${projectName}.`,
+            '',
+            `This is likely an issue with the deepforge extension (${projectName})`
+        ].join('\n');
+    }
 
-            try {
-                extConfig = JSON.parse(fs.readFileSync(extConfigPath, 'utf8'));
-            } catch(e) {  // Invalid JSON
-                throw `Invalid ${extender.EXT_CONFIG_NAME}: ${e}`;
-            }
+    try {
+        extConfig = JSON.parse(fs.readFileSync(extConfigPath, 'utf8'));
+    } catch(e) {  // Invalid JSON
+        throw `Invalid ${extender.EXT_CONFIG_NAME}: ${e}`;
+    }
 
-            // Try to add the extension to the project (using the extender)
-            extType = extConfig.type;
-            if (!extender.isSupportedType(extType)) {
-                throw `Unrecognized extension type: "${extType}"`;
-            }
-            // add project info to the config
-            let project = {
-                arg: projectName,
-                root: extRoot,
-                name: extProject
-            };
-            let pkgJsonPath = path.join(project.root, 'package.json');
-            let pkgJson = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf8'));
-            project = project || extConfig.project;
-            extConfig.version = pkgJson.version;
-            extConfig.project = project;
+    // Try to add the extension to the project (using the extender)
+    extType = extConfig.type;
+    if (!extender.isSupportedType(extType)) {
+        throw `Unrecognized extension type: "${extType}"`;
+    }
+    // add project info to the config
+    let project = {
+        arg: projectName,
+        root: extRoot,
+        name: name
+    };
+    let pkgJsonPath = path.join(project.root, 'package.json');
+    let pkgJson = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf8'));
+    project = project || extConfig.project;
+    extConfig.version = pkgJson.version;
+    extConfig.project = project;
 
-            allExtConfigs[extType] = allExtConfigs[extType] || {};
-            isReinstall = isReinstall || !!allExtConfigs[extType][extConfig.name];
-            if (isReinstall) {
-                // eslint-disable-next-line no-console
-                console.error(`Extension ${extConfig.name} already installed. Reinstalling...`);
-            }
+    allExtConfigs[extType] = allExtConfigs[extType] || {};
+    isReinstall = isReinstall || !!allExtConfigs[extType][extConfig.name];
+    if (isReinstall) {
+        // eslint-disable-next-line no-console
+        console.error(`Extension ${extConfig.name} already installed. Reinstalling...`);
+    }
 
-            allExtConfigs[extType][extConfig.name] = extConfig;
-            return Q(extender.install[extType](extConfig, project, !!isReinstall))
-                .then(config => {
-                    extConfig = config || extConfig;
-                    // Update the deployment config
-                    allExtConfigs[extType][extConfig.name] = extConfig;
-                    persistExtConfig();
+    allExtConfigs[extType][extConfig.name] = extConfig;
+    const config = await extender.install[extType](extConfig, project, !!isReinstall);
+    extConfig = config || extConfig;
+    // Update the deployment config
+    allExtConfigs[extType][extConfig.name] = extConfig;
+    persistExtConfig();
 
-                    return extConfig;
-                });
-        });
+    return extConfig;
 };
 
 extender.uninstall = function(name) {
@@ -170,7 +164,7 @@ function makeInstallFor(typeCfg) {
     //  - extension type
     //  - target path tpl
     // create the installation/uninstallation functions
-    extender.install[typeCfg.type] = (config, project/*, isReinstall*/) => {
+    extender.install[typeCfg.type] = async (config, project/*, isReinstall*/) => {
         var dstPath,
             pkgJsonPath = path.join(project.root, 'package.json'),
             pkgJson = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf8')),

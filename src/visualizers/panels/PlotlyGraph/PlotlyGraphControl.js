@@ -9,6 +9,9 @@ define([
 ) {
 
     'use strict';
+    const ClientFigureExtractor = FigureExtractor.ClientFigureExtractor;
+    const GRAPH = ['Graph'];
+    const SUBGRAPHS = ['Plot2D', 'Plot3D'];
 
     function PlotlyGraphControl(options) {
 
@@ -19,10 +22,12 @@ define([
         // Initialize core collections and variables
         this._widget = options.widget;
 
+        this._embedded = options.embedded;
+
         this._currentNodeId = null;
         this._currentNodeParentId = undefined;
 
-        this.figureExtractor = new FigureExtractor(this._client);
+        this.figureExtractor = new ClientFigureExtractor(this._client);
 
         this._logger.debug('ctor finished');
     }
@@ -63,11 +68,18 @@ define([
     // This next function retrieves the relevant node information for the widget
     PlotlyGraphControl.prototype._getObjectDescriptor = function (nodeId) {
         let node = this._client.getNode(nodeId),
-            desc;
-        const graphNode = this.figureExtractor.getGraphNode(node);
-
-        if(graphNode) {
-            desc = this.figureExtractor.extract(graphNode);
+            desc, graphNode;
+        if(node) {
+            const baseNode = this._client.getNode(node.getBaseId());
+            const type = baseNode.getAttribute('name');
+            const isGraph = GRAPH.concat(SUBGRAPHS).includes(type);
+            if(isGraph){
+                graphNode = node;
+                if (SUBGRAPHS.includes(type)) {
+                    graphNode = this._client.getNode(node.getParentId());
+                }
+                desc = this.figureExtractor.extract(graphNode);
+            }
         }
         return desc;
     };
@@ -128,11 +140,15 @@ define([
 
     PlotlyGraphControl.prototype._attachClientEventListeners = function () {
         this._detachClientEventListeners();
-        WebGMEGlobal.State.on('change:' + CONSTANTS.STATE_ACTIVE_OBJECT, this._stateActiveObjectChanged, this);
+        if (!this._embedded) {
+            WebGMEGlobal.State.on('change:' + CONSTANTS.STATE_ACTIVE_OBJECT, this._stateActiveObjectChanged, this);
+        }
     };
 
     PlotlyGraphControl.prototype._detachClientEventListeners = function () {
-        WebGMEGlobal.State.off('change:' + CONSTANTS.STATE_ACTIVE_OBJECT, this._stateActiveObjectChanged);
+        if(!this._embedded){
+            WebGMEGlobal.State.off('change:' + CONSTANTS.STATE_ACTIVE_OBJECT, this._stateActiveObjectChanged);
+        }
     };
 
     PlotlyGraphControl.prototype.onActivate = function () {

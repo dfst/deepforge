@@ -75,7 +75,7 @@ define([
                 }
                 return this.updateSeed(name);
             })
-            .then(() => this.recordVersion(name, version))
+            .then(() => this.recordRelease(name, version))
             .then(() => {
                 this.logger.info(`Finished updating library seed for ${name}`);
                 this.result.setSuccess(true);
@@ -141,10 +141,12 @@ define([
         return deferred.promise;
     };
 
-    UpdateLibrarySeed.prototype.recordVersion = function (seed, version) {
-        var versionPath = path.join(SEEDS_DIR, seed, 'version.txt');
+    UpdateLibrarySeed.prototype.recordRelease = function (seed, version) {
+        const {changelog} = this.getCurrentConfig();
+        const release = {version, changelog};
+        const versionPath = path.join(SEEDS_DIR, seed, 'releases.jsonl');
         this.logger.info(`Updating ${seed} version (${version})`);
-        return Q.nfcall(fs.writeFile, versionPath, version);
+        return Q.nfcall(fs.appendFile, versionPath, `\n${JSON.stringify(release)}`);
     };
 
     return UpdateLibrarySeed;

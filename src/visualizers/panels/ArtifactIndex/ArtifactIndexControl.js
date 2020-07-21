@@ -3,12 +3,10 @@
 
 define([
     'deepforge/storage/index',
-    'deepforge/viz/ConfigDialog',
     'blob/BlobClient',
     'js/Constants'
 ], function (
     Storage,
-    ConfigDialog,
     BlobClient,
     CONSTANTS
 ) {
@@ -62,22 +60,14 @@ define([
             this._client.completeTransaction();
         };
 
-        this._widget.getDownloadURL = async (id, config) => {
+        this._widget.onAttributeChange = (id, attr, newValue) => {
             const node = this._client.getNode(id);
-            const dataInfo = this.getDataInfo(node);
-            const {backend} = dataInfo;
-            const storage = await Storage.getClient(backend, this._logger, config);
-
-            return await storage.getDownloadURL(dataInfo);
-        };
-        this._widget.getConfigDialog = () => new ConfigDialog(this._client);
-
-        this._widget.onNameChange = (id, newName) => {
-            var name = this._client.getNode(id).getAttribute('name'),
-                msg = `Renamed "${name}" artifact to "${newName}"`;
-
+            const name = node.getAttribute('name');
+            const oldValue = node.getAttribute(attr);
+            const fromMsg = oldValue ? ` (from ${oldValue})` : '';
+            const msg = `Set ${name} artifact's ${attr} to ${newValue}${fromMsg}`;
             this._client.startTransaction(msg);
-            this._client.setAttribute(id, 'name', newName);
+            this._client.setAttribute(id, attr, newValue);
             this._client.completeTransaction();
         };
     };

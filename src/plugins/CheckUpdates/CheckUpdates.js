@@ -9,7 +9,7 @@ define([
     'module',
     'path',
     'fs',
-    'util',
+    'readline',
 ], function (
     Updates,
     Version,
@@ -18,11 +18,11 @@ define([
     module,
     path,
     fs,
-    util,
+    readline,
 ) {
     'use strict';
 
-    const writeFile = util.promisify(fs.writeFile);
+    const fsp = fs.promises;
     /**
      * Initializes a new instance of CheckUpdates.
      * @class
@@ -126,25 +126,51 @@ define([
     };
 
     CheckUpdates.prototype.getSeedVersionPath = function (name) {
-        return path.join(this.getSeedDir(name), 'version.txt');
+        return path.join(this.getSeedDir(name), 'releases.jsonl');
+    };
+
+    CheckUpdates.prototype.getLastLine = async function (filename) {
+        const stream = fs.createReadStream(filename);
+        const rl = readline.createInterface({input: stream, crlfDelay: Infinity});
+        let lastline = null;
+        for await (const line of rl) {
+            if (line.startsWith('{')) {
+                lastline = line.trim();
+            }
+        }
+        return lastline;
+    };
+
+    CheckUpdates.prototype.getSeedVersion = async function (name) {
+        const versionPath = this.getSeedVersionPath(name);
+        const exists = await fsp.stat(versionPath).catch(() => false);
+        if (exists) {
+            const release = JSON.parse(await this.getLastLine(versionPath));
+            return new Version(release.version);
+        } else {
+            this.logger.warn(`No releases found for ${name}`);
+            return new Version('0.0.0');
+        }
     };
 
     CheckUpdates.prototype.getLibraryHash = async function (name, version) {
         let hash;
+        const filename = this.getSeedHashPath(name);
         try {
-            const filename = this.getSeedHashPath(name);
-            let [lastHash, versionString] = fs.readFileSync(filename, 'utf8').split(' ');
+            let [lastHash, versionString] = (await fsp.readFile(filename, 'utf8')).split(' ');
             const lastVersion = new Version(versionString);
             if (lastVersion.equalTo(version)) {
                 hash = lastHash;
             }
         } catch (err) {
-            this.logger.info(`Uploading new version of ${name} (${version})`);
+            if (err.code !== 'ENOENT') {
+                this.logger.info(`Could not get ${name} library hash: ${err.message}`);
+            }
         }
         if (!hash) {
             this.logger.info(`Uploading new version of ${name} (${version})`);
             hash = await this.uploadSeed(name);
-            await writeFile(this.getSeedHashPath(name), `${hash} ${version}`);
+            await fsp.writeFile(filename, `${hash} ${version}`);
         }
         return hash;
     };
@@ -179,11 +205,10 @@ define([
         for (let i = names.length; i--;) {
             const name = names[i];
             try {
-                const versionPath = this.getSeedVersionPath(name);
-                const version = fs.readFileSync(versionPath, 'utf8').trim();
+                const version = await this.getSeedVersion(name);
                 this.logger.debug(`${name} version is ${version}`);
                 if (version) {
-                    libraries.push([name, new Version(version)]);
+                    libraries.push([name, version]);
                 } else {
                     this.logger.debug(`Invalid version for ${name}: "${version}"`);
                 }

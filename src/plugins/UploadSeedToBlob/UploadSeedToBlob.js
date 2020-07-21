@@ -6,20 +6,17 @@ define([
     'module',
     'path',
     'fs',
-    'util',
     './metadata.json'
 ], function (
     PluginBase,
     module,
     path,
     fs,
-    util,
     pluginMetadata
 ) {
     'use strict';
 
-    const {promisify} = util;
-    const readFile = promisify(fs.readFile);
+    const fsp = fs.promises;
     const __dirname = path.dirname(module.uri);
     const PROJECT_ROOT = path.join(__dirname, '..', '..', '..');
     const SEEDS_DIR = path.join(PROJECT_ROOT, 'src', 'seeds');
@@ -74,7 +71,7 @@ define([
     };
 
     UploadSeedToBlob.prototype.uploadSeed = async function (name) {
-        const data = await readFile(this.getSeedDataPath(name));
+        const data = await fsp.readFile(this.getSeedDataPath(name));
         return await this.blobClient.putFile(`${name}.webgmex`, data);
     };
 

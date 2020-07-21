@@ -2,11 +2,13 @@
 define([
     'panels/EasyDAG/EasyDAGControl.WidgetEventHandlers',
     'deepforge/OperationCode',
+    'deepforge/Constants',
     './Colors',
     'text!panels/ForgeActionButton/Libraries.json',
 ], function(
     EasyDAGControlEventHandlers,
     OperationCode,
+    Constants,
     COLORS,
     LibrariesText
 ) {
@@ -265,7 +267,10 @@ define([
         } else if (nodeId === this._currentNodeId) {  // edit operation attributes
             msg = `Setting attribute default ${attr}->${value} in ${name}`;
             this._client.startTransaction(msg);
-            this.updateCode(operation => operation.setAttributeDefault(attr, value));
+            const isOperationAttribute = !Object.values(Constants.OPERATION).includes(attr);
+            if (isOperationAttribute) {
+                this.updateCode(operation => operation.setAttributeDefault(attr, value));
+            }
             EasyDAGControlEventHandlers.prototype._saveAttributeForNode.apply(this, arguments);
             this._client.completeTransaction();
         }

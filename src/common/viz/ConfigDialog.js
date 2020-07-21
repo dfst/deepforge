@@ -198,7 +198,7 @@ define([
 
             // Make sure not modify the global metadata.
             pluginConfigEntry = JSON.parse(JSON.stringify(pluginConfigEntry));
-            if (this._client.getProjectAccess().write === false && pluginConfigEntry.writeAccessRequired === true) {
+            if (pluginConfigEntry.writeAccessRequired === true && this._client.getProjectAccess().write === false) {
                 pluginConfigEntry.readOnly = true;
             }
 

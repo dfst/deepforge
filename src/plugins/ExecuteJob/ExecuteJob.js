@@ -10,6 +10,7 @@ define([
     'deepforge/plugin/LocalExecutor',
     'deepforge/plugin/PtrCodeGen',
     'deepforge/plugin/Operation',
+    'deepforge/plugin/ExecutionHelpers',
     'deepforge/api/JobLogsClient',
     'deepforge/api/JobOriginClient',
     'deepforge/api/ExecPulseClient',
@@ -28,6 +29,7 @@ define([
     LocalExecutor,  // DeepForge operation primitives
     PtrCodeGen,
     OperationPlugin,
+    ExecutionHelpers,
     JobLogsClient,
     JobOriginClient,
     ExecPulseClient,
@@ -656,7 +658,7 @@ define([
             this.logManager.deleteLog(jobId);
             if (status === this.compute.SUCCESS) {
                 const results = await this.compute.getResultsInfo(jobInfo);
-                this.onDistOperationComplete(op, results);
+                await this.recordOperationOutputs(op, results);
             } else {
                 // Parse the most precise error and present it in the toast...
                 const lastline = result.stdout.split('\n').filter(l => !!l).pop() || '';
@@ -676,29 +678,48 @@ define([
         }
     };
 
-    ExecuteJob.prototype.onDistOperationComplete = async function (node, results) {
+    ExecuteJob.prototype.recordOperationOutputs = async function (node, results) {
         const nodeId = this.core.getPath(node);
         const outputPorts = await this.getOutputs(node);
         const outputs = outputPorts.map(tuple => [tuple[0], tuple[2]]);
 
         for (let i = outputs.length; i--;) {
-            const [name, node] = outputs[i];
+            const [name, dataNode] = outputs[i];
             const {type, dataInfo} = results[name];
 
             if (type) {
-                this.core.setAttribute(node, 'type', type);
+                this.core.setAttribute(dataNode, 'type', type);
                 this.logger.info(`Setting ${nodeId} data type to ${type}`);
             } else {
                 this.logger.warn(`No data type found for ${nodeId}`);
             }
 
             if (dataInfo) {
-                this.core.setAttribute(node, 'data', JSON.stringify(dataInfo));
+                this.core.setAttribute(dataNode, 'data', JSON.stringify(dataInfo));
                 this.logger.info(`Setting ${nodeId} data to ${dataInfo}`);
             }
+
+            await this.recordProvenance(dataNode, node);
         }
 
         return this.onOperationComplete(node);
+    };
+
+    ExecuteJob.prototype.recordProvenance = async function (dataNode, opNode) {
+        const oldProvId = this.core.getPointerPath(dataNode, 'provenance');
+        if (oldProvId) {
+            const executedJob = await this.core.loadByPath(this.rootNode, oldProvId);
+            this.core.deleteNode(executedJob);
+        }
+
+        const helpers = new ExecutionHelpers(this.core, this.rootNode);
+        const executedJob = this.core.createNode({
+            base: this.META.ExecutedJob,
+            parent: dataNode
+        });
+        const {snapshot} = await helpers.snapshotOperation(opNode, executedJob, this.META.Operation);
+        this.core.setPointer(executedJob, 'operation', snapshot);
+        this.core.setPointer(dataNode, 'provenance', executedJob);
     };
 
     //////////////////////////// Special Operations ////////////////////////////
@@ -714,14 +735,14 @@ define([
 
         try {
             await this[type](node);
-            this.onOperationEnd(null, node);
+            await this.onOperationEnd(null, node);
         } catch (err) {
             const job = this.core.getParent(node);
             const stdout = this.core.getAttribute(job, 'stdout') +
                 '\n' + red(err.toString());
 
             this.core.setAttribute(job, 'stdout', stdout);
-            this.onOperationEnd(err, node);
+            await this.onOperationEnd(err, node);
         }
     };
 

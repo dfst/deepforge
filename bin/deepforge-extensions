@@ -20,7 +20,7 @@ program
         extender.install(project)
             .then(extConfig => 
                 console.log(`The ${extConfig.name} extension has been added to deepforge.`))
-            .fail(err => {
+            .catch(err => {
                 console.error('Could not install extension:\n');
                 console.error(err);
                 process.exit(1);
