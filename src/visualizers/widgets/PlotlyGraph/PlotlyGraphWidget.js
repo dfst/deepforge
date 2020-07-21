@@ -25,7 +25,6 @@ define([
         this.$el.css('overflow', 'auto');
         this.$el.addClass(WIDGET_CLASS);
         this.plots = [];
-        this.created = false;
         this.logger.debug('ctor finished');
         this.setTextVisibility(true);
     }
@@ -77,16 +76,7 @@ define([
         if (!plotlyJSONs) {
             this.deleteChart();
         } else {
-            if (!this.created && !_.isEmpty(plotlyJSONs)) {
-                this.createChartSlider(plotlyJSONs);
-                this.created = true;
-
-            } else if(!_.isEmpty(plotlyJSONs)) {
-                // Currently in plotly, ImageTraces have no react support
-                // This will be updated when there's additional support
-                // for react with responsive layout
-                this.createChartSlider(plotlyJSONs);
-            }
+            this.createChartSlider(plotlyJSONs);
         }
     };
 
@@ -102,13 +92,10 @@ define([
     PlotlyGraphWidget.prototype.refreshChart = _.debounce(PlotlyGraphWidget.prototype.createOrUpdateChart, 50);
 
     PlotlyGraphWidget.prototype.deleteChart = function () {
-        if (this.created) {
-            this.plots.forEach($plot => {
-                Plotly.purge($plot[0]);
-                $plot.remove();
-            });
-        }
-        this.created = false;
+        this.plots.forEach($plot => {
+            Plotly.purge($plot[0]);
+            $plot.remove();
+        });
     };
 
     PlotlyGraphWidget.prototype.setTextVisibility = function (display) {

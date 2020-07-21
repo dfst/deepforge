@@ -172,7 +172,6 @@ describe('ExecuteJob', function () {
             plugin.pulseClient.update = nopPromise;
             plugin.resumeJob = () => done(shouldResume ? null : 'Should not resume job!');
             plugin.executeJob = () => done(shouldResume ? 'Should resume job!' : null);
-
             plugin.main();
         };
 

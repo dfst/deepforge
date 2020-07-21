@@ -13,13 +13,13 @@ define([
     Q
 ) {
     const GRAPH = 'Graph';
-    const getGraphNode = async function(core, rootNode, graphNodes={}) {
+    const getGraphNodes = async function(core, rootNode, graphNodes=[]) {
         const children = await core.loadChildren(rootNode);
         for(let i = 0; i < children.length; i++) {
             if (core.getAttribute(children[i], 'name') === GRAPH && !core.isMetaNode(children[i])) {
-                graphNodes[core.getPath(children[i])] = children[i];
+                graphNodes.push(children[i]);
             }
-            await getGraphNode(core, children[i], graphNodes);
+            await getGraphNodes(core, children[i], graphNodes);
         }
     };
 
@@ -100,12 +100,11 @@ define([
                 }
             },
             apply: async function(core, rootNode, META) {
-                let graphNodes = {};
-                await getGraphNode(core, rootNode, graphNodes);
-                const graphNodeKeys = Object.keys(graphNodes);
+                let graphNodes = [];
+                await getGraphNodes(core, rootNode, graphNodes);
                 const coreFigureExtractor = new FigureExtractor.CoreFigureExtractor(core, rootNode);
-                for (let i = 0; i < graphNodeKeys.length; i++){
-                    const graphNode = graphNodes[graphNodeKeys[i]];
+                for (let i = 0; i < graphNodes.length; i++){
+                    const graphNode = graphNodes[i];
                     const desc = await coreFigureExtractor.extract(graphNode);
                     const plotlyJSON = PlotlyDescExtractor.descToPlotlyJSON(desc);
                     const parentNode = core.getParent(graphNode);
