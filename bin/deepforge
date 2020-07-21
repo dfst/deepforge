@@ -247,8 +247,9 @@ program.command('start')
             try {
                 Conda.check();
             } catch (e) {
-                console.log('Warning: option to use a conda is selected but conda installation ' +
-                            `check failed with error: ${e}\nContinuing without using conda`);
+                console.log('Warning: conda executable not found. Please ' +
+                            'install conda for automatic management of Python ' +
+                            'dependencies via conda environments.');
                 args.conda = false;
             }
         }
