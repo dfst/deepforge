@@ -167,21 +167,39 @@ define([
     };
 
     SidebarPanel.prototype.applyUpdates = async function (updates) {
-        const seedUpdates = updates.filter(update => update.type === Updates.SEED);
+        const [seedUpdates, earlyMigrations, migrations] = Utils.partition(
+            updates,
+            update => {
+                if (update.type === Updates.SEED) {
+                    return 0;
+                }
+                if (Updates.getUpdate(update.name).beforeLibraryUpdates) {
+                    return 1;
+                }
+                return 2;
+            }
+        );
+
+        await this.applyMigrationUpdates(earlyMigrations);
+
+        await Utils.sleep(1000);
+
         for (let i = 0; i < seedUpdates.length; i++) {
             const {name, hash} = seedUpdates[i];
             await Q.ninvoke(this._client, 'updateLibrary', name, hash);
         }
 
         await Utils.sleep(1000);
+        await this.applyMigrationUpdates(migrations);
+    };
+
+    SidebarPanel.prototype.applyMigrationUpdates = async function (updates) {
         const pluginId = 'ApplyUpdates';
-        const migrations = updates
-            .filter(update => update.type === Updates.MIGRATION)
-            .map(update => update.name);
+        const names = updates.map(update => update.name);
 
         const context = this._client.getCurrentPluginContext(pluginId);
         context.pluginConfig = {
-            updates: migrations
+            updates: names,
         };
 
         await Q.ninvoke(this._client, 'runServerPlugin', pluginId, context);
