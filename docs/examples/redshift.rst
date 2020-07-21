@@ -1,7 +1,7 @@
 Redshift Estimation
 ===================
 
-The project described on this page can be found in the `deepforge examples repository <https://github.com/deepforge-dev/examples>`_ on GitHub under the name **redshift-example.webgmex**
+The project described on this page can be found in the `deepforge examples repository <https://github.com/deepforge-dev/examples/tree/master/redshift-tutorial>`_ on GitHub under the name **Redshift-Application.webgmex**
 
 This project provides a small collection of generalized pipelines for the training and utilization of redshift estimation models. This branch is designed to allow simple use by only requiring that the configuration parameters of individual nodes be defined where necessary. The most involved alterations that should be necessary for most users is the definition of additional architectures in the **Resources** tab. It should be noted that any newly defined architecture should have an output length and input shape that match the *num_bins* and *input_shape* configuration parameters being used in the various pipelines.
 

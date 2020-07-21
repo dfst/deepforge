@@ -1,6 +1,6 @@
 Tutorial Project - Redshift
 ===========================
-The project described on this page can be found in the `deepforge examples repository <https://github.com/deepforge-dev/examples>`_ on GitHub under the name **redshift-tutorial.webgmex**
+The project described on this page can be found in the `deepforge examples repository <https://github.com/deepforge-dev/examples/tree/master/redshift-tutorial>`_ on GitHub under the name **Redshift-Tutorial.webgmex**
 
 Pipeline Overview
 -----------------
