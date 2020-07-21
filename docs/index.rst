@@ -32,7 +32,7 @@ Welcome to DeepForge's documentation!
 
 .. toctree::
    :maxdepth: 1
-   :caption: Tutorials and Example Projects.
+   :caption: Tutorials and Examples
    
    examples/rs-tutorial.rst
    examples/redshift.rst
