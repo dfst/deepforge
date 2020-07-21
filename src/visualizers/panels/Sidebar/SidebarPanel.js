@@ -3,6 +3,7 @@
 
 define([
     'deepforge/updates/Updates',
+    'deepforge/utils',
     'js/Constants',
     'js/PanelBase/PanelBase',
     'panels/AutoViz/AutoVizPanel',
@@ -11,6 +12,7 @@ define([
     'q'
 ], function (
     Updates,
+    Utils,
     CONSTANTS,
     PanelBase,
     AutoVizPanel,
@@ -164,15 +166,14 @@ define([
             });
     };
 
-    SidebarPanel.prototype.applyUpdates = function (updates) {
-        // Seed Updates should apply the
+    SidebarPanel.prototype.applyUpdates = async function (updates) {
         const seedUpdates = updates.filter(update => update.type === Updates.SEED);
-        const promises = seedUpdates.map(update => {
-            const {name, hash} = update;
-            return Q.ninvoke(this._client, 'updateLibrary', name, hash);
-        });
+        for (let i = 0; i < seedUpdates.length; i++) {
+            const {name, hash} = seedUpdates[i];
+            await Q.ninvoke(this._client, 'updateLibrary', name, hash);
+        }
 
-        // Apply the migrations
+        await Utils.sleep(1000);
         const pluginId = 'ApplyUpdates';
         const migrations = updates
             .filter(update => update.type === Updates.MIGRATION)
@@ -183,11 +184,7 @@ define([
             updates: migrations
         };
 
-        promises.push(
-            Q.ninvoke(this._client, 'runServerPlugin', pluginId, context)
-        );
-
-        return Q.all(promises);
+        await Q.ninvoke(this._client, 'runServerPlugin', pluginId, context);
     };
 
     return SidebarPanel;
