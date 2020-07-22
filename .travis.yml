@@ -11,7 +11,7 @@ script: travis_wait 30 npm run test-ci
 before_install:
   - docker pull minio/minio
   - docker run -d -p 9000:9000 --name minio-test -e "MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}" -e "MINIO_SECRET_KEY=${MINIO_SECRET_KEY}" minio/minio server ./data
-  - nvm install 12; if [[ `npm -v` != 6* ]]; then npm i -g npm@6; fi
+  - nvm install 12.18.0; if [[ `npm -v` != 6* ]]; then npm i -g npm@6; fi
 install:
   - source utils/install-conda.sh
   - npm install
