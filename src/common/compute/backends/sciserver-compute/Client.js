@@ -220,30 +220,32 @@ define([
         async _getFile (jobInfo, filename) {
             const state = await this.getJobState(jobInfo);
             if (state) {
-                const baseUrl = 'https://apps.sciserver.org/fileservice/api/file/';
                 const filepath = state.resultsFolderURI.replace(/\/?$/, '/') + filename;
-                const fileUrl = baseUrl + this._getEncodedFilePath(filepath);
-
-                const response = await this.fetch(fileUrl);
-                return await response.text();
+                const {config, dataInfo} = this._getStorageConfigAndDataInfo(filepath);
+                const storage = await Storage.getClient('sciserver-files', this.logger, config);
+                return (await storage.getFile(dataInfo)).toString('utf-8');
             }
         }
 
         async _deleteFileDir (state) {
-            const baseUrl = 'https://apps.sciserver.org/fileservice/api/data/';
             const filepath = state.command.split(' ').pop();
-            const fileUrl = baseUrl + this._getEncodedFilePath(filepath);
-            const response = await this.fetch(fileUrl, {method: 'DELETE'});
-            return await response.text();
+            const {dataInfo, config} = this._getStorageConfigAndDataInfo(filepath);
+            const storage = await Storage.getClient('sciserver-files', this.logger, config);
+            await storage.deleteDir(dataInfo.data.filename);
         }
 
-        _getEncodedFilePath (filepath) {
+        _getStorageConfigAndDataInfo (filepath) {
             const dirs = filepath.split('/').slice(4);
-            const filename = dirs.pop();
-            const drive = dirs.slice(0, 3).join('/') + '/';
-            const dirname = '/' + dirs.slice(3).join('/');
-
-            return drive + encodeURIComponent(dirname) + '/' + filename;
+            let [volumePool, owner, volume] = dirs.slice(0, 3);
+            const password = this.password;
+            volume = owner + '/' + volume;
+            const filename = dirs.slice(3).join('/');
+            return {
+                config: {username: this.username, volumePool, password, volume},
+                dataInfo: {
+                    data: {filename, volume, volumePool}
+                }
+            };
         }
 
         async _getComputeDomain () {

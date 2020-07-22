@@ -3,6 +3,7 @@
 
 define([
     'deepforge/updates/Updates',
+    'deepforge/utils',
     'js/Constants',
     'js/PanelBase/PanelBase',
     'panels/AutoViz/AutoVizPanel',
@@ -11,6 +12,7 @@ define([
     'q'
 ], function (
     Updates,
+    Utils,
     CONSTANTS,
     PanelBase,
     AutoVizPanel,
@@ -164,30 +166,43 @@ define([
             });
     };
 
-    SidebarPanel.prototype.applyUpdates = function (updates) {
-        // Seed Updates should apply the
-        const seedUpdates = updates.filter(update => update.type === Updates.SEED);
-        const promises = seedUpdates.map(update => {
-            const {name, hash} = update;
-            return Q.ninvoke(this._client, 'updateLibrary', name, hash);
-        });
+    SidebarPanel.prototype.applyUpdates = async function (updates) {
+        const [seedUpdates, earlyMigrations, migrations] = Utils.partition(
+            updates,
+            update => {
+                if (update.type === Updates.SEED) {
+                    return 0;
+                }
+                if (Updates.getUpdate(update.name).beforeLibraryUpdates) {
+                    return 1;
+                }
+                return 2;
+            }
+        );
 
-        // Apply the migrations
+        await this.applyMigrationUpdates(earlyMigrations);
+
+        await Utils.sleep(1000);
+
+        for (let i = 0; i < seedUpdates.length; i++) {
+            const {name, hash} = seedUpdates[i];
+            await Q.ninvoke(this._client, 'updateLibrary', name, hash);
+        }
+
+        await Utils.sleep(1000);
+        await this.applyMigrationUpdates(migrations);
+    };
+
+    SidebarPanel.prototype.applyMigrationUpdates = async function (updates) {
         const pluginId = 'ApplyUpdates';
-        const migrations = updates
-            .filter(update => update.type === Updates.MIGRATION)
-            .map(update => update.name);
+        const names = updates.map(update => update.name);
 
         const context = this._client.getCurrentPluginContext(pluginId);
         context.pluginConfig = {
-            updates: migrations
+            updates: names,
         };
 
-        promises.push(
-            Q.ninvoke(this._client, 'runServerPlugin', pluginId, context)
-        );
-
-        return Q.all(promises);
+        await Q.ninvoke(this._client, 'runServerPlugin', pluginId, context);
     };
 
     return SidebarPanel;
