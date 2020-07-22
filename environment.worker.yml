@@ -3,5 +3,5 @@ dependencies:
   - python=3.7
   - pip:
       - pillow
-      - matplotlib
+      - matplotlib==3.2.2
       - simplejson
