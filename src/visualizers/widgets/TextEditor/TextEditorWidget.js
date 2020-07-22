@@ -1,33 +1,56 @@
-/*globals $, define*/
+/*globals $, define, monaco */
 /*jshint browser: true*/
 
 define([
-    'ace/ace',
     'underscore',
-    './completer',
     'js/Utils/ComponentSettings',
+    'text!./MonacoLanguages.json',
+    'vs/editor/editor.main',
     'jquery-contextMenu',
     'css!./styles/TextEditorWidget.css'
 ], function (
-    ace,
     _,
-    Completer,
-    ComponentSettings
+    ComponentSettings,
+    MonacoLanguages
 ) {
     'use strict';
 
-    var TextEditorWidget,
-        WIDGET_CLASS = 'text-editor',
+    const WIDGET_CLASS = 'text-editor',
         LINE_COMMENT = {
             python: '#',
             lua: '--',
             yaml: '#'
         };
 
-    TextEditorWidget = function (logger, container, config={}) {
-        this.logger = logger.fork('Widget');
+    MonacoLanguages = JSON.parse(MonacoLanguages);
+    const DEFAULT_THEMES = ['vs-dark', 'vs', 'hc-black'];
+    const DEFAULT_COLORS = {
+        'vs': '#fffffe',
+        'vs-dark': '#1e1e1e',
+        'hc-black': '#000000'
+    };
 
+    const AVAILABLE_KEYBINDINGS = ['default'];
+
+    const TextEditorWidget = function (logger, container, config={}) {
+        this.logger = logger.fork('Widget');
+        this._registerMonacoLanguages();
         this.language = this.language || config.language || 'python';
+        this.monacoURI = this._getMonacoURI();
+        const value = config.value || "def dummy_python_func():\n\tpass";
+        this.model = monaco.editor.getModel(this.monacoURI) ||
+            monaco.editor.createModel(
+                value,
+                this.language,
+                this.monacoURI
+            );
+        this.model.updateOptions({
+            tabSize: 4,
+            insertSpaces: true
+        });
+
+        const displayMiniMap = config.displayMiniMap || true;
+
         this._el = container;
         this._el.css({height: '100%'});
         this.$editor = $('<div/>');
@@ -35,45 +58,54 @@ define([
         this._el.append(this.$editor[0]);
 
         this.readOnly = this.readOnly || false;
-        this.editor = ace.edit(this.$editor[0]);
-        this._initialize();
-
-        // Get the config from component settings for themes
-        this.editor.getSession().setOptions(this.getSessionOptions());
-        var handler = this.editorSettings.keybindings;
-        this.editor.setKeyboardHandler(handler === 'default' ?
-            null : 'ace/keyboard/' + handler);
-        this.addExtensions();
-        this.editor.$blockScrolling = Infinity;
+        this.editor = this._createEditor(displayMiniMap);
         this.DELAY = 750;
         this.silent = false;
         this.saving = false;
+        this.count = 0;
 
-        this.editor.on('change', () => {
+        this.model.onDidChangeContent(() => {
             if (!this.silent) {
                 this.saving = true;
                 this.onChange();
             }
         });
-        this.onChange = _.debounce(this.saveText.bind(this), this.DELAY);
 
-        this.setReadOnly(this.readOnly);
+        this.onChange = _.debounce(this.saveText.bind(this), this.DELAY);
         this.currentHeader = '';
         this.activeNode = null;
 
+
+        this.nodes = {};
+        this._initialize();
         this.logger.debug('ctor finished');
     };
 
-    TextEditorWidget.prototype.addExtensions = function () {
-        ace.require(['ace/ext/language_tools'], () => {
-            this.editor.setOptions(this.getEditorOptions());
-            this.completer = this.getCompleter();
-            this.editor.completers = [this.completer];
-        });
+    TextEditorWidget.prototype._getMonacoURI = function () {
+        const modelSuffix = Math.random().toString(36).substring(2, 15);
+        return monaco.Uri.parse(
+            `inmemory://model_${modelSuffix}.${MonacoLanguages[this.language].extensions[0]}`
+        );
     };
 
-    TextEditorWidget.prototype.getCompleter = function () {
-        return new Completer(this.editor.completers);
+    TextEditorWidget.prototype._createEditor = function (displayMiniMap) {
+        const editor = monaco.editor.create(
+            this.$editor[0], {
+                model: this.model,
+                automaticLayout: true,
+                lightbulb: {
+                    enabled: true
+                },
+                fontSize: 14,
+                readOnly: this.readOnly,
+                minimap: {
+                    enabled: displayMiniMap
+                },
+                theme: DEFAULT_THEMES[0]
+            }
+        );
+
+        return editor;
     };
 
     TextEditorWidget.prototype.getEditorOptions = function () {
@@ -85,11 +117,12 @@ define([
         };
     };
 
-    TextEditorWidget.prototype.getSessionOptions = function () {
+    TextEditorWidget.prototype.getDefaultEditorOptions = function () {
         return {
-            mode: 'ace/mode/' + this.language,
-            tabSize: 4,
-            useSoftTabs: true
+            keybindings: 'default',
+            theme: 'vs-dark',
+            fontSize: 12,
+            fontFamily: 'source'
         };
     };
 
@@ -123,6 +156,15 @@ define([
             this.editorSettings,
             this.getComponentId()
         );
+    };
+
+    TextEditorWidget.prototype._registerMonacoLanguages = function () {
+        const languages = Object.keys(MonacoLanguages);
+        languages.forEach(language => {
+            monaco.languages.register(
+                MonacoLanguages[language]
+            );
+        });
     };
 
     TextEditorWidget.prototype.getDefaultEditorOptions = function () {
@@ -234,15 +276,15 @@ define([
     };
 
     TextEditorWidget.prototype.onWidgetContainerResize = function () {
-        this.editor.resize();
+        this.editor.layout();
     };
 
     // Adding/Removing/Updating items
     TextEditorWidget.prototype.comment = function (text) {
-        var prefix = LINE_COMMENT[this.language] + ' ';
+        const commentToken = MonacoLanguages[this.language].comment + ' ';
         return text.replace(
-            new RegExp('^(' + LINE_COMMENT[this.language] + ')?','mg'),
-            prefix
+            new RegExp('^(' + commentToken + ')?','mg'),
+            commentToken
         );
     };
 
@@ -253,33 +295,19 @@ define([
     TextEditorWidget.prototype.addNode = function (desc) {
         // Set the current text based on the given
         // Create the header
-        var header = this.getHeader(desc),
-            newContent = header ? header + '\n' + desc.text : desc.text,
-            oldContent,
-            selection;
+        const header = this.getHeader(desc),
+            newContent = header ? header + '\n' + desc.text : desc.text;
 
         this.activeNode = desc.id;
         this.silent = true;
-
-        oldContent = this.editor.getValue();
-        selection = this.editor.session.selection.toJSON();
-
-        this.editor.setValue(newContent, 2);
-
-        selection = this.getAdjustedSelection(oldContent, newContent, selection);
-        this.editor.session.selection.fromJSON(selection);
+        const prevPosition = this.editor.getPosition();
+        this.editor.setValue(newContent);
+        this.editor.setPosition(prevPosition);
 
         this.silent = false;
         this.currentHeader = header;
     };
 
-    TextEditorWidget.prototype.getAdjustedSelection = function (oldText, newText, selection) {
-        // if we are updating the value, we should make sure the cursor position
-        // remains in the same spot (ie, diff the text and update the positions
-        // based on the size of the patches
-        // TODO
-        return selection;
-    };
 
     TextEditorWidget.prototype.saveText = function () {
         var text;
@@ -314,7 +342,7 @@ define([
 
     TextEditorWidget.prototype.updateNode = function (desc) {
         var shouldUpdate = this.readOnly ||
-            (!this.saving && !this.editor.isFocused()) ||
+            (!this.saving && !this.editor.hasTextFocus()) ||
             (this.activeNode === desc.id && this.getHeader(desc) !== this.currentHeader);
 
         // Check for header changes
@@ -329,7 +357,8 @@ define([
     /* * * * * * * * Visualizer life cycle callbacks * * * * * * * */
     TextEditorWidget.prototype.destroy = function () {
         this.readOnly = true;
-        this.editor.destroy();
+        this.editor.dispose();
+        this.model.dispose();
         $.contextMenu('destroy', '.' + WIDGET_CLASS);
     };
 
@@ -343,7 +372,9 @@ define([
 
     TextEditorWidget.prototype.setReadOnly = function (isReadOnly) {
         this.readOnly = isReadOnly;
-        this.editor.setReadOnly(isReadOnly);
+        this.editor.updateOptions({
+            readOnly: isReadOnly
+        });
     };
 
     return TextEditorWidget;
