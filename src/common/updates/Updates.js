@@ -89,6 +89,7 @@ define([
         },
         {
             name: 'UpdateGraphContainment',
+            beforeLibraryUpdates: true,
             isNeeded: async function(core, rootNode) {
                 const pipelineRoot = core.getLibraryRoot(rootNode, 'pipeline');
                 const hasPipelineLibrary = !!pipelineRoot;
