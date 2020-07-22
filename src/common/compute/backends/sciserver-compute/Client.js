@@ -238,7 +238,7 @@ define([
             const dirs = filepath.split('/').slice(4);
             let [volumePool, username, volume] = dirs.slice(0, 3);
             const password = this.password;
-            volume = username + '/' +volume;
+            volume = username + '/' + volume;
             const filename = dirs.slice(3).join('/');
             return {
                 config: {username, volumePool, password, volume},
