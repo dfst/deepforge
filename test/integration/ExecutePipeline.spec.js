@@ -194,7 +194,7 @@ describe('Pipeline execution', function () {
         const seconds = 1000;
         const minutes = 60*seconds;
         if (compute.startsWith('sciserver')) {
-            return 5*minutes;
+            return 10*minutes;
         } else if (compute === 'gme'){
             return 30*seconds;
         } else {
