@@ -147,6 +147,18 @@
         }
     }
 
+    function partition(list, mapItemToIndex) {
+        const lists = [];
+        list.forEach(item => {
+            const index = +mapItemToIndex(item);
+            if (!lists[index]) {
+                lists[index] = [];
+            }
+            lists[index].push(item);
+        });
+        return lists;
+    }
+
     return {
         deepExtend,
         splitObj,
@@ -156,5 +168,6 @@
         defer,
         sleep,
         waitUntil,
+        partition,
     };
 }));
