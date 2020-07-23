@@ -124,7 +124,7 @@ define([
                 const coreFigureExtractor = new FigureExtractor.CoreFigureExtractor(core, rootNode);
                 const pipelineVersion = getPipelineLibraryVersion(core, rootNode);
                 const shouldAddMetadataMixin = pipelineVersion ?
-                    pipelineVersion.lessThan('0.21.1') :
+                    pipelineVersion.lessThan(new Version('0.21.1')) :
                     false;
 
                 for (let i = 0; i < graphNodes.length; i++){
