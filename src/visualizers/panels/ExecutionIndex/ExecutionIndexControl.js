@@ -82,7 +82,7 @@ define([
         if (graphDescs.length > 1) {
             graphDescs.forEach(graphDesc => {
                 graphDesc.plotlyData.layout.title =
-                    getDisplayTitle(graphDesc, true);
+                    getDisplayTitle(graphDesc);
             });
         }
 
@@ -92,11 +92,15 @@ define([
         }
     };
 
-    const getDisplayTitle = function (desc, includeAbbr = false) {
-        let title = desc.plotlyData.layout.title ? desc.plotlyData.layout.title : 'Graph';
-        if (includeAbbr) {
-            title = `${title} (${desc.abbr})`;
+    const getDisplayTitle = function (desc) {
+        let title = desc.plotlyData.layout.title ? desc.plotlyData.layout.title : {};
+
+        if (title.text) {
+            title.text = `${title.text} (${desc.abbr})`;
+        } else {
+            title = {text: `Graph (${desc.abbr})`};
         }
+
         return title;
     };
 
