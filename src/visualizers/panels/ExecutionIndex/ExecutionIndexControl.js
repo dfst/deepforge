@@ -97,8 +97,12 @@ define([
 
         if (title.text) {
             title.text = `${title.text} (${desc.abbr})`;
+        } else if(typeof title === 'string') {
+            title = `${title} (${desc.abbr})`;
         } else {
-            title = {text: `Graph (${desc.abbr})`};
+            title = {
+                text: `Graph (${desc.abbr})`
+            };
         }
 
         return title;
