@@ -354,9 +354,9 @@ class FigureCanvasTemplate(FigureCanvasBase):
         """
         Draw the figure using the renderer
         """
-        self.send_deepforge_update()
         renderer = RendererTemplate(self.figure.dpi)
         self.figure.draw(renderer)
+        self.send_deepforge_update()
 
     def send_deepforge_update(self):
         state = self.figure_to_state()

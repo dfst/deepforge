@@ -25,7 +25,14 @@ define([
 
     const addMetadataMixinToNodeSubTree = async function(core, META, node) {
         const METADATA_NODE_PATH =  core.getPath(META['pipeline.Metadata']);
-        const graphNodeChildren = await core.loadSubTree(node);
+        const IMPLICIT_OPERATION_NODE = META['pipeline.ImplicitOperation'];
+        const graphNodeChildren = (await core.loadSubTree(node))
+            .filter(node => {
+                return IMPLICIT_OPERATION_NODE ?
+                    !core.isTypeOf(node, IMPLICIT_OPERATION_NODE) :
+                    true;
+            });
+
         graphNodeChildren.forEach(node => {
             core.addMixin(node, METADATA_NODE_PATH);
         });
