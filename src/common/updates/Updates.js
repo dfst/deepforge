@@ -23,6 +23,23 @@ define([
         }
     };
 
+    const addMetadataMixinToNodeSubTree = async function(core, META, node) {
+        const METADATA_NODE_PATH =  core.getPath(META['pipeline.Metadata']);
+        const graphNodeChildren = await core.loadSubTree(node);
+        graphNodeChildren.forEach(node => {
+            core.addMixin(node, METADATA_NODE_PATH);
+        });
+    };
+
+    const getPipelineLibraryVersion = function(core, rootNode) {
+        const pipelineRoot = core.getLibraryRoot(rootNode, 'pipeline');
+        const hasPipelineLibrary = !!pipelineRoot;
+        if (hasPipelineLibrary) {
+            const versionString = core.getAttribute(pipelineRoot, 'version');
+            return new Version(versionString);
+        }
+    };
+
     const allUpdates = [
         {
             name: 'CustomUtilities',
@@ -35,7 +52,7 @@ define([
                     });
             },
             apply: function(core, rootNode, META) {
-                // Create 'MyUtilities' nodeupdate
+                // Create 'MyUtilities' node
                 const utils = core.createNode({
                     parent: rootNode,
                     base: META.FCO
@@ -62,12 +79,9 @@ define([
         {
             name: 'UpdateDataNodesToUserAssets',
             isNeeded: async function(core, rootNode) {
-                const pipelineRoot = core.getLibraryRoot(rootNode, 'pipeline');
-                const hasPipelineLibrary = !!pipelineRoot;
-                if (hasPipelineLibrary) {
-                    const versionString = core.getAttribute(pipelineRoot, 'version');
-                    const version = new Version(versionString);
-                    return version.lessThan(new Version('0.13.0'));
+                const pipelineLibraryVersion = getPipelineLibraryVersion(core, rootNode);
+                if(pipelineLibraryVersion) {
+                    return pipelineLibraryVersion.lessThan(new Version('0.13.0'));
                 }
             },
             apply: async function(core, rootNode, META) {
@@ -91,21 +105,26 @@ define([
             name: 'UpdateGraphContainment',
             beforeLibraryUpdates: true,
             isNeeded: async function(core, rootNode) {
-                const pipelineRoot = core.getLibraryRoot(rootNode, 'pipeline');
-                const hasPipelineLibrary = !!pipelineRoot;
-                if (hasPipelineLibrary) {
-                    const versionString = core.getAttribute(pipelineRoot, 'version');
-                    const version = new Version(versionString);
-                    return version.lessThan(new Version('0.22.0')) &&
-                           version.greaterThan(new Version('0.19.1'));
+                const pipelineLibraryVersion = getPipelineLibraryVersion(core, rootNode);
+                if (pipelineLibraryVersion) {
+                    return pipelineLibraryVersion.lessThan(new Version('0.22.0')) &&
+                           pipelineLibraryVersion.greaterThan(new Version('0.19.1'));
                 }
             },
             apply: async function(core, rootNode, META) {
                 let graphNodes = [];
                 await getGraphNodes(core, rootNode, graphNodes);
                 const coreFigureExtractor = new FigureExtractor.CoreFigureExtractor(core, rootNode);
+                const pipelineVersion = getPipelineLibraryVersion(core, rootNode);
+                const shouldAddMetadataMixin = pipelineVersion ?
+                    pipelineVersion.lessThan('0.21.1') :
+                    false;
+
                 for (let i = 0; i < graphNodes.length; i++){
                     const graphNode = graphNodes[i];
+                    if(shouldAddMetadataMixin){
+                        await addMetadataMixinToNodeSubTree(core, META, graphNode);
+                    }
                     const desc = await coreFigureExtractor.extract(graphNode);
                     const plotlyJSON = PlotlyDescExtractor.descToPlotlyJSON(desc);
                     const parentNode = core.getParent(graphNode);
