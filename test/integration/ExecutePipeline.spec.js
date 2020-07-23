@@ -1,6 +1,6 @@
 /* globals */
 describe('Pipeline execution', function () {
-    this.timeout(15000);
+    this.timeout(30000);
     const {promisify} = require('util');
     const {spawn} = require('child_process');
     const testFixture = require('../globals');
