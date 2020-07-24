@@ -167,7 +167,7 @@ define([
     };
 
     SidebarPanel.prototype.applyUpdates = async function (updates) {
-        const [seedUpdates, earlyMigrations, migrations] = Utils.partition(
+        const [seedUpdates=[], earlyMigrations=[], migrations=[]] = Utils.partition(
             updates,
             update => {
                 if (update.type === Updates.SEED) {
