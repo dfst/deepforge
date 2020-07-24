@@ -13,8 +13,7 @@ define([
     function PlotlyGraphWidget(logger, container) {
         this.logger = logger.fork('widget');
         this._container = container;
-        this.$el = $('<div/>');
-        this._container.append(this.$el);
+        this.$el = container;
         this.$defaultTextDiv = $('<div>', {
             class: 'h2 center'
         }).text('No Data Available.')
@@ -56,9 +55,17 @@ define([
             const plotlyJSONs = Array.isArray(desc) ?
                 desc.map(descr => descr.plotlyData) : [desc.plotlyData];
 
+            const len = plotlyJSONs.length;
+
             plotlyJSONs.forEach(json => {
-                json.layout.autosize = true;
-                json.layout.width = this.$el.width();
+                if (len === 1) {
+                    json.layout.height = this.$el.height();
+                    json.layout.width = this.$el.width();
+                } else {
+                    json.layout.autosize = true;
+                    delete json.layout.width;
+                    delete json.layout.height;
+                }
                 json.layout.plot_bgcolor = PLOT_BG_COLOR;
                 json.layout.paper_bgcolor = PLOT_BG_COLOR;
             });

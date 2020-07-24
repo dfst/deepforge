@@ -207,9 +207,10 @@ define([
     ExecutionIndexControl.prototype.getGraphDesc = function (graphNode) {
         let id = graphNode.getId();
         const execId = this._client.getNode(graphNode.getParentId()).getParentId();
+        const plotlyData = graphNode.getAttribute('data');
         let desc = {
             execId: execId,
-            plotlyData: JSON.parse(graphNode.getAttribute('data'))
+            plotlyData: plotlyData ? JSON.parse(plotlyData) : null
         };
 
         if (!this._graphToExec[id]) {
