@@ -35,8 +35,21 @@ define([
         return await this.blobClient.getObject(data);
     };
 
+    GMEStorage.prototype.getFileStream = async function(dataInfo) {
+        const url = await this.getDownloadURL(dataInfo);
+        const response = await this.fetch(url, {method: 'GET'});
+        return response.body;
+    };
+
     GMEStorage.prototype.putFile = async function(filename, content) {
         const hash = await this.blobClient.putFile(filename, content);
+        return this.createDataInfo(hash);
+    };
+
+    GMEStorage.prototype.putFileStream = async function(filename, stream) {
+        this.ensureStreamSupport();
+        this.ensureReadableStream(stream);
+        const hash = await this.blobClient.putFile(filename, stream);
         return this.createDataInfo(hash);
     };
 

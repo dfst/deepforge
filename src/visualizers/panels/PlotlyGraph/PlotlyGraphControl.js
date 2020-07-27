@@ -1,14 +1,13 @@
 /*globals define, WebGMEGlobal*/
 
 define([
-    'js/Constants',
-    'deepforge/viz/FigureExtractor',
+    'js/Constants'
 ], function (
-    CONSTANTS,
-    FigureExtractor
+    CONSTANTS
 ) {
-
     'use strict';
+
+    const GRAPH = 'Graph';
 
     function PlotlyGraphControl(options) {
 
@@ -23,9 +22,6 @@ define([
 
         this._currentNodeId = null;
         this._currentNodeParentId = undefined;
-
-        this.figureExtractor = new FigureExtractor(this._client);
-
         this._logger.debug('ctor finished');
     }
 
@@ -57,7 +53,7 @@ define([
             });
 
             // Update the territory
-            self._selfPatterns[nodeId] = {children: 3};
+            self._selfPatterns[nodeId] = {children: 1};
             self._client.updateTerritory(self._territoryId, self._selfPatterns);
         }
     };
@@ -65,13 +61,19 @@ define([
     // This next function retrieves the relevant node information for the widget
     PlotlyGraphControl.prototype._getObjectDescriptor = function (nodeId) {
         let node = this._client.getNode(nodeId),
-            desc, graphNode, hasGraph;
-        if(node) {
-            graphNode = this.figureExtractor.getGraphNode(node);
-            hasGraph = !!graphNode;
-        }
-        if(hasGraph){
-            desc = this.figureExtractor.extract(graphNode);
+            desc;
+        const isGraph = node => {
+            if(node) {
+                return this._client.getNode(node.getMetaTypeId())
+                    .getAttribute('name') === GRAPH;
+            }
+        };
+        if(isGraph(node)){
+            desc = {
+                plotlyData: JSON.parse(
+                    node.getAttribute('data')
+                )
+            };
         }
         return desc;
     };

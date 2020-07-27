@@ -18,14 +18,17 @@ define([
     SciServerFiles.prototype = Object.create(StorageClient.prototype);
 
     SciServerFiles.prototype.getFile = async function (dataInfo) {
-        let {volume, filename, volumePool='Storage'} = dataInfo.data;
-        const url = `file/${volumePool}/${volume}/${filename}`;
-        const response = await this.fetch('download', url);
+        const response = await this.getDownloadResponse(dataInfo);
         if (require.isBrowser) {
             return await response.arrayBuffer();
         } else {
             return Buffer.from(await response.arrayBuffer());
         }
+    };
+
+    SciServerFiles.prototype.getFileStream = async function(dataInfo) {
+        const response = await this.getDownloadResponse(dataInfo);
+        return response.body;
     };
 
     SciServerFiles.prototype.putFile = async function (filename, content) {
@@ -47,6 +50,14 @@ define([
             volumePool: this.volumePool
         };
         return this.createDataInfo(metadata);
+    };
+
+    SciServerFiles.prototype.putFileStream = async function(filename, stream) {
+        this.ensureStreamSupport();
+        this.ensureReadableStream(stream);
+        await this.putFile(filename, stream);
+        // stat necessary because of byteLength
+        return await this.stat(filename);
     };
 
     SciServerFiles.prototype.deleteDir = async function (dirname) {
@@ -118,6 +129,12 @@ define([
             throw new Error(`The file at ${path} doesn't exist in ${this.volume}`);
         }
         return this.createDataInfo(metadata);
+    };
+
+    SciServerFiles.prototype.getDownloadResponse = async function (dataInfo) {
+        let {volume, filename, volumePool='Storage'} = dataInfo.data;
+        const url = `file/${volumePool}/${volume}/${filename}`;
+        return await this.fetch('download', url);
     };
 
     return SciServerFiles;

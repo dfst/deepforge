@@ -12,23 +12,11 @@ Next, you must decide if you would like authentication to be enabled. For produc
 
 Without User Accounts
 ---------------------
-Open the docker-compose file and add the following environment variable to the server:
+Start the docker containers with ``docker-compose run`` :
 
 .. code-block:: bash
 
-    NODE_ENV=default
-
-and delete the volume for the server's keys (used for signing JWTs):
-
-.. code-block:: bash
-
-    - "${TOKEN_KEYS_DIR}:/token_keys"
-
-Next, start the docker containers with
-
-.. code-block:: bash
-
-    docker-compose up
+    docker-compose --file docker-compose.yml run -p 8888:8888 -p 8889:8889 -e "NODE_ENV=default" server
 
 User Authentication Enabled
 ---------------------------
@@ -41,11 +29,11 @@ First, generate a public and private key pair
     openssl rsa -in deepforge_keys/private_key -pubout > deepforge_keys/public_key
     export TOKEN_KEYS_DIR="$(pwd)/deepforge_keys"
 
-Then start DeepForge using docker-compose:
+Then start DeepForge using ``docker-compose run``:
 
 .. code-block:: bash
 
-    docker-compose up
+    docker-compose --file docker-compose.yml run -v "${TOKEN_KEYS_DIR}:/token_keys" -p  8888:8888 -p 8889:8889 server
 
 Finally, create the admin user by connecting to the server's docker container. First, get the ID of the container using:
 

@@ -55,7 +55,7 @@ requirejs([
     main();
 
     async function main() {
-        process.env.MPLBACKEND = 'module://backend_deepforge';
+        process.env.MPLBACKEND = 'module://plotly_backend';
 
         // Download the large files
         const inputData = require('./input-data.json');

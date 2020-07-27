@@ -47,7 +47,7 @@
     "q": "1.4.1",
     "rimraf": "^2.4.0",
     "tcp-port-used": "^0.1.2",
-    "webgme": "git+https://github.com/webgme/webgme.git",
+    "webgme": "^2.42.0",
     "webgme-autoviz": "^2.2.2",
     "webgme-breadcrumbheader": "^2.1.1",
     "webgme-chflayout": "^2.0.1",
