@@ -40,3 +40,4 @@ exclude_paths:
 - src/visualizers/widgets/PlotlyGraph/lib/plotly.min.js
 - src/plugins/GenerateJob/templates/utils.build.js
 - src/visualizers/widgets/TensorPlotter/lib/
+- src/visualizers/widgets/TensorPlotter/styles/simple-grid.min.css
