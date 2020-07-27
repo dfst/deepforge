@@ -100,6 +100,9 @@ define([
                 DeepForge.unregisterAction('Save');
             }
         }
+
+        updateNode(/*desc*/) {
+        }
     }
 
     return InteractiveEditorWidget;

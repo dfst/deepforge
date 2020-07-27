@@ -256,10 +256,6 @@ define([
             this.artifactLoader.unregister(gmeId);
         }
 
-        updateNode (/*desc*/) {
-            // TODO: handle node changes, etc
-        }
-
         /* * * * * * * * Visualizer life cycle callbacks * * * * * * * */
         destroy () {
             Plotly.purge(this.$plot[0]);

@@ -16,7 +16,7 @@ define([
             dataFields.forEach(name => {
                 this.$elements[name] = this.$el.find(`#${name}`);
                 if (updateOnChange) {
-                    this.$elements[name].change(() => this.onUpdate());  // FIXME
+                    this.$elements[name].change(() => this.onUpdate());
                 }
             });
         }
@@ -46,9 +46,6 @@ define([
             this.emit('update', values);
         }
     }
-    // TODO: add input for title value
-    // TODO: add input for labels
-    // TODO: add input for data?
 
     return DataEditorBase;
 });

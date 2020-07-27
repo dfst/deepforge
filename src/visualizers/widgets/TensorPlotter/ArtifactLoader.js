@@ -67,9 +67,6 @@ define([
             }
         }
 
-        unload(artifact) {
-        }
-
         render() {
             this.$artifacts.empty();
             this.artifacts.forEach(artifact => {

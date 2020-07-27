@@ -96,9 +96,6 @@ define([
             return values;
         }
     }
-    // TODO: add input for title value
-    // TODO: add input for labels
-    // TODO: add input for data?
 
     return PlotEditor;
 });

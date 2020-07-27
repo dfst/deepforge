@@ -18,7 +18,7 @@ define([
         constructor(plottedData, dataShapes) {
             const isNewData = !plottedData;
             const title = isNewData ? `Add data to figure` :
-                `Edit "${plottedData.name}"`;  // FIXME: fix capitalization?
+                `Edit "${plottedData.name}"`;
 
             const fields = ['id', 'name', 'data', 'dataSlice', 'colorData',
                 'colorDataSlice', 'colorType', 'uniformColor', 'startColor',
@@ -80,7 +80,7 @@ define([
         }
 
         static getAllVariableNames(metadata, isKey=false) {
-            const name = isKey ? `["${metadata.name}"]` : metadata.name;  // TODO: bug if not escaping "'"
+            const name = isKey ? `["${metadata.name}"]` : metadata.name;
 
             if (metadata.entries) {
                 const names = metadata.entries
@@ -112,7 +112,6 @@ define([
             data.id = this.id;
             if (!shallow) {
                 data.shape = this.getPythonDataShape(data.data, data.dataSlice);
-                // TODO: Include shape of the colors? Probably not
             }
             return data;
         }
