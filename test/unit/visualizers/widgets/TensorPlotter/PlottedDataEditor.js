@@ -19,7 +19,7 @@ describe('PlottedDataEditor', function() {
                 ]
             };
             const names = PlottedDataEditor.getAllVariableNames(metadata);
-            assert.deepEqual(names, [`test['a']`, `test['b']`]);
+            assert.deepEqual(names, [`test["a"]`, `test["b"]`]);
         });
 
         it('should detect deeply nested values', function() {
@@ -49,9 +49,9 @@ describe('PlottedDataEditor', function() {
             assert.deepEqual(
                 names,
                 [
-                    `test['a']['c']`,
-                    `test['a']['d']`,
-                    `test['b']`,
+                    `test["a"]["c"]`,
+                    `test["a"]["d"]`,
+                    `test["b"]`,
                 ]
             );
         });
