@@ -99,9 +99,9 @@ define([
                 return stdout;
             } catch (err) {
                 const {stderr} = err.jobResult;
-                const msg = `Command:\n\n${code}\nError logs:\n\n${stderr}`
-                    .replace('\n', '</br>');
-                const dialog = new InformDialog('Command failed.', msg);
+                const msg = `Command:<br/><pre><code>${code}</code></pre><br/>` +
+                    `Error logs:<br/><pre><code>${stderr}</code></pre>`;
+                const dialog = new InformDialog('Plotting failed.', msg);
                 dialog.show();
                 throw err;
             }
