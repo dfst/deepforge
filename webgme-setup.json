@@ -369,6 +369,11 @@
         "src": "src/routers/SciServerAuth",
         "test": "test/routers/SciServerAuth",
         "mount": "routers/SciServerAuth"
+      },
+      "InteractiveCompute": {
+        "src": "src/routers/InteractiveCompute",
+        "test": "test/routers/InteractiveCompute",
+        "mount": "routers/InteractiveCompute"
       }
     }
   },
