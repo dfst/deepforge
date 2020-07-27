@@ -302,6 +302,13 @@
         "panel": "src/visualizers/panels/InteractiveExplorer",
         "secondary": false,
         "widget": "src/visualizers/widgets/InteractiveExplorer"
+      },
+      "TrainKeras": {
+        "src": "panels/TrainKeras/TrainKerasPanel",
+        "title": "TrainKeras",
+        "panel": "src/visualizers/panels/TrainKeras",
+        "secondary": false,
+        "widget": "src/visualizers/widgets/TrainKeras"
       }
     },
     "addons": {},

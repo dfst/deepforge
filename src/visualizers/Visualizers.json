@@ -160,5 +160,11 @@
     "title": "InteractiveExplorer",
     "panel": "panels/InteractiveExplorer/InteractiveExplorerPanel",
     "DEBUG_ONLY": false
+  },
+  {
+    "id": "TrainKeras",
+    "title": "TrainKeras",
+    "panel": "panels/TrainKeras/TrainKerasPanel",
+    "DEBUG_ONLY": false
   }
 ]
