@@ -1,6 +1,8 @@
 const {spawn} = require('child_process');
 const WebSocket = require('ws');
 const fs = require('fs').promises;
+const { promisify } = require('util');
+const pipeline = promisify(require('stream').pipeline);
 const path = require('path');
 const requirejs = require('requirejs');
 let Message;
@@ -43,8 +45,8 @@ class InteractiveClient {
                 async function saveArtifact() {
                     const client = await Storage.getClient(dataInfo.backend, null, config);
                     const dataPath = path.join(...dirs.concat('data'));
-                    const buffer = await client.getFile(dataInfo);
-                    await fs.writeFile(dataPath, buffer);
+                    const stream = await client.getFileStream(dataInfo);
+                    await pipeline(stream, fs.createWriteStream(dataPath));
                     const filePath = path.join(...dirs.concat('__init__.py'));
                     await fs.writeFile(filePath, initFile(name, type));
                 }

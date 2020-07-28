@@ -91,8 +91,8 @@ define([
             const srcStorage = this.isPipelineInput(dataNodes[i]) ?
                 await this.getStorageClientForInputData(originalData)
                 : dstStorage;
-            const content = await srcStorage.getFile(originalData);
-            const userAsset = await dstStorage.putFile(saveDir + name, content);
+            const contentStream = await srcStorage.getFileStream(originalData);
+            const userAsset = await dstStorage.putFileStream(saveDir + name, contentStream);
 
             this.core.setAttribute(artifact, 'data', JSON.stringify(userAsset));
             this.core.setAttribute(artifact, 'name', name);
@@ -125,7 +125,7 @@ define([
     LocalExecutor.OPERATIONS = Object.keys(LocalExecutor.prototype)
         .filter(name => name.indexOf('_') !== 0)
         .filter(name => name !== 'isLocalOperation' && name !== 'getLocalOperationType');
-    
+
     class JobLogger{
         constructor(core, node) {
             this.core = core;

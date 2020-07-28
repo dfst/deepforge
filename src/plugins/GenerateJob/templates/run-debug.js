@@ -8,7 +8,7 @@ const fs = require('fs');
 const path = require('path');
 const {promisify} = require('util');
 const mkdir = promisify(fs.mkdir);
-const writeFile = promisify(fs.writeFile);
+const pipeline = promisify(require('stream').pipeline);
 const {spawn} = require('child_process');
 
 const Config = require('./config.json');
@@ -47,7 +47,7 @@ requirejs([
     async function fetchInputData(filename, dataInfo, config) {
         const {backend} = dataInfo;
         const client = await Storage.getClient(backend, null, config);
-        const buffer = await client.getFile(dataInfo);
+        const stream = await client.getFileStream(dataInfo);
         filename = fromRelative(filename);
         await writeFile(filename, buffer);
     }
@@ -59,4 +59,13 @@ requirejs([
     async function tryMkdir(filename) {
         await mkdir(filename).catch(nop);
     }
+
+    async function writeFile(path, readStream) {
+        const dstStream = fs.createWriteStream(path, {
+            encoding: readStream.readableEncoding
+        });
+        logger.info(`About to write the stream to ${path}`);
+        await pipeline(readStream, dstStream);
+    }
+
 });

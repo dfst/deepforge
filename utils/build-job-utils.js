@@ -5,12 +5,24 @@ const babel = require('@babel/core');
 const requirejs = require('requirejs');
 const path = require('path');
 const fs = require('fs');
-const webgmeEngineSrc = path.join(path.dirname(require.resolve('webgme-engine')), 'src');
+const webgmeEngineSrc = getWebGMEEngineSrcPath();
 const JOB_FILES_DIR = `${__dirname}/../src/plugins/GenerateJob/templates/`;
 const os = require('os');
 const gmeConfig = require('../config');
 const includeFile = path.join(__dirname, 'build-includes.js');
 const _ = require('underscore');
+
+function getWebGMEEngineSrcPath() {
+    let webGMEEngine;
+
+    try{
+        webGMEEngine = require.resolve('webgme/node_modules/webgme-engine');
+    } catch (e) {
+        webGMEEngine = require.resolve('webgme-engine');
+    }
+
+    return path.join(path.dirname(webGMEEngine), 'src');
+}
 
 function getFiles(dirname) {
     return fs.readdirSync(dirname)
