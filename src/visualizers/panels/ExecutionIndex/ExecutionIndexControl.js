@@ -4,20 +4,14 @@
 define([
     'js/Constants',
     'deepforge/utils',
-    'deepforge/viz/Execute',
-    'deepforge/viz/FigureExtractor'
+    'deepforge/viz/Execute'
 ], function (
     CONSTANTS,
     utils,
-    Execute,
-    FigureExtractor
+    Execute
 ) {
 
     'use strict';
-    const ClientFigureExtractor = FigureExtractor.ClientFigureExtractor;
-    const GRAPH = ['Graph'];
-    const SUBGRAPHS = ['Plot2D', 'Plot3D'];
-
     var ExecutionIndexControl;
 
     ExecutionIndexControl = function (options) {
@@ -35,7 +29,6 @@ define([
         this._graphsForExecution = {};
         this._graphToExec = {};
         this._pipelineNames = {};
-        this.figureExtractor = new ClientFigureExtractor(this._client);
         this.abbrToId = {};
         this.abbrFor = {};
 
@@ -83,108 +76,35 @@ define([
 
     ExecutionIndexControl.prototype._consolidateGraphData = function (graphExecIDs) {
         let graphIds = graphExecIDs.map(execId => this._graphsForExecution[execId]);
-        let graphDescs = graphIds.map(id => this._getObjectDescriptor(id)).filter(desc => !!desc);
+        let graphDescs = graphIds.map(id => this._getObjectDescriptor(id))
+            .filter(desc => !!desc);
+
+        if (graphDescs.length > 1) {
+            graphDescs.forEach(graphDesc => {
+                graphDesc.plotlyData.layout.title =
+                    getDisplayTitle(graphDesc);
+            });
+        }
+
         if (graphDescs.length > 0) {
-            let consolidatedDesc = this._combineGraphDesc(graphDescs);
-            consolidatedDesc.type = 'graph';
-            return consolidatedDesc;
+            graphDescs.type = 'graph';
+            return graphDescs;
         }
     };
 
+    const getDisplayTitle = function (desc) {
+        let title = desc.plotlyData.layout.title ? desc.plotlyData.layout.title : {};
 
-    ExecutionIndexControl.prototype._combineGraphDesc = function (graphDescs) {
-        const isMultiGraph = this.displayedExecCount() > 1;
-        if (!isMultiGraph) {
-            return graphDescs[0];
-        } else {
-            let consolidatedDesc = null;
-
-            graphDescs.forEach((desc) => {
-                if (!consolidatedDesc) {
-                    consolidatedDesc = JSON.parse(JSON.stringify(desc));
-                    consolidatedDesc.subGraphs.forEach((subGraph) => {
-                        subGraph.abbr = desc.abbr;
-                        subGraph.title = getDisplayTitle(subGraph, true);
-                    });
-                    consolidatedDesc.title = getDisplayTitle(consolidatedDesc, true);
-                } else {
-                    consolidatedDesc.id += desc.id;
-                    consolidatedDesc.execId += ` vs ${desc.execId}`;
-                    consolidatedDesc.graphId += ` vs ${desc.graphId}`;
-                    consolidatedDesc.title += ` vs ${getDisplayTitle(desc, true)}`;
-                    this._combineSubGraphsDesc(consolidatedDesc, desc.subGraphs, desc.abbr);
-                }
-            });
-            return consolidatedDesc;
-        }
-    };
-
-    ExecutionIndexControl.prototype._combineSubGraphsDesc = function (consolidatedDesc, subGraphs, abbr) {
-        let currentSubGraph, imageSubGraphCopy, added=0, subgraphCopy;
-        const originalLength = consolidatedDesc.subGraphs.length;
-        for (let i = 0; i < originalLength; i++) {
-            if (!subGraphs[i]) break;
-            currentSubGraph = consolidatedDesc.subGraphs[i+added];
-            subGraphs[i].abbr = abbr;
-
-            if(subGraphs[i].type !== currentSubGraph.type){
-                subgraphCopy = JSON.parse(JSON.stringify(subGraphs[i]));
-                subgraphCopy.title = getDisplayTitle(subGraphs[i], true);
-                consolidatedDesc.subGraphs.splice(i+added, 0, subgraphCopy);
-                added++;
-                continue;
-            }
-            if(currentSubGraph.images && subGraphs[i].images) {
-                if (subGraphs[i].images.length > 0 || currentSubGraph.images.length > 0) {
-                    imageSubGraphCopy = JSON.parse(JSON.stringify(subGraphs[i]));
-                    imageSubGraphCopy.title = getDisplayTitle(subGraphs[i], true);
-                    consolidatedDesc.subGraphs.splice(i+added, 0, imageSubGraphCopy);
-                    added++;
-                    continue;
-                }
-            }
-
-            currentSubGraph.title += ` vs. ${getDisplayTitle(subGraphs[i], true)}`;
-            if(currentSubGraph.xlabel !== subGraphs[i].xlabel){
-                currentSubGraph.xlabel += ` ${subGraphs[i].xlabel}`;
-            }
-
-            if(currentSubGraph.ylabel !== subGraphs[i].ylabel){
-                currentSubGraph.ylabel += ` ${subGraphs[i].ylabel}`;
-            }
-
-            if(currentSubGraph.zlabel && currentSubGraph.zlabel !== subGraphs[i].zlabel){
-                currentSubGraph.zlabel += ` ${subGraphs[i].zlabel}`;
-            }
-
-            subGraphs[i].lines.forEach((line, index) => {
-                let lineClone = JSON.parse(JSON.stringify(line));
-                lineClone.label = (lineClone.label || `line${index}`) + ` (${abbr})`;
-                currentSubGraph.lines.push(lineClone);
-            });
-
-            subGraphs[i].scatterPoints.forEach(scatterPoint => {
-                let scatterClone = JSON.parse(JSON.stringify(scatterPoint));
-                currentSubGraph.scatterPoints.push(scatterClone);
-            });
-        }
-        // Check if there are more subgraphs
-        let extraSubGraphIdx = consolidatedDesc.subGraphs.length;
-        while (extraSubGraphIdx < subGraphs.length) {
-            subGraphs[extraSubGraphIdx].abbr = abbr;
-            const clonedSubgraph = JSON.parse(JSON.stringify(subGraphs[extraSubGraphIdx]));
-            clonedSubgraph.title = getDisplayTitle(clonedSubgraph, true);
-            consolidatedDesc.subGraphs.push(clonedSubgraph);
-            extraSubGraphIdx++;
-        }
-    };
-
-    const getDisplayTitle = function (desc, includeAbbr = false) {
-        let title = desc.title || desc.type;
-
-        if (includeAbbr) {
+        if (title.text) {
+            title.text = `${title.text} (${desc.abbr})`;
+        } else if(typeof title === 'string') {
             title = `${title} (${desc.abbr})`;
+        } else {
+            title = {
+                text: `Graph (${desc.abbr})`
+            };
         }
+
         return title;
     };
 
@@ -257,7 +177,6 @@ define([
                 name: node.getAttribute('name')
             };
 
-            const isGraphOrChildren = GRAPH.concat(SUBGRAPHS).includes(type);
 
             if (type === 'Execution') {
                 desc.status = node.getAttribute('status');
@@ -278,12 +197,8 @@ define([
             } else if (type === 'Pipeline') {
                 desc.execs = node.getMemberIds('executions');
                 this._pipelineNames[desc.id] = desc.name;
-            } else if (isGraphOrChildren) {
-                let graphNode = node;
-                if (SUBGRAPHS.includes(type)){
-                    graphNode = this._client.getNode(node.getParentId());
-                }
-                desc = this.getGraphDesc(graphNode);
+            } else if (type === 'Graph') {
+                desc = this.getGraphDesc(node);
             }
         }
         return desc;
@@ -291,7 +206,12 @@ define([
 
     ExecutionIndexControl.prototype.getGraphDesc = function (graphNode) {
         let id = graphNode.getId();
-        let desc = this.figureExtractor.extract(graphNode);
+        const execId = this._client.getNode(graphNode.getParentId()).getParentId();
+        const plotlyData = graphNode.getAttribute('data');
+        let desc = {
+            execId: execId,
+            plotlyData: plotlyData ? JSON.parse(plotlyData) : null
+        };
 
         if (!this._graphToExec[id]) {
             this._graphsForExecution[desc.execId] = id;
@@ -305,7 +225,6 @@ define([
             desc.name = `${desc.name} (${execAbbr})`;
             desc.abbr = execAbbr;
         }
-
         return desc;
     };
 
@@ -321,17 +240,17 @@ define([
             event = events[i];
             switch (event.etype) {
 
-                case CONSTANTS.TERRITORY_EVENT_LOAD:
-                    this._onLoad(event.eid);
-                    break;
-                case CONSTANTS.TERRITORY_EVENT_UPDATE:
-                    this._onUpdate(event.eid);
-                    break;
-                case CONSTANTS.TERRITORY_EVENT_UNLOAD:
-                    this._onUnload(event.eid);
-                    break;
-                default:
-                    break;
+            case CONSTANTS.TERRITORY_EVENT_LOAD:
+                this._onLoad(event.eid);
+                break;
+            case CONSTANTS.TERRITORY_EVENT_UPDATE:
+                this._onUpdate(event.eid);
+                break;
+            case CONSTANTS.TERRITORY_EVENT_UNLOAD:
+                this._onUnload(event.eid);
+                break;
+            default:
+                break;
             }
         }
 

@@ -10,9 +10,8 @@ Pipeline Overview
 4. `Train CIFAR-10`_
 5. `Train-Test`_
 6. `Train-Test-Compare`_
-7. `Download-Train-Evaluate`_
-
-.. 6. `Visualize Predictions`_
+7. `Train-PredVis`_
+8. `Download-Train-Evaluate`_
 
 Pipelines
 ---------
@@ -134,7 +133,7 @@ This pipeline gives a very basic example of how to create, train, and evaluate a
 
 Train-Test
 ~~~~~~~~~~
-.. figure:: train-basic.png
+.. figure:: train-single.png
     :align: center
 
 This pipeline provides an example of how one might train and evaluate a redshift estimation model. In particular, the procedure implemented here is a simplified version of work by `Pasquet et. al. (2018) <https://www.aanda.org/articles/aa/abs/2019/01/aa33617-18/aa33617-18.html>`_. For readers unfamiliar with cosmological redshift, `this article <https://earthsky.org/astronomy-essentials/what-is-a-redshift>`_ provides a simple and brief introduction to the topic. For the training process, there are two primary additions that should be noted.
@@ -146,10 +145,6 @@ Second, a class has been provided to give examples of how researchers may define
 The evaluation node has also been updated to provide metrics more in line with redshift estimation. Specifically, it calculates the fraction of outlier predictions, the model’s prediction bias, the deviation in the MAD scores of the model output, and the average Continuous Ranked Probability Score (CRPS) of the output.
 
 
-.. Visualize Predictions
-.. ~~~~~~~~~~~~~~~~~~~~~
-
-
 Train-Test-Compare
 ~~~~~~~~~~~~~~~~~~
 .. figure:: train-compare.png
@@ -157,6 +152,50 @@ Train-Test-Compare
 
 This pipeline gives a more complicated example of how to create visualizations that may be helpful for understanding the effectiveness of a model. The **EvalCompare** node provides a simple comparison visualization of two models.
 
+
+Train-PredVis
+~~~~~~~~~~~~~
+.. figure:: vis-pred.png
+    :align: center
+
+This pipeline shows another more complex and useful visualization example that can be helpful for understanding the effectiveness of your redshift estimation model. It generates a set of graphs like the one below that show the output probability distribution function (pdf) for the redshift values of a set of random galaxies' images. A pair of vertical  lines in each subplot indicate the actual redshift value (green) and the predicted redshift value (red) for that galaxy.
+
+As shown in this example, any visualization that can be created using the `matplotlib.pyplot <https://matplotlib.org/3.2.2/api/_as_gen/matplotlib.pyplot.html>`_ python library can be created and displayed by a pipeline. Displaying these visualizations can be accomplished by calling the **pyplot.show()** function after building the visualization. They can then be viewed from the `Executions view <../fundamentals/interface.rst#Executions>`_.
+
+
+.. code-block:: python
+
+    import numpy as np
+    from matplotlib import pyplot as plt
+
+    class PredVis():
+        def __init__(self, num_bins=180, num_rows=1, num_cols=1, max_val=0.4):
+            self.num_rows = num_rows
+            self.num_cols = num_cols
+            self.xrange = np.arange(0, max_val, max_val / num_bins)
+            return
+
+        def execute(self, pt, gt, pdfs):
+            fig, splts = plt.subplots(self.num_rows, self.num_cols, sharex=True, sharey=True)
+            
+            num_samples = self.num_rows * self.num_cols
+            
+            random_indices = np.random.choice(list(range(len(gt))), num_samples, replace=False)
+            
+            s_pdfs = np.take(pdfs, random_indices, axis=0)
+            s_pt = np.take(pt, random_indices, axis=0)
+            s_gt = np.take(gt, random_indices, axis=0)
+            
+            for i in range(num_samples):
+                col = i % self.num_cols
+                row = i // self.num_cols
+                splts[row,col].plot(self.xrange, s_pdfs[i],'-')
+                splts[row,col].axvline(s_pt[i], color='red')
+                splts[row,col].axvline(s_gt[i], color='green')
+            plt.show()
+
+.. figure:: vis-pred-plot.png
+    :align: center
 
 Download-Train-Evaluate
 ~~~~~~~~~~~~~~~~~~~~~~~

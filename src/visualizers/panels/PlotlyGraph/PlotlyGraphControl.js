@@ -1,17 +1,13 @@
 /*globals define, WebGMEGlobal*/
 
 define([
-    'js/Constants',
-    'deepforge/viz/FigureExtractor',
+    'js/Constants'
 ], function (
-    CONSTANTS,
-    FigureExtractor
+    CONSTANTS
 ) {
-
     'use strict';
-    const ClientFigureExtractor = FigureExtractor.ClientFigureExtractor;
-    const GRAPH = ['Graph'];
-    const SUBGRAPHS = ['Plot2D', 'Plot3D'];
+
+    const GRAPH = 'Graph';
 
     function PlotlyGraphControl(options) {
 
@@ -26,9 +22,6 @@ define([
 
         this._currentNodeId = null;
         this._currentNodeParentId = undefined;
-
-        this.figureExtractor = new ClientFigureExtractor(this._client);
-
         this._logger.debug('ctor finished');
     }
 
@@ -60,7 +53,7 @@ define([
             });
 
             // Update the territory
-            self._selfPatterns[nodeId] = {children: 3};
+            self._selfPatterns[nodeId] = {children: 1};
             self._client.updateTerritory(self._territoryId, self._selfPatterns);
         }
     };
@@ -68,18 +61,19 @@ define([
     // This next function retrieves the relevant node information for the widget
     PlotlyGraphControl.prototype._getObjectDescriptor = function (nodeId) {
         let node = this._client.getNode(nodeId),
-            desc, graphNode;
-        if(node) {
-            const baseNode = this._client.getNode(node.getBaseId());
-            const type = baseNode.getAttribute('name');
-            const isGraph = GRAPH.concat(SUBGRAPHS).includes(type);
-            if(isGraph){
-                graphNode = node;
-                if (SUBGRAPHS.includes(type)) {
-                    graphNode = this._client.getNode(node.getParentId());
-                }
-                desc = this.figureExtractor.extract(graphNode);
+            desc;
+        const isGraph = node => {
+            if(node) {
+                return this._client.getNode(node.getMetaTypeId())
+                    .getAttribute('name') === GRAPH;
             }
+        };
+        if(isGraph(node)){
+            desc = {
+                plotlyData: JSON.parse(
+                    node.getAttribute('data')
+                )
+            };
         }
         return desc;
     };

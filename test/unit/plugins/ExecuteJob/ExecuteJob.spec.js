@@ -172,7 +172,6 @@ describe('ExecuteJob', function () {
             plugin.pulseClient.update = nopPromise;
             plugin.resumeJob = () => done(shouldResume ? null : 'Should not resume job!');
             plugin.executeJob = () => done(shouldResume ? 'Should resume job!' : null);
-                
             plugin.main();
         };
 
@@ -217,10 +216,6 @@ describe('ExecuteJob', function () {
             const graph = plugin.core.createNode({
                 base: plugin.META.Graph,
                 parent: plugin.activeNode
-            });
-            plugin.core.createNode({
-                base: plugin.META.Line,
-                parent: graph
             });
 
             await plugin.save();

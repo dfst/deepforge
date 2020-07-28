@@ -63,7 +63,6 @@ define([
                 this.logger.error(`Failed to create bucket ${this.bucketName} in S3 server.`);
                 throw err;
             }
-
         }
     };
 
@@ -76,6 +75,16 @@ define([
             Key: filename
         }).promise();
         return data.Body;
+    };
+
+    S3Storage.prototype.getFileStream = async function(dataInfo) {
+        const {endpoint, bucketName, filename} = dataInfo.data;
+        const {accessKeyId, secretAccessKey} = this.config;
+        const s3Client = await this.getS3Client({endpoint, accessKeyId, secretAccessKey});
+        return s3Client.getObject({
+            Bucket: bucketName,
+            Key: filename
+        }).createReadStream();
     };
 
     S3Storage.prototype.putFile = async function (filename, content) {
@@ -96,6 +105,31 @@ define([
 
         this.logger.debug(`Successfully uploaded file ${filename} to the S3 server.`);
         return dataInfo;
+    };
+
+    S3Storage.prototype.putFileStream = async function(filename, stream) {
+        this.ensureStreamSupport();
+        this.ensureReadableStream(stream);
+        const s3Client = await this.getS3Client();
+        const params = await this.getUploadParams(s3Client, filename, stream);
+        try {
+            await s3Client.upload(params).promise();
+        } catch (err) {
+            throw new Error(`Unable to upload ${stream}: ${err.message}`);
+        }
+        const dataInfo = await this.stat(filename);
+        this.logger.debug(`Successfully uploaded file ${filename} to the S3 server using stream`);
+        return dataInfo;
+    };
+
+    S3Storage.prototype.getUploadParams = async function(s3Client, filename, body) {
+        await this.createBucketIfNeeded(s3Client);
+        this.logger.debug(`Created bucket ${this.bucketName}`);
+        return {
+            Body: require.isBrowser ? new Blob([body]) : body,
+            Bucket: this.bucketName,
+            Key: filename,
+        };
     };
 
     S3Storage.prototype.deleteDir = async function (dirname) {

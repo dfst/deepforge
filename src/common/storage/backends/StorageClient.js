@@ -1,7 +1,7 @@
 /* globals define*/
 define([
     'client/logger',
-    'deepforge/gmeConfig'
+    'deepforge/gmeConfig',
 ], function(
     Logger,
     gmeConfig
@@ -9,6 +9,7 @@ define([
     const fetch = require.isBrowser ? window.fetch :
         require.nodeRequire('node-fetch');
     const Headers = require.isBrowser ? window.Headers : fetch.Headers;
+    const stream = require.isBrowser ? null : require.nodeRequire('stream');
     const StorageClient = function(id, name, logger) {
         this.id = id;
         this.name = name;
@@ -48,8 +49,16 @@ define([
         throw new Error(`File download not implemented for ${this.name}`);
     };
 
+    StorageClient.prototype.getFileStream = async function(/*dataInfo*/) {
+        throw new Error(`Stream download not implemented for ${this.name}`);
+    };
+
     StorageClient.prototype.putFile = async function(/*filename, content*/) {
         throw new Error(`File upload not supported by ${this.name}`);
+    };
+
+    StorageClient.prototype.putFileStream = async function(/*filename, stream*/) {
+        throw new Error(`Stream upload not supported by ${this.name}`);
     };
 
     StorageClient.prototype.deleteFile = async function(/*dataInfo*/) {
@@ -85,6 +94,18 @@ define([
 
     StorageClient.prototype.stat = async function (/*path*/) {
         throw new Error(`stat not implemented for ${this.name}`);
+    };
+
+    StorageClient.prototype.ensureStreamSupport = function() {
+        if(require.isBrowser) {
+            throw new Error('Streams are not supported in browser');
+        }
+    };
+
+    StorageClient.prototype.ensureReadableStream = function (obj) {
+        if(stream && !(obj instanceof stream.Readable)) {
+            throw new Error(`${obj} should be an instance of a readable stream`);
+        }
     };
 
     return StorageClient;

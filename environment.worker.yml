@@ -5,3 +5,4 @@ dependencies:
       - pillow
       - matplotlib==3.2.2
       - simplejson
+      - plotly
