@@ -93,16 +93,15 @@ define([
             this.file = file;
             this.assetLink.text(this.file.name);
             this.assetLink.attr('href', URL.createObjectURL(this.file));
+            this.setValue(file);
         }
 
         detachFileHandlers(){
             this.fileUploadInput.off('change');
-
             this.fileDropTarget.off('dragover');
             this.fileDropTarget.off('dragenter');
             this.fileDropTarget.off('dragleave');
             this.fileDropTarget.off('drop');
-
             this.btnAttach.off('click');
         }
 
@@ -113,43 +112,9 @@ define([
             super.updateDisplay();
         }
 
-        async beforeSubmit(basedir, config) {
-            const storageConfig = findByKey(config, 'storage');
-            const backendId = this.resolveBackendId(storageConfig);
-            if(backendId){
-                const backend = Storage.getBackend(backendId);
-                const tgtStorageClient = await backend.getClient(this.logger, storageConfig.config);
-                const path = `${basedir}/${this.file.name}`;
-                const dataInfo = await tgtStorageClient.putFile(path, this.file);
-                this.setValue({name: this.file.name, dataInfo: dataInfo});
-            }
-        }
-
-        resolveBackendId(config){
-            if(config.name){
-                const storageId = Storage.getAvailableBackends()
-                    .map(id => Storage.getStorageMetadata(id))
-                    .filter(metadata => metadata.name === config.name)
-                    .map(metadata => metadata.id);
-                return storageId.pop();
-            }
-        }
-
         destroy() {
             this.detachFileHandlers();
             super.destroy();
-        }
-    }
-
-    function findByKey(obj, key) {
-        if(Object.keys(obj).includes(key)){
-            return obj[key];
-        } else {
-            for(const childKey of Object.keys(obj)){
-                if(typeof obj[childKey] === 'object'){
-                    return findByKey(obj[childKey], key);
-                }
-            }
         }
     }
 

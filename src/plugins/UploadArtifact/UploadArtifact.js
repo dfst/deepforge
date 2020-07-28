@@ -66,13 +66,5 @@ define([
         }
     };
 
-
-    UploadArtifact.prototype.getAssetNameFromHash = async function(hash){
-        const metadata = await this.blobClient.getMetadata(hash);
-        if (metadata) {
-            return metadata.name.replace(/\.[^.]*?$/, '');
-        }
-    };
-
     return UploadArtifact;
 });

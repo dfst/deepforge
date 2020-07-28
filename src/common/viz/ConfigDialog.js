@@ -2,16 +2,18 @@
 define([
     'q',
     'js/Dialogs/PluginConfig/PluginConfigDialog',
+    './ConfigDialogEntries/CustomConfigEntries',
     'deepforge/utils',
+    'js/Utils/ComponentSettings',
     'text!js/Dialogs/PluginConfig/templates/PluginConfigDialog.html',
-    'text!./CustomConfigWidgets.json',
     'css!./ConfigDialog.css'
 ], function(
     Q,
     PluginConfigDialog,
+    CustomConfigEntries,
     utils,
-    pluginConfigDialogTemplate,
-    CustomWidgets
+    ComponentSettings,
+    pluginConfigDialogTemplate
 ) {
     var SECTION_DATA_KEY = 'section',
         ATTRIBUTE_DATA_KEY = 'attribute',
@@ -19,21 +21,31 @@ define([
         PLUGIN_CONFIG_SECTION_BASE = $('<div><fieldset><form class="form-horizontal" role="form"></form><fieldset></div>'),
         ENTRY_BASE = $('<div class="form-group"><div class="row"><label class="col-sm-4 control-label">NAME</label><div class="col-sm-8 controls"></div></div><div class="row description"><div class="col-sm-4"></div></div></div>'),
         //jscs:enable maximumLineLength
-        DESCRIPTION_BASE = $('<div class="desc muted col-sm-8"></div>'),
-        SECTION_HEADER = $('<h6 class="config-section-header">');
+        DESCRIPTION_BASE = $('<div class="desc muted col-sm-8"></div>');
 
-    const CUSTOM_WIDGETS = JSON.parse(CustomWidgets);
 
     var ConfigDialog = function(client) {
         PluginConfigDialog.call(this, {client: client});
         this._widgets = {};
-        this.imported = this._registerCustomWidgets(CUSTOM_WIDGETS);
+        this._customEntriesManager = new CustomConfigEntries();
+        this._initCustomEntriesManagerMethods();
+        this.imported = this._registerCustomPropertyGridWidgets();
     };
 
     ConfigDialog.prototype = Object.create(PluginConfigDialog.prototype);
 
-    ConfigDialog.prototype._registerCustomWidgets = async function(customWidgets) {
+    ConfigDialog.prototype._initCustomEntriesManagerMethods = function () {
+        this._customEntriesManager.getEntryForProperty = this.getEntryForProperty.bind(this);
+        this._customEntriesManager.getBaseStorageDir = this.getBaseStorageDir.bind(this);
+    };
+
+    ConfigDialog.prototype._registerCustomPropertyGridWidgets = async function() {
         const self = this;
+        const customWidgets = ComponentSettings.resolveWithWebGMEGlobal(
+            {},
+            'PropertyGridWidgets'
+        ).widgets || [];
+
         const promises = customWidgets.map(widgetInfo => {
             return new Promise((resolve, reject) => {
                 require([widgetInfo.path], function(customWidget) {
@@ -83,7 +95,6 @@ define([
         this._divContainer = this._dialog.find('.modal-body');
         this._saveConfigurationCb = this._dialog.find('.save-configuration');
         this._modalHeader = this._dialog.find('.modal-header');
-        this._modalFooter = this._dialog.find('.modal-footer');
         this._saveConfigurationCb.find('input').prop('checked', true);
 
         // Create the header
@@ -183,22 +194,12 @@ define([
 
     ConfigDialog.prototype._getAllConfigValues = async function () {
         var settings = {};
-        const basedir = `${this._client.getActiveProjectId()}/artifacts`;
-        Object.keys(this._widgets).forEach(namespace => {
+        for (const namespace of Object.keys(this._widgets)){
             settings[namespace] = {};
 
-            Object.keys(this._widgets[namespace]).forEach(name => {
-                settings[namespace][name] = this._widgets[namespace][name].getValue();
-            });
-        });
-
-        // Second pass necessary to resolve value from functions
-        for (const namespace of Object.keys(this._widgets)){
             for(const name of Object.keys(this._widgets[namespace])){
-                if(this._widgets[namespace][name].beforeSubmit){
-                    await this._widgets[namespace][name].beforeSubmit(basedir, settings);
-                    settings[namespace][name] = this._widgets[namespace][name].getValue();
-                }
+                const value = await this._widgets[namespace][name].getValue();
+                settings[namespace][name] = value;
             }
         }
 
@@ -256,8 +257,8 @@ define([
 
     ConfigDialog.prototype.getEntryForProperty = function (configEntry, prevConfig = {}) {
         let entry = null;
-        if (ConfigDialog.ENTRIES[configEntry.valueType]) {
-            entry = ConfigDialog.ENTRIES[configEntry.valueType].call(this, configEntry, prevConfig);
+        if (CustomConfigEntries.isCustomEntryValueType(configEntry.valueType)) {
+            entry = this._customEntriesManager[configEntry.valueType](configEntry, prevConfig);
         } else {
             const widget = this.getWidgetForProperty(configEntry);
             const el = ENTRY_BASE.clone();
@@ -306,127 +307,15 @@ define([
         }
     };
 
+    ConfigDialog.prototype.getBaseStorageDir = function() {
+        return `${this._client.getActiveProjectId()}/artifacts`;
+    };
+
+    ConfigDialog.prototype.getComponentId = function() {
+        return 'ConfigDialog';
+    };
+
     ConfigDialog.WIDGETS = {};
-    ConfigDialog.ENTRIES = {};
-    ConfigDialog.ENTRIES.section = function(configEntry) {
-        const sectionHeader = SECTION_HEADER.clone();
-        sectionHeader.text(configEntry.displayName);
-        return {el: sectionHeader};
-    };
-
-    ConfigDialog.ENTRIES.group = function(configEntry, config) {
-        const widget = {el: null};
-        widget.el = $('<div>', {class: configEntry.name});
-
-        const entries = configEntry.valueItems
-            .map(item => this.getEntryForProperty(item, config));
-
-        entries.forEach(entry => widget.el.append(entry.el));
-
-        widget.getValue = () => {
-            const config = {};
-            entries.forEach(entry => {
-                if (entry.widget) {
-                    config[entry.id || entry.name] = entry.widget.getValue();
-                }
-            });
-            return config;
-        };
-
-        widget.setValue = config => {
-            entries.forEach(entry => {
-                const value = config[entry.id || entry.name];
-                if (entry.widget && value !== undefined) {
-                    entry.widget.setValue(value);
-                }
-            });
-            return config;
-        };
-
-        return {widget, el: widget.el};
-    };
-
-    ConfigDialog.ENTRIES.dict = function(configEntry, config) {
-        const widget = {el: null, active: null};
-        widget.el = $('<div>', {class: configEntry.name});
-
-        const entriesForItem = {};
-        const valueItemsDict = {};
-        for (let i = 0; i < configEntry.valueItems.length; i++) {
-            const valueItem = configEntry.valueItems[i];
-            const entries = valueItem.configStructure
-                .map(item => {
-                    const entry = this.getEntryForProperty(item, config);
-                    return entry;
-                });
-
-            entries.forEach(entry => {
-                if (i > 0) {
-                    entry.el.css('display', 'none');
-                }
-                widget.el.append(entry.el);
-            });
-
-            const displayName = valueItem.displayName || valueItem.name;
-            entriesForItem[displayName] = entries;
-            valueItemsDict[displayName] = valueItem;
-        }
-
-        const itemNames = Object.keys(valueItemsDict);
-        const defaultValue = itemNames[0];
-
-        const configForKeys = {
-            name: configEntry.name,
-            displayName: configEntry.displayName,
-            value: defaultValue,
-            valueType: 'string',
-            valueItems: itemNames
-        };
-        const selector = this.getEntryForProperty(configForKeys);
-
-        widget.active = defaultValue;
-        widget.onSetSelector = value => {
-            const oldEntries = entriesForItem[widget.active];
-            oldEntries.forEach(entry => entry.el.css('display', 'none'));
-
-            widget.active = value;
-            entriesForItem[widget.active]
-                .forEach(entry => entry.el.css('display', ''));
-        };
-
-        selector.el.find('select').on('change', event => {
-            const {value} = event.target;
-            widget.onSetSelector(value);
-        });
-
-        widget.getValue = () => {
-            const displayName = widget.active;
-            const name = valueItemsDict[displayName].name;
-            const config = {};
-            entriesForItem[name].forEach(entry => {
-                if (entry.widget) {
-                    config[entry.id] = entry.widget.getValue();
-                }
-            });
-            return {name, config};
-        };
-
-        widget.setValue = value => {
-            const {name, config} = value;
-            selector.widget.setValue(name);
-            widget.onSetSelector(name);
-            entriesForItem[name].forEach(entry => {
-                if (entry.widget) {
-                    entry.widget.setValue(config[entry.id]);
-                }
-            });
-            return {name, config};
-        };
-
-        widget.el.prepend(selector.el);
-
-        return {widget, el: widget.el};
-    };
 
     return ConfigDialog;
 });
