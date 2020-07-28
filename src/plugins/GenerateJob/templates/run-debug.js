@@ -49,7 +49,7 @@ requirejs([
         const client = await Storage.getClient(backend, null, config);
         const stream = await client.getFileStream(dataInfo);
         filename = fromRelative(filename);
-        await writeFile(filename, buffer);
+        await writeFile(filename, stream);
     }
 
     function fromRelative(filename) {
@@ -64,7 +64,6 @@ requirejs([
         const dstStream = fs.createWriteStream(path, {
             encoding: readStream.readableEncoding
         });
-        logger.info(`About to write the stream to ${path}`);
         await pipeline(readStream, dstStream);
     }
 

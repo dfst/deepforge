@@ -422,7 +422,6 @@ requirejs([
         const dstStream = fs.createWriteStream(path, {
             encoding: readStream.readableEncoding
         });
-        logger.info(`About to write the stream to ${path}`);
         await pipeline(readStream, dstStream);
     }
 
