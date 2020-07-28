@@ -243,6 +243,16 @@ program.command('start')
     .option('-N, --no-conda', 'do not start deepforge server in a conda environment.')
     .option('-m, --mongo', 'start MongoDB')
     .action(async args => {
+        if(args.conda){
+            try {
+                Conda.check();
+            } catch (e) {
+                console.log('Warning: conda executable not found. Please ' +
+                            'install conda for automatic management of Python ' +
+                            'dependencies via conda environments.');
+                args.conda = false;
+            }
+        }
         const serverCommand = getDeepForgeServerCommand(args.conda);
         const startAll = !args.server && !args.mongo;
         if (startAll) {

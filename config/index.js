@@ -11,5 +11,6 @@ var env = process.env.NODE_ENV || 'default',
     config = require(configFilename),
     validateConfig = require('webgme/config/validator');
 
-validateConfig(configFilename);
+validateConfig(config);
+config = require(__dirname + '/config.extensions.js')(config);
 module.exports = config;

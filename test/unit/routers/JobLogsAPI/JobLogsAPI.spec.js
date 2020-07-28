@@ -6,7 +6,6 @@ var testFixture = require('../../../globals'),
     path = testFixture.path,
     gmeConfig = testFixture.getGmeConfig(),
     blobDir = gmeConfig.blob.fsDir,
-    server = testFixture.WebGME.standaloneServer(gmeConfig),
     mntPt = 'execution/logs',
     rm_rf = require('rimraf'),
     exists = require('exists-file');
@@ -16,6 +15,12 @@ describe('JobLogsAPI', function() {
         branch = 'master',
         jobId = encodeURIComponent('/4/q/l'),
         firstLog = 'hello world',
+        server,
+        url;
+
+    before(function(done) {
+        testFixture.mkdir(blobDir);
+        server = testFixture.WebGME.standaloneServer(gmeConfig);
         url = [
             server.getUrl(),
             mntPt,
@@ -23,9 +28,6 @@ describe('JobLogsAPI', function() {
             branch,
             jobId
         ].join('/');
-
-    before(function(done) {
-        testFixture.mkdir(blobDir);
         server.start(done);
     });
 
@@ -78,15 +80,16 @@ describe('JobLogsAPI', function() {
     });
 
     describe('delete', function() {
-        var delUrl = [
-            server.getUrl(),
-            mntPt,
-            'testProject',
-            'other',
-            encodeURIComponent('/4/8/l')
-        ].join('/');
+        var delUrl;
 
         before(function(done) {
+            delUrl = [
+                server.getUrl(),
+                mntPt,
+                'testProject',
+                'other',
+                encodeURIComponent('/4/8/l')
+            ].join('/');
             superagent.patch(delUrl)
                 .send({patch: firstLog})
                 .end(function (err, res) {

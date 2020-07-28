@@ -1,0 +1,93 @@
+.tensor-plotter {
+  outline: none; }
+  .tensor-plotter .plot {
+    display: inline-block; }
+  .tensor-plotter .plot-editor {
+    padding: 20px;
+    display: inline-block; }
+  .tensor-plotter .container {
+    width: 90%;
+    margin-left: auto;
+    margin-right: auto; }
+    @media only screen and (min-width: 33.75em) {
+      .tensor-plotter .container {
+        width: 80%; } }
+    @media only screen and (min-width: 60em) {
+      .tensor-plotter .container {
+        width: 75%;
+        max-width: 60rem; } }
+  .tensor-plotter .row {
+    position: relative;
+    width: 100%; }
+  .tensor-plotter .row [class^="col"] {
+    float: left;
+    margin: 0.5rem 2%;
+    min-height: 0.125rem; }
+  .tensor-plotter .row::after {
+    content: "";
+    display: table;
+    clear: both; }
+  .tensor-plotter .col-1,
+  .tensor-plotter .col-2,
+  .tensor-plotter .col-3,
+  .tensor-plotter .col-4,
+  .tensor-plotter .col-5,
+  .tensor-plotter .col-6,
+  .tensor-plotter .col-7,
+  .tensor-plotter .col-8,
+  .tensor-plotter .col-9,
+  .tensor-plotter .col-10,
+  .tensor-plotter .col-11,
+  .tensor-plotter .col-12 {
+    width: 96%; }
+  .tensor-plotter .col-1-sm {
+    width: 4.33333%; }
+  .tensor-plotter .col-2-sm {
+    width: 12.66667%; }
+  .tensor-plotter .col-3-sm {
+    width: 21%; }
+  .tensor-plotter .col-4-sm {
+    width: 29.33333%; }
+  .tensor-plotter .col-5-sm {
+    width: 37.66667%; }
+  .tensor-plotter .col-6-sm {
+    width: 46%; }
+  .tensor-plotter .col-7-sm {
+    width: 54.33333%; }
+  .tensor-plotter .col-8-sm {
+    width: 62.66667%; }
+  .tensor-plotter .col-9-sm {
+    width: 71%; }
+  .tensor-plotter .col-10-sm {
+    width: 79.33333%; }
+  .tensor-plotter .col-11-sm {
+    width: 87.66667%; }
+  .tensor-plotter .col-12-sm {
+    width: 96%; }
+  @media only screen and (min-width: 45em) {
+    .tensor-plotter .col-1 {
+      width: 4.33333%; }
+    .tensor-plotter .col-2 {
+      width: 12.66667%; }
+    .tensor-plotter .col-3 {
+      width: 21%; }
+    .tensor-plotter .col-4 {
+      width: 29.33333%; }
+    .tensor-plotter .col-5 {
+      width: 37.66667%; }
+    .tensor-plotter .col-6 {
+      width: 46%; }
+    .tensor-plotter .col-7 {
+      width: 54.33333%; }
+    .tensor-plotter .col-8 {
+      width: 62.66667%; }
+    .tensor-plotter .col-9 {
+      width: 71%; }
+    .tensor-plotter .col-10 {
+      width: 79.33333%; }
+    .tensor-plotter .col-11 {
+      width: 87.66667%; }
+    .tensor-plotter .col-12 {
+      width: 96%; }
+    .tensor-plotter .hidden-sm {
+      display: block; } }

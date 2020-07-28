@@ -146,7 +146,7 @@ define([
         const release = {version, changelog};
         const versionPath = path.join(SEEDS_DIR, seed, 'releases.jsonl');
         this.logger.info(`Updating ${seed} version (${version})`);
-        return Q.nfcall(fs.appendFile, versionPath, JSON.stringify(release));
+        return Q.nfcall(fs.appendFile, versionPath, `\n${JSON.stringify(release)}`);
     };
 
     return UpdateLibrarySeed;

@@ -104,6 +104,18 @@ describe('TwoPhaseCore', function() {
         });
 
         describe('getPointerPath', function() {
+            it('should get pointer path for newly created node w/ staged changes', async function() {
+                const {META, rootNode, core} = plugin;
+                core.getStagedChanges();
+                const base = META.FCO;
+                const parent = rootNode;
+                const newNode = core.createNode({base, parent});
+                core.setPointer(newNode, 'test', base);
+
+                const baseId = core.getPointerPath(newNode, 'test');
+                assert.equal(baseId, core.getPath(base));
+            });
+
             it('should get pointer path for newly created node', async function() {
                 const {META, rootNode, core} = plugin;
                 const base = META.FCO;

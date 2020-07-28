@@ -1,26 +1,12 @@
 /* globals define */
 define([
-    './Metadata',
+    './Metadata'
 ], function(
-    Metadata,
+    Metadata
 ) {
     class Figure extends Metadata {
         async update(state) {
-            this.core.setAttribute(this.node, 'title', state.title);
-            await this.clearSubGraphs();
-
-            state.axes.forEach(axes => {
-                const axesNode = this.core.createNode({
-                    parent: this.node,
-                    base: axes.is3D ? this.META.Plot3D : this.META.Plot2D
-                });
-                this.setAxesProperties(axesNode, axes);
-                this.addAxesLines(axesNode, this.node, axes);
-                if(!axes.is3D){
-                    this.addAxesImage(axesNode, this.node, axes);
-                }
-                this.addAxesScatterPoints(axesNode, this.node, axes);
-            });
+            this.core.setAttribute(this.node, 'data', JSON.stringify(state));
         }
 
         setAxesProperties(axesNode, axes){
@@ -52,7 +38,8 @@ define([
         }
 
         async clearSubGraphs() {
-            const subGraphs = await this.core.loadChildren(this.node);
+            const subGraphs = await this.loadChildren();
+
             subGraphs.forEach(subGraph => this.core.deleteNode(subGraph));
         }
 
@@ -73,8 +60,8 @@ define([
         addAxesScatterPoints (parent, job, axes) {
             axes.scatterPoints.forEach(scatterPoint => {
                 const scatterPointsNode = this.core.createNode({
-                   parent: parent,
-                   base: this.META.ScatterPoints,
+                    parent: parent,
+                    base: this.META.ScatterPoints,
                 });
                 this.core.setAttribute(scatterPointsNode, 'color', scatterPoint.color);
                 this.core.setAttribute(scatterPointsNode, 'label', scatterPoint.label);

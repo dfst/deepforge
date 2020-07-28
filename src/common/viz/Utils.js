@@ -21,8 +21,15 @@ define([], function(){
     };
 
     Utils.base64ToImageArray = function (base64String, width, height, numChannels) {
-        const decodedString = atob(base64String);
-        let bytes = new Uint8Array(decodedString.length);
+        let decodedString, bytes;
+        if(require.isBrowser) {
+            decodedString = atob(base64String);
+            bytes = new Uint8Array(decodedString.length);
+        } else {
+            decodedString = Buffer.from(base64String, 'base64').toString('binary');
+            bytes = new Buffer.alloc(decodedString.length);
+        }
+
         for (let i = 0; i < decodedString.length; i++) {
             bytes[i] = decodedString.charCodeAt(i);
         }

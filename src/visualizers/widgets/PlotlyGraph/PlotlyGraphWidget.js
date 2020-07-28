@@ -1,17 +1,18 @@
 /*globals define, _, $*/
 define([
-    './lib/plotly.min',
-    './PlotlyDescExtractor'
+    './lib/plotly.min'
 ], function (
-    Plotly,
-    PlotlyDescExtractor) {
+    Plotly
+) {
 
     'use strict';
 
     const WIDGET_CLASS = 'plotly-graph';
+    const PLOT_BG_COLOR = '#EEEEEE';
 
     function PlotlyGraphWidget(logger, container) {
         this.logger = logger.fork('widget');
+        this._container = container;
         this.$el = container;
         this.$defaultTextDiv = $('<div>', {
             class: 'h2 center'
@@ -22,10 +23,7 @@ define([
         this.$el.append(this.$defaultTextDiv);
         this.$el.css('overflow', 'auto');
         this.$el.addClass(WIDGET_CLASS);
-        this.nodes = {};
-        this.plotlyJSON = null;
-        this.layout = {};
-        this.created = false;
+        this.plots = [];
         this.logger.debug('ctor finished');
         this.setTextVisibility(true);
     }
@@ -48,48 +46,61 @@ define([
     };
 
     PlotlyGraphWidget.prototype.removeNode = function () {
-        this.plotlyJSON = null;
         this.refreshChart();
         this.setTextVisibility(true);
     };
 
     PlotlyGraphWidget.prototype.addOrUpdateNode = function (desc) {
         if (desc) {
-            this.plotlyJSON = PlotlyDescExtractor.descToPlotlyJSON(desc);
+            const plotlyJSONs = Array.isArray(desc) ?
+                desc.map(descr => descr.plotlyData) : [desc.plotlyData];
             this.setTextVisibility(false);
-            this.refreshChart();
+            this.refreshChart(plotlyJSONs);
         }
     };
 
     PlotlyGraphWidget.prototype.updateNode = function (desc) {
+        this.deleteChart();
         this.addOrUpdateNode(desc);
     };
 
-    PlotlyGraphWidget.prototype.createOrUpdateChart = function () {
-        if (!this.plotlyJSON) {
+    PlotlyGraphWidget.prototype.createOrUpdateChart = function (plotlyJSONs) {
+        if (!plotlyJSONs) {
             this.deleteChart();
         } else {
-            if (!this.created && !_.isEmpty(this.plotlyJSON)) {
-                Plotly.newPlot(this.$el[0], this.plotlyJSON);
-                this.created = true;
-
-            } else if(!_.isEmpty(this.plotlyJSON)) {
-                // Currently in plotly, ImageTraces have no react support
-                // This will be updated when there's additional support
-                // for react with responsive layout
-                Plotly.newPlot(this.$el[0], this.plotlyJSON);
-            }
+            this.createChartSlider(plotlyJSONs);
         }
+    };
+
+    PlotlyGraphWidget.prototype.createChartSlider = function(plotlyJSONs) {
+        const len = plotlyJSONs.length;
+        plotlyJSONs.forEach(json => {
+            const plotlyDiv = $('<div/>');
+
+            if (len === 1) {
+                json.layout.height = this.$el.height();
+                json.layout.width = this.$el.width();
+            } else {
+                json.layout.autosize = true;
+                delete json.layout.width;
+                delete json.layout.height;
+            }
+            json.layout.plot_bgcolor = PLOT_BG_COLOR;
+            json.layout.paper_bgcolor = PLOT_BG_COLOR;
+
+            Plotly.newPlot(plotlyDiv[0], json);
+            this.plots.push(plotlyDiv);
+            this.$el.append(plotlyDiv);
+        });
     };
 
     PlotlyGraphWidget.prototype.refreshChart = _.debounce(PlotlyGraphWidget.prototype.createOrUpdateChart, 50);
 
     PlotlyGraphWidget.prototype.deleteChart = function () {
-        this.plotlyJSON = null;
-        if (this.created) {
-            Plotly.purge(this.$el[0]);
-        }
-        this.created = false;
+        this.plots.forEach($plot => {
+            Plotly.purge($plot[0]);
+            $plot.remove();
+        });
     };
 
     PlotlyGraphWidget.prototype.setTextVisibility = function (display) {
@@ -98,7 +109,7 @@ define([
     };
     /* * * * * * * * Visualizer life cycle callbacks * * * * * * * */
     PlotlyGraphWidget.prototype.destroy = function () {
-        Plotly.purge(this.$el[0]);
+        this.deleteChart();
     };
 
     PlotlyGraphWidget.prototype.onActivate = function () {

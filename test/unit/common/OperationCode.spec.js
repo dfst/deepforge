@@ -1,17 +1,28 @@
 describe('OperationCode', function() {
-    var fs = require('fs');
-    var path = require('path');
-    var assert = require('assert');
-    var OperationCode = require('../../../src/common/OperationCode');
-    var operation;
+    const fs = require('fs');
+    const path = require('path');
+    const assert = require('assert');
+    const OperationCode = require('../../../src/common/OperationCode');
+    let operation;
+
+    describe('attr types', function() {
+        before(async () => {
+            const code = testCase('numeric-attr.py');
+            operation = new OperationCode(code);
+        });
+
+        it('should detect type correctly', function() {
+            const [number] = operation.getAttributes();
+            assert.equal(typeof number.value, 'number');
+        });
+    });
 
     describe('example', function() {
         var code;
 
         before(function() {
             // load the example
-            var filePath = path.join(__dirname, '..', 'test-cases', 'operations', 'example.py');
-            code = fs.readFileSync(filePath, 'utf8');
+            code = testCase('example.py');
         });
 
         describe('name', function() {
@@ -508,5 +519,10 @@ describe('OperationCode', function() {
             // TODO: rename attribute?
         });
     });
+
+    function testCase(name) {
+        const filePath = path.join(__dirname, '..', 'test-cases', 'operations', name);
+        return fs.readFileSync(filePath, 'utf8');
+    }
 
 });

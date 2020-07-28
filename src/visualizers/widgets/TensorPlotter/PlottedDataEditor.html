@@ -1,0 +1,57 @@
+<div class="modal" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title"><%= title %></h3>
+      </div>
+      <div class="modal-body">
+        <form>
+            <div class="form-group">
+                <label for="name">Name</label>
+                <input type="text", class="form-control" id="name"/>
+            </div>
+            <hr>
+            <h5>Data</h5>
+            <div class="form-group">
+                <label for="data">Data</label>
+                <select id="data" class="artifactData"></select>
+            </div>
+            <div class="form-group">
+                <label for="dataSlice">Data View</label>
+                <input type="text", class="form-control" id="dataSlice"/>
+                <span class="data-shape" data-data="data" data-slice="dataSlice">(10,5,4)</span>
+            </div>
+            <hr>
+            <h5>Color</h5>
+            <div class="form-group">
+                <label for="colorType">Type</label>
+                <select id="colorType">
+                    <option value="uniform">Single Color for All Points</option>
+                    <option value="individual">Color-Code Each Point</option>
+                </select>
+            </div>
+            <div class="color-type uniform">
+                <input class="jscolor" id="uniformColor" value="1f77b4">
+            </div>
+            <div class="color-type individual">
+                <input class="jscolor" id="startColor" value="1f77b4">
+                <input class="jscolor" id="endColor" value="1f77b4">
+                <div class="form-group">
+                    <label for="colorData">Data</label>
+                    <select id="colorData" class="artifactData"></select>
+                </div>
+                <div class="form-group">
+                    <label for="colorDataSlice">Data View</label>
+                    <input type="text", class="form-control" id="colorDataSlice"/>
+                    <span class="data-shape" data-data="colorData" data-slice="colorDataSlice" id="colorDataDims">(10,5,4)</span>
+                </div>
+            </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-save btn-primary">Apply</button>
+        <button type="button" class="btn btn-default btn-secondary" data-dismiss="modal">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>

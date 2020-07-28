@@ -8,23 +8,23 @@ define([], function() {
             this._events = {};
         }
 
-        cancelJob (/*job*/) {
+        async cancelJob (/*job*/) {
             unimplemented(this.logger, 'cancelJob');
         }
 
-        createJob (/*hash*/) {
+        async createJob (/*hash*/) {
             unimplemented(this.logger, 'createJob');
         }
 
-        getStatus (/*jobInfo*/) {
+        async getStatus (/*jobInfo*/) {
             unimplemented(this.logger, 'getStatus');
         }
 
-        getResultsInfo (/*jobInfo*/) {
+        async getResultsInfo (/*jobInfo*/) {
             unimplemented(this.logger, 'getResultsInfo');
         }
 
-        getConsoleOutput (/*hash*/) {
+        async getConsoleOutput (/*hash*/) {
             unimplemented(this.logger, 'getConsoleOutput');
         }
 
@@ -46,13 +46,18 @@ define([], function() {
         }
     }
 
-    ComputeClient.prototype.QUEUED = 'queued';
-    ComputeClient.prototype.PENDING = 'pending';
-    ComputeClient.prototype.RUNNING = 'running';
-    ComputeClient.prototype.SUCCESS = 'success';
-    ComputeClient.prototype.FAILED = 'failed';
-    ComputeClient.prototype.CANCELED = 'canceled';
-    ComputeClient.prototype.NOT_FOUND = 'NOT_FOUND';
+    const Constants = {
+        QUEUED: 'queued',
+        PENDING: 'pending',
+        RUNNING: 'running',
+        SUCCESS: 'success',
+        FAILED: 'failed',
+        CANCELED: 'canceled',
+        NOT_FOUND: 'NOT_FOUND',
+    };
+
+    Object.assign(ComputeClient, Constants);
+    Object.assign(ComputeClient.prototype, Constants);
 
     function unimplemented(logger, name) {
         const msg = `${name} is not implemented for current compute backend!`;
