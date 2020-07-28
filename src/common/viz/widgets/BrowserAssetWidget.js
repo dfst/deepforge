@@ -1,12 +1,10 @@
 /*globals define, $, WebGMEGlobal*/
 define([
     'js/Controls/PropertyGrid/Widgets/WidgetBase',
-    'js/logger',
-    'deepforge/storage/index'
+    'js/logger'
 ], function (
     WidgetBase,
-    Logger,
-    Storage
+    Logger
 ) {
     'use strict';
 

@@ -21,8 +21,8 @@ define([
         PLUGIN_CONFIG_SECTION_BASE = $('<div><fieldset><form class="form-horizontal" role="form"></form><fieldset></div>'),
         ENTRY_BASE = $('<div class="form-group"><div class="row"><label class="col-sm-4 control-label">NAME</label><div class="col-sm-8 controls"></div></div><div class="row description"><div class="col-sm-4"></div></div></div>'),
         //jscs:enable maximumLineLength
-        DESCRIPTION_BASE = $('<div class="desc muted col-sm-8"></div>');
-
+        DESCRIPTION_BASE = $('<div class="desc muted col-sm-8"></div>'),
+        SPINNER_BASE = $('<span class="text-primary glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>');
 
     var ConfigDialog = function(client) {
         PluginConfigDialog.call(this, {client: client});
@@ -71,9 +71,9 @@ define([
         });
 
         this._btnSave.on('click', async event => {
-            await this.submit(deferred.resolve);
             event.stopPropagation();
             event.preventDefault();
+            await this.submit(deferred.resolve);
         });
 
         //save&run on CTRL + Enter
@@ -95,6 +95,7 @@ define([
         this._divContainer = this._dialog.find('.modal-body');
         this._saveConfigurationCb = this._dialog.find('.save-configuration');
         this._modalHeader = this._dialog.find('.modal-header');
+        this._modalFooter = this._dialog.find('.modal-footer');
         this._saveConfigurationCb.find('input').prop('checked', true);
 
         // Create the header
@@ -119,6 +120,7 @@ define([
 
     ConfigDialog.prototype.submit = async function (callback) {
         this._btnSave.attr('disabled', true);
+        SPINNER_BASE.insertAfter(this._modalFooter.find('form'));
         const config = await this._getAllConfigValues();
         const saveConfig = this._saveConfigurationCb.find('input')
             .prop('checked');
