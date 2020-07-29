@@ -132,7 +132,7 @@ define([
             const browserAssetConfig = {
                 name: configEntry.name,
                 displayName: configEntry.displayName,
-                valueType: 'browserAsset'
+                valueType: 'file'
             };
             const browserAssetWidget = this.getEntryForProperty(browserAssetConfig, config);
             const storageWidget = this.getEntryForProperty(storageOpts, config);

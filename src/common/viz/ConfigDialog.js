@@ -200,7 +200,12 @@ define([
             settings[namespace] = {};
 
             for(const name of Object.keys(this._widgets[namespace])){
-                const value = await this._widgets[namespace][name].getValue();
+                let value;
+                try {
+                    value = await this._widgets[namespace][name].getValue();
+                } catch (e) {
+                    this._dialog.modal('hide');
+                }
                 settings[namespace][name] = value;
             }
         }

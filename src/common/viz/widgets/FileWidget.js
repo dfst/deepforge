@@ -13,7 +13,7 @@ define([
         ASSET_WIDGET_BASE = $('<div class="asset-widget" />'),
         ASSET_LINK = $('<a class="local-download-link" href="" target="_blank"></a>');
 
-    class BrowserAssetWidget extends WidgetBase {
+    class FileWidget extends WidgetBase {
         constructor(propertyDesc) {
             super(propertyDesc);
             if (propertyDesc.readOnly) {
@@ -116,5 +116,5 @@ define([
         }
     }
 
-    return BrowserAssetWidget;
+    return FileWidget;
 });
