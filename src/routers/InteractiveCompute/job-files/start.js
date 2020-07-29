@@ -52,12 +52,19 @@ class InteractiveClient {
                 this.runTask(saveArtifact);
             });
         } else if (msg.type === Message.ADD_FILE) {
-            this.runTask(() => this.writeFile(msg));
+            this.runTask(() => {
+                const [filepath, content] = msg.data;
+                this.writeFile(filepath, content);
+            });
+        } else if (msg.type === Message.SET_ENV) {
+            this.runTask(() => {
+                const [name, value] = msg.data;
+                process.env[name] = value;
+            });
         }
     }
 
-    async writeFile(msg) {
-        const [filepath, content] = msg.data;
+    async writeFile(filepath, content) {
         const dirs = path.dirname(filepath).split(path.sep);
         await mkdirp(...dirs);
         await fs.writeFile(filepath, content);

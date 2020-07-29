@@ -141,6 +141,13 @@ define([
             await this.runTask(task);
         }
 
+        async setEnvVar(name, value) {
+            this.ensureIdle('set env var');
+            const msg = new Message(Message.SET_ENV, [name, value]);
+            const task = new Task(this.ws, msg);
+            await this.runTask(task);
+        }
+
         close() {
             this.ws.close();
         }
