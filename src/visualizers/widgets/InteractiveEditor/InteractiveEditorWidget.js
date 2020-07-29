@@ -28,12 +28,13 @@ define([
             overlay.on('click', async () => {
                 const {id, config} = await this.promptComputeConfig();
                 try {
-                    await this.createInteractiveSession(id, config);
+                    this.session = await this.createInteractiveSession(id, config);
                     const features = this.getCapabilities();
                     if (features.save) {
                         DeepForge.registerAction('Save', 'save', 10, () => this.save());
                     }
                     overlay.remove();
+                    this.onComputeInitialized(this.session);
                 } catch (err) {
                     const title = 'Compute Creation Error';
                     const body = 'Unable to create compute. Please verify the credentials are correct.';
@@ -42,6 +43,9 @@ define([
                     dialog.show();
                 }
             });
+        }
+
+        onComputeInitialized(/*session*/) {
         }
 
         getCapabilities() {
@@ -91,7 +95,7 @@ define([
         }
 
         async createInteractiveSession(computeId, config) {
-            this.session = await Session.new(computeId, config);
+            return await Session.new(computeId, config);
         }
 
         destroy() {
@@ -102,6 +106,15 @@ define([
         }
 
         updateNode(/*desc*/) {
+        }
+
+        onActivate() {
+        }
+
+        onDeactivate() {
+        }
+
+        onWidgetContainerResize(/*width, height*/) {
         }
     }
 
