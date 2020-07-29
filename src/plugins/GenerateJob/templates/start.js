@@ -7,7 +7,7 @@ const {spawn} = childProcess;
 const fs = require('fs');
 const {promisify} = require('util');
 const mkdir = promisify(fs.mkdir);
-const writeFile = promisify(fs.writeFile);
+const pipeline = promisify(require('stream').pipeline);
 const lstat = promisify(fs.lstat);
 const exec = promisify(childProcess.exec);
 const rm_rf = require('rimraf');
@@ -172,8 +172,8 @@ requirejs([
             for (let i = outputNames.length; i--;) {
                 const filename = outputNames[i];
                 const storagePath = `${storageDir}/${filename}`;
-                const contents = fs.readFileSync(`outputs/${filename}`);
-                const dataInfo = await client.putFile(storagePath, contents);
+                const contentsStream = fs.createReadStream(`outputs/${filename}`);
+                const dataInfo = await client.putFileStream(storagePath, contentsStream);
                 const type = results[filename];
                 results[filename] = {type, dataInfo};
             }
@@ -278,8 +278,8 @@ requirejs([
         if (!exists) {
             await createCacheDir(cachePath);
             const client = await Storage.getClient(dataInfo.backend, null, config);
-            const buffer = await client.getFile(dataInfo);
-            await writeFile(cachePath, buffer);
+            const stream = await client.getFileStream(dataInfo);
+            await writeFile(cachePath, stream);
         } else {
             logger.info(`${inputName} already cached. Skipping retrieval from blob`);
         }
@@ -416,6 +416,13 @@ requirejs([
     async function dataCachePath(cacheDir, dataInfo) {
         const relPath = await Storage.getCachePath(dataInfo, logger);
         return path.join(cacheDir, relPath);
+    }
+
+    async function writeFile(path, readStream) {
+        const dstStream = fs.createWriteStream(path, {
+            encoding: readStream.readableEncoding
+        });
+        await pipeline(readStream, dstStream);
     }
 
     function nop() {}
