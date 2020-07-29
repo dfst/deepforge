@@ -1,6 +1,8 @@
 /*globals define*/
 
 define([
+    'plugin/GenerateJob/GenerateJob/templates/index',
+    'deepforge/Constants',
     'widgets/InteractiveEditor/InteractiveEditorWidget',
     'deepforge/compute/interactive/message',
     'text!./TrainOperation.py',
@@ -8,6 +10,8 @@ define([
     'underscore',
     'css!./styles/TrainKerasWidget.css',
 ], function (
+    JobTemplates,
+    CONSTANTS,
     InteractiveEditor,
     Message,
     TrainOperation,
@@ -23,6 +27,7 @@ define([
         constructor(logger, container) {
             super(container);
             container.addClass(WIDGET_CLASS);
+            this.currentTrainTask = null;
             // TODO: Add training dashboard
             // TODO: add event for training?
         }
@@ -30,6 +35,9 @@ define([
         async onComputeInitialized(session) {
             const initCode = await this.getInitializationCode();
             await session.addFile('utils/init.py', initCode);
+            await session.addFile('plotly_backend.py', JobTemplates.MATPLOTLIB_BACKEND);
+            await this.session.setEnvVar('MPLBACKEND', 'module://plotly_backend');
+            await this.session.addFile('start_train.py', MainCode);
             const config = {
                 epochs: 2,
                 batchSize: 64,
@@ -44,14 +52,34 @@ define([
             const trainPy = GetTrainCode(config);
             await this.session.addFile('operations/train.py', trainPy);
             // TODO: get the architecture
-            await this.session.addFile('start_train.py', MainCode);
-            const task = this.session.spawn('python start_train.py');
-            task.on(Message.STDOUT, data => console.log(data.toString()));
-            task.on(Message.STDERR, data => console.error(data.toString()));
+            if (this.currentTrainTask) {
+                // TODO: kill the current task
+            }
+            this.currentTrainTask = this.session.spawn('python start_train.py');
+            const lineParser = new LineCollector();
+            lineParser.on(line => {
+                if (line.startsWith(CONSTANTS.START_CMD)) {
+                    line = line.substring(CONSTANTS.START_CMD.length + 1);
+                    const splitIndex = line.indexOf(' ');
+                    const cmd = line.substring(0, splitIndex);
+                    const content = line.substring(splitIndex + 1);
+                    this.parseMetadata(cmd, JSON.parse(content));
+                }
+            });
+            this.currentTrainTask.on(Message.STDOUT, data => lineParser.receive(data));
+            this.currentTrainTask.on(Message.STDERR, data => console.error(data.toString()));
             // TODO: stop the current execution
             // TODO: stream to the console for now
             // TODO: send feedback to the browser...
             // TODO: we could probably use the same matplotlib code to create the plots
+        }
+
+        parseMetadata(cmd, content) {
+            if (cmd === 'PLOT') {
+                console.log(content);
+            } else {
+                console.error('Unrecognized command:', cmd);
+            }
         }
 
         addNode(desc) {
@@ -60,6 +88,34 @@ define([
 
         removeNode(id) {
             console.log('adding', id);
+        }
+    }
+
+    class LineCollector {
+        constructor() {
+            this.partialLine = '';
+            this.handler = null;
+        }
+
+        on(fn) {
+            this.handler = fn;
+        }
+
+        receive(data) {
+            const text = data.toString();
+            const lines = text.split('\n');
+            lines.forEach(l => this.handler(l));
+            //const newLine = text.indexOf('\n');
+            //let fragment;
+            //if (newLine > -1) {
+                //const line = this.partialLine + text.substring(0, newLine);
+                //this.handler(line);
+                //fragment = text.substring(newLine + 1);
+                //this.partialLine = '';
+            //} else {
+                //fragment = text;
+            //}
+            //this.partialLine += fragment;
         }
     }
 

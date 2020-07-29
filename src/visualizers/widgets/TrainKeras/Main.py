@@ -9,12 +9,12 @@ test_model = tf.keras.Sequential(
     [
         tf.keras.layers.Dense(2, activation='relu'),
         tf.keras.layers.Dense(3, activation='relu'),
-        tf.keras.layers.Dense(4),
+        tf.keras.layers.Dense(4, activation='softmax'),
     ]
 )
 
 test_X = tf.ones((3, 3))
-test_y = tf.ones((3, 3))
+test_y = tf.ones((3, 4))
 
 train = Train(test_model)
 model = train.execute(test_X, test_y)
