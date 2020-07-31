@@ -5,6 +5,7 @@ define([
     './ConfigDialogEntries/CustomConfigEntries',
     'deepforge/utils',
     'js/Utils/ComponentSettings',
+    'panel/FloatingActionButton/styles/Materialize',
     'text!js/Dialogs/PluginConfig/templates/PluginConfigDialog.html',
     'css!./ConfigDialog.css'
 ], function(
@@ -13,6 +14,7 @@ define([
     CustomConfigEntries,
     utils,
     ComponentSettings,
+    Materialize,
     pluginConfigDialogTemplate
 ) {
     var SECTION_DATA_KEY = 'section',
@@ -204,7 +206,9 @@ define([
                 try {
                     value = await this._widgets[namespace][name].getValue();
                 } catch (e) {
+                    Materialize.toast(e.message, 4000);
                     this._dialog.modal('hide');
+                    throw e;
                 }
                 settings[namespace][name] = value;
             }

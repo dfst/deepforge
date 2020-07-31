@@ -139,9 +139,9 @@
     "PropertyGridWidgets": {
         "widgets" : [
               {
-                  "name" : "BrowserAssetWidget",
-                  "type": "browserAsset",
-                  "path" : "deepforge/viz/widgets/BrowserAssetWidget"
+                  "name" : "FileWidget",
+                  "type": "file",
+                  "path" : "deepforge/viz/widgets/FileWidget"
               }
           ]
     }
