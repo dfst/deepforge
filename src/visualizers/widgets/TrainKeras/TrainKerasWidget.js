@@ -1,34 +1,43 @@
 /*globals define*/
 
 define([
+    './build/TrainDashboard',
     'plugin/GenerateJob/GenerateJob/templates/index',
     'deepforge/Constants',
     'widgets/InteractiveEditor/InteractiveEditorWidget',
     'deepforge/compute/interactive/message',
+    'widgets/PlotlyGraph/lib/plotly.min',
     'text!./TrainOperation.py',
     'text!./Main.py',
     'underscore',
+    'text!./schemas/index.json',
+    'css!./build/TrainDashboard.css',
     'css!./styles/TrainKerasWidget.css',
 ], function (
+    TrainDashboard,
     JobTemplates,
     CONSTANTS,
     InteractiveEditor,
     Message,
+    Plotly,
     TrainOperation,
     MainCode,
     _,
+    SchemaText,
 ) {
     'use strict';
 
     const WIDGET_CLASS = 'train-keras';
     const GetTrainCode = _.template(TrainOperation);
+    const DashboardSchemas = JSON.parse(SchemaText);
 
     class TrainKerasWidget extends InteractiveEditor {
         constructor(logger, container) {
             super(container);
+            this.dashboard = new TrainDashboard({target: container[0]});
+            this.dashboard.initialize(Plotly, DashboardSchemas);
             container.addClass(WIDGET_CLASS);
             this.currentTrainTask = null;
-            // TODO: Add training dashboard
             // TODO: add event for training?
         }
 
@@ -88,6 +97,19 @@ define([
 
         removeNode(id) {
             console.log('adding', id);
+        }
+
+        addArchitecture(desc) {
+            this.dashboard.addArchitecture(desc);
+        }
+
+        updateArchitecture(desc) {
+            this.dashboard.removeArchitecture(desc.id);
+            this.dashboard.addArchitecture(desc);
+        }
+
+        removeArchitecture(id) {
+            this.dashboard.removeArchitecture(id);
         }
     }
 

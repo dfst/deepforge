@@ -9,7 +9,9 @@
   },
   "scripts": {
     "start": "node ./bin/deepforge start",
-    "postinstall": "node utils/reinstall-extensions.js && node utils/build-job-utils.js && ./bin/deepforge create-env",
+    "postinstall": "node utils/reinstall-extensions.js && npm run build && ./bin/deepforge create-env",
+    "build": "node utils/build-job-utils.js && npm run build-svelte",
+    "build-svelte": "rollup -c utils/svelte/rollup.config.js",
     "start-dev": "NODE_ENV=dev node ./bin/deepforge start",
     "start-authenticated": "NODE_ENV=production ./bin/deepforge start",
     "server": "node ./bin/deepforge start --server",
@@ -64,6 +66,13 @@
     "mocha": "^2.2.5",
     "mockery": "^1.7.0",
     "nodemon": "^1.9.2",
-    "skulpt": "^0.11.1"
+    "skulpt": "^0.11.1",
+    "@rollup/plugin-commonjs": "^12.0.0",
+    "@rollup/plugin-node-resolve": "^8.0.0",
+    "rollup": "^2.3.4",
+    "rollup-plugin-livereload": "^1.0.0",
+    "rollup-plugin-svelte": "^5.0.3",
+    "rollup-plugin-terser": "^5.1.2",
+    "svelte": "^3.0.0"
   }
 }
