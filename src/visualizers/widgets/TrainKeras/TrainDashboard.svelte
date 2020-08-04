@@ -4,7 +4,6 @@
 	let batchSize = 32;
 	let epochs = 50;
 	let validation = 0.1;
-	let lr = 0.005;
   let optimizer = EMPTY_FN_SCHEMA;
   let optimizers = [];
   let loss = EMPTY_FN_SCHEMA;
@@ -46,9 +45,7 @@
   }
 
   export function initialize(plotly, schemas) {
-    console.log('received:', schemas);
     decorateSchemas(schemas);
-    console.log(schemas);
     optimizers = schemas.optimizers;
     optimizer = optimizers[0];
     const lossesByCategory = {};
@@ -69,6 +66,9 @@
 
   export function addArchitecture(arch) {
     architectures = architectures.concat(arch);
+    if (!architecture) {
+      architecture = architectures[0];
+    }
   }
 
   export function updateArchitecture(desc) {
@@ -82,6 +82,9 @@
 
   export function removeArchitecture(id) {
     architectures = architectures.filter(arch => arch.id !== id);
+    if (architecture && architecture.id === id) {
+      architecture = architectures[0];
+    }
   }
 
   /*setTimeout(() => record(0.5), 2000);*/
@@ -122,12 +125,13 @@
   }
 
   export function data() {
+    console.log(architectures);
     return {
+      architecture,
       batchSize,
       validation,
       optimizer,
       epochs,
-      lr,
       loss,
     };
   }
@@ -145,7 +149,7 @@
             <label for="arch">Architecture: </label>
             <select id="arch" bind:value={architecture}>
               {#each architectures as arch}
-                <option value={arch.id}>{arch.name}</option>
+                <option value={arch}>{arch.name}</option>
               {/each}
             </select>
           </div>
@@ -202,10 +206,6 @@
               {/if}
             </div>
           {/each}
-          <div class="form-group">
-            <label>Learning Rate: </label>
-            <input bind:value={lr} type="number"/>
-          </div>
           <div class="form-group">
             <label>Batch Size</label>
             <input bind:value={batchSize} type="number"/>
