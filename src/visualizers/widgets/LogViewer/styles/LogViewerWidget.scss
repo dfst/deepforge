@@ -4,4 +4,28 @@
 
 .log-viewer {
   outline: none;
+  .ansi-black {
+    color: #000000;
+  }
+  .ansi-red {
+      color: rgb(194, 54, 33);
+  }
+  .ansi-green {
+      color: rgb(37, 188, 36);
+  }
+  .ansi-yellow {
+      color: rgb(173, 173, 39);
+  }
+  .ansi-blue {
+      color: rgb(73, 46, 225);
+  }
+  .ansi-magenta {
+      color: rgb(211, 56, 211);
+  }
+  .ansi-cyan {
+      color: rgb(51, 187, 200);
+  }
+  .ansi-gray {
+      color: rgb(203, 204, 205);
+  }
 }
