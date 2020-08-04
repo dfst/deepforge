@@ -104,8 +104,7 @@ define([
         }
 
         updateArchitecture(desc) {
-            this.dashboard.removeArchitecture(desc.id);
-            this.dashboard.addArchitecture(desc);
+            this.dashboard.updateArchitecture(desc);
         }
 
         removeArchitecture(id) {

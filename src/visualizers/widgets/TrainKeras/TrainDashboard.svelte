@@ -7,7 +7,7 @@
 	let lr = 0.005;
   let optimizer = EMPTY_FN_SCHEMA;
   let optimizers = [];
-  let loss;
+  let loss = EMPTY_FN_SCHEMA;
   let categorizedLosses = [];
   let architectures = [];
   let architecture;
@@ -66,6 +66,15 @@
 
   export function addArchitecture(arch) {
     architectures = architectures.concat(arch);
+  }
+
+  export function updateArchitecture(desc) {
+    architectures = architectures.map(arch => {
+      if (arch.id === desc.id) {
+        return desc;
+      }
+      return arch;
+    });
   }
 
   export function removeArchitecture(id) {
@@ -148,22 +157,21 @@
                 </optgroup>
               {/each}
             </select>
-            <!-- FIXME: icon not showing up -->
             <span class="glyphicon glyphicon-info-sign" aria-hidden="true"></span>
           </div>
-          <!-- TODO: loss config -->
-          <div class="form-group">
-            <label>Batch Size</label>
-            <input bind:value={batchSize} type="number"/>
-          </div>
-          <div class="form-group">
-            <label>Epochs</label>
-            <input bind:value={epochs} type="number"/>
-          </div>
-          <div class="form-group">
-            <label>Validation Split</label>
-            <input bind:value={validation} type="number"/>
-          </div>
+          {#each loss.arguments as arg}
+            <div class="form-group">
+              {#if arg.type === 'boolean'}
+              {:else if arg.type === 'string'}
+                <label>{arg.name}</label>
+                <input bind:value={arg.value} type="text"/>
+              {:else if arg.type === 'reduction'}
+              {:else}
+                <label>{arg.name}</label>
+                <input bind:value={arg.value} type="number"/>
+              {/if}
+            </div>
+          {/each}
           <div class="form-group">
             <label for="optimizer">Optimizer: </label>
             <select id="optimizer" bind:value={optimizer}>
@@ -185,10 +193,21 @@
               {/if}
             </div>
           {/each}
-          <!-- TODO: optimizer config -->
           <div class="form-group">
             <label>Learning Rate: </label>
             <input bind:value={lr} type="number"/>
+          </div>
+          <div class="form-group">
+            <label>Batch Size</label>
+            <input bind:value={batchSize} type="number"/>
+          </div>
+          <div class="form-group">
+            <label>Epochs</label>
+            <input bind:value={epochs} type="number"/>
+          </div>
+          <div class="form-group">
+            <label>Validation Split</label>
+            <input bind:value={validation} type="number"/>
           </div>
           <!-- TODO: Train button -->
         </form>
