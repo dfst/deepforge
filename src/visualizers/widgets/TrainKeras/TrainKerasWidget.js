@@ -51,7 +51,6 @@ define([
             const config = {
                 epochs: 2,
                 batchSize: 64,
-                lr: 0.05,
                 optimizer: 'adam',
                 loss: 'categorical_crossentropy',
             };

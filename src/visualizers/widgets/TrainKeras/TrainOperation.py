@@ -4,16 +4,17 @@ from matplotlib import pyplot as plt
 #TODO: set random seed with tf.random.set_seed()
 
 class Train():
-    def __init__(self, model, lr=<%= lr %>, optim='<%= optimizer %>', loss='<%= loss %>', batch_size=<%= batchSize%>, epochs=<%= epochs %>):
+    def __init__(self, model, optim='<%= optimizer.name %>', loss='<%= loss %>', batch_size=<%= batchSize%>, epochs=<%= epochs %>):
         self.model = model
-        self.lr = lr
+        # TODO: Update this
         self.optimizer = optim
         self.loss = loss
         self.batch_size = batch_size
         self.epochs = epochs
 
     def execute(self, X, y=None, X_val=None, y_val=None):
-        optimizer = tf.keras.optimizers.get(self.optimizer).__class__(self.lr)
+        # TODO: Update this
+        optimizer = tf.keras.optimizers.get(self.optimizer).__class__()
         self.model.compile(optimizer=optimizer, loss=self.loss)
         self.model.fit(x=X, y=y, batch_size=self.batch_size,
                 epochs=self.epochs, callbacks=[PlotLosses(self.loss)])
