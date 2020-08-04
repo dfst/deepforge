@@ -46,16 +46,12 @@ define([
         this.dashboards = await Promise.all(fetchDashboards);
 
         this.$el.modal('show');
-        this.$el.on('hidden.bs.modal', () => this.onHide());
+        this.$el.on('hidden.bs.modal', () => this.$el.remove());
     };
 
     ComputeDialog.prototype.show = async function() {
         await this.initialize();
         this.dashboards.forEach(dashboard => dashboard.onShow());
-    };
-
-    ComputeDialog.prototype.onHide = function() {
-        this.dashboards.forEach(dashboard => dashboard.onHide());
     };
 
     return ComputeDialog;
