@@ -1,10 +1,11 @@
 <script>
+  const EMPTY_FN_SCHEMA = {name: '', arguments: []};
   let Plotly = null;
 	let batchSize = 32;
 	let epochs = 50;
 	let validation = 0.1;
 	let lr = 0.005;
-  let optimizer;
+  let optimizer = EMPTY_FN_SCHEMA;
   let optimizers = [];
   let loss;
   let categorizedLosses = [];
@@ -27,8 +28,26 @@
   ];
   const layout = {title: 'Accuracy'};
 
+  function decorateSchemas(schemas) {
+    schemas.losses.concat(schemas.optimizers).forEach(fn => {
+      fn.arguments = fn.arguments
+        .filter(arg => arg.name !== 'name')
+        .map(arg => {
+          if (arg.default === undefined) {
+            console.log(arg);
+            throw new Error('no default provided');
+          }
+          arg.type = typeof(arg.default);
+          arg.value = arg.default;
+          return arg;
+        });
+    });
+  }
+
   export function initialize(plotly, schemas) {
+    decorateSchemas(schemas);
     optimizers = schemas.optimizers;
+    optimizer = optimizers[0];
     const lossesByCategory = {};
     schemas.losses.forEach(loss => {
       if (!lossesByCategory[loss.category]) {
@@ -38,8 +57,11 @@
     });
 
     categorizedLosses = Object.entries(lossesByCategory);
+    loss = schemas.losses[0];
     Plotly = plotly;
-    Plotly.newPlot(accuracyPlot, accuracyData, layout);
+    if (accuracyData) {
+      Plotly.newPlot(accuracyPlot, accuracyData, layout);
+    }
   }
 
   export function addArchitecture(arch) {
@@ -95,7 +117,6 @@
       epochs,
       lr,
       loss,
-      optimizer
     };
   }
 </script>
@@ -122,7 +143,7 @@
               {#each categorizedLosses as cat}
                 <optgroup label={cat[0]}>
                 {#each cat[1] as lf}
-                  <option value={lf.name}>{lf.name}</option>
+                  <option value={lf}>{lf.name}</option>
                 {/each}
                 </optgroup>
               {/each}
@@ -147,10 +168,23 @@
             <label for="optimizer">Optimizer: </label>
             <select id="optimizer" bind:value={optimizer}>
               {#each optimizers as optim}
-                <option value={optim.name}>{optim.name}</option>
+                <option value={optim}>{optim.name}</option>
               {/each}
             </select>
           </div>
+          {#each optimizer.arguments as arg}
+            <div class="form-group">
+              {#if arg.type === 'boolean'}
+              {:else if arg.type === 'string'}
+                <label>{arg.name}</label>
+                <input bind:value={arg.value} type="text"/>
+              {:else if arg.type === 'reduction'}
+              {:else}
+                <label>{arg.name}</label>
+                <input bind:value={arg.value} type="number"/>
+              {/if}
+            </div>
+          {/each}
           <!-- TODO: optimizer config -->
           <div class="form-group">
             <label>Learning Rate: </label>
