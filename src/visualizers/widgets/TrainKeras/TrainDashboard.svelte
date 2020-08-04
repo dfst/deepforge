@@ -33,11 +33,12 @@
       fn.arguments = fn.arguments
         .filter(arg => arg.name !== 'name')
         .map(arg => {
-          if (arg.default === undefined) {
-            console.log(arg);
-            throw new Error('no default provided');
+          if (arg.name.includes('reduction')) {
+            arg.type = 'enum';
+            arg.options = schemas.reductions;
+          } else {
+            arg.type = typeof(arg.default);
           }
-          arg.type = typeof(arg.default);
           arg.value = arg.default;
           return arg;
         });
@@ -45,7 +46,9 @@
   }
 
   export function initialize(plotly, schemas) {
+    console.log('received:', schemas);
     decorateSchemas(schemas);
+    console.log(schemas);
     optimizers = schemas.optimizers;
     optimizer = optimizers[0];
     const lossesByCategory = {};
@@ -162,10 +165,17 @@
           {#each loss.arguments as arg}
             <div class="form-group">
               {#if arg.type === 'boolean'}
+                <!-- TODO -->
               {:else if arg.type === 'string'}
                 <label>{arg.name}</label>
                 <input bind:value={arg.value} type="text"/>
-              {:else if arg.type === 'reduction'}
+              {:else if arg.type === 'enum'}
+                <label>{arg.name}</label>
+                <select bind:value={arg.value}>
+                  {#each arg.options as option}
+                    <option value={option}>{option}</option>
+                  {/each}
+                </select>
               {:else}
                 <label>{arg.name}</label>
                 <input bind:value={arg.value} type="number"/>
@@ -186,7 +196,6 @@
               {:else if arg.type === 'string'}
                 <label>{arg.name}</label>
                 <input bind:value={arg.value} type="text"/>
-              {:else if arg.type === 'reduction'}
               {:else}
                 <label>{arg.name}</label>
                 <input bind:value={arg.value} type="number"/>

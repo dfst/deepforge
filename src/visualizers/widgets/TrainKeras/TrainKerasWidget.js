@@ -39,6 +39,7 @@ define([
             container.addClass(WIDGET_CLASS);
             this.currentTrainTask = null;
             // TODO: add event for training?
+            setTimeout(() => console.log(this.dashboard.data()), 1000);
         }
 
         async onComputeInitialized(session) {
