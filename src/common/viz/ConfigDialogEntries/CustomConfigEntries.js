@@ -22,6 +22,9 @@ define([
             const entries = configEntry.valueItems.map(item => {
                 return this.getEntryForProperty(item, config);
             });
+
+            entries.forEach(entry => widget.el.append(entry.el));
+
             widget.getValue = () => {
                 const config = {};
                 entries.forEach(entry => {
