@@ -20,7 +20,7 @@ define([
             const widget = {el: null};
             widget.el = $('<div>', {class: configEntry.name});
             const entries = configEntry.valueItems.map(item => {
-                return item.this.getEntryForProperty(item, config);
+                return this.getEntryForProperty(item, config);
             });
             widget.getValue = () => {
                 const config = {};
