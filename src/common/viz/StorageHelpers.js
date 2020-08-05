@@ -10,11 +10,19 @@ define([
 ) {
     const StorageHelpers = {};
 
-    StorageHelpers.getAuthenticationConfig = async function (dataInfo) {
+    StorageHelpers.getAuthenticationConfig = async function (dataInfo, runInBrowser=false) {
         const {backend} = dataInfo;
         const metadata = Storage.getStorageMetadata(backend);
         metadata.configStructure = metadata.configStructure
-            .filter(option => option.isAuth);
+            .filter(option => {
+                if (option.isAuth) {
+                    const isRequiredForBrowser = option.isRequiredForBrowser !== false;
+                    const isNodeJs = !runInBrowser;
+                    return isNodeJs || isRequiredForBrowser;
+                }
+                return false;
+            });
+
         if (metadata.configStructure.length) {
             const configDialog = new ConfigDialog();
             const title = `Authenticate with ${metadata.name}`;
@@ -26,7 +34,7 @@ define([
     };
 
     StorageHelpers.download = async function (dataInfo, dataName='data') {
-        const config = await StorageHelpers.getAuthenticationConfig(dataInfo);
+        const config = await StorageHelpers.getAuthenticationConfig(dataInfo, true);
         const storageAdapter = await Storage.getClient(dataInfo.backend, null, config);
         const storageName = Storage.getStorageMetadata(dataInfo.backend).name;
 

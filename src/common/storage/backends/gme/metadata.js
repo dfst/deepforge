@@ -18,6 +18,7 @@ define([
             valueType: 'string',
             readOnly: false,
             isAuth: true,
+            isRequiredForBrowser: false,
         });
     }
     return metadata;
