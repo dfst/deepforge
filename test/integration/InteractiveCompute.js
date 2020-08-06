@@ -47,9 +47,10 @@ describe('InteractiveCompute', function() {
         try {
             await session.addFile('test.txt', 'hello world');
             await session.removeFile('test.txt');
-            const {stdout} = await session.exec('cat test.txt');
-            assert(false);
+            await session.exec('cat test.txt');
+            assert(false, new Error('Expected file to be deleted.'));
         } catch (err) {
+            assert(err.jobResult, err);
             assert(err.jobResult.stderr.includes('No such file'));
         }
     });
