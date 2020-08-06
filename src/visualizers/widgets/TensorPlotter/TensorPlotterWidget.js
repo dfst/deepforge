@@ -218,7 +218,12 @@ define([
         }
 
         onWidgetContainerResize (/*width, height*/) {
-            this._logger.debug('Widget is resizing...');
+            if (this.currentPlotData) {
+                const {data, layout} = this.currentPlotData;
+                Plotly.newPlot(this.$plot[0], data, layout);
+            } else {
+                Plotly.newPlot(this.$plot[0]);
+            }
         }
 
         defaultLayout(desc) {
