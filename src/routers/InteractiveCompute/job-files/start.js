@@ -57,6 +57,7 @@ class InteractiveClient {
         } else if (msg.type === Message.ADD_FILE) {
             this.runTask(() => {
                 const [filepath, content] = msg.data;
+                this.ensureValidPath(filepath);
                 this.writeFile(filepath, content);
             });
         } else if (msg.type === Message.SET_ENV) {
@@ -64,6 +65,25 @@ class InteractiveClient {
                 const [name, value] = msg.data;
                 process.env[name] = value;
             });
+        } else if (msg.type === Message.REMOVE_FILE) {
+            this.runTask(async () => {
+                const [filepath] = msg.data;
+                this.ensureValidPath(filepath);
+                await fsp.unlink(filepath);
+            });
+        } else {
+            this.sendMessage(Message.COMPLETE, 2);
+        }
+    }
+
+    ensureValidPath(filepath) {
+        const isOutsideWorkspace = path.relative(
+            path.resolve(__dirname),
+            path.resolve(filepath)
+        ).startsWith('..');
+
+        if (isOutsideWorkspace) {
+            throw new Error('Cannot edit files outside workspace: ' + filepath);
         }
     }
 

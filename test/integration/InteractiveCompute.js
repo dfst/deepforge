@@ -42,4 +42,15 @@ describe('InteractiveCompute', function() {
         const {stdout} = await session.exec('cat test.txt');
         assert.equal(stdout, 'hello world');
     });
+
+    it('should remove file', async function() {
+        try {
+            await session.addFile('test.txt', 'hello world');
+            await session.removeFile('test.txt');
+            const {stdout} = await session.exec('cat test.txt');
+            assert(false);
+        } catch (err) {
+            assert(err.jobResult.stderr.includes('No such file'));
+        }
+    });
 });
