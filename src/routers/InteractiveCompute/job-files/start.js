@@ -1,6 +1,7 @@
 const {spawn} = require('child_process');
 const WebSocket = require('ws');
-const fs = require('fs').promises;
+const fs = require('fs');
+const fsp = require('fs').promises;
 const { promisify } = require('util');
 const pipeline = promisify(require('stream').pipeline);
 const path = require('path');
@@ -48,7 +49,7 @@ class InteractiveClient {
                     const stream = await client.getFileStream(dataInfo);
                     await pipeline(stream, fs.createWriteStream(dataPath));
                     const filePath = path.join(...dirs.concat('__init__.py'));
-                    await fs.writeFile(filePath, initFile(name, type));
+                    await fsp.writeFile(filePath, initFile(name, type));
                 }
 
                 this.runTask(saveArtifact);
@@ -69,7 +70,7 @@ class InteractiveClient {
     async writeFile(filepath, content) {
         const dirs = path.dirname(filepath).split(path.sep);
         await mkdirp(...dirs);
-        await fs.writeFile(filepath, content);
+        await fsp.writeFile(filepath, content);
     }
 
     async runTask(fn) {
@@ -114,7 +115,7 @@ async function mkdirp() {
     await dirs.reduce(async (lastDirPromise, nextDir) => {
         const dir = path.join(await lastDirPromise, nextDir);
         try {
-            await fs.mkdir(dir);
+            await fsp.mkdir(dir);
         } catch (err) {
             if (err.code !== 'EEXIST') {
                 throw err;

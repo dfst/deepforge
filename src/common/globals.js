@@ -271,16 +271,22 @@ define([
         const allConfigs = await configDialog.show(metadata);
         const context = client.getCurrentPluginContext(pluginName);
         context.pluginConfig = allConfigs[pluginName];
-        context.pluginConfig.storage.id = storageMetadata
-            .find(metadata => metadata.name === context.pluginConfig.storage.name)
-            .id;
+        const hasStorageConfig = pluginConfig => !!pluginConfig.storage;
+        if (hasStorageConfig(context.pluginConfig)){
+            context.pluginConfig.storage.id = storageMetadata
+                .find(metadata => metadata.name === context.pluginConfig.storage.name)
+                .id;
+        }
         return await Q.ninvoke(client, 'runBrowserPlugin', pluginName, context);
     };
 
 
     DeepForge.create.Artifact = async function() {
+        const USER_ASSET_TYPE = 'userAsset';
         const metadata = copy(WebGMEGlobal.allPluginsMetadata[UPLOAD_PLUGIN]);
-        const storageOpts = getStorageOptions();
+        const hasUserAssetType = metadata.configStructure
+            .map(config => config.valueType)
+            .find(val => val === USER_ASSET_TYPE);
 
         metadata.configStructure.unshift({
             name: 'artifactOptions',
@@ -288,14 +294,16 @@ define([
             valueType: 'section'
         });
 
-        const storageHeader = {
-            name: 'storageOptions',
-            displayName: 'Storage',
-            valueType: 'section'
-        };
-        metadata.configStructure.push(storageHeader);
-        metadata.configStructure.push(storageOpts);
-
+        if(!hasUserAssetType){
+            const storageOpts = getStorageOptions();
+            const storageHeader = {
+                name: 'storageOptions',
+                displayName: 'Storage',
+                valueType: 'section'
+            };
+            metadata.configStructure.push(storageHeader);
+            metadata.configStructure.push(storageOpts);
+        }
         await runArtifactPlugin(UPLOAD_PLUGIN, metadata);
     };
 

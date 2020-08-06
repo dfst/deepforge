@@ -147,6 +147,7 @@ define([
             desc.container = cntr.toLowerCase();
             desc.isInput = desc.container === 'inputs';
             desc.attributes = {};
+            desc.pointers = {};
 
         } else if (desc.id === this._currentNodeId) {
             desc.pointers = {};
