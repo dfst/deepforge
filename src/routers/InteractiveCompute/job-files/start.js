@@ -1,6 +1,9 @@
 const {spawn} = require('child_process');
 const WebSocket = require('ws');
-const fs = require('fs').promises;
+const fs = require('fs');
+const fsp = require('fs').promises;
+const { promisify } = require('util');
+const pipeline = promisify(require('stream').pipeline);
 const path = require('path');
 const requirejs = require('requirejs');
 let Message;
@@ -43,24 +46,51 @@ class InteractiveClient {
                 async function saveArtifact() {
                     const client = await Storage.getClient(dataInfo.backend, null, config);
                     const dataPath = path.join(...dirs.concat('data'));
-                    const buffer = await client.getFile(dataInfo);
-                    await fs.writeFile(dataPath, buffer);
+                    const stream = await client.getFileStream(dataInfo);
+                    await pipeline(stream, fs.createWriteStream(dataPath));
                     const filePath = path.join(...dirs.concat('__init__.py'));
-                    await fs.writeFile(filePath, initFile(name, type));
+                    await fsp.writeFile(filePath, initFile(name, type));
                 }
 
                 this.runTask(saveArtifact);
             });
         } else if (msg.type === Message.ADD_FILE) {
-            this.runTask(() => this.writeFile(msg));
+            this.runTask(() => {
+                const [filepath, content] = msg.data;
+                this.ensureValidPath(filepath);
+                this.writeFile(filepath, content);
+            });
+        } else if (msg.type === Message.SET_ENV) {
+            this.runTask(() => {
+                const [name, value] = msg.data;
+                process.env[name] = value;
+            });
+        } else if (msg.type === Message.REMOVE_FILE) {
+            this.runTask(async () => {
+                const [filepath] = msg.data;
+                this.ensureValidPath(filepath);
+                await fsp.unlink(filepath);
+            });
+        } else {
+            this.sendMessage(Message.COMPLETE, 2);
         }
     }
 
-    async writeFile(msg) {
-        const [filepath, content] = msg.data;
+    ensureValidPath(filepath) {
+        const isOutsideWorkspace = path.relative(
+            path.resolve(__dirname),
+            path.resolve(filepath)
+        ).startsWith('..');
+
+        if (isOutsideWorkspace) {
+            throw new Error('Cannot edit files outside workspace: ' + filepath);
+        }
+    }
+
+    async writeFile(filepath, content) {
         const dirs = path.dirname(filepath).split(path.sep);
         await mkdirp(...dirs);
-        await fs.writeFile(filepath, content);
+        await fsp.writeFile(filepath, content);
     }
 
     async runTask(fn) {
@@ -105,7 +135,7 @@ async function mkdirp() {
     await dirs.reduce(async (lastDirPromise, nextDir) => {
         const dir = path.join(await lastDirPromise, nextDir);
         try {
-            await fs.mkdir(dir);
+            await fsp.mkdir(dir);
         } catch (err) {
             if (err.code !== 'EEXIST') {
                 throw err;

@@ -1,22 +1,22 @@
 {
   "id": "UploadArtifact",
   "name": "Upload Artifact",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "",
   "icon": {
     "class": "glyphicon glyphicon-cloud-upload",
     "src": ""
   },
-  "disableServerSideExecution": false,
+  "disableServerSideExecution": true,
   "disableBrowserSideExecution": false,
   "writeAccessRequired": true,
   "configStructure": [
         {
-            "name": "dataHash",
+            "name": "assetInfo",
             "displayName": "Data to upload",
             "description": "",
             "value": "",
-            "valueType": "asset",
+            "valueType": "userAsset",
             "readOnly": false
         },
         {

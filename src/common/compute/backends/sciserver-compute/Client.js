@@ -56,7 +56,7 @@ define([
             return {
                 command: `bash ${filepath}/prepare-and-run.sh ${filepath}`,
                 dockerComputeEndpoint: domain.apiEndpoint,
-                dockerImageName: 'SciServer Essentials',
+                dockerImageName: 'DeepForge',
                 resultsFolderURI: '',
                 submitterDID: 'DeepForge Job',
                 volumeContainers: [],

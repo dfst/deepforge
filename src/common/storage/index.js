@@ -3,7 +3,7 @@ define([
     'module',
     './backends/StorageBackend',
     'text!deepforge/storage/backends/sciserver-files/metadata.json',
-    'text!deepforge/storage/backends/gme/metadata.json',
+    'deepforge/storage/backends/gme/metadata',
     'text!deepforge/storage/backends/s3/metadata.json'
 ],function(
     module,
@@ -15,7 +15,7 @@ define([
     const Storage = {};
     const StorageMetadata = {};
     StorageMetadata['sciserver-files'] = JSON.parse(sciserverFiles);
-    StorageMetadata['gme'] = JSON.parse(gme);
+    StorageMetadata['gme'] = gme;
     StorageMetadata['s3'] = JSON.parse(s3);
     const STORAGE_BACKENDS = Object.keys(StorageMetadata);
 

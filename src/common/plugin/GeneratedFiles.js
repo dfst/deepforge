@@ -62,9 +62,9 @@ define([
             const objectHashes = {};
             for (let i = userAssets.length; i--;) {
                 const [filepath, dataInfo] = userAssets[i];
-                const contents = await Storage.getFile(dataInfo);
+                const contentsStream = await Storage.getFileStream(dataInfo);
                 const filename = filepath.split('/').pop();
-                const hash = await this.blobClient.putFile(filename, contents);
+                const hash = await this.blobClient.putFile(filename, contentsStream);
                 objectHashes[filepath] = hash;
             }
             await artifact.addObjectHashes(objectHashes);

@@ -100,7 +100,7 @@
                 "container": "float",
                 "DEBUG_ONLY": false
             }
-            
+
         ]
     },
     "RootViz": {
@@ -135,5 +135,14 @@
     },
     "Storage": {
         "backends": ["gme", "sciserver-files", "s3"]
+    },
+    "PropertyGridWidgets": {
+        "widgets" : [
+              {
+                  "name" : "FileWidget",
+                  "type": "file",
+                  "path" : "deepforge/viz/widgets/FileWidget"
+              }
+          ]
     }
 }

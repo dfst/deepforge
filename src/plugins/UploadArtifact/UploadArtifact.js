@@ -52,38 +52,17 @@ define([
      */
     UploadArtifact.prototype.main = async function (callback) {
         const config = this.getCurrentConfig();
-        const hash = config.dataHash;
+        const {name, dataInfo} = config.assetInfo;
         const baseName = config.dataTypeId;
 
         try {
             this.ensureCompatibleMeta();
-            const name = await this.getAssetNameFromHash(hash) ||
-                baseName[0].toLowerCase() + baseName.substring(1);
-            const assetInfo =  await this.transfer(hash, config.storage, name);
-            await this.createArtifact({type: baseName, name: name, data: assetInfo});
+            await this.createArtifact({type: baseName, name: name, data: dataInfo});
             await this.save(`Uploaded "${name}" data`);
             this.result.setSuccess(true);
             callback(null, this.result);
         } catch (err) {
             callback(err, this.result);
-        }
-    };
-
-    UploadArtifact.prototype.transfer = async function (hash, storage, name) {
-        const filename = `${this.projectId}/artifacts/${name}`;
-        const gmeStorageClient = await Storage.getBackend('gme').getClient(this.logger);
-        const dataInfo = gmeStorageClient.createDataInfo(hash);
-        const content = await gmeStorageClient.getFile(dataInfo);
-
-        const {id, config} = storage;
-        const dstStorage = await Storage.getBackend(id).getClient(this.logger, config);
-        return await dstStorage.putFile(filename, content);
-    };
-
-    UploadArtifact.prototype.getAssetNameFromHash = async function(hash){
-        const metadata = await this.blobClient.getMetadata(hash);
-        if (metadata) {
-            return metadata.name.replace(/\.[^.]*?$/, '');
         }
     };
 

@@ -46,7 +46,7 @@ define([
         const metadata = {
             filename: filename,
             volume: this.volume,
-            size: content.byteLength,
+            size: content.byteLength || content.size,
             volumePool: this.volumePool
         };
         return this.createDataInfo(metadata);

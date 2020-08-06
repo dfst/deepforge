@@ -7,9 +7,10 @@ define([
     BlobClient
 ) {
 
-    const GMEStorage = function(/*name, logger*/) {
+    const GMEStorage = function(id, name, logger, config={}) {
         StorageClient.apply(this, arguments);
         const params = this.getBlobClientParams();
+        params.apiToken = config.apiToken;
         this.blobClient = new BlobClient(params);
     };
 

@@ -30,6 +30,7 @@ define([
         constructor(logger, container) {
             super(container);
             this._logger = logger.fork('Widget');
+            this.cmdCount = 0;
             this.currentPlotData = null;
 
             this.session = null;
@@ -64,9 +65,10 @@ define([
         }
 
         async createInteractiveSession(computeId, config) {
-            this.session = await Session.new(computeId, config);
-            this.initSession();
-            this.artifactLoader.session = this.session;
+            const session = await Session.new(computeId, config);
+            this.initSession(session);
+            this.artifactLoader.session = session;
+            return session;
         }
 
         async getAuthenticationConfig (dataInfo) {
@@ -85,17 +87,19 @@ define([
             }
         }
 
-        async initSession () {
-            await this.session.whenConnected();
+        async initSession (session) {
+            await session.whenConnected();
             const initCode = await this.getInitializationCode();
-            await this.session.addFile('utils/init.py', initCode);
-            await this.session.addFile('utils/explorer_helpers.py', HELPERS_PY);
+            await session.addFile('utils/init.py', initCode);
+            await session.addFile('utils/explorer_helpers.py', HELPERS_PY);
         }
 
         async execPy(code) {
             try {
-                await this.session.addFile('last_cmd.py', code);
-                const {stdout} = await this.session.exec('python last_cmd.py');
+                const i = ++this.cmdCount;
+                await this.session.addFile(`cmd_${i}.py`, code);
+                const {stdout} = await this.session.exec(`python cmd_${i}.py`);
+                await this.session.removeFile(`cmd_${i}.py`);
                 return stdout;
             } catch (err) {
                 const {stderr} = err.jobResult;
@@ -217,7 +221,12 @@ define([
         }
 
         onWidgetContainerResize (/*width, height*/) {
-            this._logger.debug('Widget is resizing...');
+            if (this.currentPlotData) {
+                const {data, layout} = this.currentPlotData;
+                Plotly.newPlot(this.$plot[0], data, layout);
+            } else {
+                Plotly.newPlot(this.$plot[0]);
+            }
         }
 
         defaultLayout(desc) {
