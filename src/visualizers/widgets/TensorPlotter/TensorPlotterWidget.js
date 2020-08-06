@@ -99,7 +99,7 @@ define([
                 const i = ++this.cmdCount;
                 await this.session.addFile(`cmd_${i}.py`, code);
                 const {stdout} = await this.session.exec(`python cmd_${i}.py`);
-                // TODO: Remove file
+                await this.session.removeFile(`cmd_${i}.py`);
                 return stdout;
             } catch (err) {
                 const {stderr} = err.jobResult;
