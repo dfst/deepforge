@@ -270,6 +270,10 @@ class DeepforgePlotlyRenderer(PlotlyRenderer):
             props['data'] = np.transpose(props['mplobj'].get_data_3d())
             self.draw_3d_collection(**props)
         else:
+            if props['coordinates'] == 'display' and isinstance(props['mplobj'], Line2D):
+                props['coordinates'] = 'data'
+                props['data'] = props['mplobj'].get_xydata()
+
             super().draw_marked_line(**props)
 
     def draw_3d_collection(self, **props):
