@@ -15,22 +15,12 @@ define([
 ) {
     'use strict';
 
-    const WIDGET_CLASS = 'text-editor',
-        LINE_COMMENT = {
-            python: '#',
-            lua: '--',
-            yaml: '#'
-        };
+    const WIDGET_CLASS = 'text-editor';
 
     MonacoLanguages = JSON.parse(MonacoLanguages);
     const DEFAULT_THEMES = ['vs-dark', 'vs', 'hc-black'];
-    const DEFAULT_COLORS = {
-        'vs': '#fffffe',
-        'vs-dark': '#1e1e1e',
-        'hc-black': '#000000'
-    };
 
-    const AVAILABLE_KEYBINDINGS = ['default'];
+    const AVAILABLE_KEYBINDINGS = ['default', 'vim'];
 
     const TextEditorWidget = function (logger, container, config={}) {
         this.logger = logger.fork('Widget');
@@ -49,13 +39,15 @@ define([
             insertSpaces: true
         });
 
-        const displayMiniMap = config.displayMiniMap || true;
+        const displayMiniMap = config.displayMiniMap !== false;
 
         this._el = container;
         this._el.css({height: '100%'});
         this.$editor = $('<div/>');
+        this.$status = $('<div/>'); // required for vim keybinding
         this.$editor.css({height: '100%'});
         this._el.append(this.$editor[0]);
+        this._el.append(this.$status[0]);
 
         this.readOnly = this.readOnly || false;
         this.editor = this._createEditor(displayMiniMap);
@@ -75,6 +67,7 @@ define([
         this.currentHeader = '';
         this.activeNode = null;
 
+        this.vimImported = this._importMonacoVim();
 
         this.nodes = {};
         this._initialize();
@@ -86,6 +79,16 @@ define([
         return monaco.Uri.parse(
             `inmemory://model_${modelSuffix}.${MonacoLanguages[this.language].extensions[0]}`
         );
+    };
+
+    TextEditorWidget.prototype._importMonacoVim = async function () {
+        const self = this;
+        return new Promise((resolve, reject) => {
+            require(['MonacoVim'], function (MonacoVim) {
+                self.MonacoVim = MonacoVim;
+                resolve();
+            }, reject);
+        });
     };
 
     TextEditorWidget.prototype._createEditor = function (displayMiniMap) {
@@ -101,7 +104,8 @@ define([
                 minimap: {
                     enabled: displayMiniMap
                 },
-                theme: DEFAULT_THEMES[0]
+                theme: DEFAULT_THEMES[0],
+                contextmenu: false
             }
         );
 
@@ -110,10 +114,10 @@ define([
 
     TextEditorWidget.prototype.getEditorOptions = function () {
         return {
-            enableBasicAutocompletion: true,
-            enableLiveAutocompletion: true,
-            theme: 'ace/theme/' + this.editorSettings.theme,
-            fontSize: this.editorSettings.fontSize + 'pt'
+            keybindings: this.editorSettings.keybindings,
+            theme: this.editorSettings.theme,
+            fontSize: this.editorSettings.fontSize + 'pt',
+            fontFamily: this.editorSettings.fontFamily
         };
     };
 
@@ -156,6 +160,23 @@ define([
             this.editorSettings,
             this.getComponentId()
         );
+        if (this.editorSettings.keybindings === 'vim') {
+            this.initVimKeyBindings();
+        }
+    };
+
+    TextEditorWidget.prototype.initVimKeyBindings = async function () {
+        await this.vimImported;
+        this.vimMode = this.MonacoVim.initVimMode(
+            this.editor,
+            this.$status[0]
+        );
+    };
+
+    TextEditorWidget.prototype.disposeVimMode = function() {
+        if(this.vimMode) {
+            this.vimMode.dispose();
+        }
     };
 
     TextEditorWidget.prototype._registerMonacoLanguages = function () {
@@ -170,7 +191,7 @@ define([
     TextEditorWidget.prototype.getDefaultEditorOptions = function () {
         return {
             keybindings: 'default',
-            theme: 'solarized_dark',
+            theme: 'vs-dark',
             fontSize: 12
         };
     };
@@ -181,19 +202,8 @@ define([
 
     TextEditorWidget.prototype.getMenuItemsFor = function () {
         var fontSizes = [8, 10, 11, 12, 14],
-            themes = [
-                'Solarized Light',
-                'Solarized Dark',
-                'Twilight',
-                'Tomorrow Night',
-                'Eclipse',
-                'Monokai'
-            ],
-            keybindings = [
-                'default',
-                'vim',
-                'emacs'
-            ],
+            themes = DEFAULT_THEMES,
+            keybindings = AVAILABLE_KEYBINDINGS,
             menuItems = {
                 setKeybindings: {
                     name: 'Keybindings...',
@@ -222,7 +232,7 @@ define([
                 isHtmlName: isSet,
                 callback: () => {
                     this.editorSettings.fontSize = fontSize;
-                    this.editor.setOptions(this.getEditorOptions());
+                    this.editor.updateOptions(this.getEditorOptions());
                     this.onUpdateEditorSettings();
                 }
             };
@@ -241,7 +251,7 @@ define([
                 isHtmlName: isSet,
                 callback: () => {
                     this.editorSettings.theme = theme;
-                    this.editor.setOptions(this.getEditorOptions());
+                    monaco.editor.setTheme(theme);
                     this.onUpdateEditorSettings();
                 }
             };
@@ -260,8 +270,12 @@ define([
                 isHtmlName: isSet,
                 callback: () => {
                     this.editorSettings.keybindings = handler;
-                    this.editor.setKeyboardHandler(handler === 'default' ?
-                        null : 'ace/keyboard/' + handler);
+                    switch (handler) {
+                        case 'vim':
+                            this.initVimKeyBindings();
+                        default:
+                            this.disposeVimMode();
+                    }
                     this.onUpdateEditorSettings();
                 }
             };
@@ -359,6 +373,7 @@ define([
         this.readOnly = true;
         this.editor.dispose();
         this.model.dispose();
+        this.disposeVimMode();
         $.contextMenu('destroy', '.' + WIDGET_CLASS);
     };
 

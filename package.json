@@ -42,6 +42,7 @@
     "lodash.template": "^4.4.0",
     "minimatch": "^3.0.4",
     "monaco-editor": "^0.20.0",
+    "monaco-vim": "^0.1.7",
     "mongodb": "^2.2.10",
     "node-fetch": "^2.6.0",
     "pacote": "^11.1.10",

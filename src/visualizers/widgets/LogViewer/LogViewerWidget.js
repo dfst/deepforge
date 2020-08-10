@@ -25,13 +25,13 @@ define([
         this.readOnly = true;
         TextEditorWidget.apply(this, arguments);
         this._el.addClass('log-viewer');
-        this.editor.setTheme('ace/theme/twilight');
-        this.editor.setShowPrintMargin(false);
-        this.editor.renderer.setScrollMargin(0, 75);
-        this.addKeyListeners();
+        this.editor.updateOptions({
+           lineNumbers: "off",
+           readOnly: true,
+        });
 
         // Override the textlayer to add support for ansi colors
-        this.customizeAce();
+        // this.customizeAce();
     };
 
     _.extend(LogViewerWidget.prototype, TextEditorWidget.prototype);
@@ -120,17 +120,6 @@ define([
         return {
             firstLineNumber: -1
         };
-    };
-
-    LogViewerWidget.prototype.addNode = function (desc) {
-        var atEOF = this.editor.getLastVisibleRow()+1 ===
-            this.editor.session.getLength();
-
-        TextEditorWidget.prototype.addNode.call(this, desc);
-
-        if (atEOF) {  // Scroll to bottom
-            this.editor.gotoLine(Infinity);
-        }
     };
 
     LogViewerWidget.prototype.getDefaultEditorOptions = function() {

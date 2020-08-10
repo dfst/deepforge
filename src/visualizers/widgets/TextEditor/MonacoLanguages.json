@@ -41,5 +41,20 @@
       "application/text"
     ],
     "comment": "#"
+  },
+  "plaintext": {
+    "id": "plaintext",
+    "extensions": [
+      "txt",
+      "text"
+    ],
+    "aliases": [
+      "text",
+      "PLAINTEXT"
+    ],
+    "mimetypes": [
+      "application/text"
+    ],
+    "comment": "#"
   }
 }
