@@ -107,7 +107,7 @@ define([
                 throw new Error('Received "Bad Request" from SciServer. Is the token invalid?');
             } else if (status > 399) {
                 const contents = await response.json();
-                throw new Error(`SciServer Files request failed: ${contents.error}`);
+                throw new Error(`Received error from SciServer: ${contents.error}`);
             }
             return await response.json();
         }

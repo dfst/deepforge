@@ -497,7 +497,11 @@ define([
             await this.save(`Queued "${name}" operation in ${this.pipelineName}`);
             await this.createJob(job, hash);
         } catch (err) {
-            this.logger.error(`Could not execute "${name}": ${err}`);
+            const stdout = this.core.getAttribute(job, 'stdout') +
+                '\n' + red(err.toString());
+
+            this.core.setAttribute(job, 'stdout', stdout);
+            await this.onOperationEnd(err, opNode);
         }
 
     };
@@ -624,12 +628,10 @@ define([
     };
 
     ExecuteJob.prototype.onOperationEnd = async function (err, job) {
-        if (this.isLocalOperation(job)) {
-            if (err) {
-                return this.onOperationFail(job, err);
-            } else {
-                return this.onOperationComplete(job);
-            }
+        if (err) {
+            return this.onOperationFail(job, err);
+        } else if (this.isLocalOperation(job)) {
+            return this.onOperationComplete(job);
         }
 
         const op = await this.getOperation(job);
