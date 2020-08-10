@@ -27,7 +27,6 @@ var express = require('express'),
 function initialize(middlewareOpts) {
     var logger = middlewareOpts.logger.fork('JobOriginAPI'),
         gmeConfig = middlewareOpts.gmeConfig,
-        ensureAuthenticated = middlewareOpts.ensureAuthenticated,
         REQUIRED_FIELDS = ['hash', 'project', 'execution', 'job', 'nodeId', 'branch'];
 
     storage = require('../storage')(logger, gmeConfig);
@@ -39,9 +38,6 @@ function initialize(middlewareOpts) {
         res.setHeader('X-WebGME-Media-Type', 'webgme.v1');
         next();
     });
-
-    // Use ensureAuthenticated if the routes require authentication. (Can be set explicitly for each route.)
-    router.use('*', ensureAuthenticated);
 
     // Connect to mongo...
 
