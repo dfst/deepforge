@@ -17,6 +17,7 @@ from matplotlib.backend_bases import (
      FigureCanvasBase, FigureManagerBase, GraphicsContextBase, RendererBase
 )
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 from matplotlib.figure import Figure
 from matplotlib import transforms, collections
 from matplotlib import ticker
