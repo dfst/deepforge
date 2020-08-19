@@ -11,12 +11,14 @@ define([
         this.blobClient = blobClient;
         this._files = {};
         this._data = {};
+        this._auth = {};
     };
 
-    GeneratedFiles.prototype.addUserAsset = function (path, dataInfo) {
+    GeneratedFiles.prototype.addUserAsset = function (path, dataInfo, creds) {
         assert(!!dataInfo, `Adding undefined user asset: ${path}`);
         dataInfo = typeof dataInfo === 'object' ? dataInfo : JSON.parse(dataInfo);
         this._data[path] = dataInfo;
+        this._auth[path] = creds;
     };
 
     GeneratedFiles.prototype.getUserAssetPaths = function () {
@@ -25,6 +27,10 @@ define([
 
     GeneratedFiles.prototype.getUserAsset = function (path) {
         return this._data[path];
+    };
+
+    GeneratedFiles.prototype.getUserAssetAuth = function (path) {
+        return this._auth[path];
     };
 
     GeneratedFiles.prototype.getUserAssets = function () {
@@ -51,6 +57,7 @@ define([
     GeneratedFiles.prototype.remove = function (path) {
         delete this._files[path];
         delete this._data[path];
+        delete this._auth[path];
     };
 
     GeneratedFiles.prototype.save = async function (artifactName) {
@@ -62,7 +69,11 @@ define([
             const objectHashes = {};
             for (let i = userAssets.length; i--;) {
                 const [filepath, dataInfo] = userAssets[i];
-                const contentsStream = await Storage.getFileStream(dataInfo);
+                const creds = this.getUserAssetAuth(filepath);
+                const config = {};
+                config[dataInfo.backend] = creds;
+
+                const contentsStream = await Storage.getFileStream(dataInfo, null, config);
                 const filename = filepath.split('/').pop();
                 const hash = await this.blobClient.putFile(filename, contentsStream);
                 objectHashes[filepath] = hash;
