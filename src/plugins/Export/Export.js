@@ -18,7 +18,6 @@ define([
     CONSTANTS,
     BlobConfig,
     _,
-    Q
 ) {
     'use strict';
 
@@ -158,7 +157,7 @@ define([
                 let argIndex = 1;
                 const parseInputCode = (await Promise.all(inputs.map(async (input, i) => {
                     const [, , node] = input;
-                    const inputName = inputNames[i];  // FIXME: This is the wrong inputName...
+                    const inputName = inputNames[i];
                     const pathNameVar = this.getVariableName(`${inputName}_path`);
                     const type = this.core.getAttribute(node, 'type');
                     const id = this.core.getPath(node);
