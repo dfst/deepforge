@@ -454,33 +454,6 @@ define([
 
                 return type === Constants.OP.INPUT;
             });
-        const inputArtifactNodes = inputOps
-            .map(input => {
-                var outputCntr,
-                    outputIds;
-
-                outputCntr = input.getChildrenIds()
-                    .map(id => this.client.getNode(id))
-                    .find(node => {
-                        var typeId = node.getMetaTypeId(),
-                            type = this.client.getNode(typeId).getAttribute('name');
-                        return type === 'Outputs';
-                    });
-
-                // input operations only have a single output
-                outputIds = outputCntr.getChildrenIds();
-
-                if (outputIds.length === 1) {
-                    return outputIds[0];
-                } else if (outputIds.length > 1) {
-                    this.logger.warn(`Found multiple ids for input op: ${outputIds.join(', ')}`);
-                    return;
-                }
-            })
-            .filter(outputId => !!outputId)
-            .map(id => this.client.getNode(id))
-            .filter(output => output.getAttribute('data'));
-
         const artifacts = inputOps
             .map(inputOp => {
                 const artifactId = inputOp.getPointer('artifact').to;
