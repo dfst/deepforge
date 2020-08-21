@@ -69,11 +69,10 @@ define([
             }
         };
         if(isGraph(node)){
-            desc = {
-                plotlyData: JSON.parse(
-                    node.getAttribute('data')
-                )
-            };
+            const plotlyData = node.getAttribute('data');
+            if(plotlyData){
+                desc = { plotlyData: JSON.parse(plotlyData) };
+            }
         }
         return desc;
     };
@@ -130,11 +129,14 @@ define([
     /* * * * * * * * Visualizer life cycle callbacks * * * * * * * */
     PlotlyGraphControl.prototype.destroy = function () {
         this._detachClientEventListeners();
+        if(this._territoryId){
+            this._client.removeUI(this._territoryId);
+        }
     };
 
     PlotlyGraphControl.prototype._attachClientEventListeners = function () {
-        this._detachClientEventListeners();
         if (!this._embedded) {
+            this._detachClientEventListeners();
             WebGMEGlobal.State.on('change:' + CONSTANTS.STATE_ACTIVE_OBJECT, this._stateActiveObjectChanged, this);
         }
     };

@@ -2,8 +2,8 @@ RESULTS_DIR=$(pwd)
 JOB_DIR=$1
 
 source activate deepforge;
+export NODE_PATH=/home/idies/miniconda3/envs/deepforge/lib/node_modules:$NODE_PATH
 cd $JOB_DIR;
-conda run -n deepforge pip install plotly
 CMD=$(conda run -n deepforge node -e 'console.log(require("./executor_config.json").cmd)')
 ARGS=$(conda run -n deepforge node -e 'console.log(require("./executor_config.json").args.join(" "))')
 conda run -n deepforge $CMD $ARGS

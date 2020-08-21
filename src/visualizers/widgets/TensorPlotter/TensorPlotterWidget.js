@@ -30,6 +30,7 @@ define([
         constructor(logger, container) {
             super(container);
             this._logger = logger.fork('Widget');
+            this.cmdCount = 0;
             this.currentPlotData = null;
 
             this.session = null;
@@ -95,8 +96,10 @@ define([
 
         async execPy(code) {
             try {
-                await this.session.addFile('last_cmd.py', code);
-                const {stdout} = await this.session.exec('python last_cmd.py');
+                const i = ++this.cmdCount;
+                await this.session.addFile(`cmd_${i}.py`, code);
+                const {stdout} = await this.session.exec(`python cmd_${i}.py`);
+                await this.session.removeFile(`cmd_${i}.py`);
                 return stdout;
             } catch (err) {
                 const {stderr} = err.jobResult;
@@ -218,7 +221,12 @@ define([
         }
 
         onWidgetContainerResize (/*width, height*/) {
-            this._logger.debug('Widget is resizing...');
+            if (this.currentPlotData) {
+                const {data, layout} = this.currentPlotData;
+                Plotly.newPlot(this.$plot[0], data, layout);
+            } else {
+                Plotly.newPlot(this.$plot[0]);
+            }
         }
 
         defaultLayout(desc) {

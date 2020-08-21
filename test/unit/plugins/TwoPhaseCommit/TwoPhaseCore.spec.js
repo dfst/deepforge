@@ -213,11 +213,14 @@ describe('TwoPhaseCore', function() {
 
         it('should check node types on loadChildren', async function() {
             const invalidNode = {relid: 'h'};
-            try {
-                await plugin.core.loadChildren(invalidNode);
-                throw new Error('Did not throw exception.');
-            } catch (err) {
-            }
+            await assert.rejects(() => plugin.core.loadChildren(invalidNode));
+        });
+
+        it('should have meaningful error on null node', async function() {
+            assert.throws(
+                () => plugin.core.getAttribute(null, 'name'),
+                /Expected node but found/
+            );
         });
     });
 });
