@@ -28,6 +28,7 @@ config.visualization.panelPaths.push(__dirname + '/../node_modules/webgme-fab/sr
 config.visualization.panelPaths.push(__dirname + '/../node_modules/webgme-breadcrumbheader/src/visualizers/panels');
 config.visualization.panelPaths.push(__dirname + '/../node_modules/webgme-autoviz/src/visualizers/panels');
 config.visualization.panelPaths.push(__dirname + '/../node_modules/webgme-easydag/src/visualizers/panels');
+config.visualization.panelPaths.push(__dirname + '/../node_modules/webgme-plotly/src/visualizers/panels');
 config.visualization.panelPaths.push(__dirname + '/../src/visualizers/panels');
 
 
@@ -62,6 +63,7 @@ config.visualization.visualizerDescriptors.push(__dirname + '/../src/visualizers
 // Add requirejs paths
 config.requirejsPaths = {
   'EllipseDecorator': 'node_modules/webgme-easydag/src/decorators/EllipseDecorator',
+  'PlotlyGraph': 'panels/PlotlyGraph/PlotlyGraphPanel',
   'EasyDAG': 'panels/EasyDAG/EasyDAGPanel',
   'AutoViz': 'panels/AutoViz/AutoVizPanel',
   'BreadcrumbHeader': 'panels/BreadcrumbHeader/BreadcrumbHeaderPanel',
@@ -70,6 +72,8 @@ config.requirejsPaths = {
   'SimpleNodes': 'node_modules/webgme-simple-nodes/src/plugins/SimpleNodes',
   'panels': './src/visualizers/panels',
   'widgets': './src/visualizers/widgets',
+  'panels/PlotlyGraph': './node_modules/webgme-plotly/src/visualizers/panels/PlotlyGraph',
+  'widgets/PlotlyGraph': './node_modules/webgme-plotly/src/visualizers/widgets/PlotlyGraph',
   'panels/EasyDAG': './node_modules/webgme-easydag/src/visualizers/panels/EasyDAG',
   'widgets/EasyDAG': './node_modules/webgme-easydag/src/visualizers/widgets/EasyDAG',
   'panels/AutoViz': './node_modules/webgme-autoviz/src/visualizers/panels/AutoViz',
@@ -84,6 +88,7 @@ config.requirejsPaths = {
   'webgme-breadcrumbheader': './node_modules/webgme-breadcrumbheader/src/common',
   'webgme-autoviz': './node_modules/webgme-autoviz/src/common',
   'webgme-easydag': './node_modules/webgme-easydag/src/common',
+  'webgme-plotly': './node_modules/webgme-plotly/src/common',
   'deepforge': './src/common'
 };
 

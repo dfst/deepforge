@@ -132,12 +132,6 @@
     "DEBUG_ONLY": false
   },
   {
-    "id": "PlotlyGraph",
-    "title": "PlotlyGraph",
-    "panel": "panels/PlotlyGraph/PlotlyGraphPanel",
-    "DEBUG_ONLY": false
-  },
-  {
     "id": "OperationSecondaryEditor",
     "title": "OperationSecondaryEditor",
     "panel": "panels/OperationSecondaryEditor/OperationSecondaryEditorPanel",
@@ -165,6 +159,12 @@
     "id": "TrainKeras",
     "title": "TrainKeras",
     "panel": "panels/TrainKeras/TrainKerasPanel",
+    "DEBUG_ONLY": false
+  },
+  {
+    "id": "PlotlyGraph",
+    "title": "PlotlyGraph",
+    "panel": "panels/PlotlyGraph/PlotlyGraphPanel",
     "DEBUG_ONLY": false
   }
 ]
