@@ -25,5 +25,8 @@ config.visualization.extraCss.push('deepforge/styles/global.css');
 
 config.storage.autoMerge.enable = true;
 
+config.client.pageTitle = 'DeepForge';
+config.client.faviconPath = '/extlib/favicon.ico';
+
 validateConfig(config);
 module.exports = config;

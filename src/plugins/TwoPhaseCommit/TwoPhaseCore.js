@@ -420,7 +420,7 @@ define([
 
     TwoPhaseCore.isValidNode = function (node) {
         const EXPECTED_KEYS = ['parent', 'children', 'relid'];
-        const isGMENode = typeof node === 'object' &&
+        const isGMENode = node && typeof node === 'object' &&
             EXPECTED_KEYS.reduce((valid, key) => valid && node.hasOwnProperty(key), true);
         return isGMENode || node instanceof CreatedNode;
     };
