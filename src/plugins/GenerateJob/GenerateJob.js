@@ -8,7 +8,7 @@ define([
     'deepforge/Constants',
     'deepforge/plugin/Operation',
     'deepforge/OperationCode',
-    'deepforge/plugin/PtrCodeGen',
+    'deepforge/CodeGenerator',
     'deepforge/plugin/GeneratedFiles',
     'deepforge/storage/index',
     'common/util/assert',
@@ -22,7 +22,7 @@ define([
     CONSTANTS,
     OperationHelpers,
     OperationCode,
-    PtrCodeGen,
+    CodeGenerator,
     GeneratedFiles,
     Storage,
     assert,
@@ -418,7 +418,7 @@ define([
         return argumentValues;
     };
 
-    GenerateJob.prototype.getReferencedContent = function (node) {
+    GenerateJob.prototype.getReferencedContent = async function (node) {
         this.logger.info('Creating referenced library content...');
         // Convert pointer names to use _ instead of ' '
         const pointers = this.core.getPointerNames(node)
@@ -427,27 +427,16 @@ define([
 
         const targetIds = pointers.map(p => this.core.getPointerPath(node, p));
         const name = this.core.getAttribute(node, 'name');
-        return Q.all(targetIds.map(nId => this.getPtrCode(nId)))
-            .then(resultContents => {
-                this.logger.info(`Pointer generation for ${name} FINISHED!`);
-
-                const references = resultContents.map((code, index) => {
-                    const pointer = pointers[index];
-                    return [pointer, code];
-                });
-
-                return references;
-            })
-            .fail(e => {
-                this.logger.error(`Could not generate resource files for ${this.core.getAttribute(node, 'name')}: ${e.toString()}`);
-                throw e;
-            });
+        const codeGen = CodeGenerator.fromPlugin(this);
+        const codeFiles = await Promise.all(targetIds.map(nId => codeGen.getCode(nId)));
+        const references = _.zip(pointers, codeFiles);
+        this.logger.info(`Pointer generation for ${name} FINISHED!`);
+        return references;
     };
 
     _.extend(
         GenerateJob.prototype,
         OperationHelpers.prototype,
-        PtrCodeGen.prototype
     );
 
     return GenerateJob;
