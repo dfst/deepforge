@@ -39,7 +39,12 @@ define([
             container.addClass(WIDGET_CLASS);
             this.currentTrainTask = null;
             // TODO: add event for training?
-            setTimeout(() => console.log(this.dashboard.data()), 1000);
+            setTimeout(async () => {
+                const data = this.dashboard.data();
+                console.log(data);
+                const code = await this.getArchitectureCode(data.architecture.id);
+                console.log(code);
+            }, 1000);
         }
 
         async onComputeInitialized(session) {
@@ -48,16 +53,12 @@ define([
             await session.addFile('plotly_backend.py', JobTemplates.MATPLOTLIB_BACKEND);
             await this.session.setEnvVar('MPLBACKEND', 'module://plotly_backend');
             await this.session.addFile('start_train.py', MainCode);
-            const config = {
-                epochs: 2,
-                batchSize: 64,
-                optimizer: 'adam',
-                loss: 'categorical_crossentropy',
-            };
+            const config = this.dashboard.data();
             this.train(config);
         }
 
         async train(config) {
+            //const archCode = await codeGen.getCode(config.architecture.id);
             const trainPy = GetTrainCode(config);
             await this.session.addFile('operations/train.py', trainPy);
             // TODO: get the architecture
