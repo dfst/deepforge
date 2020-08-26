@@ -6,7 +6,7 @@ define([
     'deepforge/Constants',
     'widgets/InteractiveEditor/InteractiveEditorWidget',
     'deepforge/compute/interactive/message',
-    'widgets/PlotlyGraph/lib/plotly.min',
+    'webgme-plotly/plotly.min',
     'text!./TrainOperation.py',
     'text!./Main.py',
     'underscore',
