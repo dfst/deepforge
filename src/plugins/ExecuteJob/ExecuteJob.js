@@ -8,7 +8,7 @@ define([
     'deepforge/storage/index',
     'plugin/TwoPhaseCommit/TwoPhaseCommit/TwoPhaseCommit',
     'deepforge/plugin/LocalExecutor',
-    'deepforge/plugin/PtrCodeGen',
+    'deepforge/CodeGenerator',
     'deepforge/plugin/Operation',
     'deepforge/plugin/ExecutionHelpers',
     'deepforge/api/JobLogsClient',
@@ -27,7 +27,7 @@ define([
     Storage,
     PluginBase,
     LocalExecutor,  // DeepForge operation primitives
-    PtrCodeGen,
+    CodeGenerator,
     OperationPlugin,
     ExecutionHelpers,
     JobLogsClient,
@@ -440,7 +440,8 @@ define([
             let hash;
             try {
                 const config = this.getCurrentConfig();
-                hash = await this.getPtrCodeHash(this.core.getPath(node), config);
+                const codeGen = await CodeGenerator.fromPlugin(this);
+                hash = await codeGen.getCodeHash(this.core.getPath(node), config);
             } catch (err) {
                 this.logger.error(`Could not generate files: ${err}`);
                 if (err.message.indexOf('BLOB_FETCH_FAILED') > -1) {
@@ -752,7 +753,6 @@ define([
         ExecuteJob.prototype,
         OperationPlugin.prototype,
         ExecuteJobMetadata.prototype,
-        PtrCodeGen.prototype,
         LocalExecutor.prototype
     );
 
