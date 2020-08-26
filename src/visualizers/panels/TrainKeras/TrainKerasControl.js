@@ -3,18 +3,23 @@
 define([
     'panels/InteractiveExplorer/InteractiveExplorerControl',
     'deepforge/globals',
+    'deepforge/CodeGenerator',
     'js/Constants',
-    'q',
 ], function (
     InteractiveExplorerControl,
     DeepForge,
+    CodeGenerator,
     CONSTANTS,
-    Q,
 ) {
 
     'use strict';
 
     class TrainKerasControl extends InteractiveExplorerControl {
+
+        initializeWidgetHandlers (widget) {
+            super.initializeWidgetHandlers(widget);
+            widget.getArchitectureCode = id => this.getArchitectureCode(id);
+        }
 
         getObjectDescriptor(nodeId) {
             const desc = super.getObjectDescriptor(nodeId);
@@ -64,6 +69,11 @@ define([
                 events => this.onResourceEvents(events)
             );
             this.client.updateTerritory(this._archTerritory, territory);
+        }
+
+        async getArchitectureCode(nodeId) {
+            const codeGen = await CodeGenerator.fromClient(this.client, this._logger);
+            return await codeGen.getCode(nodeId);
         }
 
         async onResourceEvents(events) {
