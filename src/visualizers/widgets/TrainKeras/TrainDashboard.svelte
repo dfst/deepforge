@@ -12,6 +12,7 @@
   let architecture;
   let accuracyPlot;
   let plotData;
+  let eventElement;
 
   function decorateSchemas(schemas) {
     schemas.losses.concat(schemas.optimizers).forEach(fn => {
@@ -45,15 +46,22 @@
     categorizedLosses = Object.entries(lossesByCategory);
     loss = schemas.losses[0];
     Plotly = plotly;
-    if (plotData) {
-      Plotly.newPlot(accuracyPlot, plotData);
-    }
+    Plotly.newPlot(accuracyPlot);
+  }
+
+  function onTrainClicked() {
+    const event = new CustomEvent('onTrainClicked');
+    eventElement.dispatchEvent(event);
+  }
+
+  export function events() {
+      return eventElement;
   }
 
   export function setPlotData(newData) {
     plotData = newData;
     if (Plotly) {
-      Plotly.animate(accuracyPlot, plotData);
+      Plotly.react(accuracyPlot, plotData);
     }
   }
   export function addArchitecture(arch) {
@@ -79,10 +87,6 @@
     }
   }
 
-  /*setTimeout(() => record(0.5), 2000);*/
-  /*export function record(acc, loss) {*/
-  /*}*/
-
   export function set(info) {
     loss = info.loss || loss;
     optimizer = info.optimizer || optimizer;
@@ -90,7 +94,6 @@
   }
 
   export function data() {
-    console.log(architectures);
     return {
       architecture,
       batchSize,
@@ -102,9 +105,7 @@
   }
 </script>
 
-<main>
-
-
+<main bind:this={eventElement}>
   <div class="row">
     <div class="config-panel">
       <h3>Training Parameters</h3>
@@ -183,8 +184,8 @@
             <label>Validation Split</label>
             <input bind:value={validation} type="number"/>
           </div>
-          <!-- TODO: Train button -->
         </form>
+        <button on:click|preventDefault|stopPropagation={onTrainClicked} type="button" class="btn btn-primary">Train</button>
       </div>
     </div>
     <div class="plot-container" bind:this={accuracyPlot} style="flex-grow: 4"></div>

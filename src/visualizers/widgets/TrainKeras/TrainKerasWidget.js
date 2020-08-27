@@ -37,9 +37,12 @@ define([
             super(container);
             this.dashboard = new TrainDashboard({target: container[0]});
             this.dashboard.initialize(Plotly, DashboardSchemas);
+            this.dashboard.events().addEventListener('onTrainClicked', () => {
+                console.log('training!');
+                this.train(this.dashboard.data());
+            });
             container.addClass(WIDGET_CLASS);
             this.currentTrainTask = null;
-            // TODO: add event for training?
             setTimeout(async () => {
                 const data = this.dashboard.data();
                 console.log(data);
@@ -51,8 +54,6 @@ define([
             await session.addFile('utils/init.py', initCode);
             await session.addFile('plotly_backend.py', JobTemplates.MATPLOTLIB_BACKEND);
             await this.session.setEnvVar('MPLBACKEND', 'module://plotly_backend');
-            const config = this.dashboard.data();
-            this.train(config);
         }
 
         async train(config) {
@@ -88,7 +89,6 @@ define([
             // TODO: stop the current execution
             // TODO: stream to the console for now
             // TODO: send feedback to the browser...
-            // TODO: we could probably use the same matplotlib code to create the plots
         }
 
         parseMetadata(cmd, content) {
