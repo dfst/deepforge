@@ -11,21 +11,7 @@
   let architectures = [];
   let architecture;
   let accuracyPlot;
-  const accuracyData = [
-    {
-      name: 'Training',
-      type: 'scatter',
-      //x: [0, 1, 2, 3],
-      y: [0.1, 0.15, 0.2, 0.25]
-    },
-    {
-      name: 'Validation',
-      type: 'scatter',
-      //x: [0, 1, 2, 3],
-      y: [0.1, 0.12, 0.18, 0.20]
-    },
-  ];
-  const layout = {title: 'Accuracy'};
+  let plotData;
 
   function decorateSchemas(schemas) {
     schemas.losses.concat(schemas.optimizers).forEach(fn => {
@@ -59,11 +45,17 @@
     categorizedLosses = Object.entries(lossesByCategory);
     loss = schemas.losses[0];
     Plotly = plotly;
-    if (accuracyData) {
-      Plotly.newPlot(accuracyPlot, accuracyData, layout);
+    if (plotData) {
+      Plotly.newPlot(accuracyPlot, plotData);
     }
   }
 
+  export function setPlotData(newData) {
+    plotData = newData;
+    if (Plotly) {
+      Plotly.animate(accuracyPlot, plotData);
+    }
+  }
   export function addArchitecture(arch) {
     architectures = architectures.concat(arch);
     if (!architecture) {
@@ -89,33 +81,6 @@
 
   /*setTimeout(() => record(0.5), 2000);*/
   /*export function record(acc, loss) {*/
-    /*accuracyData.forEach(d => {*/
-      /*//d.x.push(d.x.length);*/
-        /*d.y.push(acc);*/
-    /*});*/
-    /*const yData = accuracyData[0].y;*/
-    /*const xmin = 0;*/
-    /*const xmax = yData.length;*/
-    /*const ymin = Math.min(...yData);*/
-    /*const ymax = Math.max(...yData);*/
-
-    /*Plotly.animate(accuracyPlot, {*/
-        /*data: accuracyData.map(d => d.y),*/
-        /*layout: {*/
-          /*xaxis: {range: [xmin, xmax]},*/
-          /*yaxis: {range: [ymin, ymax]},*/
-        /*},*/
-      /*},*/
-      /*{*/
-        /*transition: {*/
-          /*duration: 500,*/
-          /*easing: 'cubic-in-out',*/
-        /*},*/
-        /*frame: {*/
-          /*duration: 500*/
-        /*}*/
-      /*}*/
-    /*);*/
   /*}*/
 
   export function set(info) {

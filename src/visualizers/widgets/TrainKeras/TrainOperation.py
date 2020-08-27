@@ -4,18 +4,15 @@ from matplotlib import pyplot as plt
 #TODO: set random seed with tf.random.set_seed()
 
 class Train():
-    def __init__(self, model, optim='<%= optimizer.name %>', loss='<%= loss %>', batch_size=<%= batchSize%>, epochs=<%= epochs %>):
+    def __init__(self, model, batch_size=<%= batchSize%>, epochs=<%= epochs %>):
         self.model = model
-        # TODO: Update this
-        self.optimizer = optim
-        self.loss = loss
         self.batch_size = batch_size
         self.epochs = epochs
+        self.optimizer = keras.optimizers.<%= optimizer.name %>(<%= optimizer.arguments.map(arg => arg.pyValue).join(', ') %>)
+        self.loss = keras.losses.<%= loss.name %>(<%= loss.arguments.map(arg => arg.pyValue).join(', ') %>)
 
     def execute(self, X, y=None, X_val=None, y_val=None):
-        # TODO: Update this
-        optimizer = tf.keras.optimizers.get(self.optimizer).__class__()
-        self.model.compile(optimizer=optimizer, loss=self.loss)
+        self.model.compile(optimizer=self.optimizer, loss=self.loss)
         self.model.fit(x=X, y=y, batch_size=self.batch_size,
                 epochs=self.epochs, callbacks=[PlotLosses(self.loss)])
 
@@ -24,7 +21,7 @@ class Train():
 class PlotLosses(keras.callbacks.Callback):
     def __init__(self, loss):
         super()
-        self.loss_fn = loss
+        self.loss_fn = loss.__class__.__name__
 
     def on_train_begin(self, logs={}):
         self.i = 0

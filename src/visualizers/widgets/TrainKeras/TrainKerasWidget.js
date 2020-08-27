@@ -57,6 +57,15 @@ define([
 
         async train(config) {
             const archCode = await this.getArchitectureCode(config.architecture.id);
+            config.loss.arguments.concat(config.optimizer.arguments).forEach(arg => {
+                let pyValue = arg.value.toString();
+                if (arg.type === 'boolean') {
+                    pyValue = arg.value ? 'True' : 'False';
+                } else if (arg.type === 'enum') {
+                    pyValue = `"${arg.value}"`;
+                }
+                arg.pyValue = pyValue;
+            });
             await this.session.addFile('start_train.py', MainCode({archCode}));
             const trainPy = GetTrainCode(config);
             await this.session.addFile('operations/train.py', trainPy);
@@ -84,7 +93,7 @@ define([
 
         parseMetadata(cmd, content) {
             if (cmd === 'PLOT') {
-                console.log(content);
+                this.dashboard.setPlotData(content);
             } else {
                 console.error('Unrecognized command:', cmd);
             }
