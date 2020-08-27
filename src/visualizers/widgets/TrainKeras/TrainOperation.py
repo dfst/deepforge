@@ -14,7 +14,7 @@ class Train():
     def execute(self, X, y=None, X_val=None, y_val=None):
         self.model.compile(optimizer=self.optimizer, loss=self.loss)
         self.model.fit(x=X, y=y, batch_size=self.batch_size,
-                epochs=self.epochs, callbacks=[PlotLosses(self.loss)])
+                epochs=self.epochs, callbacks=[PlotLosses(self.loss)], validation_split=<%= validation %>)
 
         return self.model
 
