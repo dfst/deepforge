@@ -54,6 +54,18 @@
     eventElement.dispatchEvent(event);
   }
 
+  function showLossInfo() {
+    const category = loss.category.toLowerCase().replace(/ /g, '_');
+    const name = `${loss.name.toLowerCase()}-class`;
+    const url = `https://keras.io/api/losses/${category}/#${name}/`;
+    window.open(url, '_blank');
+  }
+
+  function showOptimInfo() {
+    const url = `https://keras.io/api/optimizers/${optimizer.name.toLowerCase()}/`;
+    window.open(url, '_blank');
+  }
+
   export function events() {
       return eventElement;
   }
@@ -130,7 +142,7 @@
                 </optgroup>
               {/each}
             </select>
-            <span class="glyphicon glyphicon-info-sign" aria-hidden="true"></span>
+            <span on:click|stopPropagation|preventDefault={showLossInfo} class="glyphicon glyphicon-info-sign" aria-hidden="true"></span>
           </div>
           {#each loss.arguments as arg}
             <div class="form-group">
@@ -159,6 +171,7 @@
                 <option value={optim}>{optim.name}</option>
               {/each}
             </select>
+            <span on:click|stopPropagation|preventDefault={showOptimInfo} class="glyphicon glyphicon-info-sign" aria-hidden="true"></span>
           </div>
           {#each optimizer.arguments as arg}
             <div class="form-group">
