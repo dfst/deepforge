@@ -30,6 +30,7 @@ define([
     const WIDGET_CLASS = 'train-keras';
     const GetTrainCode = _.template(TrainOperation);
     const DashboardSchemas = JSON.parse(SchemaText);
+    MainCode = _.template(MainCode);
 
     class TrainKerasWidget extends InteractiveEditor {
         constructor(logger, container) {
@@ -42,8 +43,6 @@ define([
             setTimeout(async () => {
                 const data = this.dashboard.data();
                 console.log(data);
-                const code = await this.getArchitectureCode(data.architecture.id);
-                console.log(code);
             }, 1000);
         }
 
@@ -52,16 +51,15 @@ define([
             await session.addFile('utils/init.py', initCode);
             await session.addFile('plotly_backend.py', JobTemplates.MATPLOTLIB_BACKEND);
             await this.session.setEnvVar('MPLBACKEND', 'module://plotly_backend');
-            await this.session.addFile('start_train.py', MainCode);
             const config = this.dashboard.data();
             this.train(config);
         }
 
         async train(config) {
-            //const archCode = await codeGen.getCode(config.architecture.id);
+            const archCode = await this.getArchitectureCode(config.architecture.id);
+            await this.session.addFile('start_train.py', MainCode({archCode}));
             const trainPy = GetTrainCode(config);
             await this.session.addFile('operations/train.py', trainPy);
-            // TODO: get the architecture
             if (this.currentTrainTask) {
                 // TODO: kill the current task
             }
