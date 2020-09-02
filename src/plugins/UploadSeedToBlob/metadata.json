@@ -1,6 +1,6 @@
 {
-  "id": "ImportLibrary",
-  "name": "ImportLibrary",
+  "id": "UploadSeedToBlob",
+  "name": "UploadSeedToBlob",
   "version": "0.1.0",
   "description": "",
   "icon": {
