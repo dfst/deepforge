@@ -20,6 +20,7 @@ define([
     'q',
     'superagent',
     'underscore',
+    'deepforge/compute/backends/ComputeJob',
 ], function (
     assert,
     pluginMetadata,
@@ -41,9 +42,11 @@ define([
     Q,
     superagent,
     _,
+    ComputeJob,
 ) {
     'use strict';
 
+    const {PipelineJob} = ComputeJob;
     pluginMetadata = JSON.parse(pluginMetadata);
 
     /**
@@ -510,7 +513,14 @@ define([
     ExecuteJob.prototype.createJob = async function (job, hash) {
         // Record the job info for the given hash
         this._execHashToJobNode[hash] = job;
-        const jobInfo = await this.compute.createJob(hash);
+        const computeJob = new PipelineJob(
+            hash,
+            this.projectId,
+            this.branchName,
+            this.core,
+            job
+        );
+        const jobInfo = await this.compute.startJob(computeJob);
         this.core.setAttribute(job, 'jobInfo', JSON.stringify(jobInfo));
         this.core.setAttribute(job, 'execFiles', hash);
 
