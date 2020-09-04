@@ -38,7 +38,7 @@
     "graceful-fs": "^4.1.10",
     "js-yaml": "^3.13.1",
     "lodash.difference": "^4.1.2",
-    "lodash.merge": "^4.5.1",
+    "lodash.merge": "^4.6.2",
     "lodash.template": "^4.4.0",
     "minimatch": "^3.0.4",
     "mongodb": "^2.2.10",
