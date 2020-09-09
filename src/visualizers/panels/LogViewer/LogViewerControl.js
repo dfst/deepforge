@@ -73,7 +73,6 @@ define([
 
     LogViewerControl.prototype._onLoad = function (id) {
         this.getFullDescriptor(id).then(desc => {
-            console.log(desc);
             this._widget.addNode(desc);
         });
     };

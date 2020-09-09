@@ -1,5 +1,6 @@
 /*globals $, define, monaco */
 /*jshint browser: true*/
+/*eslint indent: [2, 4, {"SwitchCase": 1}]*/
 
 define([
     'underscore',
@@ -99,7 +100,8 @@ define([
                 lightbulb: {
                     enabled: true
                 },
-                fontSize: 14,
+                fontSize: this.getDefaultEditorOptions().fontSize,
+                fontFamily: this.getDefaultEditorOptions().fontFamily,
                 readOnly: this.readOnly,
                 minimap: {
                     enabled: displayMiniMap
@@ -114,7 +116,7 @@ define([
         return {
             keybindings: this.editorSettings.keybindings,
             theme: this.editorSettings.theme,
-            fontSize: this.editorSettings.fontSize + 'pt',
+            fontSize: this.editorSettings.fontSize,
             fontFamily: this.editorSettings.fontFamily
         };
     };
@@ -158,11 +160,14 @@ define([
             this.editorSettings,
             this.getComponentId()
         );
+        this.updateEditorDisplay();
+    };
 
+    TextEditorWidget.prototype.updateEditorDisplay = function() {
         if (this.editorSettings.keybindings === 'vim') {
             this.initVimKeyBindings();
         }
-
+        this.editor.updateOptions(this.getEditorOptions());
         this.themesProvider.setTheme(this.editorSettings.theme);
     };
 
@@ -180,15 +185,6 @@ define([
             this.vimMode.dispose();
             this.editor.layout();
         }
-    };
-
-
-    TextEditorWidget.prototype.getDefaultEditorOptions = function () {
-        return {
-            keybindings: 'default',
-            theme: 'vs-dark',
-            fontSize: 12
-        };
     };
 
     TextEditorWidget.prototype.getComponentId = function () {
