@@ -1,3 +1,12 @@
+.. raw:: html
+
+    <style> .center {text-align:center} </style>
+
+.. class:: center
+
+    `Walkthrough Main Page <walkthrough.rst>`_
+    `Next Tutorial -> <creating-operations.rst>`_
+
 Creating Pipelines
 ------------------
 From the home view in the *Pipelines* tab, you are presented with a list of the pipelines that have already been created. Clicking on any of these pipelines will allow editing of that pipeline. To create a new, empty pipeline, click on the red button in the bottom right corner of the workspace.
@@ -25,3 +34,8 @@ Operation inputs and outputs are represented by blue circles that are visible af
     :scale: 50%
 
 Operations can be connected by clicking on an input or output of an operation before clicking on an output or input respectively of another operation. All input and output connections are optional, though missing outputs may give errors depending upon the operation's internal logic.
+
+.. class:: center
+
+    `Walkthrough Main Page <walkthrough.rst>`_
+    `Next Tutorial -> <creating-operations.rst>`_

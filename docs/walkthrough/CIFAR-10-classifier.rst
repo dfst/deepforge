@@ -1,3 +1,13 @@
+.. raw:: html
+
+    <style> .center {text-align:center} </style>
+
+.. class:: center
+
+    `<- Previous Tutorial <viewing-pipelines.rst>`_
+    `Walkthrough Main Page <walkthrough.rst>`_
+    `Next Tutorial -> <redshift-estimator.rst>`_
+
 CIFAR-10 Classifier
 -------------------
 This guide provides step-by-step instructions on how to create full pipeline for training and evaluating a simple image classification neural network. This example uses the `CIFAR-10 dataset <https://www.cs.toronto.edu/~kriz/cifar.html>`_. This guide assumes that the reader has a basic understanding of the DeepForge interface. New users are recommended to review the guide available `here <walkthrough.rst>`_ before attempting the process described in this guide. The basic steps of this guide are:
@@ -465,3 +475,9 @@ Unfortunately, only one of the two figures can be viewed from this page. To view
 .. figure:: images/cifar-execution-eval.png
     :align: center
     :scale: 50%
+
+.. class:: center
+
+    `<- Previous Tutorial <viewing-pipelines.rst>`_
+    `Walkthrough Main Page <walkthrough.rst>`_
+    `Next Tutorial -> <redshift-estimator.rst>`_

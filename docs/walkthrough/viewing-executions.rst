@@ -1,3 +1,13 @@
+.. raw:: html
+
+    <style> .center {text-align:center} </style>
+
+.. class:: center
+
+    `<- Previous Tutorial <executing-pipelines.rst>`_
+    `Walkthrough Main Page <walkthrough.rst>`_
+    `Next Tutorial -> <CIFAR-10-classifier.rst>`_
+    
 Viewing Executions
 ------------------
 
@@ -73,3 +83,9 @@ Graphical output, which will generally by generated using a graphical library li
 .. figure:: images/cifar-select-execution.png
     :align: center
     :scale: 50%
+
+.. class:: center
+
+    `<- Previous Tutorial <executing-pipelines.rst>`_
+    `Walkthrough Main Page <walkthrough.rst>`_
+    `Next Tutorial -> <CIFAR-10-classifier.rst>`_

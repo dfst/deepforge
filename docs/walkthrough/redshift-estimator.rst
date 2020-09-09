@@ -1,3 +1,12 @@
+.. raw:: html
+
+    <style> .center {text-align:center} </style>
+
+.. class:: center
+
+    `<- Previous Tutorial <CIFAR-10-classifier.rst>`_
+    `Walkthrough Main Page <walkthrough.rst>`_
+
 Redshift Estimator
 ------------------
 This guide provides instructions on how to create full pipeline for training and evaluating a convolutional neural network on the task of predicting astronomical redshift values given images of galaxies. It provides an approach that is simplified from work by `Pasquet et. al. <https://arxiv.org/abs/1806.06607>`_ The data referenced and used in this guide was obtained from the `Sloan Digital Sky Survey Data Release 3 <https://www.sdss.org/dr13/>`_, obtained via `SciServer's CasJobs Service <http://www.sciserver.org/about/casjobs/>`_, and processed using `Astromatic's SWarp tool <https://www.astromatic.net/software/swarp>`_.
@@ -458,3 +467,8 @@ Unfortunately, only one of the two figures can be viewed from this page. To view
 .. figure:: images/redshift-pdfvis-res.png
     :align: center
     :scale: 50%
+
+.. class:: center
+
+    `<- Previous Tutorial <CIFAR-10-classifier.rst>`_
+    `Walkthrough Main Page <walkthrough.rst>`_

@@ -1,4 +1,13 @@
+.. raw:: html
 
+    <style> .center {text-align:center} </style>
+
+.. class:: center
+
+    `<- Previous Tutorial <creating-neural-networks.rst>`_
+    `Walkthrough Main Page <walkthrough.rst>`_
+    `Next Tutorial -> <viewing-executions.rst>`_
+    
 Executing Pipelines
 -------------------
 
@@ -63,3 +72,9 @@ Any artifacts used in Input operations will require the login credentials for th
 .. figure:: images/export-pipeline-dialog.png
     :align: center
     :scale: 50%
+
+.. class:: center
+
+    `<- Previous Tutorial <creating-neural-networks.rst>`_
+    `Walkthrough Main Page <walkthrough.rst>`_
+    `Next Tutorial -> <viewing-executions.rst>`_

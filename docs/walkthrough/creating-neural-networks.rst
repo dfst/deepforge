@@ -1,3 +1,13 @@
+.. raw:: html
+
+    <style> .center {text-align:center} </style>
+
+.. class:: center
+
+    `<- Previous Tutorial <creating-operations.rst>`_
+    `Walkthrough Main Page <walkthrough.rst>`_
+    `Next Tutorial -> <executing-pipelines.rst>`_
+
 Creating Neural Networks
 ------------------------
 
@@ -121,3 +131,9 @@ Clicking on *Details* will provide some metadata about the export, as well as a 
 .. figure:: images/vgg-gen-keras-view-res-details.png
     :align: center
     :scale: 50%
+
+.. class:: center
+
+    `<- Previous Tutorial <creating-operations.rst>`_
+    `Walkthrough Main Page <walkthrough.rst>`_
+    `Next Tutorial -> <executing-pipelines.rst>`_
