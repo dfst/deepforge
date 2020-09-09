@@ -28,10 +28,14 @@ class InteractiveClient {
     async onMessage(msg) {
         if (msg.type === Message.RUN) {
             const [cmd, ...opts] = InteractiveClient.parseCommand(msg.data);
-            const subprocess = spawn(cmd, opts);
-            subprocess.on('close', code => this.sendMessage(Message.COMPLETE, code));
-            subprocess.stdout.on('data', data => this.sendMessage(Message.STDOUT, data));
-            subprocess.stderr.on('data', data => this.sendMessage(Message.STDERR, data));
+            this.subprocess = spawn(cmd, opts);
+            this.subprocess.on('exit', code => this.sendMessage(Message.COMPLETE, code));
+            this.subprocess.stdout.on('data', data => this.sendMessage(Message.STDOUT, data));
+            this.subprocess.stderr.on('data', data => this.sendMessage(Message.STDERR, data));
+        } else if (msg.type === Message.KILL) {
+            if (this.subprocess) {  // TODO: Add more checking here...
+                this.subprocess.kill();
+            }
         } else if (msg.type === Message.ADD_ARTIFACT) {
             const [name, dataInfo, type, config={}] = msg.data;
             const dirs = ['artifacts', name];

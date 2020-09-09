@@ -4,6 +4,7 @@ describe('InteractiveCompute', function() {
     const testFixture = require('../globals');
     const gmeConfig = testFixture.getGmeConfig();
     const server = new testFixture.WebGME.standaloneServer(gmeConfig);
+    const Message = testFixture.requirejs('deepforge/compute/interactive/message');
     server.start = promisify(server.start);
     server.stop = promisify(server.stop);
     let session;
@@ -29,7 +30,6 @@ describe('InteractiveCompute', function() {
     });
 
     it('should be able to spawn commands', function(done) {
-        const Message = testFixture.requirejs('deepforge/compute/interactive/message');
         const task = session.spawn('ls');
         task.on(Message.COMPLETE, exitCode => {
             assert.equal(exitCode, 0);
@@ -54,4 +54,14 @@ describe('InteractiveCompute', function() {
             assert(err.jobResult.stderr.includes('No such file'));
         }
     });
+
+    it('should cancel tasks', function(done) {
+        const task = session.spawn('sleep 20');
+        task.on(Message.COMPLETE, () => done());
+        sleep(100).then(() => session.kill(task));
+    });
+
+    function sleep(duration) {
+        return new Promise(resolve => setTimeout(resolve, duration));
+    }
 });

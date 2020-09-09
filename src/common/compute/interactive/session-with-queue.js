@@ -52,6 +52,17 @@ define([
             this.checkTaskQueue();
         }
 
+        async kill(task) {
+            const index = this.tasks
+                .findIndex(queuedTask => queuedTask.unwrap() === task);
+
+            if (index > 0) {
+                this.tasks.splice(index, 1);
+            } else {
+                super.kill(task);
+            }
+        }
+
         static async new(id, config) {
             return await Session.new(id, config, SessionWithQueue);
         }

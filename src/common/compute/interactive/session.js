@@ -32,7 +32,7 @@ define([
                     const msg = Message.decode(data);
                     if (msg.type === Message.COMPLETE) {
                         const err = msg.data;
-                        this.ws.onmessage = null;
+                        this.channel = new MessageChannel(this.ws);
                         if (err) {
                             this.connected.reject(err);
                         } else {
@@ -85,7 +85,7 @@ define([
             this.ensureIdle('spawn a task');
 
             const msg = new Message(Message.RUN, cmd);
-            const task = new Task(this.ws, msg);
+            const task = new Task(this.channel, msg);
             this.runTask(task);
             return task;
         }
@@ -111,7 +111,7 @@ define([
         async exec(cmd) {
             this.ensureIdle('exec a task');
             const msg = new Message(Message.RUN, cmd);
-            const task = new Task(this.ws, msg);
+            const task = new Task(this.channel, msg);
             const result = {
                 stdout: '',
                 stderr: '',
@@ -130,29 +130,42 @@ define([
         async addArtifact(name, dataInfo, type, auth) {
             this.ensureIdle('add artifact');
             const msg = new Message(Message.ADD_ARTIFACT, [name, dataInfo, type, auth]);
-            const task = new Task(this.ws, msg);
+            const task = new Task(this.channel, msg);
             await this.runTask(task);
         }
 
         async addFile(filepath, content) {
             this.ensureIdle('add file');
             const msg = new Message(Message.ADD_FILE, [filepath, content]);
-            const task = new Task(this.ws, msg);
+            const task = new Task(this.channel, msg);
             await this.runTask(task);
         }
 
         async removeFile(filepath) {
             this.ensureIdle('remove file');
             const msg = new Message(Message.REMOVE_FILE, [filepath]);
-            const task = new Task(this.ws, msg);
+            const task = new Task(this.channel, msg);
             await this.runTask(task);
         }
 
         async setEnvVar(name, value) {
             this.ensureIdle('set env var');
             const msg = new Message(Message.SET_ENV, [name, value]);
-            const task = new Task(this.ws, msg);
+            const task = new Task(this.channel, msg);
             await this.runTask(task);
+        }
+
+        async kill(task) {
+            assert(
+                task.msg.type === Message.RUN,
+                'Cannot kill task. Must be a RUN task.'
+            );
+            if (task === this.currentTask) {
+                const msg = new Message(Message.KILL, task.msg.data);
+                const killTask = new Task(this.channel, msg);
+                await killTask.run();
+                this.checkReady();
+            }
         }
 
         close() {
@@ -166,7 +179,39 @@ define([
         }
     }
 
+    function assert(cond, msg) {
+        if (!cond) {
+            throw new Error(msg);
+        }
+    }
+
     Object.assign(InteractiveSession, Message.Constants);
+
+    class MessageChannel {
+        constructor(ws) {
+            this.ws = ws;
+            this.listeners = [];
+
+            this.ws.onmessage = message => {
+                this.listeners.forEach(fn => fn(message));
+            };
+        }
+
+        send(data) {
+            this.ws.send(data);
+        }
+
+        listen(fn) {
+            this.listeners.push(fn);
+        }
+
+        unlisten(fn) {
+            const index = this.listeners.indexOf(fn);
+            if (index !== -1) {
+                this.listeners.splice(index, 1);
+            }
+        }
+    }
 
     return InteractiveSession;
 });
