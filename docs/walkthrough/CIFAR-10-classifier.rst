@@ -452,7 +452,7 @@ The *Storage Options* section allows configuration of the storage backend to be 
     :align: center
     :scale: 50%
 
-When all settings have been specified, click **Run** to begin execution. For information on how to check execution status, consult the `Viewing Executions <viewing_executions.rst>`_ walkthrough.
+When all settings have been specified, click **Run** to begin execution. For information on how to check execution status, consult the `Viewing Executions <viewing-executions.rst>`_ walkthrough.
 
 To view the output of the execution, go to the *Executions* tab and check the box next to the desired execution.
 
