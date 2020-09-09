@@ -47,15 +47,19 @@ define([
 
         async selectedObjectChanged (nodeId) {
             super.selectedObjectChanged(nodeId);
-            this.removeArchitectureTerritory();
+            this.removeAuxTerritories();
             const isNewNodeLoaded = typeof nodeId === 'string';
             if (isNewNodeLoaded) {
                 await this.addArchitectureTerritory();
+                await this.addDatasetTerritory();
             }
         }
 
-        removeArchitectureTerritory() {
+        removeAuxTerritories() {
             if (this._archTerritory) {
+                this.client.removeUI(this._archTerritory);
+            }
+            if (this._artifactTerritory) {
                 this.client.removeUI(this._archTerritory);
             }
         }
@@ -69,6 +73,17 @@ define([
                 events => this.onResourceEvents(events)
             );
             this.client.updateTerritory(this._archTerritory, territory);
+        }
+
+        async addDatasetTerritory() {
+            const containerId = await DeepForge.places.MyArtifacts();
+            const territory = {};
+            territory[containerId] = {children: 1};
+            this._artifactTerritory = this.client.addUI(
+                territory,
+                events => this.onArtifactEvents(events)
+            );
+            this.client.updateTerritory(this._artifactTerritory, territory);
         }
 
         async getArchitectureCode(nodeId) {
@@ -132,7 +147,60 @@ define([
         }
 
         onResourceUnload(nodeId) {
-            this._widget.addArchitecture(nodeId);
+            this._widget.removeArchitecture(nodeId);
+        }
+
+        async onArtifactEvents(events) {
+            events
+                .filter(event => this.isArtifact(event.eid))
+                .forEach(event => {
+                    switch (event.etype) {
+
+                    case CONSTANTS.TERRITORY_EVENT_LOAD:
+                        this.onArtifactLoad(event.eid);
+                        break;
+                    case CONSTANTS.TERRITORY_EVENT_UPDATE:
+                        this.onArtifactUpdate(event.eid);
+                        break;
+                    case CONSTANTS.TERRITORY_EVENT_UNLOAD:
+                        this.onArtifactUnload(event.eid);
+                        break;
+                    default:
+                        break;
+                    }
+                });
+        }
+
+        isArtifact(nodeId) {
+            const node = this.client.getNode(nodeId);
+            if (node) {
+                return node.getAttribute('data');
+            }
+            return true;
+        }
+
+        getArtifactDesc(nodeId) {
+            const node = this.client.getNode(nodeId);
+            return {
+                id: nodeId,
+                name: node.getAttribute('name'),
+                type: node.getAttribute('type'),
+                dataInfo: JSON.parse(node.getAttribute('data')),
+            };
+        }
+
+        onArtifactLoad(nodeId) {
+            const desc = this.getArtifactDesc(nodeId);
+            this._widget.addArtifact(desc);
+        }
+
+        onArtifactUpdate(nodeId) {
+            const desc = this.getArtifactDesc(nodeId);
+            this._widget.updateArtifact(desc);
+        }
+
+        onArtifactUnload(nodeId) {
+            this._widget.removeArtifact(nodeId);
         }
     }
 

@@ -11,12 +11,19 @@ class Train():
         self.optimizer = keras.optimizers.<%= optimizer.name %>(<%= optimizer.arguments.map(arg => arg.pyValue).join(', ') %>)
         self.loss = keras.losses.<%= loss.name %>(<%= loss.arguments.map(arg => arg.pyValue).join(', ') %>)
 
-    def execute(self, X, y=None, X_val=None, y_val=None):
+    def execute(self, dataset):
+        X, y = self.get_data_and_labels(dataset)
         self.model.compile(optimizer=self.optimizer, loss=self.loss)
         self.model.fit(x=X, y=y, batch_size=self.batch_size,
                 epochs=self.epochs, callbacks=[PlotLosses(self.loss)], validation_split=<%= validation %>)
 
         return self.model
+
+    def get_data_and_labels(self, dataset):
+        if type(dataset) is dict:
+            return dataset['X'], dataset['y']
+        else:
+            dataset[0], dataset[1]
 
 class PlotLosses(keras.callbacks.Callback):
     def __init__(self, loss):

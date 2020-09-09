@@ -9,6 +9,7 @@ define([
     'webgme-plotly/plotly.min',
     'text!./TrainOperation.py',
     'text!./Main.py',
+    'deepforge/viz/StorageHelpers',
     'underscore',
     'text!./schemas/index.json',
     'css!./build/TrainDashboard.css',
@@ -22,6 +23,7 @@ define([
     Plotly,
     TrainOperation,
     MainCode,
+    StorageHelpers,
     _,
     SchemaText,
 ) {
@@ -37,17 +39,14 @@ define([
             super(container);
             this.dashboard = new TrainDashboard({target: container[0]});
             this.dashboard.initialize(Plotly, DashboardSchemas);
-            this.dashboard.events().addEventListener('onTrainClicked', () => {
-                console.log('training!');
-                this.train(this.dashboard.data());
-            });
+            this.dashboard.events().addEventListener(
+                'onTrainClicked',
+                () => this.train(this.dashboard.data())
+            );
             this.modelCount = 1;
             container.addClass(WIDGET_CLASS);
             this.currentTrainTask = null;
-            setTimeout(async () => {
-                const data = this.dashboard.data();
-                console.log(data);
-            }, 1000);
+            this.loadedData = [];
         }
 
         async onComputeInitialized(session) {
@@ -57,7 +56,18 @@ define([
             await this.session.setEnvVar('MPLBACKEND', 'module://plotly_backend');
         }
 
+        isDataLoaded(dataset) {
+            return this.loadedData.find(data => _.isEqual(data, dataset));
+        }
+
         async train(config) {
+            const {dataset} = config;
+            if (!this.isDataLoaded(dataset)) {
+                this.loadedData.push(dataset);
+                const auth = await StorageHelpers.getAuthenticationConfig(dataset.dataInfo);
+                await this.session.addArtifact(dataset.name, dataset.dataInfo, dataset.type, auth);
+            }
+
             if (this.currentTrainTask) {
                 await this.session.kill(this.currentTrainTask);
             }
@@ -73,7 +83,7 @@ define([
                 arg.pyValue = pyValue;
             });
             const saveName = `model_${this.modelCount++}`;
-            await this.session.addFile('start_train.py', MainCode({saveName, archCode}));
+            await this.session.addFile('start_train.py', MainCode({dataset, saveName, archCode}));
             const trainPy = GetTrainCode(config);
             await this.session.addFile('operations/train.py', trainPy);
             this.currentTrainTask = this.session.spawn('python start_train.py');
@@ -117,6 +127,18 @@ define([
 
         removeArchitecture(id) {
             this.dashboard.removeArchitecture(id);
+        }
+
+        addArtifact(desc) {
+            this.dashboard.addArtifact(desc);
+        }
+
+        updateArtifact(desc) {
+            this.dashboard.updateArtifact(desc);
+        }
+
+        removeArtifact(id) {
+            this.dashboard.removeArtifact(id);
         }
     }
 

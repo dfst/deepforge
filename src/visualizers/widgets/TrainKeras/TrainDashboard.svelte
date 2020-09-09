@@ -10,7 +10,7 @@
   let categorizedLosses = [];
   let architectures = [];
   let architecture;
-  let datasets = [];
+  let artifacts = [];
   let dataset;
   let accuracyPlot;
   let plotData;
@@ -78,6 +78,30 @@
       Plotly.react(accuracyPlot, plotData);
     }
   }
+
+  export function addArtifact(arch) {
+    artifacts = artifacts.concat(arch);
+    if (!dataset) {
+      dataset = artifacts[0];
+    }
+  }
+
+  export function updateArtifact(desc) {
+    artifacts = artifacts.map(arch => {
+      if (arch.id === desc.id) {
+        return desc;
+      }
+      return arch;
+    });
+  }
+
+  export function removeArtifact(id) {
+    artifacts = artifacts.filter(arch => arch.id !== id);
+    if (dataset && dataset.id === id) {
+      dataset = artifacts[0];
+    }
+  }
+
   export function addArchitecture(arch) {
     architectures = architectures.concat(arch);
     if (!architecture) {
@@ -92,10 +116,6 @@
       }
       return arch;
     });
-  }
-
-  export function setDatasets(newDatasets) {
-    datasets = newDatasets;
   }
 
   export function removeArchitecture(id) {
@@ -133,7 +153,7 @@
           <div class="form-group">
             <label for="dataset">Training Data: </label>
             <select id="dataset" bind:value={dataset}>
-              {#each datasets as data}
+              {#each artifacts as data}
                 <option value={data}>{data.name}</option>
               {/each}
             </select>

@@ -1,18 +1,12 @@
 import utils.init
 from operations.train import Train
-
-# TODO: add the init code
+from artifacts.<%= dataset.name %> import data
 
 <%= archCode %>
 model = result
 
-# TODO: add the data
-import tensorflow as tf
-test_X = tf.ones((25, 64, 64, 5))
-test_y = tf.ones((25, 32))
-
 train = Train(model)
-model = train.execute(test_X, test_y)
-# TODO: save to outputs
+model = train.execute(data)
 
+# TODO: Save this as an output/artifact
 model.save('<%= saveName %>.h5')
