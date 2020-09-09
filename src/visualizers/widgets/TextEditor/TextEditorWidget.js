@@ -26,6 +26,7 @@ define([
         this.logger = logger.fork('Widget');
         this._registerMonacoLanguages();
         this.language = this.language || config.language || 'python';
+        this.destroyed = false;
         this.monacoURI = this._getMonacoURI();
         const value = config.value || "def dummy_python_func():\n\tpass";
         this.model = monaco.editor.getModel(this.monacoURI) ||
@@ -167,10 +168,12 @@ define([
 
     TextEditorWidget.prototype.initVimKeyBindings = async function () {
         await this.vimImported;
-        this.vimMode = this.MonacoVim.initVimMode(
-            this.editor,
-            this.$status[0]
-        );
+        if (!this.destroyed) {
+            this.vimMode = this.MonacoVim.initVimMode(
+                this.editor,
+                this.$status[0]
+            );
+        }
     };
 
     TextEditorWidget.prototype.disposeVimMode = function() {
@@ -371,6 +374,7 @@ define([
     /* * * * * * * * Visualizer life cycle callbacks * * * * * * * */
     TextEditorWidget.prototype.destroy = function () {
         this.readOnly = true;
+        this.destroyed = true;
         this.editor.dispose();
         this.model.dispose();
         this.disposeVimMode();
