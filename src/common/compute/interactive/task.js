@@ -11,26 +11,27 @@ define([
 
     const isNodeJs = typeof window === 'undefined';
     class Task extends EventEmitter {
-        constructor(ws, msg) {
+        constructor(channel, msg) {
             super();
-            this.ws = ws;
+            this.channel = channel;
             this.msg = msg;
         }
 
         async run() {
             const deferred = utils.defer();
 
-            this.ws.send(this.msg.encode());
-            this.ws.onmessage = async wsMsg => {
+            this.channel.send(this.msg.encode());
+            const handler = async wsMsg => {
                 const data = await Task.getMessageData(wsMsg);
 
                 const msg = Message.decode(data);
                 this.emitMessage(msg);
                 if (msg.type === Message.COMPLETE) {
-                    this.ws.onmessage = null;
+                    this.channel.unlisten(handler);
                     deferred.resolve();
                 }
             };
+            this.channel.listen(handler);
 
             return deferred.promise;
         }
