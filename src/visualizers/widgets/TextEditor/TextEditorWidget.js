@@ -28,14 +28,10 @@ define([
         this.logger = logger.fork('Widget');
         this.language = this.language || config.language || 'python';
         this.destroyed = false;
-        this.monacoURI = this._getMonacoURI();
-        const value = config.value || '';
-        this.model = monaco.editor.getModel(this.monacoURI) ||
-            monaco.editor.createModel(
-                value,
-                this.language,
-                this.monacoURI
-            );
+
+        const monacoURI = this._getMonacoURI(),
+            value = config.value || '';
+        this.model = this.getModel(monacoURI, value);
         this.model.updateOptions({
             tabSize: 4,
             insertSpaces: true
@@ -73,6 +69,15 @@ define([
         this.nodes = {};
         this._initialize();
         this.logger.debug('ctor finished');
+    };
+
+    TextEditorWidget.prototype.getModel = function(monacoURI, value) {
+        return monaco.editor.getModel(monacoURI) ||
+        monaco.editor.createModel(
+            value,
+            this.language,
+            monacoURI
+        );
     };
 
     TextEditorWidget.prototype._getMonacoURI = function () {
@@ -155,15 +160,16 @@ define([
             }
         });
 
+        // editor display updates for component settings
         this.editorSettings = _.extend({}, this.getDefaultEditorOptions()),
         ComponentSettings.resolveWithWebGMEGlobal(
             this.editorSettings,
             this.getComponentId()
         );
-        this.updateEditorDisplay();
+        this.initEditorDisplay();
     };
 
-    TextEditorWidget.prototype.updateEditorDisplay = function() {
+    TextEditorWidget.prototype.initEditorDisplay = function() {
         if (this.editorSettings.keybindings === 'vim') {
             this.initVimKeyBindings();
         }

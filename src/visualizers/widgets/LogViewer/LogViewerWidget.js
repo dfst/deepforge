@@ -1,4 +1,4 @@
-/*globals define, _*/
+/*globals define, _, monaco*/
 /*jshint browser: true*/
 
 define([
@@ -14,7 +14,7 @@ define([
         TextEditorWidget.apply(this, arguments);
         this._el.addClass('log-viewer');
         this.editor.updateOptions({
-           lineNumbers: this.getLineNumbers
+            lineNumbers: this.getLineNumbers
         });
         this.setReadOnly(true);
     };

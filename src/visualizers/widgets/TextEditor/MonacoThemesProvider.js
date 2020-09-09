@@ -1,4 +1,4 @@
-/* globals monaco, define, require */
+/* globals monaco, define */
 
 define(['text!./Themes/themelist.json'], function (ThemeList) {
     const DEFAULT_THEMES = ['vs-dark', 'vs', 'hc-black'];
