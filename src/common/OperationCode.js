@@ -408,10 +408,14 @@ var isNodeJs = typeof module === 'object' && module.exports;
         schema.methods[name].outputs = retVals
             .filter(node => !!node)
             .map((arg, index) => {
-                var isNameNode = OperationCode.isNodeType(arg, 'Name');
-                var name = isNameNode ? arg.id.v : 'result';
-                if (!isNameNode && index > 0) {
-                    name += '_' + index;
+                let name = index > 0 ? `result_${index}` : 'result';
+                const isNameNode = OperationCode.isNodeType(arg, 'Name');
+                const isSelfAttr = OperationCode.isNodeType(arg, 'Attribute') &&
+                    arg.value.id.v === 'self';
+                if (isNameNode) {
+                    name = arg.id.v;
+                } else if (isSelfAttr) {
+                    name = arg.attr.v;
                 }
 
                 var value = OperationCode.isNodeType(arg, 'Num') ? arg.n.v : name;

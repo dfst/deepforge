@@ -4,7 +4,7 @@ define([
     'widgets/InteractiveExplorer/InteractiveExplorerWidget',
     'deepforge/storage/index',
     'deepforge/compute/interactive/session-with-queue',
-    'widgets/PlotlyGraph/lib/plotly.min',
+    'webgme-plotly/plotly.min',
     './PlotEditor',
     './ArtifactLoader',
     'underscore',
