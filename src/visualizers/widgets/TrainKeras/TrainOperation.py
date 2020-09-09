@@ -40,10 +40,12 @@ class PlotLosses(keras.callbacks.Callback):
         self.i = 0
         self.x = []
         self.losses = []
+        self.val_losses = []
 
     def on_epoch_end(self, epoch, logs={}):
         self.x.append(self.i)
         self.losses.append(logs.get('loss'))
+        self.val_losses.append(logs.get('val_loss'))
         self.i += 1
 
         self.update()
@@ -54,5 +56,6 @@ class PlotLosses(keras.callbacks.Callback):
         plt.ylabel(f"{self.loss_fn} Loss")
         plt.xlabel("Epochs")
         plt.plot(self.x, self.losses, label="loss")
+        plt.plot(self.x, self.val_losses, label="validation loss")
         plt.legend()
         plt.show()
