@@ -4,6 +4,7 @@
 define([
     'underscore',
     'js/Utils/ComponentSettings',
+    './MonacoThemesProvider',
     'text!./MonacoLanguages.json',
     'vs/editor/editor.main',
     'jquery-contextMenu',
@@ -11,20 +12,19 @@ define([
 ], function (
     _,
     ComponentSettings,
-    MonacoLanguages
+    MonacoThemesProvider,
+    MonacoLanguages,
 ) {
     'use strict';
 
     const WIDGET_CLASS = 'text-editor';
 
     MonacoLanguages = JSON.parse(MonacoLanguages);
-    const DEFAULT_THEMES = ['vs-dark', 'vs', 'hc-black'];
 
     const AVAILABLE_KEYBINDINGS = ['default', 'vim'];
 
     const TextEditorWidget = function (logger, container, config={}) {
         this.logger = logger.fork('Widget');
-        this._registerMonacoLanguages();
         this.language = this.language || config.language || 'python';
         this.destroyed = false;
         this.monacoURI = this._getMonacoURI();
@@ -45,10 +45,8 @@ define([
         this._el = container;
         this._el.css({height: '100%'});
         this.$editor = $('<div/>');
-        this.$status = $('<div/>'); // required for vim keybinding
         this.$editor.css({height: '100%'});
         this._el.append(this.$editor[0]);
-        this._el.append(this.$status[0]);
 
         this.readOnly = this.readOnly || false;
         this.editor = this._createEditor(displayMiniMap);
@@ -56,6 +54,7 @@ define([
         this.silent = false;
         this.saving = false;
         this.count = 0;
+        this.themesProvider = new MonacoThemesProvider();
 
         this.model.onDidChangeContent(() => {
             if (!this.silent) {
@@ -105,11 +104,9 @@ define([
                 minimap: {
                     enabled: displayMiniMap
                 },
-                theme: DEFAULT_THEMES[0],
                 contextmenu: false
             }
         );
-
         return editor;
     };
 
@@ -161,17 +158,19 @@ define([
             this.editorSettings,
             this.getComponentId()
         );
+
         if (this.editorSettings.keybindings === 'vim') {
             this.initVimKeyBindings();
         }
+
+        this.themesProvider.setTheme(this.editorSettings.theme);
     };
 
     TextEditorWidget.prototype.initVimKeyBindings = async function () {
         await this.vimImported;
-        if (!this.destroyed) {
+        if (!this.destroyed && !this.readOnly) {
             this.vimMode = this.MonacoVim.initVimMode(
-                this.editor,
-                this.$status[0]
+                this.editor
             );
         }
     };
@@ -179,17 +178,10 @@ define([
     TextEditorWidget.prototype.disposeVimMode = function() {
         if(this.vimMode) {
             this.vimMode.dispose();
+            this.editor.layout();
         }
     };
 
-    TextEditorWidget.prototype._registerMonacoLanguages = function () {
-        const languages = Object.keys(MonacoLanguages);
-        languages.forEach(language => {
-            monaco.languages.register(
-                MonacoLanguages[language]
-            );
-        });
-    };
 
     TextEditorWidget.prototype.getDefaultEditorOptions = function () {
         return {
@@ -205,7 +197,7 @@ define([
 
     TextEditorWidget.prototype.getMenuItemsFor = function () {
         var fontSizes = [8, 10, 11, 12, 14],
-            themes = DEFAULT_THEMES,
+            themes = this.themesProvider.themes,
             keybindings = AVAILABLE_KEYBINDINGS,
             menuItems = {
                 setKeybindings: {
@@ -254,7 +246,8 @@ define([
                 isHtmlName: isSet,
                 callback: () => {
                     this.editorSettings.theme = theme;
-                    monaco.editor.setTheme(theme);
+                    console.log(theme);
+                    this.themesProvider.setTheme(theme);
                     this.onUpdateEditorSettings();
                 }
             };
@@ -276,8 +269,10 @@ define([
                     switch (handler) {
                         case 'vim':
                             this.initVimKeyBindings();
+                            break;
                         default:
                             this.disposeVimMode();
+                            break;
                     }
                     this.onUpdateEditorSettings();
                 }
