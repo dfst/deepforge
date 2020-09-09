@@ -10,6 +10,8 @@
   let categorizedLosses = [];
   let architectures = [];
   let architecture;
+  let datasets = [];
+  let dataset;
   let accuracyPlot;
   let plotData;
   let eventElement;
@@ -92,6 +94,10 @@
     });
   }
 
+  export function setDatasets(newDatasets) {
+    datasets = newDatasets;
+  }
+
   export function removeArchitecture(id) {
     architectures = architectures.filter(arch => arch.id !== id);
     if (architecture && architecture.id === id) {
@@ -108,6 +114,7 @@
   export function data() {
     return {
       architecture,
+      dataset,
       batchSize,
       validation,
       optimizer,
@@ -123,6 +130,14 @@
       <h3>Training Parameters</h3>
       <div class="well">
         <form>
+          <div class="form-group">
+            <label for="dataset">Training Data: </label>
+            <select id="dataset" bind:value={dataset}>
+              {#each datasets as data}
+                <option value={data}>{data.name}</option>
+              {/each}
+            </select>
+          </div>
           <div class="form-group">
             <label for="arch">Architecture: </label>
             <select id="arch" bind:value={architecture}>

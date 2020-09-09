@@ -15,4 +15,4 @@ train = Train(model)
 model = train.execute(test_X, test_y)
 # TODO: save to outputs
 
-model.save('model.h5')
+model.save('<%= saveName %>.h5')

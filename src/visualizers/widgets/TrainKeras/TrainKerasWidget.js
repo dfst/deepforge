@@ -41,6 +41,7 @@ define([
                 console.log('training!');
                 this.train(this.dashboard.data());
             });
+            this.modelCount = 1;
             container.addClass(WIDGET_CLASS);
             this.currentTrainTask = null;
             setTimeout(async () => {
@@ -57,6 +58,10 @@ define([
         }
 
         async train(config) {
+            if (this.currentTrainTask) {
+                await this.session.kill(this.currentTrainTask);
+            }
+
             const archCode = await this.getArchitectureCode(config.architecture.id);
             config.loss.arguments.concat(config.optimizer.arguments).forEach(arg => {
                 let pyValue = arg.value.toString();
@@ -67,12 +72,10 @@ define([
                 }
                 arg.pyValue = pyValue;
             });
-            await this.session.addFile('start_train.py', MainCode({archCode}));
+            const saveName = `model_${this.modelCount++}`;
+            await this.session.addFile('start_train.py', MainCode({saveName, archCode}));
             const trainPy = GetTrainCode(config);
             await this.session.addFile('operations/train.py', trainPy);
-            if (this.currentTrainTask) {
-                // TODO: kill the current task
-            }
             this.currentTrainTask = this.session.spawn('python start_train.py');
             const lineParser = new LineCollector();
             lineParser.on(line => {
@@ -86,9 +89,6 @@ define([
             });
             this.currentTrainTask.on(Message.STDOUT, data => lineParser.receive(data));
             this.currentTrainTask.on(Message.STDERR, data => console.error(data.toString()));
-            // TODO: stop the current execution
-            // TODO: stream to the console for now
-            // TODO: send feedback to the browser...
         }
 
         parseMetadata(cmd, content) {
