@@ -4,7 +4,7 @@ from matplotlib import pyplot as plt
 #TODO: set random seed with tf.random.set_seed()
 
 class Train():
-    def __init__(self, model, batch_size=<%= batchSize%>, epochs=<%= epochs %>):
+    def __init__(self, model, batch_size=<%= batchSize %>, epochs=<%= epochs %>):
         self.model = model
         self.batch_size = batch_size
         self.epochs = epochs
@@ -23,7 +23,13 @@ class Train():
         if type(dataset) is dict:
             return dataset['X'], dataset['y']
         else:
-            dataset[0], dataset[1]
+            X = dataset[0]
+            y = dataset[1]
+            if len(X) == 2 and len(y) == 2:
+                y = X[1]
+                X = X[0]
+
+            return X, y
 
 class PlotLosses(keras.callbacks.Callback):
     def __init__(self, loss):

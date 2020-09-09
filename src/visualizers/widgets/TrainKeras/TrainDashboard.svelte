@@ -148,8 +148,9 @@
   <div class="row">
     <div class="config-panel">
       <h3>Training Parameters</h3>
-      <div class="well">
+      <div class="well" style="padding-top: 5px">
         <form>
+          <h5 style="text-align: left">General</h5>
           <div class="form-group">
             <label for="dataset">Training Data: </label>
             <select id="dataset" bind:value={dataset}>
@@ -166,6 +167,20 @@
               {/each}
             </select>
           </div>
+          <div class="form-group">
+            <label>Batch Size</label>
+            <input bind:value={batchSize} type="number"/>
+          </div>
+          <div class="form-group">
+            <label>Epochs</label>
+            <input bind:value={epochs} type="number"/>
+          </div>
+          <div class="form-group">
+            <label>Validation Split</label>
+            <input bind:value={validation} type="number"/>
+          </div>
+          <hr style="border-top: 1px solid #aaa">
+          <h5 style="text-align: left">Loss</h5>
           <div class="form-group">
             <label for="loss">Loss Function: </label>
             <select id="loss" bind:value={loss}>
@@ -199,6 +214,8 @@
               {/if}
             </div>
           {/each}
+          <hr style="border-top: 1px solid #aaa">
+          <h5 style="text-align: left">Optimization</h5>
           <div class="form-group">
             <label for="optimizer">Optimizer: </label>
             <select id="optimizer" bind:value={optimizer}>
@@ -220,18 +237,6 @@
               {/if}
             </div>
           {/each}
-          <div class="form-group">
-            <label>Batch Size</label>
-            <input bind:value={batchSize} type="number"/>
-          </div>
-          <div class="form-group">
-            <label>Epochs</label>
-            <input bind:value={epochs} type="number"/>
-          </div>
-          <div class="form-group">
-            <label>Validation Split</label>
-            <input bind:value={validation} type="number"/>
-          </div>
         </form>
         <button on:click|preventDefault|stopPropagation={onTrainClicked} type="button" class="btn btn-primary">Train</button>
       </div>
