@@ -96,9 +96,9 @@ define([
             return this.executor.getInfo(job.hash);
         }
 
-        async createJob (hash) {
+        async startJob (job) {
             await this.checkExecutionEnv();
-
+            const {hash} = job;
             const result = await this.executor.createJob({hash});
 
             this.poll(hash);

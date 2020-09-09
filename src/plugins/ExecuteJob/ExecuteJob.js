@@ -8,7 +8,7 @@ define([
     'deepforge/storage/index',
     'plugin/TwoPhaseCommit/TwoPhaseCommit/TwoPhaseCommit',
     'deepforge/plugin/LocalExecutor',
-    'deepforge/plugin/PtrCodeGen',
+    'deepforge/CodeGenerator',
     'deepforge/plugin/Operation',
     'deepforge/plugin/ExecutionHelpers',
     'deepforge/api/JobLogsClient',
@@ -20,6 +20,7 @@ define([
     'q',
     'superagent',
     'underscore',
+    'deepforge/compute/backends/ComputeJob',
 ], function (
     assert,
     pluginMetadata,
@@ -27,7 +28,7 @@ define([
     Storage,
     PluginBase,
     LocalExecutor,  // DeepForge operation primitives
-    PtrCodeGen,
+    CodeGenerator,
     OperationPlugin,
     ExecutionHelpers,
     JobLogsClient,
@@ -41,9 +42,11 @@ define([
     Q,
     superagent,
     _,
+    ComputeJob,
 ) {
     'use strict';
 
+    const {PipelineJob} = ComputeJob;
     pluginMetadata = JSON.parse(pluginMetadata);
 
     /**
@@ -440,7 +443,8 @@ define([
             let hash;
             try {
                 const config = this.getCurrentConfig();
-                hash = await this.getPtrCodeHash(this.core.getPath(node), config);
+                const codeGen = await CodeGenerator.fromPlugin(this);
+                hash = await codeGen.getCodeHash(this.core.getPath(node), config);
             } catch (err) {
                 this.logger.error(`Could not generate files: ${err}`);
                 if (err.message.indexOf('BLOB_FETCH_FAILED') > -1) {
@@ -509,7 +513,14 @@ define([
     ExecuteJob.prototype.createJob = async function (job, hash) {
         // Record the job info for the given hash
         this._execHashToJobNode[hash] = job;
-        const jobInfo = await this.compute.createJob(hash);
+        const computeJob = new PipelineJob(
+            hash,
+            this.projectId,
+            this.branchName,
+            this.core,
+            job
+        );
+        const jobInfo = await this.compute.startJob(computeJob);
         this.core.setAttribute(job, 'jobInfo', JSON.stringify(jobInfo));
         this.core.setAttribute(job, 'execFiles', hash);
 
@@ -752,7 +763,6 @@ define([
         ExecuteJob.prototype,
         OperationPlugin.prototype,
         ExecuteJobMetadata.prototype,
-        PtrCodeGen.prototype,
         LocalExecutor.prototype
     );
 

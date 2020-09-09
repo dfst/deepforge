@@ -12,8 +12,8 @@ define([], function() {
             unimplemented(this.logger, 'cancelJob');
         }
 
-        async createJob (/*hash*/) {
-            unimplemented(this.logger, 'createJob');
+        async startJob (/*hash, metadata*/) {
+            unimplemented(this.logger, 'startJob');
         }
 
         async getStatus (/*jobInfo*/) {

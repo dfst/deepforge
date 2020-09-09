@@ -226,6 +226,13 @@ describe('OperationCode', function() {
                 assert.deepEqual(operation.getOutputs().map(output => output.name), names);
             });
 
+            it('should parse the output name when returning attr', async function() {
+                const code = testCase('op-output-name.py');
+                const operation = new OperationCode(code);
+                const names = ['myOutput'];
+                assert.deepEqual(operation.getOutputs().map(output => output.name), names);
+            });
+
             it.skip('should parse the output types', function() {
                 const types = ['str', 'int'];
                 assert.deepEqual(operation.getOutputs().map(output => output.type), types);

@@ -108,7 +108,8 @@ define([
             }
         }
 
-        async createJob (hash) {
+        async startJob (job) {
+            const {hash} = job;
             this.jobQueue.push(hash);
             this._processNextJob();
 
@@ -143,7 +144,7 @@ define([
 
             this.currentJob = this.jobQueue.shift();
             if (this.currentJob) {
-                return this._createJob(this.currentJob);
+                return this._startJob(this.currentJob);
             }
         }
 
@@ -151,7 +152,7 @@ define([
             return path.join(os.tmpdir(), `deepforge-local-exec-${hash}`);
         }
 
-        async _createJob (hash) {
+        async _startJob (hash) {
             const jobInfo = {hash};
             this.emit('update', jobInfo.hash, this.PENDING);
             const tmpdir = this._getWorkingDir(hash);
