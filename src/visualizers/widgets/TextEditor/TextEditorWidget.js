@@ -28,7 +28,7 @@ define([
         this.language = this.language || config.language || 'python';
         this.destroyed = false;
         this.monacoURI = this._getMonacoURI();
-        const value = config.value || "def dummy_python_func():\n\tpass";
+        const value = config.value || '';
         this.model = monaco.editor.getModel(this.monacoURI) ||
             monaco.editor.createModel(
                 value,
