@@ -261,13 +261,6 @@
         "secondary": false,
         "widget": "src/visualizers/widgets/TabbedTextEditor"
       },
-      "PlotlyGraph": {
-        "src": "panels/PlotlyGraph/PlotlyGraphPanel",
-        "title": "PlotlyGraph",
-        "panel": "src/visualizers/panels/PlotlyGraph",
-        "secondary": false,
-        "widget": "src/visualizers/widgets/PlotlyGraph"
-      },
       "OperationSecondaryEditor": {
         "src": "panels/OperationSecondaryEditor/OperationSecondaryEditorPanel",
         "title": "OperationSecondaryEditor",
@@ -422,6 +415,14 @@
         "secondary": false,
         "widget": "src/visualizers/widgets/EasyDAG",
         "project": "webgme-easydag"
+      },
+      "PlotlyGraph": {
+        "src": "panels/PlotlyGraph/PlotlyGraphPanel",
+        "title": "PlotlyGraph",
+        "panel": "src/visualizers/panels/PlotlyGraph",
+        "secondary": false,
+        "widget": "src/visualizers/widgets/PlotlyGraph",
+        "project": "webgme-plotly"
       }
     },
     "addons": {},

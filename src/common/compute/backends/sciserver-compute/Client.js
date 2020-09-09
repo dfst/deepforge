@@ -32,19 +32,16 @@ define([
             this.consoleOutputLen = {};
         }
 
-        async createJob (hash) {
-            const filesInfo = await this._uploadFiles(hash);
-            const job = await this._createJob(filesInfo);
-            const jobInfo = {
-                id: job.id,
-                hash,
-            };
+        async startJob (job) {
+            const filesInfo = await this._uploadFiles(job.hash);
+            const {id} = await this._startJob(job, filesInfo);
+            const jobInfo = {id, hash: job.hash};
             this._poll(jobInfo);
 
             return jobInfo;
         }
 
-        async _createConfig (filesInfo) {
+        async _createConfig (job, filesInfo) {
             const {dirname, volumePool, volume} = filesInfo;
             const domain = await this._getComputeDomain();
             const userVolumes = domain.userVolumes.map(volume => ({
@@ -58,7 +55,7 @@ define([
                 dockerComputeEndpoint: domain.apiEndpoint,
                 dockerImageName: 'DeepForge',
                 resultsFolderURI: '',
-                submitterDID: 'DeepForge Job',
+                submitterDID: job.name,
                 volumeContainers: [],
                 userVolumes: userVolumes
             };
@@ -89,8 +86,8 @@ define([
             return filesInfo;
         }
 
-        async _createJob (filesInfo) {
-            const config = await this._createConfig(filesInfo);
+        async _startJob (job, filesInfo) {
+            const config = await this._createConfig(job, filesInfo);
             const url = 'https://apps.sciserver.org/racm//jobm/rest/jobs/docker';
 
             const opts = {

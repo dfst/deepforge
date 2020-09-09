@@ -9,6 +9,7 @@ const Channel = require('./Channel');
 const EventEmitter = requireJS('deepforge/EventEmitter');
 const Message = requireJS('deepforge/compute/interactive/message');
 const ComputeClient = requireJS('deepforge/compute/backends/ComputeClient');
+const {ComputeJob} = requireJS('deepforge/compute/backends/ComputeJob');
 
 class Session extends EventEmitter {
     constructor(blobClient, compute, clientSocket) {
@@ -36,7 +37,9 @@ class Session extends EventEmitter {
 
         const files = new JobFiles(blobClient, SERVER_URL, this.id);
         const hash = await files.upload();
-        this.jobInfo = this.compute.createJob(hash);
+        const name = 'DeepForge Interactive Session';
+        const computeJob = new ComputeJob(hash, name);
+        this.jobInfo = this.compute.startJob(computeJob);
         this.compute.on('end', (id, info) => {
             const isError = this.clientSocket.readyState === WebSocket.OPEN &&
                 info.status !== ComputeClient.SUCCESS;

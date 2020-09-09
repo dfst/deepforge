@@ -153,13 +153,10 @@ define([
 
     PipelineIndexWidget.prototype.updateNode = function (desc) {
         if (desc && this.cards[desc.id]) {
-            var Template = this.getCardTemplate(desc);
-
-            this.cards[desc.id].outerHTML = Template(desc);
-            // Check if the preview changed
-            if (desc.thumbnail !== this.nodes[desc.id].thumbnail) {
-                this.addThumbnail(desc.thumbnail, this.cards[desc.id]);
-            }
+            const Template = this.getCardTemplate(desc);
+            const newHtml = $(Template(desc)).html();
+            this.cards[desc.id].html(newHtml);
+            this.addThumbnail(desc.thumbnail, this.cards[desc.id]);
             this.nodes[desc.id] = desc;
         }
     };

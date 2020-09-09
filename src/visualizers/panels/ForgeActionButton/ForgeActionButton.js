@@ -18,7 +18,8 @@ define([
     'q',
     'deepforge/globals',
     'deepforge/Constants',
-    'plugin/Export/Export/format'
+    'plugin/Export/Export/format',
+    'deepforge/storage/index',
 ], function (
     BlobClient,
     SaveToDisk,
@@ -36,7 +37,8 @@ define([
     Q,
     DeepForge,
     Constants,
-    ExportFormatDict
+    ExportFormatDict,
+    Storage,
 ) {
     'use strict';
 
@@ -426,6 +428,17 @@ define([
             .fail(err => this.logger.error(`Blob download failed: ${err}`));
     };
 
+    ForgeActionButton.prototype.getOperationOutputIds = function(operation) {
+        const outputsNode = operation.getChildrenIds()
+            .map(id => this.client.getNode(id))
+            .find(node => {
+                var typeId = node.getMetaTypeId(),
+                    type = this.client.getNode(typeId).getAttribute('name');
+                return type === 'Outputs';
+            });
+        return outputsNode.getChildrenIds();
+    };
+
     // Export Pipeline Support
     ForgeActionButton.prototype.exportPipeline = async function() {
         const pluginId = 'Export';
@@ -433,68 +446,87 @@ define([
         const id = this._currentNodeId;
         const node = this.client.getNode(id);
 
-        const inputData = node.getChildrenIds()
+        const inputOps = node.getChildrenIds()
             .map(id => this.client.getNode(id))
             .filter(node => {
                 var typeId = node.getMetaTypeId(),
                     type = this.client.getNode(typeId).getAttribute('name');
 
                 return type === Constants.OP.INPUT;
-            })
-            .map(input => {
-                var outputCntr,
-                    outputIds;
+            });
+        const artifacts = inputOps
+            .map(inputOp => {
+                const artifactId = inputOp.getPointer('artifact').to;
 
-                outputCntr = input.getChildrenIds()
-                    .map(id => this.client.getNode(id))
-                    .find(node => {
-                        var typeId = node.getMetaTypeId(),
-                            type = this.client.getNode(typeId).getAttribute('name');
-                        return type === 'Outputs';
-                    });
-
-                // input operations only have a single output
-                outputIds = outputCntr.getChildrenIds();
-
-                if (outputIds.length === 1) {
-                    return outputIds[0];
-                } else if (outputIds.length > 1) {
-                    this.logger.warn(`Found multiple ids for input op: ${outputIds.join(', ')}`);
-                    return;
+                if (artifactId) {
+                    return this._client.getNode(artifactId);
                 }
-            })
-            .filter(outputId => !!outputId)
-            .map(id => this.client.getNode(id))
-            .filter(output => output.getAttribute('data'));
-
-        // get the name of node referenced from the input op
-        const inputNames = inputData
-            .map(node => {
-                var cntrId = node.getParentId(),
-                    opId = this._client.getNode(cntrId).getParentId(),
-                    inputOp = this._client.getNode(opId),
-                    targetNodeId = inputOp.getPointer('artifact').to;
-
-                return this._client.getNode(targetNodeId).getAttribute('name');
             });
 
+        const inputsAndArtifacts = _.zip(inputOps, artifacts);
+
+        const inputOpts = inputsAndArtifacts
+            .filter(pair => {
+                const [/*input*/, artifact] = pair;
+                return artifact;
+            })
+            .map(pair => {
+                const [input, artifact] = pair;
+                const name = artifact.getAttribute('name');
+                const [inputDataId] = this.getOperationOutputIds(input);
+
+                return {
+                    name: inputDataId,
+                    displayName: name,
+                    description: `Export ${name} as static (non-input) content`,
+                    value: false,
+                    valueType: 'boolean',
+                    readOnly: false
+                };
+            }).sort((a, b) => a.displayName < b.displayName ? -1 : 1);
+
         // create config options from inputs
-        var inputOpts = inputNames.map((input, index) => {
-            return {
-                name: inputData[index].getId(),
-                displayName: input,
-                description: `Export ${input} as static (non-input) content`,
-                value: false,
-                valueType: 'boolean',
-                readOnly: false
-            };
-        }).sort((a, b) => a.displayName < b.displayName ? -1 : 1);
+        const authConfigs = (await this.getArtifactInputs(node))
+            .map(input => {
+                const config = this.getAuthConfig(input);
+                if (config) {
+                    return [input, config];
+                }
+            })
+            .filter(pair => !!pair);
+
+        const authOpts = authConfigs
+            .map(pair => {
+                const [node, config] = pair;
+                const name =  node.getAttribute('name');
+                const backend = JSON.parse(node.getAttribute('data')).backend;
+                const storageName = Storage.getStorageMetadata(backend).name;
+                const title = `${name} (${storageName}):`;
+
+                config.unshift({
+                    name: `${title} Header`,
+                    displayName: title,
+                    valueType: 'section'
+                });
+                return {
+                    name: node.getId(),
+                    valueType: 'group',
+                    valueItems: config
+                };
+            })
+            .sort((a, b) => a.displayName < b.displayName ? -1 : 1);
 
         var exportFormats = Object.keys(ExportFormatDict),
             configDialog = new ConfigDialog(this.client),
             inputConfig = _.extend({}, metadata);
 
-        inputConfig.configStructure = inputOpts;
+        inputConfig.configStructure = [
+            {
+                name: 'staticInputs',
+                valueType: 'group',
+                valueItems: inputOpts,
+            }
+        ];
 
         // Try to get the extension options
         if (inputOpts.length || exportFormats.length > 1) {
@@ -503,6 +535,20 @@ define([
                 displayName: 'Static Artifacts',
                 valueType: 'section'
             });
+
+            if (authOpts.length) {
+                inputConfig.configStructure.push({
+                    name: 'credentials',
+                    displayName: 'Storage Credentials (for static artifacts)',
+                    valueType: 'section'
+                });
+                inputConfig.configStructure.push({
+                    name: 'credentials',
+                    valueType: 'group',
+                    valueItems: authOpts
+                });
+            }
+
             inputConfig.configStructure.push({
                 name: 'exportFormatOptions',
                 displayName: 'Export Options',
@@ -527,11 +573,20 @@ define([
             const allConfigs = await configDialog.show(inputConfig);
             const context = this.client.getCurrentPluginContext(pluginId);
             const exportFormat = allConfigs[pluginId].exportFormat.id;
-            const staticInputs = Object.keys(allConfigs[pluginId])
-                .filter(input => input !== 'exportFormat' && allConfigs[pluginId][input]);
+            const staticInputs = {};
+            const isStaticInput = allConfigs[pluginId].staticInputs;
+            inputsAndArtifacts.forEach(pair => {
+                const [inputOp, artifact] = pair;
+                const [inputDataId] = this.getOperationOutputIds(inputOp);
+                if (isStaticInput[inputDataId]) {
+                    staticInputs[inputDataId] = {
+                        id: artifact.getId(),
+                        credentials: allConfigs[pluginId].credentials[artifact.getId()]
+                    };
+                }
+            });
 
             this.logger.debug('Exporting pipeline to format', exportFormat);
-            this.logger.debug('static inputs:', staticInputs);
 
             context.managerConfig.namespace = 'pipeline';
             context.pluginConfig = {
