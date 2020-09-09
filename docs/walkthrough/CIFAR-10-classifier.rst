@@ -1,6 +1,6 @@
 .. class:: centered
 
-    `<- Previous Tutorial <viewing-pipelines.rst>`_
+    `<- Previous Tutorial <viewing-executions.rst>`_
     `Walkthrough Main Page <walkthrough.rst>`_
     `Next Tutorial -> <redshift-estimator.rst>`_
 
@@ -474,6 +474,6 @@ Unfortunately, only one of the two figures can be viewed from this page. To view
 
 .. class:: centered
 
-    `<- Previous Tutorial <viewing-pipelines.rst>`_
+    `<- Previous Tutorial <viewing-exeecutions.rst>`_
     `Walkthrough Main Page <walkthrough.rst>`_
     `Next Tutorial -> <redshift-estimator.rst>`_
