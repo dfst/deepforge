@@ -2,7 +2,7 @@ Redshift Estimator
 ------------------
 This guide provides instructions on how to create full pipeline for training and evaluating a convolutional neural network on the task of predicting astronomical redshift values given images of galaxies. It provides an approach that is simplified from work by `Pasquet et. al. <https://arxiv.org/abs/1806.06607>`_ The data referenced and used in this guide was obtained from the `Sloan Digital Sky Survey Data Release 3 <https://www.sdss.org/dr13/>`_, obtained via `SciServer's CasJobs Service <http://www.sciserver.org/about/casjobs/>`_, and processed using `Astromatic's SWarp tool <https://www.astromatic.net/software/swarp>`_.
 
-This guide assumes that the reader has a basic understanding of the DeepForge interface and how to create basic pipelines. New users are recommended to review the guides available **PROVIDE LINK HERE** and `here <CIFAR-10-classifier.rst>`_ before attempting the process described in this guide. The basic steps of this guide are:
+This guide assumes that the reader has a basic understanding of the DeepForge interface and how to create basic pipelines. New users are recommended to review the guides available `here <walkthrough.rst>`_ before attempting the process described in this guide. The basic steps of this guide are:
 
 1. `Pipeline Overview`_
 2. `Input Operations`_
@@ -28,7 +28,7 @@ Input Operations
 
 While it is possible to retrieve the data needed for model creation programmatically in many cases, this guide makes use of the **Input** operations to load preprocessed data. This is in the interest of both simplicity and generalizability to datasets and data sources different than those used in this tutorial.
 
-This pipeline uses four **Input** operations. These operations provide the training input images, training output values, testing input images, and testing output values. For the purposes of this tutorial, the structure of the input images is a 4D numpy array of shape (N, 64, 64, 5), where N is the number of images. The outputs are 1D numpy arrays of length N. The process described in this tutorial will work for images that are not 64*64 pixels in size and that use any number of color channels, requiring only a slight change in the `neural network <Neural Network Architecture>`_.
+This pipeline uses four **Input** operations. These operations provide the training input images, training output values, testing input images, and testing output values. For the purposes of this tutorial, the structure of the input images is a 4D numpy array of shape (N, 64, 64, 5), where N is the number of images. The outputs are 1D numpy arrays of length N. The process described in this tutorial will work for images that are not 64*64 pixels in size and that use any number of color channels, requiring only a slight change in the neural network.
 
 .. figure:: images/redshift-inputs.png
     :align: center
@@ -330,7 +330,7 @@ PdfVisRedshift Operation
 ========================
 This operation creates another figure for evaluating the accuracy of the redshift model as shown below. Compared to the output of the **EvalRedshift** operation, this figure provides a more zoomed in picture of individual predictions. Each of the subplots is a plotting of the probability density function for a randomly chosen input image. The red and green lines indicate the predicted and actual value of the image's redshift value respectively.
 
-.. figure:: images/redsfhit-pdfvis-res.png
+.. figure:: images/redshift-pdfvis-res.png
     :align: center
     :scale: 50%
 
