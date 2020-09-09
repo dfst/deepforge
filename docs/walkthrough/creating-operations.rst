@@ -1,8 +1,4 @@
-.. raw:: html
-
-    <style> .center {text-align:center} </style>
-
-.. class:: center
+.. class:: centered
 
     `<- Previous Tutorial <creating-pipelines.rst>`_
     `Walkthrough Main Page <walkthrough.rst>`_
@@ -78,7 +74,7 @@ Importing Libraries
 
 Python libraries can be used within an operation by importing them, which is usually done above the operation class. Many common python libraries are supported by the standard DeepForge SciServer image, but more niche libraries that are available through pip or anaconda may be installed temporarily and used by clicking the *Environment* tab on the right side. The dependencies described here should be defined using the same syntax as in a `conda environment file <https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#creating-an-environment-file-manually>`_.
 
-.. class:: center
+.. class:: centered
 
     `<- Previous Tutorial <creating-pipelines.rst>`_
     `Walkthrough Main Page <walkthrough.rst>`_

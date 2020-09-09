@@ -1,8 +1,4 @@
-.. raw:: html
-
-    <style> .center {text-align:center} </style>
-
-.. class:: center
+.. class:: centered
 
     `<- Previous Tutorial <creating-neural-networks.rst>`_
     `Walkthrough Main Page <walkthrough.rst>`_
@@ -73,7 +69,7 @@ Any artifacts used in Input operations will require the login credentials for th
     :align: center
     :scale: 50%
 
-.. class:: center
+.. class:: centered
 
     `<- Previous Tutorial <creating-neural-networks.rst>`_
     `Walkthrough Main Page <walkthrough.rst>`_

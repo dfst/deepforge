@@ -1,8 +1,4 @@
-.. raw:: html
-
-    <style> .center {text-align:center} </style>
-
-.. class:: center
+.. class:: centered
 
     `<- Previous Tutorial <creating-operations.rst>`_
     `Walkthrough Main Page <walkthrough.rst>`_
@@ -132,7 +128,7 @@ Clicking on *Details* will provide some metadata about the export, as well as a 
     :align: center
     :scale: 50%
 
-.. class:: center
+.. class:: centered
 
     `<- Previous Tutorial <creating-operations.rst>`_
     `Walkthrough Main Page <walkthrough.rst>`_

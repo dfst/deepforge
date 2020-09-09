@@ -1,8 +1,4 @@
-.. raw:: html
-
-    <style> .center {text-align:center} </style>
-
-.. class:: center
+.. class:: centered
 
     `<- Previous Tutorial <viewing-pipelines.rst>`_
     `Walkthrough Main Page <walkthrough.rst>`_
@@ -476,7 +472,7 @@ Unfortunately, only one of the two figures can be viewed from this page. To view
     :align: center
     :scale: 50%
 
-.. class:: center
+.. class:: centered
 
     `<- Previous Tutorial <viewing-pipelines.rst>`_
     `Walkthrough Main Page <walkthrough.rst>`_

@@ -1,8 +1,4 @@
-.. raw:: html
-
-    <style> .center {text-align:center} </style>
-
-.. class:: center
+.. class:: centered
 
     `Walkthrough Main Page <walkthrough.rst>`_
     `Next Tutorial -> <creating-operations.rst>`_
@@ -35,7 +31,7 @@ Operation inputs and outputs are represented by blue circles that are visible af
 
 Operations can be connected by clicking on an input or output of an operation before clicking on an output or input respectively of another operation. All input and output connections are optional, though missing outputs may give errors depending upon the operation's internal logic.
 
-.. class:: center
+.. class:: centered
 
     `Walkthrough Main Page <walkthrough.rst>`_
     `Next Tutorial -> <creating-operations.rst>`_
