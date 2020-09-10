@@ -10,6 +10,7 @@ define([
     'text!./TrainOperation.py',
     'text!./Main.py',
     'deepforge/viz/StorageHelpers',
+    'deepforge/viz/ConfirmDialog',
     'underscore',
     'text!./schemas/index.json',
     'css!./build/TrainDashboard.css',
@@ -24,6 +25,7 @@ define([
     TrainOperation,
     MainCode,
     StorageHelpers,
+    ConfirmDialog,
     _,
     SchemaText,
 ) {
@@ -43,7 +45,11 @@ define([
                 'onTrainClicked',
                 () => this.train(this.dashboard.data())
             );
-            this.modelCount = 1;
+            this.dashboard.events().addEventListener(
+                'saveModel',
+                event => this.saveModel(event.detail)
+            );
+            this.modelCount = 0;
             container.addClass(WIDGET_CLASS);
             this.currentTrainTask = null;
             this.loadedData = [];
@@ -61,16 +67,32 @@ define([
         }
 
         async train(config) {
+            if (this.currentTrainTask) {
+                const title = 'Stop Current Training';
+                const body = 'Would you like to stop the current training to train a model with the new configuration?';
+                const dialog = new ConfirmDialog(title, body);
+                const confirmed = await dialog.show();
+
+                if (!confirmed) {
+                    return;
+                }
+
+                this.dashboard.setModelState(this.getCurrentModelID(), 'Canceled');
+                await this.session.kill(this.currentTrainTask);
+            }
+
+            this.modelCount++;
+            const saveName = this.getCurrentModelID();
+            const modelInfo = {id: saveName, name: saveName, state: 'Fetching Data...', config};
+            this.dashboard.addModel(modelInfo);
             const {dataset} = config;
             if (!this.isDataLoaded(dataset)) {
                 this.loadedData.push(dataset);
                 const auth = await StorageHelpers.getAuthenticationConfig(dataset.dataInfo);
+                // TODO: Handle cancellation
                 await this.session.addArtifact(dataset.name, dataset.dataInfo, dataset.type, auth);
             }
-
-            if (this.currentTrainTask) {
-                await this.session.kill(this.currentTrainTask);
-            }
+            this.dashboard.setModelState(this.getCurrentModelID(), 'Generating Code');
 
             const archCode = await this.getArchitectureCode(config.architecture.id);
             config.loss.arguments.concat(config.optimizer.arguments).forEach(arg => {
@@ -82,10 +104,10 @@ define([
                 }
                 arg.pyValue = pyValue;
             });
-            const saveName = `model_${this.modelCount++}`;
             await this.session.addFile('start_train.py', MainCode({dataset, saveName, archCode}));
             const trainPy = GetTrainCode(config);
             await this.session.addFile('operations/train.py', trainPy);
+            this.dashboard.setModelState(this.getCurrentModelID(), 'Training...');
             this.currentTrainTask = this.session.spawn('python start_train.py');
             const lineParser = new LineCollector();
             lineParser.on(line => {
@@ -101,15 +123,59 @@ define([
             this.currentTrainTask.on(Message.STDERR, data => console.error(data.toString()));
         }
 
+        getCurrentModelID() {
+            return `model_${this.modelCount}`;
+        }
+
+        async promptStorageConfig() {
+            metadata.configStructure.push({
+                name: 'storage',
+                displayName: 'Storage',
+                description: 'Location to store intermediate/generated data.',
+                valueType: 'dict',
+                value: Storage.getBackend(Storage.getAvailableBackends()[0]).name,
+                valueItems: storageMetadata,
+            });
+            // TODO
+        }
+
+        async saveModel(modelInfo) {
+            // TODO: Get the type and upload the data
+            const config = await this.promptStorageConfig();
+
+            // TODO: I need to run this in parallel???
+            const session = this.session.fork();
+            const {dataInfo, type} = await this.session.storeArtifact('path/to/artifact', config);
+            const snapshot = {
+                type: 'pipeline.Data',
+                attributes: {
+                    name: modelInfo.name,
+                    type: type,
+                    data: dataInfo,
+                }
+            };
+            const implicitOp = {
+                type: 'pipeline.TrainKeras',
+                attributes: {
+                    name: modelInfo.name,
+                    config: JSON.stringify(modelInfo.config),
+                    plotData: JSON.stringify(modelInfo.plotData),
+                }
+            };
+            const operation = GetTrainCode(modelInfo.config);
+            // TODO: copy the architecture inside?
+            return this.save(snapshot, implicitOp, operation);
+        }
+
         parseMetadata(cmd, content) {
             if (cmd === 'PLOT') {
-                this.dashboard.setPlotData(content);
+                this.dashboard.setPlotData(this.getCurrentModelID(), content);
             } else {
                 console.error('Unrecognized command:', cmd);
             }
         }
 
-        addNode(desc) {
+        addNode(desc) {  // FIXME: Remove this
             console.log('adding', desc);
         }
 

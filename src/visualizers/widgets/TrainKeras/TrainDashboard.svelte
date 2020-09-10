@@ -12,6 +12,8 @@
   let architecture;
   let artifacts = [];
   let dataset;
+  let models = [];
+  let displayedModel;
   let accuracyPlot;
   let plotData;
   let eventElement;
@@ -68,14 +70,46 @@
     window.open(url, '_blank');
   }
 
+  export function addModel(model) {
+    models = models.concat(model);
+  }
+
   export function events() {
       return eventElement;
   }
 
-  export function setPlotData(newData) {
-    plotData = newData;
+  function saveModel(model) {
+    const event = new CustomEvent('saveModel', {detail: model});
+    eventElement.dispatchEvent(event);
+  }
+
+  function setDisplayedModel(newModel) {
+    displayedModel = newModel;
+
+    if (displayedModel.config) {
+      architecture = displayedModel.config.architecture;
+      dataset = displayedModel.config.dataset;
+      batchSize = displayedModel.config.batchSize;
+      validation = displayedModel.config.validation;
+      optimizer = displayedModel.config.optimizer;
+      epochs = displayedModel.config.epochs;
+      loss = displayedModel.config.loss;
+    }
     if (Plotly) {
-      Plotly.react(accuracyPlot, plotData);
+      Plotly.react(accuracyPlot, displayedModel.plotData);
+    }
+  }
+
+  export function setModelState(modelID, state) {
+    const model = models.find(model => model.id === modelID);
+    model.state = state;
+  }
+
+  export function setPlotData(modelID, newData) {
+    const model = models.find(model => model.id === modelID);
+    model.plotData = newData;
+    if (model === displayedModel) {
+      setDisplayedModel(model);
     }
   }
 
@@ -125,7 +159,7 @@
     }
   }
 
-  export function set(info) {
+  function set(info) {
     loss = info.loss || loss;
     optimizer = info.optimizer || optimizer;
     architectures = info.architectures || architectures;
@@ -146,7 +180,7 @@
 
 <main bind:this={eventElement}>
   <div class="row">
-    <div class="config-panel">
+    <div class="col-xs-12 col-sm-12 col-md-4 col-lg-3">
       <h3>Training Parameters</h3>
       <div class="well" style="padding-top: 5px">
         <form>
@@ -241,8 +275,34 @@
         <button on:click|preventDefault|stopPropagation={onTrainClicked} type="button" class="btn btn-primary">Train</button>
       </div>
     </div>
-    <div class="plot-container" bind:this={accuracyPlot} style="flex-grow: 4"></div>
-    <div style="display: none;" class="output-panel">test<!-- TODO --></div>
+    <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6 plot-container" bind:this={accuracyPlot}></div>
+    <div class="col-xs-12 col-sm-12 col-md-2 col-lg-2">
+      <h4>Trained Models</h4>
+      <div class="list-group">
+          {#if models.length > 0}
+            {#each models as model}
+              <a on:click|preventDefault|stopPropagation={() => setDisplayedModel(model)}
+                class="list-group-item {displayedModel === model ? 'active' : ''}"
+              >
+                <span
+                  contenteditable=true
+                  bind:innerHTML={model.name}
+                  style="cursor: text;"></span>
+                {#if model.state}
+                  <span class="pull-right" style="color: #888; font-style: italic;"> {model.state[0].toUpperCase() + model.state.substring(1)}</span>
+                {:else}
+                  <span
+                    on:click|preventDefault|stopPropagation={() => saveModel(model)}
+                    class="glyphicon glyphicon-floppy-disk pull-right" aria-hidden="true"
+                  ></span>
+                {/if}
+              </a>
+            {/each}
+          {:else}
+            <a class="list-group-item" style="font-style: italic; color: #888">No Trained Models</a>
+          {/if}
+      <div>
+    </div>
   </div>
 </main>
 
@@ -252,13 +312,6 @@
     padding: 1em;
     max-width: 240px;
     margin: 0 auto;
-  }
-
-  h1 {
-    color: #ff3ef0;
-    text-transform: uppercase;
-    font-size: 4em;
-    font-weight: 100;
   }
 
   @media (min-width: 640px) {
