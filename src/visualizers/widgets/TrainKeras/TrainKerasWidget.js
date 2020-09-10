@@ -4,7 +4,9 @@ define([
     './build/TrainDashboard',
     'plugin/GenerateJob/GenerateJob/templates/index',
     'deepforge/Constants',
+    'deepforge/storage/index',
     'widgets/InteractiveEditor/InteractiveEditorWidget',
+    'deepforge/viz/ConfigDialog',
     'deepforge/compute/interactive/message',
     'webgme-plotly/plotly.min',
     'text!./TrainOperation.py',
@@ -19,7 +21,9 @@ define([
     TrainDashboard,
     JobTemplates,
     CONSTANTS,
+    Storage,
     InteractiveEditor,
+    ConfigDialog,
     Message,
     Plotly,
     TrainOperation,
@@ -83,7 +87,13 @@ define([
 
             this.modelCount++;
             const saveName = this.getCurrentModelID();
-            const modelInfo = {id: saveName, name: saveName, state: 'Fetching Data...', config};
+            const modelInfo = {
+                id: saveName,
+                path: `${saveName}.h5`,
+                name: saveName,
+                state: 'Fetching Data...',
+                config
+            };
             this.dashboard.addModel(modelInfo);
             const {dataset} = config;
             if (!this.isDataLoaded(dataset)) {
@@ -104,7 +114,11 @@ define([
                 }
                 arg.pyValue = pyValue;
             });
-            await this.session.addFile('start_train.py', MainCode({dataset, saveName, archCode}));
+            await this.session.addFile('start_train.py', MainCode({
+                dataset,
+                path: modelInfo.path,
+                archCode
+            }));
             const trainPy = GetTrainCode(config);
             await this.session.addFile('operations/train.py', trainPy);
             this.dashboard.setModelState(this.getCurrentModelID(), 'Training...');
@@ -127,7 +141,14 @@ define([
             return `model_${this.modelCount}`;
         }
 
-        async promptStorageConfig() {
+        async promptStorageConfig(modelInfo) {
+            const metadata = {
+                id: 'StorageConfig',
+                configStructure: [],
+            };
+            const storageMetadata = Storage.getAvailableBackends()
+                .map(id => Storage.getStorageMetadata(id));
+
             metadata.configStructure.push({
                 name: 'storage',
                 displayName: 'Storage',
@@ -136,16 +157,19 @@ define([
                 value: Storage.getBackend(Storage.getAvailableBackends()[0]).name,
                 valueItems: storageMetadata,
             });
-            // TODO
+
+            const configDialog = new ConfigDialog();
+            const title = `Select Storage Location for "${modelInfo.name}"`;
+            const config = await configDialog.show(metadata, {title});
+            return config[metadata.id];
         }
 
         async saveModel(modelInfo) {
-            // TODO: Get the type and upload the data
-            const config = await this.promptStorageConfig();
+            const config = await this.promptStorageConfig(modelInfo);
 
             // TODO: I need to run this in parallel???
             const session = this.session.fork();
-            const {dataInfo, type} = await this.session.storeArtifact('path/to/artifact', config);
+            const {dataInfo, type} = await session.saveArtifact(modelInfo.path, config);
             const snapshot = {
                 type: 'pipeline.Data',
                 attributes: {
@@ -164,7 +188,9 @@ define([
             };
             const operation = GetTrainCode(modelInfo.config);
             // TODO: copy the architecture inside?
-            return this.save(snapshot, implicitOp, operation);
+            // TODO: save the plot in the artifact?
+            this.save(snapshot, implicitOp, operation);
+            this.dashboard.setModelState(modelInfo.id, 'Saved');
         }
 
         parseMetadata(cmd, content) {

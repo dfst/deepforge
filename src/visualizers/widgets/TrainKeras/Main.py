@@ -9,4 +9,4 @@ train = Train(model)
 model = train.execute(data)
 
 # TODO: Save this as an output/artifact
-model.save('<%= saveName %>.h5')
+model.save('<%= path %>')
