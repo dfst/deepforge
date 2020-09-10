@@ -168,17 +168,24 @@ define([
             const configDialog = new ConfigDialog();
             const title = `Select Storage Location for "${name}"`;
             const config = await configDialog.show(metadata, {title});
-            return config[metadata.id];
+            const storageName = config[metadata.id].storage.name;
+            return {
+                id: storageMetadata.find(md => md.name === storageName).id,
+                config: config[metadata.id].storage.config,
+            };
         }
 
         async saveModel(modelInfo) {
-            const config = await this.promptStorageConfig(modelInfo.name);
+            const storage = await this.promptStorageConfig(modelInfo.name);
 
             // TODO: I need to run this in parallel???
             this.dashboard.setModelState(modelInfo.id, 'Uploading...');
+            //const session = this.session.fork();
+            const dataInfo = await this.session.saveArtifact(
+                modelInfo.path, modelInfo.name, storage.id, storage.config
+            );
+            console.log({dataInfo});
             return;
-            const session = this.session.fork();
-            const {dataInfo, type} = await session.saveArtifact(modelInfo.path, config);
             const snapshot = {
                 type: 'pipeline.Data',
                 attributes: {
