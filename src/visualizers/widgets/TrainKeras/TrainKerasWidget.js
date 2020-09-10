@@ -122,7 +122,8 @@ define([
             const trainPy = GetTrainCode(config);
             await this.session.addFile('operations/train.py', trainPy);
             this.dashboard.setModelState(this.getCurrentModelID(), 'Training...');
-            this.currentTrainTask = this.session.spawn('python start_train.py');
+            const trainTask = this.session.spawn('python start_train.py');
+            this.currentTrainTask = trainTask;
             const lineParser = new LineCollector();
             lineParser.on(line => {
                 if (line.startsWith(CONSTANTS.START_CMD)) {
@@ -135,6 +136,12 @@ define([
             });
             this.currentTrainTask.on(Message.STDOUT, data => lineParser.receive(data));
             this.currentTrainTask.on(Message.STDERR, data => console.error(data.toString()));
+            this.currentTrainTask.on(Message.COMPLETE, () => {
+                this.dashboard.setModelState(modelInfo.id);
+                if (this.currentTrainTask === trainTask) {
+                    this.currentTrainTask = null;
+                }
+            });
         }
 
         getCurrentModelID() {

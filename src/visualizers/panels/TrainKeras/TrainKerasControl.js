@@ -181,9 +181,10 @@ define([
 
         getArtifactDesc(nodeId) {
             const node = this.client.getNode(nodeId);
+            const name = node.getAttribute('name').replace(/\..*$/, '');
             return {
                 id: nodeId,
-                name: node.getAttribute('name'),
+                name,
                 type: node.getAttribute('type'),
                 dataInfo: JSON.parse(node.getAttribute('data')),
             };

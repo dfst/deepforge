@@ -15,7 +15,7 @@
   let models = [];
   let displayedModel;
   let accuracyPlot;
-  let plotData;
+  $: plotData = displayedModel && displayedModel.plotData;
   let eventElement;
 
   function decorateSchemas(schemas) {
@@ -72,6 +72,9 @@
 
   export function addModel(model) {
     models = models.concat(model);
+    if (!displayedModel) {
+      displayedModel = model;
+    }
   }
 
   export function events() {
