@@ -103,6 +103,7 @@
   export function setModelState(modelID, state) {
     const model = models.find(model => model.id === modelID);
     model.state = state;
+    models = models;
   }
 
   export function setPlotData(modelID, newData) {

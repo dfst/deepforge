@@ -141,7 +141,7 @@ define([
             return `model_${this.modelCount}`;
         }
 
-        async promptStorageConfig(modelInfo) {
+        async promptStorageConfig(name) {
             const metadata = {
                 id: 'StorageConfig',
                 configStructure: [],
@@ -159,15 +159,17 @@ define([
             });
 
             const configDialog = new ConfigDialog();
-            const title = `Select Storage Location for "${modelInfo.name}"`;
+            const title = `Select Storage Location for "${name}"`;
             const config = await configDialog.show(metadata, {title});
             return config[metadata.id];
         }
 
         async saveModel(modelInfo) {
-            const config = await this.promptStorageConfig(modelInfo);
+            const config = await this.promptStorageConfig(modelInfo.name);
 
             // TODO: I need to run this in parallel???
+            this.dashboard.setModelState(modelInfo.id, 'Uploading...');
+            return;
             const session = this.session.fork();
             const {dataInfo, type} = await session.saveArtifact(modelInfo.path, config);
             const snapshot = {
