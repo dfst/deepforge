@@ -29,7 +29,7 @@ class InteractiveClient {
         if (msg.type === Message.RUN) {
             const [cmd, ...opts] = InteractiveClient.parseCommand(msg.data);
             this.subprocess = spawn(cmd, opts);
-            this.subprocess.on('exit', code => this.sendMessage(Message.COMPLETE, code));
+            this.subprocess.on('exit', code => this.sendMessage(Message.COMPLETE, [code]));
             this.subprocess.stdout.on('data', data => this.sendMessage(Message.STDOUT, data));
             this.subprocess.stderr.on('data', data => this.sendMessage(Message.STDERR, data));
         } else if (msg.type === Message.KILL) {
@@ -46,15 +46,31 @@ class InteractiveClient {
                 Utils,
             ) => {
                 const {Storage} = Utils;
-
-                async function saveArtifact() {
-                    const client = await Storage.getClient(dataInfo.backend, null, config);
+                const fetchArtifact = async () => {
+                    const client = await Storage.getClient(dataInfo.backend, undefined, config);
                     const dataPath = path.join(...dirs.concat('data'));
                     const stream = await client.getFileStream(dataInfo);
                     await pipeline(stream, fs.createWriteStream(dataPath));
                     const filePath = path.join(...dirs.concat('__init__.py'));
                     await fsp.writeFile(filePath, initFile(name, type));
-                }
+                };
+
+                this.runTask(fetchArtifact);
+            });
+        } else if (msg.type === Message.SAVE_ARTIFACT) {
+            const [filepath, name, backend, config={}] = msg.data;
+            requirejs([
+                './utils.build',
+            ], (
+                Utils,
+            ) => {
+                const {Storage} = Utils;
+                const saveArtifact = async () => {
+                    const client = await Storage.getClient(backend, null, config);
+                    const stream = await fs.createReadStream(filepath);
+                    const dataInfo = await client.putFileStream(name, stream);
+                    return dataInfo;
+                };
 
                 this.runTask(saveArtifact);
             });
@@ -76,7 +92,7 @@ class InteractiveClient {
                 await fsp.unlink(filepath);
             });
         } else {
-            this.sendMessage(Message.COMPLETE, 2);
+            this.sendMessage(Message.COMPLETE, [2]);
         }
     }
 
@@ -99,13 +115,14 @@ class InteractiveClient {
 
     async runTask(fn) {
         let exitCode = 0;
+        let result;
         try {
-            await fn();
+            result = await fn();
         } catch (err) {
             exitCode = 1;
             console.log('Task failed with error:', err);
         }
-        this.sendMessage(Message.COMPLETE, exitCode);
+        this.sendMessage(Message.COMPLETE, [exitCode, result]);
     }
 
     static parseCommand(cmd) {

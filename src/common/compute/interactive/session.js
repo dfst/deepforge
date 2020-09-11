@@ -94,9 +94,10 @@ define([
             this.ensureIdle('run task');
 
             this.currentTask = task;
-            await task.run();
+            const result = await task.run();
             this.currentTask = null;
             this.checkReady();
+            return result;
         }
 
         async whenConnected() {
@@ -128,10 +129,22 @@ define([
         }
 
         async addArtifact(name, dataInfo, type, auth) {
+            auth = auth || {};
             this.ensureIdle('add artifact');
             const msg = new Message(Message.ADD_ARTIFACT, [name, dataInfo, type, auth]);
             const task = new Task(this.channel, msg);
             await this.runTask(task);
+        }
+
+        async saveArtifact(/*path, name, storageId, config*/) {
+            this.ensureIdle('save artifact');
+            const msg = new Message(Message.SAVE_ARTIFACT, [...arguments]);
+            const task = new Task(this.channel, msg);
+            const [exitCode, dataInfo] = await this.runTask(task);
+            if (exitCode) {
+                throw new CommandFailedError('saveArtifact', {exitCode});
+            }
+            return dataInfo;
         }
 
         async addFile(filepath, content) {

@@ -61,6 +61,13 @@ describe('InteractiveCompute', function() {
         sleep(100).then(() => session.kill(task));
     });
 
+    it('should save artifacts', async function() {
+        await session.exec('node -e \'fs.writeFileSync("test.txt", "hi")\'');
+        const dataInfo = await session.saveArtifact('test.txt', 'test', 'gme');
+        assert.equal(dataInfo.backend, 'gme');
+        assert(dataInfo.data);
+    });
+
     function sleep(duration) {
         return new Promise(resolve => setTimeout(resolve, duration));
     }
