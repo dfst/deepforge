@@ -3,6 +3,7 @@ describe('local compute', function() {
     const testFixture = require('../../../../../globals');
     const GeneratedFiles = testFixture.requirejs('deepforge/plugin/GeneratedFiles');
     const Compute = testFixture.requirejs('deepforge/compute/index');
+    const {ComputeJob} = testFixture.requirejs('deepforge/compute/backends/ComputeJob');
     const BlobClient = require('webgme-engine/src/server/middleware/blob/BlobClientWithFSBackend');
     const gmeConfig = testFixture.getGmeConfig();
     const blobClient = new BlobClient(gmeConfig, testFixture.logger);
@@ -22,7 +23,8 @@ describe('local compute', function() {
                 }
             });
 
-            jobInfo = await client.createJob(jobHash);
+            const computeJob = new ComputeJob(jobHash);
+            jobInfo = await client.startJob(computeJob);
             await deferred.promise;
         });
 
