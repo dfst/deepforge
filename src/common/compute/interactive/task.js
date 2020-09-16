@@ -28,7 +28,7 @@ define([
                 this.emitMessage(msg);
                 if (msg.type === Message.COMPLETE) {
                     this.channel.unlisten(handler);
-                    deferred.resolve();
+                    deferred.resolve(msg.data);
                 }
             };
             this.channel.listen(handler);
@@ -37,7 +37,11 @@ define([
         }
 
         emitMessage(msg) {
-            this.emit(msg.type, msg.data);
+            if (msg.type === Message.COMPLETE) {
+                this.emit(msg.type, ...msg.data);
+            } else {
+                this.emit(msg.type, msg.data);
+            }
         }
 
         static async getMessageData(wsMsg) {

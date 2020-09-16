@@ -22,7 +22,7 @@ define([
 
         async runTask(task) {
             const queuedTask = this.queueTask(task);
-            await queuedTask.promise;
+            return await queuedTask.promise;
         }
 
         queueTask(task) {
@@ -46,9 +46,9 @@ define([
 
         async runNextTask() {
             const queuedTask = this.tasks[0];
-            await super.runTask(queuedTask.unwrap());
+            const result = await super.runTask(queuedTask.unwrap());
             this.tasks.shift();
-            queuedTask.resolve();
+            queuedTask.resolve(result);
             this.checkTaskQueue();
         }
 

@@ -48,7 +48,7 @@ class ComputeBroker {
             const session = new InteractiveSession(blobClient, client, ws);
             this.initSessions.push(session);
         } catch (err) {
-            ws.send(Message.encode(Message.COMPLETE, err.message));
+            ws.send(Message.encode(-1, Message.COMPLETE, err.message));
             this.logger.warn(`Error creating session: ${err}`);
             ws.close();
         }

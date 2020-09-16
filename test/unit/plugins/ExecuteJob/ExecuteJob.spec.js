@@ -135,7 +135,7 @@ describe('ExecuteJob', function () {
                 }
                 done();
             };
-            mockCompute.createJob = async () => jobInfo;
+            mockCompute.startJob = async () => jobInfo;
             plugin.compute = mockCompute;
 
             return Q(plugin.createJob(node, jobInfo.hash))
@@ -264,7 +264,8 @@ describe('ExecuteJob', function () {
     });
 
     class MockCompute extends ComputeClient {
-        createJob(hash) {
+        startJob(job) {
+            const {hash} = job;
             this.jobId = hash;
             return {hash};
         }
