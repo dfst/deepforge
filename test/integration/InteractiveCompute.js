@@ -68,6 +68,13 @@ describe('InteractiveCompute', function() {
         assert(dataInfo.data);
     });
 
+    it('should support multiplexing', async function() {
+        session.exec('sleep 20');
+        const s2 = session.fork();
+        const {stdout} = await s2.exec('echo "hi"');
+        assert.equal(stdout, 'hi\n');
+    });
+
     function sleep(duration) {
         return new Promise(resolve => setTimeout(resolve, duration));
     }
