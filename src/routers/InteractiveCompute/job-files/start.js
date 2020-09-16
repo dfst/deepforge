@@ -205,7 +205,7 @@ function initFile(name, type) {
     ].join('\n');
 }
 
-module.exports = {InteractiveClient};
+module.exports = {InteractiveClient, InteractiveSession};
 
 const isImportedModule = require.main !== module;
 if (!isImportedModule) {
