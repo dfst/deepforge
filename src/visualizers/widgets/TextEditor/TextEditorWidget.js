@@ -98,7 +98,7 @@ define([
     };
 
     TextEditorWidget.prototype._createEditor = function (displayMiniMap) {
-        const editor = monaco.editor.create(
+        return monaco.editor.create(
             this.$editor[0], {
                 model: this.model,
                 automaticLayout: true,
@@ -114,7 +114,6 @@ define([
                 contextmenu: false
             }
         );
-        return editor;
     };
 
     TextEditorWidget.prototype.getEditorOptions = function () {
@@ -373,7 +372,6 @@ define([
         this.readOnly = true;
         this.destroyed = true;
         this.editor.dispose();
-        this.model.dispose();
         this.disposeVimMode();
         $.contextMenu('destroy', '.' + WIDGET_CLASS);
     };
