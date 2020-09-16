@@ -20,25 +20,26 @@
     }
 
     class Message {
-        constructor(type, data) {
+        constructor(sessionID, type, data) {
+            this.sessionID = sessionID;
             this.type = type;
             this.data = data;
         }
 
         static decode(serialized) {
-            const {type, data} = JSON.parse(serialized);
-            return new Message(type, data);
+            const {sessionID, type, data} = JSON.parse(serialized);
+            return new Message(sessionID, type, data);
         }
 
         encode() {
-            return Message.encode(this.type, this.data);
+            return Message.encode(this.sessionID, this.type, this.data);
         }
 
-        static encode(type, data=0) {
+        static encode(sessionID, type, data=0) {
             if (typeof Buffer !== 'undefined' && data instanceof Buffer) {
                 data = data.toString();
             }
-            return JSON.stringify({type, data});
+            return JSON.stringify({sessionID, type, data});
         }
     }
     Object.assign(Message, Constants);

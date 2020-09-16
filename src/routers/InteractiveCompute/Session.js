@@ -25,7 +25,7 @@ class Session extends EventEmitter {
         this.workerSocket = socket;
         this.emit('connected');
 
-        this.clientSocket.send(Message.encode(Message.COMPLETE));
+        this.clientSocket.send(Message.encode(-1, Message.COMPLETE));
         this.queuedMsgs.forEach(msg => this.workerSocket.send(msg));
         this.wsChannel = new Channel(this.clientSocket, this.workerSocket);
         this.wsChannel.on(Channel.CLOSE, () => this.close());
