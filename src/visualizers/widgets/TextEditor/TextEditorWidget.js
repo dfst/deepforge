@@ -247,7 +247,6 @@ define([
                 isHtmlName: isSet,
                 callback: () => {
                     this.editorSettings.theme = theme;
-                    console.log(theme);
                     this.themesProvider.setTheme(theme);
                     this.onUpdateEditorSettings();
                 }
