@@ -75,7 +75,7 @@ define([
     };
 
     ExecutionIndexControl.prototype._consolidateGraphData = function (graphExecIDs) {
-        let graphIds = graphExecIDs.map(execId => this._graphsForExecution[execId]);
+        let graphIds = graphExecIDs.flatMap(execId => this._graphsForExecution[execId]);
         let graphDescs = graphIds.map(id => this._getObjectDescriptor(id))
             .filter(desc => !!desc);
 
@@ -96,12 +96,12 @@ define([
         let title = desc.plotlyData.layout.title ? desc.plotlyData.layout.title : {};
 
         if (title.text) {
-            title.text = `${title.text} (${desc.abbr})`;
+            title.text = `${title.text} (${desc.abbr || desc.jobName})`;
         } else if(typeof title === 'string') {
-            title = `${title} (${desc.abbr})`;
+            title = `${title} (${desc.abbr || desc.jobName})`;
         } else {
             title = {
-                text: `Graph (${desc.abbr})`
+                text: `Graph (${desc.abbr || desc.jobName})`
             };
         }
 
@@ -206,15 +206,19 @@ define([
 
     ExecutionIndexControl.prototype.getGraphDesc = function (graphNode) {
         let id = graphNode.getId();
-        const execId = this._client.getNode(graphNode.getParentId()).getParentId();
+        const jobId = graphNode.getParentId();
+        const jobNode = this._client.getNode(jobId);
+        const execId = jobNode.getParentId();
         const plotlyData = graphNode.getAttribute('data');
         let desc = {
             execId: execId,
+            jobName: jobNode.getAttribute('name'),
             plotlyData: plotlyData ? JSON.parse(plotlyData) : null
         };
 
         if (!this._graphToExec[id]) {
-            this._graphsForExecution[desc.execId] = id;
+            this._graphsForExecution[desc.execId] = this._graphsForExecution[desc.execId] || [];
+            this._graphsForExecution[desc.execId].push(id);
             this._graphToExec[id] = desc.execId;
         }
         let displayedCnt = this.displayedExecCount(),
