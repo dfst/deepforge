@@ -1,0 +1,60 @@
+{
+  "python": {
+    "id": "python",
+    "extensions": [
+      ".py",
+      ".pyc"
+    ],
+    "aliases": [
+      "py",
+      "PY"
+    ],
+    "mimetypes": [
+      "application/text"
+    ],
+    "comment":  "#"
+  },
+  "javascript": {
+    "id": "javascript",
+    "extensions": [
+      "js",
+      "jsx"
+    ],
+    "mimetypes": [
+      "application/text"
+    ],
+    "comment": "//"
+  },
+  "yaml": {
+    "id": "yaml",
+    "extensions": [
+      "yaml",
+      "yml"
+    ],
+    "aliases": [
+      "yml",
+      "yaml",
+      "YML",
+      "YAML"
+    ],
+    "mimetypes": [
+      "application/text"
+    ],
+    "comment": "#"
+  },
+  "plaintext": {
+    "id": "plaintext",
+    "extensions": [
+      "txt",
+      "text"
+    ],
+    "aliases": [
+      "text",
+      "PLAINTEXT"
+    ],
+    "mimetypes": [
+      "application/text"
+    ],
+    "comment": "#"
+  }
+}

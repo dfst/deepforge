@@ -46,7 +46,7 @@ define([
         //set Widget title
         this.setTitle('');
 
-        const config = {language: 'yaml'};
+        const config = {language: 'yaml', displayMiniMap: false};
         this.widget = new TextEditorWidget(this.logger, this.$el, config);
 
         this.widget.setTitle = function (title) {

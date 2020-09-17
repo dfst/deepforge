@@ -46,8 +46,9 @@ define([
 
         //set Widget title
         this.setTitle('');
+        const config = {language: 'plaintext', displayMiniMap: false};
 
-        this.widget = new LogViewerWidget(this.logger, this.$el);
+        this.widget = new LogViewerWidget(this.logger, this.$el, config);
 
         this.widget.setTitle = function (title) {
             self.setTitle(title);

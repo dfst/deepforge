@@ -1,33 +1,44 @@
-/*globals $, define*/
+/*globals $, define, monaco */
 /*jshint browser: true*/
+/*eslint indent: [2, 4, {"SwitchCase": 1}]*/
 
 define([
-    'ace/ace',
     'underscore',
-    './completer',
     'js/Utils/ComponentSettings',
+    './MonacoThemesProvider',
+    'text!./MonacoLanguages.json',
+    'vs/editor/editor.main',
     'jquery-contextMenu',
     'css!./styles/TextEditorWidget.css'
 ], function (
-    ace,
     _,
-    Completer,
-    ComponentSettings
+    ComponentSettings,
+    MonacoThemesProvider,
+    MonacoLanguages,
 ) {
     'use strict';
 
-    var TextEditorWidget,
-        WIDGET_CLASS = 'text-editor',
-        LINE_COMMENT = {
-            python: '#',
-            lua: '--',
-            yaml: '#'
-        };
+    const WIDGET_CLASS = 'text-editor';
 
-    TextEditorWidget = function (logger, container, config={}) {
+    MonacoLanguages = JSON.parse(MonacoLanguages);
+
+    const AVAILABLE_KEYBINDINGS = ['default', 'vim'];
+
+    const TextEditorWidget = function (logger, container, config={}) {
         this.logger = logger.fork('Widget');
-
         this.language = this.language || config.language || 'python';
+        this.destroyed = false;
+
+        const monacoURI = this._getMonacoURI(),
+            value = config.value || '';
+        this.model = this.getModel(monacoURI, value);
+        this.model.updateOptions({
+            tabSize: 4,
+            insertSpaces: true
+        });
+
+        const displayMiniMap = config.displayMiniMap !== false;
+
         this._el = container;
         this._el.css({height: '100%'});
         this.$editor = $('<div/>');
@@ -35,61 +46,91 @@ define([
         this._el.append(this.$editor[0]);
 
         this.readOnly = this.readOnly || false;
-        this.editor = ace.edit(this.$editor[0]);
-        this._initialize();
-
-        // Get the config from component settings for themes
-        this.editor.getSession().setOptions(this.getSessionOptions());
-        var handler = this.editorSettings.keybindings;
-        this.editor.setKeyboardHandler(handler === 'default' ?
-            null : 'ace/keyboard/' + handler);
-        this.addExtensions();
-        this.editor.$blockScrolling = Infinity;
+        this.editor = this._createEditor(displayMiniMap);
         this.DELAY = 750;
         this.silent = false;
         this.saving = false;
+        this.count = 0;
+        this.themesProvider = new MonacoThemesProvider();
 
-        this.editor.on('change', () => {
+        this.model.onDidChangeContent(() => {
             if (!this.silent) {
                 this.saving = true;
                 this.onChange();
             }
         });
-        this.onChange = _.debounce(this.saveText.bind(this), this.DELAY);
 
-        this.setReadOnly(this.readOnly);
+        this.onChange = _.debounce(this.saveText.bind(this), this.DELAY);
         this.currentHeader = '';
         this.activeNode = null;
 
+        this.vimImported = this._importMonacoVim();
+
+        this.nodes = {};
+        this._initialize();
         this.logger.debug('ctor finished');
     };
 
-    TextEditorWidget.prototype.addExtensions = function () {
-        ace.require(['ace/ext/language_tools'], () => {
-            this.editor.setOptions(this.getEditorOptions());
-            this.completer = this.getCompleter();
-            this.editor.completers = [this.completer];
+    TextEditorWidget.prototype.getModel = function(monacoURI, value) {
+        return monaco.editor.getModel(monacoURI) ||
+        monaco.editor.createModel(
+            value,
+            this.language,
+            monacoURI
+        );
+    };
+
+    TextEditorWidget.prototype._getMonacoURI = function () {
+        const modelSuffix = Math.random().toString(36).substring(2, 15);
+        return monaco.Uri.parse(
+            `inmemory://model_${modelSuffix}.${MonacoLanguages[this.language].extensions[0]}`
+        );
+    };
+
+    TextEditorWidget.prototype._importMonacoVim = async function () {
+        const self = this;
+        return new Promise((resolve, reject) => {
+            require(['MonacoVim'], function (MonacoVim) {
+                self.MonacoVim = MonacoVim;
+                resolve();
+            }, reject);
         });
     };
 
-    TextEditorWidget.prototype.getCompleter = function () {
-        return new Completer(this.editor.completers);
+    TextEditorWidget.prototype._createEditor = function (displayMiniMap) {
+        return monaco.editor.create(
+            this.$editor[0], {
+                model: this.model,
+                automaticLayout: true,
+                lightbulb: {
+                    enabled: true
+                },
+                fontSize: this.getDefaultEditorOptions().fontSize,
+                fontFamily: this.getDefaultEditorOptions().fontFamily,
+                readOnly: this.readOnly,
+                minimap: {
+                    enabled: displayMiniMap
+                },
+                contextmenu: false
+            }
+        );
     };
 
     TextEditorWidget.prototype.getEditorOptions = function () {
         return {
-            enableBasicAutocompletion: true,
-            enableLiveAutocompletion: true,
-            theme: 'ace/theme/' + this.editorSettings.theme,
-            fontSize: this.editorSettings.fontSize + 'pt'
+            keybindings: this.editorSettings.keybindings,
+            theme: this.editorSettings.theme,
+            fontSize: this.editorSettings.fontSize,
+            fontFamily: this.editorSettings.fontFamily
         };
     };
 
-    TextEditorWidget.prototype.getSessionOptions = function () {
+    TextEditorWidget.prototype.getDefaultEditorOptions = function () {
         return {
-            mode: 'ace/mode/' + this.language,
-            tabSize: 4,
-            useSoftTabs: true
+            keybindings: 'default',
+            theme: 'vs-dark',
+            fontSize: 12,
+            fontFamily: 'source'
         };
     };
 
@@ -118,19 +159,37 @@ define([
             }
         });
 
+        // editor display updates for component settings
         this.editorSettings = _.extend({}, this.getDefaultEditorOptions()),
         ComponentSettings.resolveWithWebGMEGlobal(
             this.editorSettings,
             this.getComponentId()
         );
+        this.initEditorDisplay();
     };
 
-    TextEditorWidget.prototype.getDefaultEditorOptions = function () {
-        return {
-            keybindings: 'default',
-            theme: 'solarized_dark',
-            fontSize: 12
-        };
+    TextEditorWidget.prototype.initEditorDisplay = function() {
+        if (this.editorSettings.keybindings === 'vim') {
+            this.initVimKeyBindings();
+        }
+        this.editor.updateOptions(this.getEditorOptions());
+        this.themesProvider.setTheme(this.editorSettings.theme);
+    };
+
+    TextEditorWidget.prototype.initVimKeyBindings = async function () {
+        await this.vimImported;
+        if (!this.destroyed && !this.readOnly) {
+            this.vimMode = this.MonacoVim.initVimMode(
+                this.editor
+            );
+        }
+    };
+
+    TextEditorWidget.prototype.disposeVimMode = function() {
+        if(this.vimMode) {
+            this.vimMode.dispose();
+            this.editor.layout();
+        }
     };
 
     TextEditorWidget.prototype.getComponentId = function () {
@@ -139,19 +198,8 @@ define([
 
     TextEditorWidget.prototype.getMenuItemsFor = function () {
         var fontSizes = [8, 10, 11, 12, 14],
-            themes = [
-                'Solarized Light',
-                'Solarized Dark',
-                'Twilight',
-                'Tomorrow Night',
-                'Eclipse',
-                'Monokai'
-            ],
-            keybindings = [
-                'default',
-                'vim',
-                'emacs'
-            ],
+            themes = this.themesProvider.themes,
+            keybindings = AVAILABLE_KEYBINDINGS,
             menuItems = {
                 setKeybindings: {
                     name: 'Keybindings...',
@@ -180,7 +228,7 @@ define([
                 isHtmlName: isSet,
                 callback: () => {
                     this.editorSettings.fontSize = fontSize;
-                    this.editor.setOptions(this.getEditorOptions());
+                    this.editor.updateOptions(this.getEditorOptions());
                     this.onUpdateEditorSettings();
                 }
             };
@@ -199,7 +247,7 @@ define([
                 isHtmlName: isSet,
                 callback: () => {
                     this.editorSettings.theme = theme;
-                    this.editor.setOptions(this.getEditorOptions());
+                    this.themesProvider.setTheme(theme);
                     this.onUpdateEditorSettings();
                 }
             };
@@ -218,8 +266,14 @@ define([
                 isHtmlName: isSet,
                 callback: () => {
                     this.editorSettings.keybindings = handler;
-                    this.editor.setKeyboardHandler(handler === 'default' ?
-                        null : 'ace/keyboard/' + handler);
+                    switch (handler) {
+                        case 'vim':
+                            this.initVimKeyBindings();
+                            break;
+                        default:
+                            this.disposeVimMode();
+                            break;
+                    }
                     this.onUpdateEditorSettings();
                 }
             };
@@ -234,15 +288,15 @@ define([
     };
 
     TextEditorWidget.prototype.onWidgetContainerResize = function () {
-        this.editor.resize();
+        this.editor.layout();
     };
 
     // Adding/Removing/Updating items
     TextEditorWidget.prototype.comment = function (text) {
-        var prefix = LINE_COMMENT[this.language] + ' ';
+        const commentToken = MonacoLanguages[this.language].comment + ' ';
         return text.replace(
-            new RegExp('^(' + LINE_COMMENT[this.language] + ')?','mg'),
-            prefix
+            new RegExp('^(' + commentToken + ')?','mg'),
+            commentToken
         );
     };
 
@@ -253,33 +307,19 @@ define([
     TextEditorWidget.prototype.addNode = function (desc) {
         // Set the current text based on the given
         // Create the header
-        var header = this.getHeader(desc),
-            newContent = header ? header + '\n' + desc.text : desc.text,
-            oldContent,
-            selection;
+        const header = this.getHeader(desc),
+            newContent = header ? header + '\n' + desc.text : desc.text;
 
         this.activeNode = desc.id;
         this.silent = true;
-
-        oldContent = this.editor.getValue();
-        selection = this.editor.session.selection.toJSON();
-
-        this.editor.setValue(newContent, 2);
-
-        selection = this.getAdjustedSelection(oldContent, newContent, selection);
-        this.editor.session.selection.fromJSON(selection);
+        const prevPosition = this.editor.getPosition();
+        this.editor.setValue(newContent);
+        this.editor.setPosition(prevPosition);
 
         this.silent = false;
         this.currentHeader = header;
     };
 
-    TextEditorWidget.prototype.getAdjustedSelection = function (oldText, newText, selection) {
-        // if we are updating the value, we should make sure the cursor position
-        // remains in the same spot (ie, diff the text and update the positions
-        // based on the size of the patches
-        // TODO
-        return selection;
-    };
 
     TextEditorWidget.prototype.saveText = function () {
         var text;
@@ -314,7 +354,7 @@ define([
 
     TextEditorWidget.prototype.updateNode = function (desc) {
         var shouldUpdate = this.readOnly ||
-            (!this.saving && !this.editor.isFocused()) ||
+            (!this.saving && !this.editor.hasTextFocus()) ||
             (this.activeNode === desc.id && this.getHeader(desc) !== this.currentHeader);
 
         // Check for header changes
@@ -329,7 +369,9 @@ define([
     /* * * * * * * * Visualizer life cycle callbacks * * * * * * * */
     TextEditorWidget.prototype.destroy = function () {
         this.readOnly = true;
-        this.editor.destroy();
+        this.destroyed = true;
+        this.editor.dispose();
+        this.disposeVimMode();
         $.contextMenu('destroy', '.' + WIDGET_CLASS);
     };
 
@@ -343,7 +385,9 @@ define([
 
     TextEditorWidget.prototype.setReadOnly = function (isReadOnly) {
         this.readOnly = isReadOnly;
-        this.editor.setReadOnly(isReadOnly);
+        this.editor.updateOptions({
+            readOnly: isReadOnly
+        });
     };
 
     return TextEditorWidget;

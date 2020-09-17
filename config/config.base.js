@@ -13,14 +13,14 @@ config.blob.fsDir = process.env.DEEPFORGE_BLOB_DIR || config.blob.fsDir;
 
 config.requirejsPaths.deepforge = './src/common';
 config.requirejsPaths['aws-sdk-min'] = './node_modules/aws-sdk/dist/aws-sdk.min';
-config.requirejsPaths.ace = './src/visualizers/widgets/TextEditor/lib/ace';
+config.requirejsPaths.vs = './node_modules/monaco-editor/min/vs';
+config.requirejsPaths.MonacoVim = './node_modules/monaco-vim/dist/monaco-vim';
 config.seedProjects.defaultProject = 'project';
 
 config.plugin.allowBrowserExecution = true;
 config.plugin.allowServerExecution = true;
 
 config.executor.enable = true;
-
 config.visualization.extraCss.push('deepforge/styles/global.css');
 
 config.storage.autoMerge.enable = true;
