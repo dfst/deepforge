@@ -10,8 +10,8 @@ Creating Operations
 Sections
 --------
 
-* `Graphical Editing`_
-* `Code Editing`_
+* `Editing the Operation Interface`_
+* `Implementing the Operation`_
 * `Importing Libraries`_
 
 When adding an operation to a pipeline, new operations can be created by clicking the *New Operation* option. This will open the operation editor for the new operation.
@@ -32,13 +32,15 @@ This editor has two primary views for editing the operation. The left view allow
     :align: center
     :scale: 50%
 
-Graphical Editing
-~~~~~~~~~~~~~~~~~
+Editing the Operation Interface
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. figure:: images/new-operation-orig.png
     :align: center
     :scale: 50%
 
-Clicking on the operation in the right view will allow editing of the operation. Attributes can be added by clicking the *New Attribute* label, which will open a dialog box where you can define the name, type, default value, and other metadata about that attribute. This dialog box can be viewed again to edit the attribute by clicking on the name of the attribute in the right-side view.
+Clicking on the operation in the right view will allow editing the operation interface. The operation interface consists of design time parameters (attributes and references) as well as inputs and outputs generated at runtime.
+
+Attributes can be added by clicking the *New Attribute* label, which will open a dialog box where you can define the name, type, default value, and other metadata about that attribute. This dialog box can be viewed again to edit the attribute by clicking on the name of the attribute in the right-side view.
 
 .. figure:: images/train-cifar-epochs.png
     :align: center
@@ -50,7 +52,7 @@ Inputs and outputs can be added using the blue arrow icons. Any number of inputs
     :align: center
     :scale: 50%
 
-Using the gray plus icon, pointers to resources can be added to the operation. These resources will usually be some form of neural network. As with inputs and outputs, any number of resources can be added to an operation.
+Using the gray plus icon, referencess to resources can be added to the operation. These resources will usually be some form of neural network. As with inputs and outputs, any number of resources can be added to an operation.
 
 .. figure:: images/train-cifar-io.png
     :align: center
@@ -58,8 +60,8 @@ Using the gray plus icon, pointers to resources can be added to the operation. T
 
 The yellow paint brush icon allows editing the color of the operation, but this is purely aesthetic and does not affect the operation's underlying logic.
 
-Code Editing
-~~~~~~~~~~~~
+Implementing the Operation
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. figure:: images/operation-code-editor.png
     :align: center
     :scale: 50%
@@ -72,7 +74,7 @@ Importing Libraries
     :align: center
     :scale: 50%
 
-Python libraries can be used within an operation by importing them, which is usually done above the operation class. Many common python libraries are supported by the standard DeepForge SciServer image, but more niche libraries that are available through pip or anaconda may be installed temporarily and used by clicking the *Environment* tab on the right side. The dependencies described here should be defined using the same syntax as in a `conda environment file <https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#creating-an-environment-file-manually>`_.
+Python libraries can be used within an operation by importing them, which is usually done above the operation class. Any library that is installed on the compute backend's python environment can be imported as normal, but more niche libraries that are available through pip or anaconda need to be specified as dependencies for the operation by clicking the *Environment* tab on the right side. The dependencies described here should be defined using the same syntax as in a `conda environment file <https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#creating-an-environment-file-manually>`_.
 
 .. class:: centered
 

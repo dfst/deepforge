@@ -13,8 +13,8 @@ Index
 * `Creating Pipelines <creating-pipelines.rst>`_
 * `Creating Operations <creating-operations.rst>`_
 
-  * `Graphical Editing <creating-operations.rst#grahical-editing>`_
-  * `Code Editing <creating-operations.rst#code-editing>`_
+  * `Graphical Editing <creating-operations.rst#editing-the-operation-interface>`_
+  * `Implementing the Operation <creating-operations.rst#implementing-the-operation>`_
   * `Importing Libraries <creating-operations.rst#importing-libraries>`_
 
 * `Creating Neural Networks <creating-neural-networks.rst>`_
@@ -28,14 +28,14 @@ Index
 
 * `Executing Pipelines <executing-pipelines.rst>`_
 
-  * `DeepForge Execution <executing-pipelines.rst#deepforge-execution>`_
+  * `Executing within DeepForge <executing-pipelines.rst#executing-within-deepForge>`_
   * `Manual Execution <executing-pipelines.rst#manual-execution>`_
 
 * `Viewing Executions <viewing-executions.rst>`_
 
-  * `Checking Execution Status <viewing-executions.rst#checking-execution-status>`_
-  * `Execution Status Tracker <viewing-executions.rst#execution-status-tracker>`_
-  * `View Compute Window <viewing-executions.rst#view-compute-window>`_
+  * `Monitoring Executions <viewing-executions.rst#monitoring-executions>`_
+  * `Execution Status Tracker <viewing-executions.rst#viewing-executions>`_
+  * `Viewing the Compute Dashboard <viewing-executions.rst#viewing-the-compute-dashboard>`_
   * `Viewing Execution Output <viewing-executions.rst#viewing-execution-output>`_
 
 * `Introductory Example: CIFAR-10 Classifier <CIFAR-10-classifier.rst>`_

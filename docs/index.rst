@@ -32,6 +32,14 @@ Welcome to DeepForge's documentation!
 
 .. toctree::
    :maxdepth: 1
+   :caption: Step-by-Step Guides
+
+   walkthrough/walkthrough.rst
+   walkthrough/CIFAR-10-classifier.rst
+   walkthrough/redshift-estimator.rst
+
+.. toctree::
+   :maxdepth: 1
    :caption: Tutorials and Examples
    
    examples/rs-tutorial.rst

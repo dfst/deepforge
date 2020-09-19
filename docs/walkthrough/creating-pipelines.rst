@@ -23,7 +23,7 @@ After an operation has been added, the attributes of that operation can be chang
     :align: center
     :scale: 50%
 
-Operation inputs and outputs are represented by blue circles that are visible after clicking on the operation. Blue circles on the top on the operation represent inputs, while circles on the bottom represent outputs. The red X circle can be clicked to remove an operation from the pipeline. This does not remove it from the set of available operations. The green **</>** circle will open the operation editor view.
+Operation inputs and outputs are represented by blue circles that are visible after clicking on the operation. Blue circles on the top on the operation represent inputs, while circles on the bottom represent outputs. The red X circle can be clicked to remove an operation from the pipeline. This does not remove it from the set of available operations. The gray **</>** circle will open the operation editor view. Holding alt while clicking this icon will instead create a copy of the operation and open the new copy's editor.
 
 .. figure:: images/cifar-operation-io.png
     :align: center

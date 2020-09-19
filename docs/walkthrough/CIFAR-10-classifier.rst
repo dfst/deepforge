@@ -43,7 +43,7 @@ Our GetCifarData operation will produce four outputs, representing the images an
     :align: center
     :scale: 50 %
 
-The next step in creating any operation is defining its behavior at runtime. This is performed in the left panel using the python programming language. Every operation is defined as a python class that must include an *execute* function. Any arbitrary code can be included and run in association with this operation, but an *execute* function must be included and external code will only run if called from within the *execute* function.
+The next step in creating any operation is defining its implementation. This is performed in the left panel using the python programming language. Every operation is defined as a python class that must include an *execute* function. Any arbitrary code can be included and run in association with this operation, but an *execute* function must be included and external code will only run if called from within the *execute* function.
 
 CIFAR-10 is a very common benchmarking dataset. As such, the common keras neural network python library provides a simple method for directly downloading and using the data. The code for doing this is relatively straightforward and is shown below.
 
@@ -153,6 +153,8 @@ For specifics on how to create a new network how to use the neural network edito
 
 Beginning from a blank network, the first step when building a network is to create an Input layer by clicking anywhere on the workspace.
 
+For reference during design, the full architecture can be found `here <images/vgg-full.png>`_.
+
 .. figure:: images/vgg-blank.png
     :align: center
     :scale: 25%
@@ -196,12 +198,6 @@ The final **Dense** layer will actually provide the output probability density f
     :scale: 50%
 
 Optionally, an **Output** layer may be added after the final **Dense** layer. This layer explicitly marks the output of a model, but may be excluded when there is only one output. When there is only one output, such as in this network, the lowest layer in the model will be assumed to be the output layer.
-
-Below is the expected structure of the finished VGG network
-
-.. figure:: images/vgg-full.png
-    :align: center
-    :scale: 50%
 
 PredictCifar Operation
 ======================

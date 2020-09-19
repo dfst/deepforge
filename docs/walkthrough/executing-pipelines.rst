@@ -10,11 +10,11 @@ Executing Pipelines
 Sections
 ~~~~~~~~
 
-* `DeepForge Execution`_
+* `Executing within DeepForge`_
 * `Manual Execution`_
 
-DeepForge Execution
-~~~~~~~~~~~~~~~~~~~
+Executing within DeepForge
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 Finished pipelines can be conveniently executed from within DeepForge. To do so, navigate to the desired pipeline's workspace, hover over the red + button in the bottom right, and click on the blue arrow button. This will open a dialog box for defining how to execute the pipeline. The configuration options are split into several sections. Once all information has been provided, clicking the blue *Run* button will begin execution. The information provided can also be saved for future executions by checking the box in the bottom left.
 
 .. figure:: images/cifar-execute-dialog.png
@@ -23,9 +23,9 @@ Finished pipelines can be conveniently executed from within DeepForge. To do so,
 
 Basic Options
 ^^^^^^^^^^^^^
-Here you will define the name of the execution. Execution names are unique identifiers and cannot be repeated. In the case that a name is given that has already been used for that project, an index will be added to the pipeline name automatically (i.e. *test* becomes *test_2*).
+Here you will define the name of the execution. Execution names are unique identifiers and cannot be repeated. In the case that a name is given that has already been used for that project, an index will be added to the pipeline name automatically (i.e. *test* becomes *test_2*). Upon starting execution, the execution name will also be added to the project version history as a tag.
 
-The pipeline can also be chosen to run in debug mode here. This will allow editing the operations and re-running the pipelines with the edited operations after creation. Leaving this as false will cause the execution to always use the version of each operation that existed when the pipeline was first executed. This can be helpful when creating and testing pipelines before deployment.
+The pipeline can also be chosen to run in debug mode here. This will allow editing the operations and re-running the pipelines with the edited operations after creation. Alternatively, the execution will only use the version of each operation that existed when the pipeline was first executed. This can be helpful when creating and testing pipelines before deployment.
 
 .. figure:: images/cifar-execute-basic.png
     :align: center
@@ -49,7 +49,7 @@ In this section, you will select from the available compute backends. In the exa
 
 Storage Options
 ^^^^^^^^^^^^^^^
-Here, the storage backend must be chosen from the available options. As with the compute options, SciServer's Files Service is used here as an example. Each backend may require additional input, such as login credentials and the desired storage location. This storage backend and location will be where all files created during execution will be stored. This will include both files used during execution, such as the generated python scripts, as well as artifacts created using Output operations.
+Here, the storage backend must be chosen from the available options. As with the compute options, SciServer's Files Service is used here as an example. Each backend may require additional input, such as login credentials and the desired storage location. This storage backend and location will be where all files created during execution will be stored. This will include both files used during execution, such as data passed between operations, as well as artifacts created using Output operations.
 
 .. figure:: images/cifar-execute-storage.png
     :align: center

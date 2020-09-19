@@ -10,17 +10,17 @@ Viewing Executions
 Sections
 ~~~~~~~~
 
-* `Checking Execution Status`_
-* `Execution Status Tracker`_
-* `View Compute Window`_
+* `Monitoring Executions`_
+* `Viewing Executions`_
+* `Viewing the Compute Dashboard`_
 * `Viewing Execution Output`_
 
-Checking Execution Status
-~~~~~~~~~~~~~~~~~~~~~~~~~
+Monitoring Executions
+~~~~~~~~~~~~~~~~~~~~~
 After execution has been started through DeepForge, the status of an execution can be checked using numerous methods.
 
-Execution Status Tracker
-^^^^^^^^^^^^^^^^^^^^^^^^
+Viewing Executions
+^^^^^^^^^^^^^^^^^^
 While in the workspace for a pipeline, the bottom left corner shows a list of all executions associated with the pipeline. Clicking on the name of an execution will open the status tracker for that execution.
 
 .. figure:: images/pipeline-view-exec.png
@@ -38,26 +38,27 @@ In the status tracker view, the current status for the execution is displayed on
 * Gray - Awaiting Execution
 * Yellow - Currently Executing
 * Green - Execution Finished Successfully
+* Orange - Execution Cancelled
 * Red - Error Encountered During Execution
 
 .. figure:: images/cifar-execution-in-progress.png
     :align: center
     :scale: 50%
 
-Also in this view, clicking on an operation will reveal the attribute values used for this execution. Clicking the blue computer icon in the top right of a selected operation will open the console output for that operation.
+Also in this view, clicking on an operation will reveal the attribute values used for this execution. Clicking the blue monitor icon in the top right of a selected operation will open the console output for that operation.
 
 .. figure:: images/status-tracker-selected.png
     :align: center
     :scale: 50%
 
-This view will provide all textual output that is passed to the command line during execution, including error messages and output from print statements. For operations with graphical output, a set of buttons in the bottom left will allow swapping between console and graphical output.
+This view will provide all textual output that is passed to the command line during execution, including error messages and output from print statements. For operations generating matplotlib figures, a set of buttons in the bottom left will allow swapping between console and matplotlib figures.
 
 .. figure:: images/view-graphical-output.png
     :align: center
     :scale: 50%
 
-View Compute Window
-^^^^^^^^^^^^^^^^^^^
+Viewing the Compute Dashboard
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In the top left of the webpage, clicking the DeepForge logo will open the DeepForge main dropdown menu. In this menu is an option named *View Compute*.
 
 .. figure:: images/view-compute.png
@@ -72,7 +73,7 @@ This option opens a dialog box that displays the current execution status of the
 
 Viewing Execution Output
 ~~~~~~~~~~~~~~~~~~~~~~~~
-Execution output can be viewed in one of two major ways. Textual output that is printed to the console can be viewed by going to the `Execution Status Tracker`_, selecting the operation that produces the desired output, and clicking on the blue computer icon in the top right of the operation. This is also the only method for viewing additional graphical output in executions with multiple operations that produce graphics
+Execution output can be viewed in one of two major ways. Textual output that is printed to the console can be viewed by going to the `execution status tracker <Viewing Executions>`_, selecting the operation that produces the desired output, and clicking on the blue computer icon in the top right of the operation. This is also the only method for viewing additional graphical output in executions with multiple operations that produce graphics
 
 Graphical output, which will generally by generated using a graphical library like `Matplotlib <https://matplotlib.org/>`_, can be viewed from the *Executions* tab on the sidebar. Beside each execution is a checkbox. Activating a checkbox will display the graphical output generated during that execution. Selecting multiple boxes will display the output from all selected executions together.
 

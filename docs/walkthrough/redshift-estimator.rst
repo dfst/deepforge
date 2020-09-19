@@ -5,8 +5,8 @@
 
 Redshift Estimator
 ------------------
-This guide provides instructions on how to create full pipeline for training and evaluating a convolutional neural network on the task of predicting astronomical redshift values given images of galaxies. It provides an approach that is simplified from work by `Pasquet et. al. <https://arxiv.org/abs/1806.06607>`_ The data referenced and used in this guide was obtained from the `Sloan Digital Sky Survey Data Release 3 <https://www.sdss.org/dr13/>`_, obtained via `SciServer's CasJobs Service <http://www.sciserver.org/about/casjobs/>`_, and processed using `Astromatic's SWarp tool <https://www.astromatic.net/software/swarp>`_.
 
+This guide provides instructions on how to create a full pipeline for training and evaluating a convolutional neural network on the task of predicting astronomical redshift values given images of galaxies. It provides an approach that is simplified from work by `Pasquet et. al. <https://arxiv.org/abs/1806.06607>`_ The data referenced and used in this guide was obtained from the `Sloan Digital Sky Survey Data Release 3 <https://www.sdss.org/dr13/>`_, obtained via `SciServer's CasJobs Service <http://www.sciserver.org/about/casjobs/>`_, and processed using `Astromatic's SWarp tool <https://www.astromatic.net/software/swarp>`_.    
 This guide assumes that the reader has a basic understanding of the DeepForge interface and how to create basic pipelines. New users are recommended to review the guides available `here <walkthrough.rst>`_ before attempting the process described in this guide. The basic steps of this guide are:
 
 1. `Pipeline Overview`_
@@ -58,7 +58,7 @@ TrainRedshift Operation
 
 The first custom operation will create and train the neural network classifier.
 
-Two attributes should be added: *batch_size* and *epochs*. Batch size is the number of training samples that the model will be trained on at a time and epochs is the number of times that each training sample will be given to the model. Both are important hyperparameters for a neural network. For this guide, the attributes are defined as shown below, but the exact number used for default values can be changed as desired by the reader.
+Two attributes should be added: *batch_size* and *epochs*. Batch size is the number of training samples that the model will be trained on at a time and epochs is the number of times that each training sample will be given to the model. Both are important hyperparameters for training a neural network. For this guide, the attributes are defined as shown below, but the exact number used for default values can be changed as desired by the reader.
 
 This operation will require two inputs (images and labels) and a neural network architecture. Finally, the operation produces one output, which is the trained classifier model. After all inputs, outputs, and attributes have been added, the structure of the operation should appear similar to the following:
 
@@ -66,7 +66,7 @@ This operation will require two inputs (images and labels) and a neural network 
     :align: center
     :scale: 50%
 
-The code for this operation follows the standard procedure for creating and training a Keras network with one minor caveat. Keras models expect the output of a network during training to be an array or an array of indices. Because the outputs used in this tutorial are floating point values, they must be converted into one of these forms. This is the purpose of the *to_categorical* function below. The code for this operation is shown below.
+The code for this operation follows the standard procedure for creating and training a Keras network with one minor caveat. The method used by Pasquet et al. on which this pipeline is based formulates redshift prediction as a classification problem. Because the labels used in this tutorial are floating point values, they must be converted into a categorical format. This is the purpose of the *to_categorical* function. The code for this operation is shown below.
 
 .. code-block:: python
 
@@ -136,13 +136,9 @@ Note that the architecture selected from within the pipeline editor until after 
 
 Neural Network Architecture
 ===========================
-This section will describe how to create a Convolutional Neural Network for estimating redshift from images. In particular, this section gives instructions on creating an `Inception-v1 network <https://towardsdatascience.com/a-simple-guide-to-the-versions-of-the-inception-network-7fc52b863202#8fff>`_. The basic structure of this network is an input block, a series of five inception blocks, followed by a densely connected classifier block. These blocks are each described in order below.
+This section will describe how to create a convolutional neural network for estimating redshift from images. In particular, this section gives instructions on creating an `Inception-v1 network <https://towardsdatascience.com/a-simple-guide-to-the-versions-of-the-inception-network-7fc52b863202#8fff>`_. The basic structure of this network is an input block, a series of five inception blocks, followed by a densely connected classifier block. These blocks are each described in order below.
 
-For reference during design, the full architecture is shown below.
-
-.. figure:: images/incep-full.png
-    :align: center
-    :scale: 50%
+For reference during design, the full architecture can be found `here <images/incep-full.png>`_.
 
 Input Block
 ^^^^^^^^^^^
@@ -217,7 +213,7 @@ This operation uses the model created by **TrainRedshift** to predict the values
     :align: center
     :scale: 50%
    
-The *model.predict* function results in a pdf over all redshift values in the allowed range [0,0.4]. In order to get scalar values for predictions, a weighted average is taken for each pdf where the value being averaged is the redshift value represented by that bin and the weight is the pdf value at that bin (i.e. how likely it is that the value represented by that bin is the actual redshift value).
+The *model.predict* function results in a probability density function (PDF) over all redshift values in the allowed range [0,0.4]. In order to get scalar values for predictions, a weighted average is taken for each PDF where the value being averaged is the redshift value represented by that bin and the weight is the PDF value at that bin (i.e. how likely it is that the value represented by that bin is the actual redshift value).
 
 .. code-block:: python
 
