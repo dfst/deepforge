@@ -2,18 +2,7 @@ Redshift Estimator
 ------------------
 
 This guide provides instructions on how to create a full pipeline for training and evaluating a convolutional neural network on the task of predicting astronomical redshift values given images of galaxies. It provides an approach that is simplified from work by `Pasquet et. al. <https://arxiv.org/abs/1806.06607>`_ The data referenced and used in this guide was obtained from the `Sloan Digital Sky Survey Data Release 3 <https://www.sdss.org/dr13/>`_, obtained via `SciServer's CasJobs Service <http://www.sciserver.org/about/casjobs/>`_, and processed using `Astromatic's SWarp tool <https://www.astromatic.net/software/swarp>`_.    
-This guide assumes that the reader has a basic understanding of the DeepForge interface and how to create basic pipelines. New users are recommended to review the `step-by-step guides <introduction.rst>`_ before attempting the process described in this guide. The basic steps of this guide are:
-
-1. `Pipeline Overview`_
-2. `Input Operations`_
-3. `TrainRedshift Operation`_
-4. `Neural Network Architecture`_
-5. `PredictRedshift Operation`_
-6. `EvalRedshift Operation`_
-7. `PdfVisRedshift Operation`_
-8. `Output Operations`_
-9. `Execution and Results`_
-
+This guide assumes that the reader has a basic understanding of the DeepForge interface and how to create basic pipelines. New users are recommended to review the `step-by-step guides <introduction.rst>`_ before attempting the process described in this guide.
 
 Pipeline Overview
 =================

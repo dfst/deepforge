@@ -1,15 +1,6 @@
 CIFAR-10 Classifier
 -------------------
-This guide provides step-by-step instructions on how to create full pipeline for training and evaluating a simple image classification neural network. This example uses the `CIFAR-10 dataset <https://www.cs.toronto.edu/~kriz/cifar.html>`_. This guide assumes that the reader has a basic understanding of the DeepForge interface. New users are recommended to review the `step-by-step guides <introduction.rst>`_ before attempting the process described in this guide. The basic steps of this guide are:
-
-1. `Pipeline Overview`_
-2. `GetCifarData Operation`_
-3. `TrainCifar Operation`_
-4. `Neural Network Architecture`_
-5. `PredictCifar Operation`_
-6. `EvalCifar Operation`_
-7. `ViewCifar Operation`_
-8. `Execution and Results`_
+This guide provides step-by-step instructions on how to create full pipeline for training and evaluating a simple image classification neural network. This example uses the `CIFAR-10 dataset <https://www.cs.toronto.edu/~kriz/cifar.html>`_. This guide assumes that the reader has a basic understanding of the DeepForge interface. New users are recommended to review the `step-by-step guides <introduction.rst>`_ before attempting the process described in this guide.
 
 Pipeline Overview
 =================
