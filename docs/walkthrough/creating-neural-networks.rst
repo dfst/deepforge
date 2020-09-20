@@ -1,20 +1,7 @@
-.. class:: centered
-
-    `<- Previous Tutorial <creating-operations.rst>`_
-    `Walkthrough Main Page <walkthrough.rst>`_
-    `Next Tutorial -> <executing-pipelines.rst>`_
-
 Creating Neural Networks
 ------------------------
 
-Sections
-~~~~~~~~
-* `Importing Resource Libraries`_
-* `Creating a New Architecture`_
-* `Editing Network Layers`_
-* `Adding Additional Layers`_
-* `Connections Between Layers`_
-* `Exporting Architectures`_
+This page will guide you through the steps needed to create a neural network architecture for use in pipelines.
 
 Importing Resource Libraries
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -127,9 +114,3 @@ Clicking on *Details* will provide some metadata about the export, as well as a 
 .. figure:: images/vgg-gen-keras-view-res-details.png
     :align: center
     :scale: 50%
-
-.. class:: centered
-
-    `<- Previous Tutorial <creating-operations.rst>`_
-    `Walkthrough Main Page <walkthrough.rst>`_
-    `Next Tutorial -> <executing-pipelines.rst>`_

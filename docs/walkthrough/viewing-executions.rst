@@ -1,26 +1,15 @@
-.. class:: centered
-
-    `<- Previous Tutorial <executing-pipelines.rst>`_
-    `Walkthrough Main Page <walkthrough.rst>`_
-    `Next Tutorial -> <CIFAR-10-classifier.rst>`_
-    
 Viewing Executions
 ------------------
 
-Sections
-~~~~~~~~
-
-* `Monitoring Executions`_
-* `Viewing Executions`_
-* `Viewing the Compute Dashboard`_
-* `Viewing Execution Output`_
+This page will guide you through monitoring the execution of pipelines and viewing the output of finished executions.
 
 Monitoring Executions
 ~~~~~~~~~~~~~~~~~~~~~
 After execution has been started through DeepForge, the status of an execution can be checked using numerous methods.
 
-Viewing Executions
-^^^^^^^^^^^^^^^^^^
+Viewing Execution Status
+^^^^^^^^^^^^^^^^^^^^^^^^
+
 While in the workspace for a pipeline, the bottom left corner shows a list of all executions associated with the pipeline. Clicking on the name of an execution will open the status tracker for that execution.
 
 .. figure:: images/pipeline-view-exec.png
@@ -51,11 +40,6 @@ Also in this view, clicking on an operation will reveal the attribute values use
     :align: center
     :scale: 50%
 
-This view will provide all textual output that is passed to the command line during execution, including error messages and output from print statements. For operations generating matplotlib figures, a set of buttons in the bottom left will allow swapping between console and matplotlib figures.
-
-.. figure:: images/view-graphical-output.png
-    :align: center
-    :scale: 50%
 
 Viewing the Compute Dashboard
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -73,16 +57,14 @@ This option opens a dialog box that displays the current execution status of the
 
 Viewing Execution Output
 ~~~~~~~~~~~~~~~~~~~~~~~~
-Execution output can be viewed in one of two major ways. Textual output that is printed to the console can be viewed by going to the `execution status tracker <Viewing Executions>`_, selecting the operation that produces the desired output, and clicking on the blue computer icon in the top right of the operation. This is also the only method for viewing additional graphical output in executions with multiple operations that produce graphics
+Execution output can be viewed in one of two major ways. Textual output that is printed to the console can be viewed by going to the `execution status tracker <Viewing Execution Status>`_, selecting the operation that produces the desired output, and clicking on the blue monitor icon in the top right of the operation. For operations generating matplotlib figures, a set of buttons in the bottom left will allow swapping between console and matplotlib figures.
+
+.. figure:: images/view-graphical-output.png
+    :align: center
+    :scale: 50%
 
 Graphical output, which will generally by generated using a graphical library like `Matplotlib <https://matplotlib.org/>`_, can be viewed from the *Executions* tab on the sidebar. Beside each execution is a checkbox. Activating a checkbox will display the graphical output generated during that execution. Selecting multiple boxes will display the output from all selected executions together.
 
 .. figure:: images/cifar-select-execution.png
     :align: center
     :scale: 50%
-
-.. class:: centered
-
-    `<- Previous Tutorial <executing-pipelines.rst>`_
-    `Walkthrough Main Page <walkthrough.rst>`_
-    `Next Tutorial -> <CIFAR-10-classifier.rst>`_

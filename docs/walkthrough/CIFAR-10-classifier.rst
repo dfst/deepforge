@@ -1,12 +1,6 @@
-.. class:: centered
-
-    `<- Previous Tutorial <viewing-executions.rst>`_
-    `Walkthrough Main Page <walkthrough.rst>`_
-    `Next Tutorial -> <redshift-estimator.rst>`_
-
 CIFAR-10 Classifier
 -------------------
-This guide provides step-by-step instructions on how to create full pipeline for training and evaluating a simple image classification neural network. This example uses the `CIFAR-10 dataset <https://www.cs.toronto.edu/~kriz/cifar.html>`_. This guide assumes that the reader has a basic understanding of the DeepForge interface. New users are recommended to review the guide available `here <walkthrough.rst>`_ before attempting the process described in this guide. The basic steps of this guide are:
+This guide provides step-by-step instructions on how to create full pipeline for training and evaluating a simple image classification neural network. This example uses the `CIFAR-10 dataset <https://www.cs.toronto.edu/~kriz/cifar.html>`_. This guide assumes that the reader has a basic understanding of the DeepForge interface. New users are recommended to review the `step-by-step guides <introduction.rst>`_ before attempting the process described in this guide. The basic steps of this guide are:
 
 1. `Pipeline Overview`_
 2. `GetCifarData Operation`_
@@ -462,14 +456,8 @@ To view the output of the execution, go to the *Executions* tab and check the bo
     :align: center
     :scale: 50%
 
-Unfortunately, only one of the two figures can be viewed from this page. To view the other outputs, click on the name of the execution to view its status page and open the console output for the desired operation. In the bottom left is a set of buttons for switching between console output and graph output for that operation.
+For a more detailed and larger view of individual figures, click on the name of the execution to view its status page and open the console output for the desired operation. In the bottom left is a set of buttons for switching between console output and graph output for that operation.
 
 .. figure:: images/cifar-execution-eval.png
     :align: center
     :scale: 50%
-
-.. class:: centered
-
-    `<- Previous Tutorial <viewing-exeecutions.rst>`_
-    `Walkthrough Main Page <walkthrough.rst>`_
-    `Next Tutorial -> <redshift-estimator.rst>`_

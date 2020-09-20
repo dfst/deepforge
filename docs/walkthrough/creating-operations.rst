@@ -1,18 +1,5 @@
-.. class:: centered
-
-    `<- Previous Tutorial <creating-pipelines.rst>`_
-    `Walkthrough Main Page <walkthrough.rst>`_
-    `Next Tutorial -> <creating-neural-networks.rst>`_
-    
 Creating Operations
 -------------------
-
-Sections
---------
-
-* `Editing the Operation Interface`_
-* `Implementing the Operation`_
-* `Importing Libraries`_
 
 When adding an operation to a pipeline, new operations can be created by clicking the *New Operation* option. This will open the operation editor for the new operation.
 
@@ -76,8 +63,3 @@ Importing Libraries
 
 Python libraries can be used within an operation by importing them, which is usually done above the operation class. Any library that is installed on the compute backend's python environment can be imported as normal, but more niche libraries that are available through pip or anaconda need to be specified as dependencies for the operation by clicking the *Environment* tab on the right side. The dependencies described here should be defined using the same syntax as in a `conda environment file <https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#creating-an-environment-file-manually>`_.
 
-.. class:: centered
-
-    `<- Previous Tutorial <creating-pipelines.rst>`_
-    `Walkthrough Main Page <walkthrough.rst>`_
-    `Next Tutorial -> <creating-neural-networks.rst>`_

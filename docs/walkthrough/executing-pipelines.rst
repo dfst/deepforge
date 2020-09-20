@@ -1,17 +1,7 @@
-.. class:: centered
-
-    `<- Previous Tutorial <creating-neural-networks.rst>`_
-    `Walkthrough Main Page <walkthrough.rst>`_
-    `Next Tutorial -> <viewing-executions.rst>`_
-    
 Executing Pipelines
 -------------------
 
-Sections
-~~~~~~~~
-
-* `Executing within DeepForge`_
-* `Manual Execution`_
+This page will guide you through the steps needed to execute a finished pipeline.
 
 Executing within DeepForge
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -68,9 +58,3 @@ Any artifacts used in Input operations will require the login credentials for th
 .. figure:: images/export-pipeline-dialog.png
     :align: center
     :scale: 50%
-
-.. class:: centered
-
-    `<- Previous Tutorial <creating-neural-networks.rst>`_
-    `Walkthrough Main Page <walkthrough.rst>`_
-    `Next Tutorial -> <viewing-executions.rst>`_

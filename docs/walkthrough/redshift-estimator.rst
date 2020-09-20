@@ -1,13 +1,8 @@
-.. class:: centered
-
-    `<- Previous Tutorial <CIFAR-10-classifier.rst>`_
-    `Walkthrough Main Page <walkthrough.rst>`_
-
 Redshift Estimator
 ------------------
 
 This guide provides instructions on how to create a full pipeline for training and evaluating a convolutional neural network on the task of predicting astronomical redshift values given images of galaxies. It provides an approach that is simplified from work by `Pasquet et. al. <https://arxiv.org/abs/1806.06607>`_ The data referenced and used in this guide was obtained from the `Sloan Digital Sky Survey Data Release 3 <https://www.sdss.org/dr13/>`_, obtained via `SciServer's CasJobs Service <http://www.sciserver.org/about/casjobs/>`_, and processed using `Astromatic's SWarp tool <https://www.astromatic.net/software/swarp>`_.    
-This guide assumes that the reader has a basic understanding of the DeepForge interface and how to create basic pipelines. New users are recommended to review the guides available `here <walkthrough.rst>`_ before attempting the process described in this guide. The basic steps of this guide are:
+This guide assumes that the reader has a basic understanding of the DeepForge interface and how to create basic pipelines. New users are recommended to review the `step-by-step guides <introduction.rst>`_ before attempting the process described in this guide. The basic steps of this guide are:
 
 1. `Pipeline Overview`_
 2. `Input Operations`_
@@ -454,13 +449,8 @@ To view the output of the execution, go to the *Executions* tab and check the bo
     :align: center
     :scale: 50%
 
-Unfortunately, only one of the two figures can be viewed from this page. To view the other outputs, click on the name of the execution to view its status page and open the console output for the desired operation. In the bottom left is a set of buttons for switching between console output and graph output for that operation.
+For a more detailed and larger view of individual figures, click on the name of the execution to view its status page and open the console output for the desired operation. In the bottom left is a set of buttons for switching between console output and graph output for that operation.
 
 .. figure:: images/redshift-pdfvis-res.png
     :align: center
     :scale: 50%
-
-.. class:: centered
-
-    `<- Previous Tutorial <CIFAR-10-classifier.rst>`_
-    `Walkthrough Main Page <walkthrough.rst>`_
