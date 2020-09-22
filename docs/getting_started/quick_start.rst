@@ -12,7 +12,7 @@ If not, the easiest way to get started is to connect your own desktop to use for
 
 .. code-block:: bash
 
-    docker run -it deepforge/worker:latest --host https://dev.deepforge.org -t <access token>
+    docker run -it deepforge/worker:latest --host https://editor.deepforge.org -t <access token>
 
 where `<access token>` is an access token for your user (created from the profile page of https://editor.deepforge.org).
 
