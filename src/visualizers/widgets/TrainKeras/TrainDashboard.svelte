@@ -1,5 +1,6 @@
 <script>
   const EMPTY_FN_SCHEMA = {name: '', arguments: []};
+  let startTrainLabel = 'Train';
   let Plotly = null;
 	let batchSize = 32;
 	let epochs = 50;
@@ -107,6 +108,13 @@
     const model = models.find(model => model.id === modelID);
     model.state = state;
     models = models;
+
+    const isTrainingComplete = !state;
+    if (isTrainingComplete) {
+      startTrainLabel = 'Train';
+    } else if (state.startsWith('Training')){
+      startTrainLabel = 'Restart';
+    }
   }
 
   export function setPlotData(modelID, newData) {
@@ -276,7 +284,7 @@
             </div>
           {/each}
         </form>
-        <button on:click|preventDefault|stopPropagation={onTrainClicked} type="button" class="btn btn-primary">Train</button>
+        <button on:click|preventDefault|stopPropagation={onTrainClicked} type="button" class="btn btn-{startTrainLabel === 'Train' ? 'primary' : 'warning'}">{startTrainLabel}</button>
       </div>
     </div>
     <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6 plot-container" bind:this={accuracyPlot}></div>

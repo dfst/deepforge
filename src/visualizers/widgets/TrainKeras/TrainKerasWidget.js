@@ -62,8 +62,10 @@ define([
         async onComputeInitialized(session) {
             const initCode = await this.getInitializationCode();
             await session.addFile('utils/init.py', initCode);
+            //await session.addFile('utils/query_type.py', QueryTypeCode);
+            // TODO: add query_type utility
             await session.addFile('plotly_backend.py', JobTemplates.MATPLOTLIB_BACKEND);
-            await this.session.setEnvVar('MPLBACKEND', 'module://plotly_backend');
+            await session.setEnvVar('MPLBACKEND', 'module://plotly_backend');
         }
 
         isDataLoaded(dataset) {
@@ -89,11 +91,12 @@ define([
             const saveName = this.getCurrentModelID();
             const modelInfo = {
                 id: saveName,
-                path: `${saveName}.h5`,
+                path: saveName,
                 name: saveName,
                 state: 'Fetching Data...',
                 config
             };
+            // TODO: save snapshot of architecture
             this.dashboard.addModel(modelInfo);
             const {dataset} = config;
             if (!this.isDataLoaded(dataset)) {
@@ -135,11 +138,19 @@ define([
                 }
             });
             this.currentTrainTask.on(Message.STDOUT, data => lineParser.receive(data));
-            this.currentTrainTask.on(Message.STDERR, data => console.error(data.toString()));
-            this.currentTrainTask.on(Message.COMPLETE, () => {
-                this.dashboard.setModelState(modelInfo.id);
-                if (this.currentTrainTask === trainTask) {
-                    this.currentTrainTask = null;
+            let stderr = '';
+            this.currentTrainTask.on(Message.STDERR, data => stderr += data.toString());
+            this.currentTrainTask.on(Message.COMPLETE, exitCode => {
+                console.log({exitCode});
+                if (exitCode) {  // FIXME: only save the last N lines
+                    console.log('ERROR occurred:', stderr);
+                    this.dashboard.setModelState(modelInfo.id, 'Error Occurred');
+                } else {
+                    this.dashboard.setModelState(modelInfo.id);
+                    // TODO: Display error?
+                    if (this.currentTrainTask === trainTask) {
+                        this.currentTrainTask = null;
+                    }
                 }
             });
         }
@@ -178,35 +189,49 @@ define([
         async saveModel(modelInfo) {
             const storage = await this.promptStorageConfig(modelInfo.name);
 
-            // TODO: I need to run this in parallel???
             this.dashboard.setModelState(modelInfo.id, 'Uploading...');
-            //const session = this.session.fork();
-            const dataInfo = await this.session.saveArtifact(
-                modelInfo.path, modelInfo.name, storage.id, storage.config
-            );
-            console.log({dataInfo});
-            return;
-            const snapshot = {
-                type: 'pipeline.Data',
-                attributes: {
-                    name: modelInfo.name,
-                    type: type,
-                    data: dataInfo,
-                }
-            };
-            const implicitOp = {
-                type: 'pipeline.TrainKeras',
-                attributes: {
-                    name: modelInfo.name,
-                    config: JSON.stringify(modelInfo.config),
-                    plotData: JSON.stringify(modelInfo.plotData),
-                }
-            };
-            const operation = GetTrainCode(modelInfo.config);
-            // TODO: copy the architecture inside?
-            // TODO: save the plot in the artifact?
-            this.save(snapshot, implicitOp, operation);
-            this.dashboard.setModelState(modelInfo.id, 'Saved');
+            const projectId = WebGMEGlobal.Client.getProjectInfo()._id;  // FIXME:
+            const savePath = `${projectId}/artifacts/${modelInfo.name}`;
+            try {
+                // TODO: get the type of the artifact. Should this be a helper method?
+                const {type} = JSON.parse(await this.session.forkAndRun(
+                    session => session.exec(`cat outputs/${modelInfo.path}/metadata.json`)
+                ));
+                const dataInfo = await this.session.forkAndRun(
+                    session => session.saveArtifact(
+                        modelInfo.path,
+                        savePath,
+                        storage.id,
+                        storage.config
+                    )
+                );
+                const snapshot = {
+                    type: 'pipeline.Data',
+                    attributes: {
+                        name: modelInfo.name,
+                        type: type,
+                        data: dataInfo,
+                    }
+                };
+
+                const implicitOp = {
+                    type: 'pipeline.TrainKeras',
+                    attributes: {
+                        name: modelInfo.name,
+                        config: JSON.stringify(modelInfo.config),
+                        plotData: JSON.stringify(modelInfo.plotData),
+                        // TODO: Add the architecture (as a snapshot)? Just remember the option?
+                    }
+                };
+                const operation = GetTrainCode(modelInfo.config);
+                // TODO: Set the first argument to be the reference
+                // TODO: copy the architecture inside?
+                // TODO: save the plot in the artifact?
+                this.save(snapshot, implicitOp, operation);
+                this.dashboard.setModelState(modelInfo.id, 'Saved');
+            } catch (err) {
+                // TODO: handle errors
+            }
         }
 
         parseMetadata(cmd, content) {
@@ -252,7 +277,7 @@ define([
 
     class LineCollector {
         constructor() {
-            this.partialLine = '';
+            this.currentLine = '';
             this.handler = null;
         }
 
@@ -264,6 +289,7 @@ define([
             const text = data.toString();
             const lines = text.split('\n');
             lines.forEach(l => this.handler(l));
+            // FIXME
             //const newLine = text.indexOf('\n');
             //let fragment;
             //if (newLine > -1) {
