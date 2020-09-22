@@ -5,6 +5,7 @@
 const childProcess = require('child_process');
 const {spawn} = childProcess;
 const fs = require('fs');
+const fsp = fs.promises;
 const {promisify} = require('util');
 const mkdir = promisify(fs.mkdir);
 const pipeline = promisify(require('stream').pipeline);
@@ -162,19 +163,19 @@ requirejs([
 
     async function uploadOutputData(exitCode) {
         if (exitCode === 0) {
-            const results = require('./result-types.json');
+            const outputNames = await fsp.readdir('./outputs');
+            const results = {};
             const storageId = Config.storage.id;
             const config = Config.storage.config;
             const client = await Storage.getClient(storageId, logger, config);
-            const outputNames = Object.keys(results);
             const storageDir = Config.storage.dir;
 
             for (let i = outputNames.length; i--;) {
                 const filename = outputNames[i];
                 const storagePath = `${storageDir}/${filename}`;
-                const contentsStream = fs.createReadStream(`outputs/${filename}`);
+                const contentsStream = fs.createReadStream(`outputs/${filename}/data`);
                 const dataInfo = await client.putFileStream(storagePath, contentsStream);
-                const type = results[filename];
+                const type = require(`./outputs/${filename}/metadata.json`).type;
                 results[filename] = {type, dataInfo};
             }
 

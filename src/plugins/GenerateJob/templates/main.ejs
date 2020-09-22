@@ -2,6 +2,7 @@ import json
 import deepforge
 import signal
 import sys
+import os
 
 def signal_handler(signum, frame):
     sig = signal.Signals(signum)
@@ -34,13 +35,13 @@ print('\n############### Running "<%= name.replace(/'/g, '\\\'') %>" Operation #
 })%>)
 print('############### "<%= name.replace(/'/g, '\\\'') %>" Operation Complete! ###############')
 
-result_types = {}
 <% outputs.forEach(name => { %>
-with open('outputs/<%= name %>', 'wb') as outfile:
-    deepforge.serialization.dump(<%= name %>, outfile)
-    result_types['<%= name %>'] = deepforge.serialization.get_full_class_name(<%= name %>)
-<% }); %>
+os.makedirs('outputs/<%= name %>/', exist_ok=True)
+with open('outputs/<%= name %>/metadata.json', 'w') as outfile:
+    metadata = {}
+    metadata['type'] = deepforge.serialization.get_full_class_name(<%= name %>)
+    json.dump(metadata, outfile)
 
-# Save the result types
-with open('result-types.json', 'w') as f:
-    json.dump(result_types, f)
+with open('outputs/<%= name %>/data', 'wb') as outfile:
+    deepforge.serialization.dump(<%= name %>, outfile)
+<% }); %>
