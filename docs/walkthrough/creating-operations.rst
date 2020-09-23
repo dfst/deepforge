@@ -7,7 +7,7 @@ When adding an operation to a pipeline, new operations can be created by clickin
     :align: center
     :scale: 50%
 
-This editor can also be reached for existing operations by clicking the gray **</>** icon when editing an operation's attributes.
+This editor can also be reached for existing operations by clicking the **</>** icon when editing an operation's attributes.
 
 .. figure:: images/cifar-operation-io.png
     :align: center
@@ -39,13 +39,13 @@ Inputs and outputs can be added using the blue arrow icons. Any number of inputs
     :align: center
     :scale: 50%
 
-Using the gray plus icon, referencess to resources can be added to the operation. These resources will usually be some form of neural network. As with inputs and outputs, any number of resources can be added to an operation.
+Using the plus icon, referencess to resources can be added to the operation. These resources will usually be some form of neural network. As with inputs and outputs, any number of resources can be added to an operation.
 
 .. figure:: images/train-cifar-io.png
     :align: center
     :scale: 50%
 
-The yellow paint brush icon allows editing the color of the operation, but this is purely aesthetic and does not affect the operation's underlying logic.
+The paint brush icon allows editing the color of the operation, but this is purely aesthetic and does not affect the operation's underlying logic.
 
 Implementing the Operation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -53,7 +53,7 @@ Implementing the Operation
     :align: center
     :scale: 50%
 
-In the left-side view, the underlying logic of the operation is represented using the python programming language. The code here can be edited freely. All operations are defined by a class with the same name as the operation. This class has two primary functions associated with it. The first is the *__init__* function, which will appear automatically when creating the operation's first attribute. This function will run when the operation is initialized and is primarily used for the creation of class variables and the processing of attributes. Note that operation attributes will not be accessible from other functions and must be assigned to a class variable in this function to be utilized elsewhere. The second primary function is the *execute* function. This is the function that is executed when the operation is running. Any number of other classes and functions can be created in the code editor, but they will not be executed if they are not called within the execute function. The outputs of the execute function will also be the outputs of the operation.
+In the left-side view, the underlying logic of the operation is implemented using Python. The code here can be edited freely. All operations are defined by a class with the same name as the operation. This class has two primary functions associated with it. The first is the *__init__* function, which will appear automatically when creating the operation's first attribute. This function will run when the operation is initialized and is primarily used for the creation of class variables and the processing of attributes. Note that operation attributes will not be accessible from other functions and must be assigned to a class variable in this function to be utilized elsewhere. The second primary function is the *execute* function. This is the function that is executed when the operation is running. Any number of other classes and functions can be created in the code editor, but they will not be executed if they are not called within the execute function. The outputs of the execute function will also be the outputs of the operation.
 
 Importing Libraries
 ~~~~~~~~~~~~~~~~~~~
