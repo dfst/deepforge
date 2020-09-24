@@ -51,7 +51,7 @@ define([
             );
             this.dashboard.events().addEventListener(
                 'saveModel',
-                event => this.saveModel(event.detail)
+                event => this.onSaveModel(event.detail)
             );
             this.modelCount = 0;
             container.addClass(WIDGET_CLASS);
@@ -89,12 +89,14 @@ define([
 
             this.modelCount++;
             const saveName = this.getCurrentModelID();
+            const architecture = await this.getNodeSnapshot(config.architecture.id);
             const modelInfo = {
                 id: saveName,
                 path: saveName,
                 name: saveName,
                 state: 'Fetching Data...',
-                config
+                config,
+                architecture
             };
             // TODO: save snapshot of architecture
             this.dashboard.addModel(modelInfo);
@@ -186,51 +188,18 @@ define([
             };
         }
 
-        async saveModel(modelInfo) {
+        async onSaveModel(modelInfo) {
             const storage = await this.promptStorageConfig(modelInfo.name);
 
             this.dashboard.setModelState(modelInfo.id, 'Uploading...');
-            const projectId = WebGMEGlobal.Client.getProjectInfo()._id;  // FIXME:
-            const savePath = `${projectId}/artifacts/${modelInfo.name}`;
             try {
-                // TODO: get the type of the artifact. Should this be a helper method?
-                const {type} = JSON.parse(await this.session.forkAndRun(
-                    session => session.exec(`cat outputs/${modelInfo.path}/metadata.json`)
-                ));
-                const dataInfo = await this.session.forkAndRun(
-                    session => session.saveArtifact(
-                        modelInfo.path,
-                        savePath,
-                        storage.id,
-                        storage.config
-                    )
-                );
-                const snapshot = {
-                    type: 'pipeline.Data',
-                    attributes: {
-                        name: modelInfo.name,
-                        type: type,
-                        data: dataInfo,
-                    }
-                };
-
-                const implicitOp = {
-                    type: 'pipeline.TrainKeras',
-                    attributes: {
-                        name: modelInfo.name,
-                        config: JSON.stringify(modelInfo.config),
-                        plotData: JSON.stringify(modelInfo.plotData),
-                        // TODO: Add the architecture (as a snapshot)? Just remember the option?
-                    }
-                };
-                const operation = GetTrainCode(modelInfo.config);
-                // TODO: Set the first argument to be the reference
-                // TODO: copy the architecture inside?
-                // TODO: save the plot in the artifact?
-                this.save(snapshot, implicitOp, operation);
+                modelInfo.code = GetTrainCode(modelInfo.config);
+                await this.saveModel(modelInfo, storage, this.session);
                 this.dashboard.setModelState(modelInfo.id, 'Saved');
             } catch (err) {
-                // TODO: handle errors
+                this.dashboard.setModelState(modelInfo.id, 'Error Occurred');
+                console.log(err)
+                // TODO
             }
         }
 
