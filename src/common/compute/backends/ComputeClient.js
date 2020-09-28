@@ -8,12 +8,15 @@ define([], function() {
             this._events = {};
         }
 
+        async startJob (/*hash, metadata*/) {
+            unimplemented(this.logger, 'startJob');
+        }
+
         async cancelJob (/*job*/) {
             unimplemented(this.logger, 'cancelJob');
         }
 
-        async startJob (/*hash, metadata*/) {
-            unimplemented(this.logger, 'startJob');
+        async purgeJob (/*jobInfo*/) {
         }
 
         async getStatus (/*jobInfo*/) {
