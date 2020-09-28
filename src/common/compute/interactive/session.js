@@ -142,6 +142,18 @@ define([
             }
         }
 
+        async forkAndRun(fn) {
+            const session = this.fork();
+            try {
+                const result = await fn(session);
+                session.close();
+                return result;
+            } catch (err) {
+                session.close();
+                throw err;
+            }
+        }
+
         close() {
             this.channel.onClientExit(this.id);
         }
