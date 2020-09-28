@@ -42,22 +42,12 @@ define([
         }
 
         async saveModel(modelInfo, storage, session) {
-            const {architecture} = modelInfo;
-            const references = {};
-            references.model = {
-                type: '@meta:keras.Architecture',
-                value: `@name:${architecture.attributes.name}`
-            };
-            const operation = this.createOperationNode(modelInfo.code, 'Train', references);
-            operation.children.push(architecture);
-
-            const projectId = this.client.getProjectInfo()._id;
-            const savePath = `${projectId}/artifacts/${modelInfo.name}`;
-
             const metadata = (await session.forkAndRun(
                 session => session.exec(`cat outputs/${modelInfo.path}/metadata.json`)
             )).stdout;
             const {type} = JSON.parse(metadata);
+            const projectId = this.client.getProjectInfo()._id;
+            const savePath = `${projectId}/artifacts/${modelInfo.name}`;
             const dataInfo = await session.forkAndRun(
                 session => session.saveArtifact(
                     modelInfo.path,
@@ -66,55 +56,106 @@ define([
                     storage.config
                 )
             );
-            const implicitOp = {
-                id: '@id:implicitOperation',
-                pointers: {
-                    base: '@meta:pipeline.TrainKeras',
-                    operation: `@name:${operation.attributes.name}`,
-                },
-                attributes: {
-                    name: modelInfo.name,
-                    config: JSON.stringify(modelInfo.config),
-                    plotData: JSON.stringify(modelInfo.plotData),
-                },
-                children: [operation]
-            };
-            const snapshot = {
-                pointers: {
-                    base: '@meta:pipeline.Data',
-                    provenance: implicitOp.id,
-                },
-                attributes: {
-                    name: modelInfo.name,
-                    type: type,
-                    data: JSON.stringify(dataInfo),
-                },
-                children: [implicitOp]
-            };
+
+            const {core, rootNode} = await Q.ninvoke(this.client, 'getCoreInstance', this._logger);
+
+            const parent = await core.loadByPath(rootNode, this._currentNodeId);
+            const artifact = this.createModelArtifact(
+                core,
+                rootNode,
+                modelInfo,
+                dataInfo,
+                type,
+                parent
+            );
+            const trainState = this.createImplicitOperation(
+                core,
+                rootNode,
+                modelInfo,
+                artifact
+            );
+            core.setPointer(artifact, 'provenance', trainState);
+
+            const operation = await this.createOperation(
+                core,
+                rootNode,
+                modelInfo,
+                trainState
+            );
+            core.setPointer(trainState, 'operation', operation);
+
+            const importer = new Importer(core, rootNode);
+            const {architecture} = modelInfo;
+            const archNode = await importer.import(operation, architecture);
+            core.setPointer(operation, 'model', archNode);
 
             // TODO: save the plot in the artifact?
-            const {core, rootNode} = await Q.ninvoke(this.client, 'getCoreInstance', this._logger);
-            const importer = new Importer(core, rootNode);
-            const parent = await core.loadByPath(rootNode, this._currentNodeId);
-            await importer.import(parent, snapshot);
+            const {rootHash, objects} = core.persist(rootNode);
+            const branch = this.client.getActiveBranchName();
+            const startCommit = this.client.getActiveCommitHash();
+            const project = this.client.getProjectObject();
+            const commitMsg = `Saved trained neural network: ${modelInfo.name}`;
+            await project.makeCommit(
+                branch,
+                [startCommit],
+                rootHash,
+                objects,
+                commitMsg
+            );
         }
 
-        createOperationNode(code, name, references={}) {
-            const operation = OperationCode.findOperation(code);
-            const attributes = {name};
-            const attribute_meta = {};
-            const pointers = {base: '@meta:pipeline.Operation'};
-            const pointer_meta = {};
+        createModelArtifact(core, root, modelInfo, dataInfo, type, parent) {
+            const metaNodes = Object.values(core.getAllMetaNodes(root));
+            const base = metaNodes
+                .find(node => core.getAttribute(node, 'name') === 'Data');
+
+            const node = core.createNode({base, parent});
+            core.setAttribute(node, 'name', modelInfo.name);
+            core.setAttribute(node, 'type', type);
+            core.setAttribute(node, 'data', JSON.stringify(dataInfo));
+            return node;
+        }
+
+        createImplicitOperation(core, root, modelInfo, parent) {
+            const metaNodes = Object.values(core.getAllMetaNodes(root));
+            const base = metaNodes
+                .find(node => core.getAttribute(node, 'name') === 'TrainKeras');
+            const node = core.createNode({base, parent});
+
+            core.setAttribute(node, 'name', `Train ${modelInfo.name}`);
+            core.setAttribute(node, 'config', JSON.stringify(modelInfo.config));
+            core.setAttribute(node, 'plotData', JSON.stringify(modelInfo.plotData));
+            return node;
+        }
+
+        async createOperation(core, root, modelInfo, parent) {
+            const META = _.object(
+                Object.values(core.getAllMetaNodes(root))
+                    .map(node => {
+                        let prefix = core.getNamespace(node) || '';
+                        if (prefix) {
+                            prefix += '.';
+                        }
+                        return [prefix + core.getAttribute(node, 'name'), node];
+                    })
+            );
+            const base = META['pipeline.Operation'];
+            const node = core.createNode({base, parent});
+            core.setAttribute(node, 'name', 'Train');
+
+            const operation = OperationCode.findOperation(modelInfo.code);
+
+            const references = {model: 'keras.Architecture'};
             operation.getAttributes().forEach(attr => {
                 const {name} = attr;
                 const isReference = references[name];
                 if (isReference) {
-                    const ref = references[name];
-                    pointers[name] = ref.value;
-                    pointer_meta[name] = {min: 1, max: 1};
-                    pointer_meta[name][ref.type] = {min: -1, max: 1};
+                    const refTypeName = references[name];
+                    const refType = META[refTypeName];
+                    core.setPointerMetaLimits(node, name, 1, 1);
+                    core.setPointerMetaTarget(node, name, refType, -1, 1);
                 } else {
-                    attributes[name] = attr.value;
+                    core.setAttribute(node, name, attr.value);
                     let type = 'string';
                     if (typeof attr.value === 'number') {
                         if (attr.value.toString().includes('.')) {
@@ -125,44 +166,27 @@ define([
                     } else if (typeof attr.value === 'boolean') {
                         type = 'boolean';
                     }
-                    attribute_meta[name] = {type};
+                    core.setAttributeMeta(node, name, {type});
                 }
             });
-            const inputs = {
-                pointers: {
-                    base: '@meta:pipeline.Inputs'
-                },
-                children: operation.getInputs().map(input => ({
-                    pointers: {
-                        base: '@meta:pipeline.Data',
-                    },
-                    attributes: {
-                        name: input.name
-                    }
-                }))
-            };
 
-            const outputs = {
-                pointers: {
-                    base: '@meta:pipeline.Inputs'
-                },
-                children: operation.getOutputs().map(output => ({
-                    pointers: {
-                        base: '@meta:pipeline.Data',
-                    },
-                    attributes: {
-                        name: output.name
-                    }
-                }))
-            };
-            const children = [inputs, outputs];
-            return {
-                attributes,
-                attribute_meta,
-                pointers,
-                pointer_meta,
-                children,
-            };
+            const [[inputs], [outputs]] = _.partition(
+                await core.loadChildren(node),
+                node => core.getAttribute(node, 'name') === 'Inputs'
+            );
+
+            const data = await core.loadByPath(root, modelInfo.config.dataset.id);
+            core.copyNode(data, inputs);
+
+            operation.getOutputs().forEach(output => {
+                const outputNode = core.createNode({
+                    base: META['pipeline.Data'],
+                    parent: outputs
+                });
+                core.setAttribute(outputNode, 'name', output.name);
+            });
+
+            return node;
         }
 
         getObjectDescriptor(nodeId) {
@@ -361,7 +385,7 @@ define([
             return set;
         };
 
-        state.pointers = _.mapObject(state.pointers, (name, target) => updateID(target));
+        state.pointers = _.mapObject(state.pointers, target => updateID(target));
         state.member_attributes = _.mapObject(state.member_attributes, updateNodeIDKeys);
         state.member_registry = _.mapObject(state.member_registry, updateNodeIDKeys);
         state.sets = _.mapObject(state.sets, members => members.map(updateID));
