@@ -2,3 +2,4 @@
 {"version":"0.21.0","changelog":"Add provenance to metadata (via WithProvenance mixin)"}
 {"version":"0.21.1","changelog":"Update Inheritance of Subgraph, Line, Images, ScatterPoints etc.. nodes"}
 {"version":"0.22.0","changelog":"Incorporate PlotlyJSON into Graph meta node"}
+{"version":"0.23.0","changelog":"Add TrainKeras implicit operation"}
