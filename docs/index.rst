@@ -32,6 +32,19 @@ Welcome to DeepForge's documentation!
 
 .. toctree::
    :maxdepth: 1
+   :caption: Step-by-Step Guides
+
+   walkthrough/introduction.rst
+   walkthrough/creating-pipelines.rst
+   walkthrough/creating-operations.rst
+   walkthrough/creating-neural-networks.rst
+   walkthrough/executing-pipelines.rst
+   walkthrough/viewing-executions.rst
+   walkthrough/CIFAR-10-classifier.rst
+   walkthrough/redshift-estimator.rst
+
+.. toctree::
+   :maxdepth: 1
    :caption: Tutorials and Examples
    
    examples/rs-tutorial.rst

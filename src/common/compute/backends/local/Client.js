@@ -96,6 +96,19 @@ define([
             return JSON.parse(resultsTxt);
         }
 
+        async purge (job) {
+            const {hash} = job;
+            if (hash === this.currentJob) {
+                throw new Error('Cannot purge running job.');
+            } else if (this.jobQueue.includes(hash)) {
+                const index = this.jobQueue.indexOf(hash);
+                this.jobQueue.splice(index, 1);
+            } else {
+                const workingDir = this._getWorkingDir(hash);
+                await rm_rf(workingDir);
+            }
+        }
+
         async _getJobFile (hash, name, notFoundMsg) {
             const filename = path.join(this._getWorkingDir(hash), name);
             try {
