@@ -50,7 +50,7 @@ define([
             const savePath = `${projectId}/artifacts/${modelInfo.name}`;
             const dataInfo = await session.forkAndRun(
                 session => session.saveArtifact(
-                    modelInfo.path,
+                    `outputs/${modelInfo.path}/data`,
                     savePath,
                     storage.id,
                     storage.config
