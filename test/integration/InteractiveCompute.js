@@ -75,6 +75,35 @@ describe('InteractiveCompute', function() {
         assert.equal(stdout, 'hi\n');
     });
 
+    describe('forkAndRun', function() {
+        it('should decrement client count', async function() {
+            const clientCount = session.channel.clients.length;
+            session.exec('sleep 20');
+            await session.forkAndRun(() => assert.equal(
+                clientCount + 1,
+                session.channel.clients.length
+            ));
+
+            assert.equal(
+                clientCount,
+                session.channel.clients.length
+            );
+        });
+
+        it('should decrement client count on error', async function() {
+            const clientCount = session.channel.clients.length;
+            session.exec('sleep 20');
+            session.forkAndRun(() => {
+                throw new Error('Fail!');
+            }).catch(()=>{});
+
+            assert.equal(
+                clientCount,
+                session.channel.clients.length
+            );
+        });
+    });
+
     function sleep(duration) {
         return new Promise(resolve => setTimeout(resolve, duration));
     }
