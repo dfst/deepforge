@@ -66,6 +66,11 @@
     window.open(url, '_blank');
   }
 
+  function showModelInfo(model) {
+    const event = new CustomEvent('showModelInfo', {detail: model});
+    eventElement.dispatchEvent(event);
+  }
+
   function showOptimInfo() {
     const url = `https://keras.io/api/optimizers/${optimizer.name.toLowerCase()}/`;
     window.open(url, '_blank');
@@ -104,9 +109,10 @@
     }
   }
 
-  export function setModelState(modelID, state) {
+  export function setModelState(modelID, state, info) {
     const model = models.find(model => model.id === modelID);
     model.state = state;
+    model.info = info;
     models = models;
 
     const isTrainingComplete = !state;
@@ -301,7 +307,9 @@
                   bind:innerHTML={model.name}
                   style="cursor: text;"></span>
                 {#if model.state}
-                  <span class="pull-right" style="color: #888; font-style: italic;"> {model.state[0].toUpperCase() + model.state.substring(1)}</span>
+                  <span
+                    on:click|preventDefault|stopPropagation={() => showModelInfo(model)}
+                    class="pull-right" style="color: #888; font-style: italic;"> {model.state[0].toUpperCase() + model.state.substring(1)}</span>
                 {:else}
                   <span
                     on:click|preventDefault|stopPropagation={() => saveModel(model)}

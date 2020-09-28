@@ -113,6 +113,7 @@ define([
             core.setAttribute(node, 'name', modelInfo.name);
             core.setAttribute(node, 'type', type);
             core.setAttribute(node, 'data', JSON.stringify(dataInfo));
+            core.setAttribute(node, 'createdAt', Date.now());
             return node;
         }
 

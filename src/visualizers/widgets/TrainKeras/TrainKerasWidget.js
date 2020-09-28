@@ -13,6 +13,7 @@ define([
     'text!./Main.py',
     'deepforge/viz/StorageHelpers',
     'deepforge/viz/ConfirmDialog',
+    'deepforge/viz/InformDialog',
     'underscore',
     'text!./schemas/index.json',
     'css!./build/TrainDashboard.css',
@@ -30,6 +31,7 @@ define([
     MainCode,
     StorageHelpers,
     ConfirmDialog,
+    InformDialog,
     _,
     SchemaText,
 ) {
@@ -44,7 +46,7 @@ define([
         constructor(logger, container) {
             super(container);
             this.dashboard = new TrainDashboard({target: container[0]});
-            this.dashboard.initialize(Plotly, DashboardSchemas);
+            this.dashboard.initialize(Plotly, $, DashboardSchemas);
             this.dashboard.events().addEventListener(
                 'onTrainClicked',
                 () => this.train(this.dashboard.data())
@@ -52,6 +54,10 @@ define([
             this.dashboard.events().addEventListener(
                 'saveModel',
                 event => this.onSaveModel(event.detail)
+            );
+            this.dashboard.events().addEventListener(
+                'showModelInfo',
+                event => this.onShowModelInfo(event.detail)
             );
             this.modelCount = 0;
             container.addClass(WIDGET_CLASS);
@@ -98,7 +104,6 @@ define([
                 config,
                 architecture
             };
-            // TODO: save snapshot of architecture
             this.dashboard.addModel(modelInfo);
             const {dataset} = config;
             if (!this.isDataLoaded(dataset)) {
@@ -143,18 +148,23 @@ define([
             let stderr = '';
             this.currentTrainTask.on(Message.STDERR, data => stderr += data.toString());
             this.currentTrainTask.on(Message.COMPLETE, exitCode => {
-                console.log({exitCode});
-                if (exitCode) {  // FIXME: only save the last N lines
-                    console.log('ERROR occurred:', stderr);
-                    this.dashboard.setModelState(modelInfo.id, 'Error Occurred');
+                if (exitCode) {
+                    this.dashboard.setModelState(modelInfo.id, 'Error Occurred', stderr);
                 } else {
                     this.dashboard.setModelState(modelInfo.id);
-                    // TODO: Display error?
-                    if (this.currentTrainTask === trainTask) {
-                        this.currentTrainTask = null;
-                    }
+                }
+                if (this.currentTrainTask === trainTask) {
+                    this.currentTrainTask = null;
                 }
             });
+        }
+
+        onShowModelInfo(modelInfo) {
+            const dialog = new InformDialog(
+                modelInfo.state,
+                modelInfo.info.replace(/\n/g, '<br/>')
+            );
+            dialog.show();
         }
 
         getCurrentModelID() {
@@ -197,9 +207,11 @@ define([
                 await this.saveModel(modelInfo, storage, this.session);
                 this.dashboard.setModelState(modelInfo.id, 'Saved');
             } catch (err) {
-                this.dashboard.setModelState(modelInfo.id, 'Error Occurred');
-                console.log(err)
-                // TODO
+                this.dashboard.setModelState(
+                    modelInfo.id,
+                    'Save Failed',
+                    err.stack
+                );
             }
         }
 
