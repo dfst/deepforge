@@ -1,4 +1,5 @@
 describe('local compute', function() {
+    const fsp = require('fs').promises;
     const assert = require('assert');
     const testFixture = require('../../../../../globals');
     const GeneratedFiles = testFixture.requirejs('deepforge/plugin/GeneratedFiles');
@@ -32,6 +33,33 @@ describe('local compute', function() {
             await client.cancelJob(jobInfo);
             const status = await client.getStatus(jobInfo);
             assert.equal(status, client.CANCELED);
+        });
+    });
+
+    describe('purgeJob', function() {
+        let jobInfo;
+        before(async () => {
+            const jobHash = await getJobHash('sleep', '0.1');
+            const deferred = utils.defer();
+            client.on('update', (hash, status) => {
+                if (hash === jobHash && status === client.RUNNING) {
+                    deferred.resolve();
+                }
+            });
+
+            const computeJob = new ComputeJob(jobHash);
+            jobInfo = await client.startJob(computeJob);
+            await deferred.promise;
+        });
+
+        it('should throw an error when accessing status on purged job', async () => {
+            const {hash} = jobInfo;
+            await assert.rejects(() => client.getStatus(hash));
+        });
+
+        it('should remove tmp directory', async function() {
+            const dir = client._getWorkingDir();
+            await assert.rejects(() => fsp.lstat(dir));
         });
     });
 
