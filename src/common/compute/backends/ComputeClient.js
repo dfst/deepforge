@@ -28,6 +28,9 @@ define([], function() {
             unimplemented(this.logger, 'getConsoleOutput');
         }
 
+        async purge (/*jobInfo*/) {
+        }
+
         isFinishedStatus (status) {
             const notFinishedStatuses = [this.QUEUED, this.PENDING, this.RUNNING];
             return !notFinishedStatuses.includes(status);
