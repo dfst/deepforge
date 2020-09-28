@@ -1,4 +1,4 @@
-/*globals define*/
+/*globals define */
 
 define([
     './build/TrainDashboard',
@@ -46,7 +46,7 @@ define([
         constructor(logger, container) {
             super(container);
             this.dashboard = new TrainDashboard({target: container[0]});
-            this.dashboard.initialize(Plotly, $, DashboardSchemas);
+            this.dashboard.initialize(Plotly, DashboardSchemas);
             this.dashboard.events().addEventListener(
                 'onTrainClicked',
                 () => this.train(this.dashboard.data())
@@ -77,6 +77,11 @@ define([
         isDataLoaded(dataset) {
             return this.loadedData.find(data => _.isEqual(data, dataset));
         }
+
+        /*
+        async kill(taskID) {
+        }
+        */
 
         async train(config) {
             if (this.currentTrainTask) {
