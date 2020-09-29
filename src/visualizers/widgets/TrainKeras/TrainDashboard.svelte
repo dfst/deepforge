@@ -31,6 +31,9 @@
             arg.type = typeof(arg.default);
           }
           arg.value = arg.default;
+          if (arg.type === 'boolean') {
+              console.warn('Unsupported argument:', arg);
+          }
           return arg;
         });
     });
@@ -220,16 +223,16 @@
             </select>
           </div>
           <div class="form-group">
-            <label>Batch Size</label>
-            <input bind:value={batchSize} type="number"/>
+            <label for="batchSize">Batch Size</label>
+            <input id="batchSize" bind:value={batchSize} type="number"/>
           </div>
           <div class="form-group">
-            <label>Epochs</label>
-            <input bind:value={epochs} type="number"/>
+            <label for="epochs">Epochs</label>
+            <input id="epochs" bind:value={epochs} type="number"/>
           </div>
           <div class="form-group">
-            <label>Validation Split</label>
-            <input bind:value={validation} type="number"/>
+            <label for="validation">Validation Split</label>
+            <input id="validation" bind:value={validation} type="number"/>
           </div>
           <hr style="border-top: 1px solid #aaa">
           <h5 style="text-align: left">Loss</h5>
@@ -248,21 +251,19 @@
           </div>
           {#each loss.arguments as arg}
             <div class="form-group">
-              {#if arg.type === 'boolean'}
-                <!-- TODO -->
-              {:else if arg.type === 'string'}
-                <label>{arg.name}</label>
-                <input bind:value={arg.value} type="text"/>
+              {#if arg.type === 'string'}
+                <label for="{arg.name}">{arg.name}</label>
+                <input id="{arg.name}" bind:value={arg.value} type="text"/>
               {:else if arg.type === 'enum'}
-                <label>{arg.name}</label>
-                <select bind:value={arg.value}>
+                <label for="{arg.name}">{arg.name}</label>
+                <select id="{arg.name}" bind:value={arg.value}>
                   {#each arg.options as option}
                     <option value={option}>{option}</option>
                   {/each}
                 </select>
               {:else}
-                <label>{arg.name}</label>
-                <input bind:value={arg.value} type="number"/>
+                <label for="{arg.name}">{arg.name}</label>
+                <input id="{arg.name}" bind:value={arg.value} type="number"/>
               {/if}
             </div>
           {/each}
@@ -279,13 +280,12 @@
           </div>
           {#each optimizer.arguments as arg}
             <div class="form-group">
-              {#if arg.type === 'boolean'}
-              {:else if arg.type === 'string'}
-                <label>{arg.name}</label>
-                <input bind:value={arg.value} type="text"/>
+              {#if arg.type === 'string'}
+                <label for="{arg.name}">{arg.name}</label>
+                <input id="{arg.name}" bind:value={arg.value} type="text"/>
               {:else}
-                <label>{arg.name}</label>
-                <input bind:value={arg.value} type="number"/>
+                <label for="{arg.name}">{arg.name}</label>
+                <input id="{arg.name}" bind:value={arg.value} type="number"/>
               {/if}
             </div>
           {/each}
@@ -299,7 +299,7 @@
       <div class="list-group">
           {#if models.length > 0}
             {#each models as model}
-              <a on:click|preventDefault|stopPropagation={() => setDisplayedModel(model)}
+              <div on:click|preventDefault|stopPropagation={() => setDisplayedModel(model)}
                 class="list-group-item {displayedModel === model ? 'active' : ''}"
               >
                 <span
@@ -316,10 +316,10 @@
                     class="glyphicon glyphicon-floppy-disk pull-right" aria-hidden="true"
                   ></span>
                 {/if}
-              </a>
+              </div>
             {/each}
           {:else}
-            <a class="list-group-item" style="font-style: italic; color: #888">No Trained Models</a>
+            <div class="list-group-item" style="font-style: italic; color: #888">No Trained Models</div>
           {/if}
       <div>
     </div>
