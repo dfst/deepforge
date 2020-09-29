@@ -202,14 +202,11 @@ define([
             return desc;
         }
 
-        getTerritory(nodeId) {
+        async getTerritory(/*nodeId*/) {
+            const containerId = await DeepForge.places.MyArtifacts();
             const territory = {};
-            const node = this.client.getNode(nodeId);
-            const parentId = node.getParentId();
-            territory[parentId] = {children: 1};
-
-            const omitParentNode = event => event.eid !== parentId;
-            this.territoryEventFilters = [omitParentNode];
+            territory[containerId] = {children: 1};
+            this.territoryEventFilters = [event => this.isArtifact(event.eid)];
 
             return territory;
         }
@@ -220,7 +217,6 @@ define([
             const isNewNodeLoaded = typeof nodeId === 'string';
             if (isNewNodeLoaded) {
                 await this.addArchitectureTerritory();
-                await this.addDatasetTerritory();
             }
         }
 
@@ -242,17 +238,6 @@ define([
                 events => this.onResourceEvents(events)
             );
             this.client.updateTerritory(this._archTerritory, territory);
-        }
-
-        async addDatasetTerritory() {
-            const containerId = await DeepForge.places.MyArtifacts();
-            const territory = {};
-            territory[containerId] = {children: 1};
-            this._artifactTerritory = this.client.addUI(
-                territory,
-                events => this.onArtifactEvents(events)
-            );
-            this.client.updateTerritory(this._artifactTerritory, territory);
         }
 
         async getArchitectureCode(nodeId) {
@@ -319,27 +304,6 @@ define([
             this._widget.removeArchitecture(nodeId);
         }
 
-        async onArtifactEvents(events) {
-            events
-                .filter(event => this.isArtifact(event.eid))
-                .forEach(event => {
-                    switch (event.etype) {
-
-                    case CONSTANTS.TERRITORY_EVENT_LOAD:
-                        this.onArtifactLoad(event.eid);
-                        break;
-                    case CONSTANTS.TERRITORY_EVENT_UPDATE:
-                        this.onArtifactUpdate(event.eid);
-                        break;
-                    case CONSTANTS.TERRITORY_EVENT_UNLOAD:
-                        this.onArtifactUnload(event.eid);
-                        break;
-                    default:
-                        break;
-                    }
-                });
-        }
-
         isArtifact(nodeId) {
             const node = this.client.getNode(nodeId);
             if (node) {
@@ -348,7 +312,7 @@ define([
             return true;
         }
 
-        getArtifactDesc(nodeId) {
+        getObjectDesc(nodeId) {
             const node = this.client.getNode(nodeId);
             const name = node.getAttribute('name').replace(/\..*$/, '');
             return {
@@ -357,20 +321,6 @@ define([
                 type: node.getAttribute('type'),
                 dataInfo: JSON.parse(node.getAttribute('data')),
             };
-        }
-
-        onArtifactLoad(nodeId) {
-            const desc = this.getArtifactDesc(nodeId);
-            this._widget.addArtifact(desc);
-        }
-
-        onArtifactUpdate(nodeId) {
-            const desc = this.getArtifactDesc(nodeId);
-            this._widget.updateArtifact(desc);
-        }
-
-        onArtifactUnload(nodeId) {
-            this._widget.removeArtifact(nodeId);
         }
     }
 

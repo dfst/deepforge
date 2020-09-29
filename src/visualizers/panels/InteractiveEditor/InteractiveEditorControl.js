@@ -70,7 +70,7 @@ define([
             return deferred.promise;
         }
 
-        selectedObjectChanged (nodeId) {
+        async selectedObjectChanged (nodeId) {
             const desc = this.getObjectDescriptor(nodeId);
 
             this._logger.debug('activeObject nodeId \'' + nodeId + '\'');
@@ -82,7 +82,7 @@ define([
             this._currentNodeId = nodeId;
 
             if (typeof this._currentNodeId === 'string') {
-                const territory = this.getTerritory(nodeId);
+                const territory = await this.getTerritory(nodeId);
                 this._widget.setTitle(desc.name.toUpperCase());
 
                 this._territoryId = this.client

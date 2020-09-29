@@ -68,8 +68,6 @@ define([
         async onComputeInitialized(session) {
             const initCode = await this.getInitializationCode();
             await session.addFile('utils/init.py', initCode);
-            //await session.addFile('utils/query_type.py', QueryTypeCode);
-            // TODO: add query_type utility
             await session.addFile('plotly_backend.py', JobTemplates.MATPLOTLIB_BACKEND);
             await session.setEnvVar('MPLBACKEND', 'module://plotly_backend');
         }
@@ -77,11 +75,6 @@ define([
         isDataLoaded(dataset) {
             return this.loadedData.find(data => _.isEqual(data, dataset));
         }
-
-        /*
-        async kill(taskID) {
-        }
-        */
 
         async train(config) {
             if (this.currentTrainTask) {
@@ -114,7 +107,6 @@ define([
             if (!this.isDataLoaded(dataset)) {
                 this.loadedData.push(dataset);
                 const auth = await StorageHelpers.getAuthenticationConfig(dataset.dataInfo);
-                // TODO: Handle cancellation
                 await this.session.addArtifact(dataset.name, dataset.dataInfo, dataset.type, auth);
             }
             this.dashboard.setModelState(this.getCurrentModelID(), 'Generating Code');
@@ -228,14 +220,6 @@ define([
             }
         }
 
-        addNode(desc) {  // FIXME: Remove this
-            console.log('adding', desc);
-        }
-
-        removeNode(id) {
-            console.log('adding', id);
-        }
-
         addArchitecture(desc) {
             this.dashboard.addArchitecture(desc);
         }
@@ -248,16 +232,16 @@ define([
             this.dashboard.removeArchitecture(id);
         }
 
-        addArtifact(desc) {
-            this.dashboard.addArtifact(desc);
+        addNode(artifactDesc) {
+            this.dashboard.addArtifact(artifactDesc);
         }
 
-        updateArtifact(desc) {
-            this.dashboard.updateArtifact(desc);
+        updateNode(artifactDesc) {
+            this.dashboard.updateArtifact(artifactDesc);
         }
 
-        removeArtifact(id) {
-            this.dashboard.removeArtifact(id);
+        removeNode(artifactId) {
+            this.dashboard.removeArtifact(artifactId);
         }
     }
 
