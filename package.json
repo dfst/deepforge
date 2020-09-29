@@ -10,8 +10,8 @@
   "scripts": {
     "start": "node ./bin/deepforge start",
     "postinstall": "node utils/reinstall-extensions.js && npm run build && ./bin/deepforge create-env",
-    "build": "node utils/build-job-utils.js && npm run build-svelte",
-    "build-svelte": "rollup -c utils/svelte/rollup.config.js",
+    "build": "node utils/build-job-utils.js",
+    "build-svelte": "npx rollup -c utils/svelte/rollup.config.js",
     "start-dev": "NODE_ENV=dev node ./bin/deepforge start",
     "start-authenticated": "NODE_ENV=production ./bin/deepforge start",
     "server": "node ./bin/deepforge start --server",
