@@ -190,18 +190,6 @@ define([
             return node;
         }
 
-        getObjectDescriptor(nodeId) {
-            const desc = super.getObjectDescriptor(nodeId);
-
-            if (desc) {
-                const node = this.client.getNode(nodeId);
-                desc.data = node.getAttribute('data');
-                desc.type = node.getAttribute('type');
-            }
-
-            return desc;
-        }
-
         async getTerritory(/*nodeId*/) {
             const containerId = await DeepForge.places.MyArtifacts();
             const territory = {};
@@ -312,7 +300,7 @@ define([
             return true;
         }
 
-        getObjectDesc(nodeId) {
+        getObjectDescriptor(nodeId) {
             const node = this.client.getNode(nodeId);
             const name = node.getAttribute('name').replace(/\..*$/, '');
             return {
