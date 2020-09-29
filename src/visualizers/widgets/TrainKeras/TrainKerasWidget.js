@@ -133,8 +133,8 @@ define([
             this.dashboard.setModelState(this.getCurrentModelID(), 'Training...');
             const trainTask = this.session.spawn('python start_train.py');
             this.currentTrainTask = trainTask;
-            const lineParser = new LineCollector();
-            lineParser.on(line => {
+            this.currentTrainTask.on(Message.STDOUT, data => {
+                let line = data.toString();
                 if (line.startsWith(CONSTANTS.START_CMD)) {
                     line = line.substring(CONSTANTS.START_CMD.length + 1);
                     const splitIndex = line.indexOf(' ');
@@ -143,11 +143,9 @@ define([
                     this.parseMetadata(cmd, JSON.parse(content));
                 }
             });
-            this.currentTrainTask.on(Message.STDOUT, data => lineParser.receive(data));
             let stderr = '';
             this.currentTrainTask.on(Message.STDERR, data => stderr += data.toString());
             this.currentTrainTask.on(Message.COMPLETE, exitCode => {
-                lineParser.flush();
                 if (exitCode) {
                     this.dashboard.setModelState(modelInfo.id, 'Error Occurred', stderr);
                 } else {
@@ -159,12 +157,23 @@ define([
             });
         }
 
-        onShowModelInfo(modelInfo) {
-            const dialog = new InformDialog(
-                modelInfo.state,
-                modelInfo.info.replace(/\n/g, '<br/>')
-            );
-            dialog.show();
+        async onShowModelInfo(modelInfo) {
+            let body = modelInfo.info.replace(/\n/g, '<br/>');
+            const isSaveError = modelInfo.state === 'Save Failed';
+            if (isSaveError) {
+                body += '<br/><br/>Would you like to clear this error?';
+                const dialog = new ConfirmDialog(modelInfo.state, body);
+                const confirmed = await dialog.show();
+                if (confirmed) {
+                    this.dashboard.setModelState(modelInfo.id);
+                }
+            } else {
+                const dialog = new InformDialog(
+                    modelInfo.state,
+                    body
+                );
+                dialog.show();
+            }
         }
 
         getCurrentModelID() {
