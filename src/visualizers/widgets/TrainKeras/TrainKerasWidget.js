@@ -8,6 +8,7 @@ define([
     'widgets/InteractiveEditor/InteractiveEditorWidget',
     'deepforge/viz/ConfigDialog',
     'deepforge/compute/interactive/message',
+    'deepforge/compute/line-collector',
     'webgme-plotly/plotly.min',
     'text!./TrainOperation.py',
     'text!./Main.py',
@@ -26,6 +27,7 @@ define([
     InteractiveEditor,
     ConfigDialog,
     Message,
+    LineCollector,
     Plotly,
     TrainOperation,
     MainCode,
@@ -145,6 +147,7 @@ define([
             let stderr = '';
             this.currentTrainTask.on(Message.STDERR, data => stderr += data.toString());
             this.currentTrainTask.on(Message.COMPLETE, exitCode => {
+                lineParser.flush();
                 if (exitCode) {
                     this.dashboard.setModelState(modelInfo.id, 'Error Occurred', stderr);
                 } else {
@@ -242,35 +245,6 @@ define([
 
         removeNode(artifactId) {
             this.dashboard.removeArtifact(artifactId);
-        }
-    }
-
-    class LineCollector {
-        constructor() {
-            this.currentLine = '';
-            this.handler = null;
-        }
-
-        on(fn) {
-            this.handler = fn;
-        }
-
-        receive(data) {
-            const text = data.toString();
-            const lines = text.split('\n');
-            lines.forEach(l => this.handler(l));
-            // FIXME
-            //const newLine = text.indexOf('\n');
-            //let fragment;
-            //if (newLine > -1) {
-                //const line = this.partialLine + text.substring(0, newLine);
-                //this.handler(line);
-                //fragment = text.substring(newLine + 1);
-                //this.partialLine = '';
-            //} else {
-                //fragment = text;
-            //}
-            //this.partialLine += fragment;
         }
     }
 
