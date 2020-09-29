@@ -64,13 +64,6 @@ define([
             this._logger.debug('ctor finished');
         }
 
-        async createInteractiveSession(computeId, config) {
-            const session = await Session.new(computeId, config);
-            this.initSession(session);
-            this.artifactLoader.session = session;
-            return session;
-        }
-
         async getAuthenticationConfig (dataInfo) {
             const {backend} = dataInfo;
             const metadata = Storage.getStorageMetadata(backend);
@@ -87,8 +80,8 @@ define([
             }
         }
 
-        async initSession (session) {
-            await session.whenConnected();
+        async onComputeInitialized (session) {
+            this.artifactLoader.session = session;
             const initCode = await this.getInitializationCode();
             await session.addFile('utils/init.py', initCode);
             await session.addFile('utils/explorer_helpers.py', HELPERS_PY);

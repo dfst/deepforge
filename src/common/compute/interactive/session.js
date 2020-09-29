@@ -163,38 +163,60 @@ define([
             return new Session(this.channel);
         }
 
-        static async new(computeID, config={}, SessionClass=InteractiveSession) {
-            const channel = await createMessageChannel(computeID, config);
-            const session = new SessionClass(channel);
-            return session;
+        static new(computeID, config={}, SessionClass=InteractiveSession) {
+            const address = gmeConfig.extensions.InteractiveComputeHost ||
+                getDefaultServerURL();
+
+            let createSession;
+            createSession = new PromiseEvents(function(resolve, reject) {
+                const ws = new WebSocket(address);
+                ws.onopen = () => {
+                    ws.send(JSON.stringify([computeID, config, getGMEToken()]));
+                    ws.onmessage = async (wsMsg) => {
+                        const data = await Task.getMessageData(wsMsg);
+
+                        const msg = Message.decode(data);
+                        if (msg.type === Message.COMPLETE) {
+                            const err = msg.data;
+                            if (err) {
+                                reject(err);
+                            } else {
+                                const channel = new MessageChannel(ws);
+                                const session = new SessionClass(channel);
+                                resolve(session);
+                            }
+                        } else if (msg.type === Message.ERROR) {
+                            const err = msg.data;
+                            reject(err);
+                        } else if (msg.type === Message.STATUS) {
+                            createSession.emit('update', msg.data);
+                        }
+                    };
+                };
+            });
+
+            return createSession;
         }
     }
 
-    async function createMessageChannel(computeID, config) {
-        const address = gmeConfig.extensions.InteractiveComputeHost ||
-            getDefaultServerURL();
+    class PromiseEvents extends Promise {
+        constructor(fn) {
+            super(fn);
+            this._handlers = {};
+        }
 
-        const connectedWs = await new Promise((resolve, reject) => {
-            const ws = new WebSocket(address);
-            ws.onopen = () => {
-                ws.send(JSON.stringify([computeID, config, getGMEToken()]));
-                ws.onmessage = async (wsMsg) => {
-                    const data = await Task.getMessageData(wsMsg);
+        on(event, fn) {
+            if (!this._handlers[event]) {
+                this._handlers[event] = [];
+            }
+            this._handlers[event].push(fn);
+        }
 
-                    const msg = Message.decode(data);
-                    if (msg.type === Message.COMPLETE) {
-                        const err = msg.data;
-                        if (err) {
-                            reject(err);
-                        } else {
-                            resolve(ws);
-                        }
-                    }
-                };
-            };
-        });
-
-        return new MessageChannel(connectedWs);
+        emit(event) {
+            const handlers = this._handlers[event] || [];
+            const args = Array.prototype.slice.call(arguments, 1);
+            handlers.forEach(fn => fn.apply(null, args));
+        }
     }
 
     function getDefaultServerURL() {

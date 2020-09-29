@@ -14,6 +14,8 @@ define([
     DeepForge,
 ) {
     const COMPUTE_MESSAGE = 'Compute Required. Click to configure.';
+    const COMPUTE_LOADING_MESSAGE = 'Connecting to Compute Instance...';
+    const LoaderHTML = '<div class="lds-ripple"><div></div><div></div></div>';
     class InteractiveEditorWidget {
         constructor(container) {
             this.showComputeShield(container);
@@ -22,13 +24,21 @@ define([
         showComputeShield(container) {
             const overlay = $('<div>', {class: 'compute-shield'});
             container.append(overlay);
-            const msg = $('<span>');
-            msg.text(COMPUTE_MESSAGE);
+            overlay.append($('<div>', {class: 'filler'}));
+            const loader = $(LoaderHTML);
+            overlay.append(loader);
+            const msg = $('<span>', {class: 'title'});
             overlay.append(msg);
+            const subtitle = $('<span>', {class: 'subtitle'});
+            overlay.append(subtitle);
+            msg.text(COMPUTE_MESSAGE);
+            loader.addClass('hidden');
+            subtitle.addClass('hidden');
+
             overlay.on('click', async () => {
                 const {id, config} = await this.promptComputeConfig();
                 try {
-                    this.session = await this.createInteractiveSession(id, config);
+                    this.session = await this.createInteractiveSession(id, config, overlay);
                     const features = this.getCapabilities();
                     if (features.save) {
                         DeepForge.registerAction('Save', 'save', 10, () => this.save());
@@ -38,6 +48,10 @@ define([
                 } catch (err) {
                     const title = 'Compute Creation Error';
                     const body = 'Unable to create compute. Please verify the credentials are correct.';
+                    msg.text(COMPUTE_MESSAGE);
+                    loader.addClass('hidden');
+                    subtitle.addClass('hidden');
+
                     // TODO: Detect authorization errors...
                     const dialog = new InformDialog(title, body);
                     dialog.show();
@@ -94,8 +108,35 @@ define([
             return {id, config};
         }
 
-        async createInteractiveSession(computeId, config) {
-            return await Session.new(computeId, config);
+        showComputeLoadingStatus(status, overlay) {
+            const msg = overlay.find('.subtitle');
+            const loader = overlay.find('.lds-ripple');
+            const title = overlay.find('.title');
+
+            title.text(COMPUTE_LOADING_MESSAGE);
+            loader.removeClass('hidden');
+            msg.removeClass('hidden');
+            return msg;
+        }
+
+        updateComputeLoadingStatus(status, subtitle) {
+            const displayText = status === 'running' ?
+                'Configuring environment' :
+                status.substring(0, 1).toUpperCase() + status.substring(1);
+            subtitle.text(`${displayText}...`);
+        }
+
+        async createInteractiveSession(computeId, config, overlay) {
+            const createSession = Session.new(computeId, config);
+
+            const msg = this.showComputeLoadingStatus(status, overlay);
+            this.updateComputeLoadingStatus('Connecting', msg);
+            createSession.on(
+                'update',
+                status => this.updateComputeLoadingStatus(status, msg)
+            );
+            const session = await createSession;
+            return session;
         }
 
         destroy() {
@@ -103,6 +144,7 @@ define([
             if (features.save) {
                 DeepForge.unregisterAction('Save');
             }
+            this.session.close();
         }
 
         updateNode(/*desc*/) {

@@ -10,7 +10,7 @@
 }(this, function() {
     const Constants = makeEnum('STDOUT', 'STDERR', 'RUN', 'ADD_ARTIFACT', 'KILL',
         'ADD_FILE', 'REMOVE_FILE', 'ADD_USER_DATA', 'COMPLETE', 'ERROR', 'SET_ENV',
-        'SAVE_ARTIFACT');
+        'SAVE_ARTIFACT', 'STATUS');
 
     function makeEnum() {
         const names = Array.prototype.slice.call(arguments);

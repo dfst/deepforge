@@ -40,11 +40,14 @@ class Session extends EventEmitter {
         const name = 'DeepForge Interactive Session';
         const computeJob = new ComputeJob(hash, name);
         this.jobInfo = this.compute.startJob(computeJob);
+        this.compute.on('update', async (id, status) =>
+            this.clientSocket.send(Message.encode(-1, Message.STATUS, status))
+        );
         this.compute.on('end', async (id, info) => {
             const isError = this.clientSocket.readyState === WebSocket.OPEN &&
                 info.status !== ComputeClient.SUCCESS;
             if (isError) {
-                this.clientSocket.send(Message.encode(Message.ERROR, info));
+                this.clientSocket.send(Message.encode(-1, Message.ERROR, info));
             }
             await this.compute.purgeJob(computeJob);
         });
