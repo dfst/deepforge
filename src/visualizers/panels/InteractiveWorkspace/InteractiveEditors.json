@@ -1,0 +1,14 @@
+[
+  {
+    "id": "TensorPlotter",
+    "title": "Tensor Plotter",
+    "panel": "panels/TensorPlotter/TensorPlotterPanel",
+    "DEBUG_ONLY": false
+  },
+  {
+    "id": "TrainKeras",
+    "title": "Neural Network Trainer",
+    "panel": "panels/TrainKeras/TrainKerasPanel",
+    "DEBUG_ONLY": false
+  }
+]

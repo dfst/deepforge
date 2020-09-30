@@ -302,6 +302,13 @@
         "panel": "src/visualizers/panels/TrainKeras",
         "secondary": false,
         "widget": "src/visualizers/widgets/TrainKeras"
+      },
+      "InteractiveWorkspace": {
+        "src": "panels/InteractiveWorkspace/InteractiveWorkspacePanel",
+        "title": "InteractiveWorkspace",
+        "panel": "src/visualizers/panels/InteractiveWorkspace",
+        "secondary": false,
+        "widget": "src/visualizers/widgets/InteractiveWorkspace"
       }
     },
     "addons": {},

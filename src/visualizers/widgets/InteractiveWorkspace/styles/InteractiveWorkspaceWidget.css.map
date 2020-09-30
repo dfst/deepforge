@@ -1,0 +1,7 @@
+{
+"version": 3,
+"mappings": "AAAA;;GAEG;AAEH,sBAAuB;EACrB,OAAO,EAAE,IAAI;EACb,OAAO,EAAE,YAAW",
+"sources": ["InteractiveWorkspaceWidget.scss"],
+"names": [],
+"file": "InteractiveWorkspaceWidget.css"
+}
