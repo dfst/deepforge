@@ -36,18 +36,17 @@ define([
     }
 
     InteractiveWorkspaceControl.prototype._initWidgetEventHandlers = function () {
-        DeepForge.registerAction(
-            BROWSE_EDITORS_TEXT,
-            'add',
-            10,
-            () => this.openEditorBrowser()
-        );
+        InteractiveEditors.forEach(info => {
+            DeepForge.registerAction(
+                `Open ${info.title}`,
+                'add',
+                10,
+                () => this.openEditorBrowser(info)
+            );
+        });
     };
 
-    InteractiveWorkspaceControl.prototype.openEditorBrowser = async function () {
-        // TODO: Create TrainKeras
-        const editorInfo = InteractiveEditors.find(info => info.id === 'TrainKeras');
-
+    InteractiveWorkspaceControl.prototype.openEditorBrowser = async function (editorInfo) {
         const EditorPanel = await this.require(editorInfo.panel);
         if (!this.session) {
             const connectedEditor = this.editors
@@ -181,7 +180,9 @@ define([
 
     /* * * * * * * * Visualizer life cycle callbacks * * * * * * * */
     InteractiveWorkspaceControl.prototype.destroy = function () {
-        DeepForge.unregisterAction(BROWSE_EDITORS_TEXT);
+        InteractiveEditors.forEach(info => {
+            DeepForge.unregisterAction(`Open ${info.title}`);
+        });
         this._detachClientEventListeners();
     };
 
