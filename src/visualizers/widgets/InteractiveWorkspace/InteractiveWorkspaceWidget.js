@@ -20,14 +20,10 @@ define([
             content: []
         };
         this.layout = new GoldenLayout(config, this.$el);
-        this.layout.registerComponent(
-            'InteractiveEditorComponent',
-            InteractiveEditorComponent
-        );
         this.layout.init();
-        this.session = null;
 
         this._initialize();
+        this._registeredComponentTypes = [];
         this._logger.debug('ctor finished');
     }
 
@@ -36,19 +32,22 @@ define([
         this.$el.addClass(WIDGET_CLASS);
     };
 
-    InteractiveWorkspaceWidget.prototype.addEditor = function (editor) {
+    InteractiveWorkspaceWidget.prototype.addEditor = function (title, editor) {
         const parent = this.layout.root.contentItems.length ?
             this.layout.root.contentItems[0] :
             this.layout.root;
 
-        // TODO: Create a new editor?
-        if (!this.session && editor.widget.session) {
-            this.session = editor.widget.session.fork();  // TODO: use the control instead
+        if (!this._registeredComponentTypes.includes(title)) {
+            this.layout.registerComponent(
+                title,
+                InteractiveEditorComponent
+            );
+            this._registeredComponentTypes.push(title);
         }
 
         parent.addChild({
             type: 'component',
-            componentName: 'InteractiveEditorComponent',
+            componentName: title,
             componentState: {
                 editor: editor,
             },

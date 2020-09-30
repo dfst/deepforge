@@ -30,34 +30,43 @@ define([
         this._currentNodeId = null;
         this._currentNodeParentId = undefined;
 
+        this.editors = [];
         this._initWidgetEventHandlers();
-
         this._logger.debug('ctor finished');
     }
 
     InteractiveWorkspaceControl.prototype._initWidgetEventHandlers = function () {
-        DeepForge.registerAction(BROWSE_EDITORS_TEXT, 'add', 10, () => this.openEditorBrowser());
-        //this._widget.onNodeClick = function (id) {
-            //// Change the current active object
-            //WebGMEGlobal.State.registerActiveObject(id);
-        //};
+        DeepForge.registerAction(
+            BROWSE_EDITORS_TEXT,
+            'add',
+            10,
+            () => this.openEditorBrowser()
+        );
     };
 
     InteractiveWorkspaceControl.prototype.openEditorBrowser = async function () {
         // TODO: Create TrainKeras
         const editorInfo = InteractiveEditors.find(info => info.id === 'TrainKeras');
+
         const EditorPanel = await this.require(editorInfo.panel);
+        if (!this.session) {
+            const connectedEditor = this.editors
+                .find(editor => editor.control.session);
+            this.session = connectedEditor && connectedEditor.control.session.fork();
+        }
+
         const editor = new EditorPanel(null, {
             client: this._client,
             embedded: this._embedded,
+            session: this.session,
         });
-        // TODO: set the active node correctly
         if (editor.control && editor.control.selectedObjectChanged) {
             const nodeId = await DeepForge.places.MyArtifacts();
             editor.control.selectedObjectChanged(nodeId);
         }
-        this._widget.addEditor(editor);
-        // TODO: add editor for now
+        this.editors.push(editor);
+
+        this._widget.addEditor(editorInfo.title, editor);
         // TODO: Show the modal
         // TODO: If one selected, import it
     };
