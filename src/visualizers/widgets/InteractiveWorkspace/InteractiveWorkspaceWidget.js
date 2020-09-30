@@ -17,9 +17,17 @@ define([
         this._logger = logger.fork('Widget');
         this.$el = container;
         const config = {
+            settings: {
+                showPopoutIcon: false,
+            },
             content: []
         };
         this.layout = new GoldenLayout(config, this.$el);
+        this.layout.on('itemDestroyed', component => {
+            if (component.instance instanceof InteractiveEditorComponent) {
+                component.instance.destroy();
+            }
+        });
         this.layout.init();
 
         this._initialize();
@@ -93,13 +101,14 @@ define([
 
     class InteractiveEditorComponent {
         constructor(container, state) {
-            // TODO: Add the editor itself to the state...
             const {editor} = state;
-            // TODO: append the body here?
             container.getElement().append(editor.$el);
+            this.editor = editor;
         }
 
-        // TODO: when is destroy called?
+        destroy() {
+            this.editor.destroy();
+        }
     }
 
     return InteractiveWorkspaceWidget;
