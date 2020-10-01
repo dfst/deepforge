@@ -80,7 +80,6 @@ define([
     };
 
     return {
-        HOME: MyPipelinesButtons,
         MyPipelines_META: MyPipelinesButtons,
         MyResources_META: function(client, currentNode) {
             let meta = this._client.getChildrenMeta(currentNode.getId());
