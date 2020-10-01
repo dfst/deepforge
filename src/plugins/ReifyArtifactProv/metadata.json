@@ -1,0 +1,24 @@
+{
+  "id": "ReifyArtifactProv",
+  "name": "Reify Artifact Provenance",
+  "version": "0.1.0",
+  "description": "",
+  "icon": {
+    "class": "glyphicon glyphicon-cog",
+    "src": ""
+  },
+  "disableServerSideExecution": false,
+  "disableBrowserSideExecution": false,
+  "dependencies": [],
+  "writeAccessRequired": false,
+  "configStructure": [
+      {
+          "name": "artifactId",
+          "displayName": "Artifact",
+          "description": "Create a pipeline of the provenance of the given artifact",
+          "value": "",
+          "valueType": "string",
+          "readOnly": false
+      }
+  ]
+}
