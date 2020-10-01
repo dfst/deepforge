@@ -50,14 +50,31 @@ define([
         if (!this.session) {
             const connectedEditor = this.editors
                 .find(editor => editor.control.session);
-            this.session = connectedEditor && connectedEditor.control.session.fork();
+            this.session = connectedEditor && connectedEditor.control.session;
         }
 
         const editor = new EditorPanel(null, {
             client: this._client,
             embedded: this._embedded,
-            session: this.session,
+            session: this.session && this.session.fork(),
         });
+
+        editor.control.on('computeInitialized', session => {
+            this.session = session;
+            this.editors.forEach(editor => {
+                const hasSession = !!editor.control.session;
+                if (!hasSession) {
+                    editor.control.onComputeInitialized(session.fork());
+                }
+            });
+        });
+        editor.control.on('destroy', () => {
+            const index = this.editors.indexOf(editor);
+            if (index > -1) {
+                this.editors.splice(index, 1);
+            }
+        });
+
         if (editor.control && editor.control.selectedObjectChanged) {
             const nodeId = await DeepForge.places.MyArtifacts();
             editor.control.selectedObjectChanged(nodeId);
@@ -92,6 +109,9 @@ define([
             DeepForge.unregisterAction(`Open ${info.title}`);
         });
         this._detachClientEventListeners();
+        if (this.session) {
+            this.session.close();
+        }
     };
 
     InteractiveWorkspaceControl.prototype._attachClientEventListeners = function () {
