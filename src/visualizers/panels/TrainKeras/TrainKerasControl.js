@@ -3,26 +3,45 @@
 define([
     'panels/InteractiveExplorer/InteractiveExplorerControl',
     'deepforge/globals',
+    'deepforge/PromiseEvents',
+    'deepforge/compute/interactive/message',
     'deepforge/CodeGenerator',
+    'plugin/GenerateJob/GenerateJob/templates/index',
+    'text!./Main.py',
+    'text!./TrainOperation.py',
     'deepforge/OperationCode',
     './JSONImporter',
+    'deepforge/Constants',
     'js/Constants',
     'q',
     'underscore',
 ], function (
     InteractiveExplorerControl,
     DeepForge,
+    PromiseEvents,
+    Message,
     CodeGenerator,
+    JobTemplates,
+    MainCode,
+    TrainOperation,
     OperationCode,
     Importer,
     CONSTANTS,
+    GME_CONSTANTS,
     Q,
     _,
 ) {
 
     'use strict';
 
+    MainCode = _.template(MainCode);
+    const GetTrainCode = _.template(TrainOperation);
     class TrainKerasControl extends InteractiveExplorerControl {
+
+        constructor() {
+            super(...arguments);
+            this.modelCount = 0;
+        }
 
         initializeWidgetHandlers (widget) {
             super.initializeWidgetHandlers(widget);
@@ -30,6 +49,12 @@ define([
             widget.getArchitectureCode = id => this.getArchitectureCode(id);
             widget.saveModel = function() {return self.saveModel(...arguments);};
             widget.getNodeSnapshot = id => this.getNodeSnapshot(id);
+            widget.stopCurrentTask = () => this.stopTask(this.currentTrainTask);
+            widget.train = config => this.train(config);
+            widget.isTrainingModel = () => this.isTrainingModel();
+            widget.getCurrentModelID = () => this.getCurrentModelID();
+            widget.createModelInfo = config => this.createModelInfo(config);
+            widget.addArtifact = (dataset, auth) => this.addArtifact(dataset, auth);
         }
 
         async getNodeSnapshot(id) {
@@ -41,14 +66,112 @@ define([
             return state;
         }
 
-        async saveModel(modelInfo, storage, session) {
-            const metadata = (await session.forkAndRun(
+        async onComputeInitialized(session) {
+            super.onComputeInitialized(session);
+            const initCode = await this.getInitializationCode();
+            await session.addFile('utils/init.py', initCode);
+            await session.addFile('plotly_backend.py', JobTemplates.MATPLOTLIB_BACKEND);
+            await session.setEnvVar('MPLBACKEND', 'module://plotly_backend');
+        }
+
+        async stopTask(task) {
+            await this.session.kill(task);
+        }
+
+        async addArtifact(dataset, auth) {
+            await this.session.addArtifact(dataset.name, dataset.dataInfo, dataset.type, auth);
+        }
+
+        async createModelInfo(config) {
+            this.modelCount++;
+            const saveName = this.getCurrentModelID();
+            const architecture = await this.getNodeSnapshot(config.architecture.id);
+            return {
+                id: saveName,
+                path: saveName,
+                name: saveName,
+                config,
+                architecture
+            };
+        }
+
+        getCurrentModelID() {
+            return `model_${this.modelCount}`;
+        }
+
+        train(modelInfo) {
+            const self = this;
+            return PromiseEvents.new(async function(resolve) {
+                this.emit('update', 'Generating Code');
+                await self.initTrainingCode(modelInfo);
+                this.emit('update', 'Training...');
+                const trainTask = self.session.spawn('python start_train.py');
+                self.currentTrainTask = trainTask;
+                self.currentTrainTask.on(Message.STDOUT, data => {
+                    let line = data.toString();
+                    if (line.startsWith(CONSTANTS.START_CMD)) {
+                        line = line.substring(CONSTANTS.START_CMD.length + 1);
+                        const splitIndex = line.indexOf(' ');
+                        const cmd = line.substring(0, splitIndex);
+                        const content = JSON.parse(line.substring(splitIndex + 1));
+                        if (cmd === 'PLOT') {
+                            this.emit('plot', content);
+                        } else {
+                            console.error('Unrecognized command:', cmd);
+                        }
+                    }
+                });
+                let stderr = '';
+                self.currentTrainTask.on(Message.STDERR, data => stderr += data.toString());
+                self.currentTrainTask.on(Message.COMPLETE, exitCode => {
+                    if (exitCode) {
+                        this.emit('error', stderr);
+                    } else {
+                        this.emit('end');
+                    }
+                    if (self.currentTrainTask === trainTask) {
+                        self.currentTrainTask = null;
+                    }
+                    resolve();
+                });
+            });
+        }
+
+        async initTrainingCode(modelInfo) {
+            const {config} = modelInfo;
+            const {dataset, architecture, path, loss, optimizer} = config;
+            const archCode = await this.getArchitectureCode(architecture.id);
+            loss.arguments.concat(optimizer.arguments).forEach(arg => {
+                let pyValue = arg.value.toString();
+                if (arg.type === 'boolean') {
+                    pyValue = arg.value ? 'True' : 'False';
+                } else if (arg.type === 'enum') {
+                    pyValue = `"${arg.value}"`;
+                }
+                arg.pyValue = pyValue;
+            });
+            await this.session.addFile('start_train.py', MainCode({
+                dataset,
+                path,
+                archCode
+            }));
+            const trainPy = GetTrainCode(config);
+            await this.session.addFile('operations/train.py', trainPy);
+        }
+
+        isTrainingModel() {
+            return !!this.currentTrainTask;
+        }
+
+        async saveModel(modelInfo, storage) {
+            modelInfo.code = GetTrainCode(modelInfo.config);
+            const metadata = (await this.session.forkAndRun(
                 session => session.exec(`cat outputs/${modelInfo.path}/metadata.json`)
             )).stdout;
             const {type} = JSON.parse(metadata);
             const projectId = this.client.getProjectInfo()._id;
             const savePath = `${projectId}/artifacts/${modelInfo.name}`;
-            const dataInfo = await session.forkAndRun(
+            const dataInfo = await this.session.forkAndRun(
                 session => session.saveArtifact(
                     `outputs/${modelInfo.path}/data`,
                     savePath,
@@ -239,13 +362,13 @@ define([
                 .forEach(event => {
                     switch (event.etype) {
 
-                    case CONSTANTS.TERRITORY_EVENT_LOAD:
+                    case GME_CONSTANTS.TERRITORY_EVENT_LOAD:
                         this.onResourceLoad(event.eid);
                         break;
-                    case CONSTANTS.TERRITORY_EVENT_UPDATE:
+                    case GME_CONSTANTS.TERRITORY_EVENT_UPDATE:
                         this.onResourceUpdate(event.eid);
                         break;
-                    case CONSTANTS.TERRITORY_EVENT_UNLOAD:
+                    case GME_CONSTANTS.TERRITORY_EVENT_UNLOAD:
                         this.onResourceUnload(event.eid);
                         break;
                     default:

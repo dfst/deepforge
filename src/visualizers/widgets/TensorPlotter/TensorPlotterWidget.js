@@ -3,23 +3,19 @@
 define([
     'widgets/InteractiveExplorer/InteractiveExplorerWidget',
     'deepforge/storage/index',
-    'deepforge/compute/interactive/session-with-queue',
     'webgme-plotly/plotly.min',
     './PlotEditor',
     './ArtifactLoader',
     'underscore',
-    'text!./files/explorer_helpers.py',
     'deepforge/viz/InformDialog',
     'css!./styles/TensorPlotterWidget.css',
 ], function (
     InteractiveExplorerWidget,
     Storage,
-    Session,
     Plotly,
     PlotEditor,
     ArtifactLoader,
     _,
-    HELPERS_PY,
     InformDialog,
 ) {
     'use strict';
@@ -33,7 +29,6 @@ define([
             this.cmdCount = 0;
             this.currentPlotData = null;
 
-            this.session = null;
             this.$el = container;
             this.$el.addClass(WIDGET_CLASS);
             const row = $('<div>', {class: 'row', style: 'height: 100%'});
@@ -73,86 +68,11 @@ define([
             if (metadata.configStructure.length) {
                 const configDialog = this.getConfigDialog();
                 const title = `Authenticate with ${metadata.name}`;
-                const iconClass = `glyphicon glyphicon-download-alt`;
+                const iconClass = 'glyphicon glyphicon-download-alt';
                 const config = await configDialog.show(metadata, {title, iconClass});
 
                 return config[backend];
             }
-        }
-
-        async onComputeInitialized (session) {
-            this.artifactLoader.session = session;
-            const initCode = await this.getInitializationCode();
-            await session.addFile('utils/init.py', initCode);
-            await session.addFile('utils/explorer_helpers.py', HELPERS_PY);
-        }
-
-        async execPy(code) {
-            try {
-                const i = ++this.cmdCount;
-                await this.session.addFile(`cmd_${i}.py`, code);
-                const {stdout} = await this.session.exec(`python cmd_${i}.py`);
-                await this.session.removeFile(`cmd_${i}.py`);
-                return stdout;
-            } catch (err) {
-                const {stderr} = err.jobResult;
-                const msg = `Command:<br/><pre><code>${code}</code></pre><br/>` +
-                    `Error logs:<br/><pre><code>${stderr}</code></pre>`;
-                const dialog = new InformDialog('Plotting failed.', msg);
-                dialog.show();
-                throw err;
-            }
-        }
-
-        async getPoints (lineInfo) {
-            const {data, dataSlice=''} = lineInfo;
-            const {pyImport, varName} = this.getImportCode(data);
-            const command = [
-                'import utils.init',
-                pyImport,
-                'from utils.explorer_helpers import print_points',
-                `print_points(${varName}${dataSlice})`
-            ].join('\n');
-            const stdout = await this.execPy(command);
-            return JSON.parse(stdout);
-        }
-
-        async getColorValues (lineInfo) {
-            const {colorData, colorDataSlice='', startColor, endColor} = lineInfo;
-            const {pyImport, varName} = this.getImportCode(colorData);
-            const command = [
-                'import utils.init',
-                pyImport,
-                'from utils.explorer_helpers import print_colors',
-                `data = ${varName}${colorDataSlice}`,
-                `print_colors(data, "${startColor}", "${endColor}")`
-            ].join('\n');
-            const stdout = await this.execPy(command);
-            return JSON.parse(stdout);
-        }
-
-        async getMetadata (desc) {
-            const {name} = desc;
-            const {pyImport, varName} = this.getImportCode(name);
-            const command = [
-                'import utils.init',
-                pyImport,
-                'from utils.explorer_helpers import print_metadata',
-                `print_metadata("${varName}", ${varName})`,
-            ].join('\n');
-            const stdout = await this.execPy(command);
-            return JSON.parse(stdout);
-        }
-
-        getImportCode (artifactName) {
-            const pyName = artifactName.replace(/\..*$/, '');
-            const [modName, ...accessors] = pyName.split('[');
-            const pyImport = `from artifacts.${modName} import data as ${modName}`;
-            const accessor = accessors.length ? '[' + accessors.join('[') : '';
-            const varName = modName + accessor;
-            return {
-                pyImport, varName
-            };
         }
 
         async getPlotData (line) {
@@ -228,18 +148,27 @@ define([
         }
 
         async getPlotlyJSON (figureData) {
-            const layout = _.pick(figureData, ['title', 'xaxis', 'yaxis']);
-            if (layout.xaxis) {
-                layout.xaxis = {title: layout.xaxis};
+            try {
+                const layout = _.pick(figureData, ['title', 'xaxis', 'yaxis']);
+                if (layout.xaxis) {
+                    layout.xaxis = {title: layout.xaxis};
+                }
+                if (layout.yaxis) {
+                    layout.yaxis = {title: layout.yaxis};
+                }
+                const data = [];
+                for (let i = 0; i < figureData.data.length; i++) {
+                    data.push(await this.getPlotData(figureData.data[i]));
+                }
+                return {data, layout};
+            } catch (err) {
+                const {stderr, code} = err;
+                const msg = `Command:<br/><pre><code>${code}</code></pre><br/>` +
+                    `Error logs:<br/><pre><code>${stderr}</code></pre>`;
+                const dialog = new InformDialog('Plotting failed.', msg);
+                dialog.show();
+                throw err;
             }
-            if (layout.yaxis) {
-                layout.yaxis = {title: layout.yaxis};
-            }
-            const data = [];
-            for (let i = 0; i < figureData.data.length; i++) {
-                data.push(await this.getPlotData(figureData.data[i]));
-            }
-            return {data, layout};
         }
 
         async updatePlot (figureData) {
@@ -261,9 +190,6 @@ define([
         /* * * * * * * * Visualizer life cycle callbacks * * * * * * * */
         destroy () {
             Plotly.purge(this.$plot[0]);
-            if (this.session) {
-                this.session.close();
-            }
         }
 
         onActivate () {

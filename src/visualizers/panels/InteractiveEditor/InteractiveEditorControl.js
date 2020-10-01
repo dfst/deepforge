@@ -1,10 +1,12 @@
 /*globals define, WebGMEGlobal*/
 
 define([
+    'deepforge/compute/interactive/session-with-queue',
     'deepforge/viz/ConfigDialog',
     'js/Constants',
     'q',
 ], function (
+    Session,
     ConfigDialog,
     CONSTANTS,
     Q,
@@ -16,23 +18,45 @@ define([
         constructor(options) {
             this._logger = options.logger.fork('Control');
             this.client = options.client;
+            this.session = options.session;
             this._embedded = options.embedded;
             this._widget = options.widget;
             this.initializeWidgetHandlers(this._widget);
             this.territoryEventFilters = [];
-
             this._currentNodeId = null;
-
+            if (this.session) {
+                this.onComputeInitialized(this.session);
+            } else {
+                this._widget.showComputeShield();
+            }
             this._logger.debug('ctor finished');
         }
 
         initializeWidgetHandlers (widget) {
-            const features = widget.getCapabilities();
-            if (features.save) {
-                widget.save = () => this.save();
-            }
+            const self = this;
+            widget.save = function() {return self.save(...arguments);};
             widget.getConfigDialog = () => new ConfigDialog(this.client);
             widget.getInitializationCode = () => this.getInitializationCode();
+            widget.createInteractiveSession =
+                (computeId, config) => this.createInteractiveSession(computeId, config);
+        }
+
+        async createInteractiveSession(computeId, config) {
+            const createSession = Session.new(computeId, config);
+            this._widget.showComputeLoadingStatus(status);
+            this._widget.updateComputeLoadingStatus('Connecting');
+            createSession.on(
+                'update',
+                status => this._widget.updateComputeLoadingStatus(status)
+            );
+            const session = await createSession;
+            this.onComputeInitialized(session);
+        }
+
+        async onComputeInitialized(session) {
+            this.session = session;
+            this._widget.session = session;  // HACK
+            this._widget.onComputeInitialized(session);  // HACK
         }
 
         async getInitializationCode () {
@@ -218,6 +242,9 @@ define([
         destroy () {
             this._detachClientEventListeners();
             this._widget.destroy();
+            if (this.session) {
+                this.session.close();
+            }
         }
 
         _attachClientEventListeners () {

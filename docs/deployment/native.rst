@@ -21,7 +21,7 @@ After installing DeepForge, it is recommended to install the `deepforge-keras <h
 
 .. code-block:: bash
 
-    deepforge extensions add deepforge-dev/deepforge-keras
+    deepforge extensions add deepforge-keras
 
 DeepForge can now be started with:
 
@@ -122,7 +122,7 @@ we recommend using a dockerized deployment.
 .. code-block:: bash
 
     cd deepforge && npm install
-    ./bin/deepforge extensions add deepforge-dev/deepforge-keras
+    ./bin/deepforge extensions add deepforge-keras
 
 2. Generate token keys for user-management (required for user management).
 

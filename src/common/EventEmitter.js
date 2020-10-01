@@ -4,6 +4,10 @@ define([
 ) {
     class EventEmitter {
         constructor() {
+            this.init();
+        }
+
+        init() {
             this._handlers = {};
         }
 

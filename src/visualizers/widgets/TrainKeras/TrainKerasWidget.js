@@ -2,16 +2,10 @@
 
 define([
     './build/TrainDashboard',
-    'plugin/GenerateJob/GenerateJob/templates/index',
-    'deepforge/Constants',
     'deepforge/storage/index',
     'widgets/InteractiveEditor/InteractiveEditorWidget',
     'deepforge/viz/ConfigDialog',
-    'deepforge/compute/interactive/message',
-    'deepforge/compute/line-collector',
     'webgme-plotly/plotly.min',
-    'text!./TrainOperation.py',
-    'text!./Main.py',
     'deepforge/viz/StorageHelpers',
     'deepforge/viz/ConfirmDialog',
     'deepforge/viz/InformDialog',
@@ -21,16 +15,10 @@ define([
     'css!./styles/TrainKerasWidget.css',
 ], function (
     TrainDashboard,
-    JobTemplates,
-    CONSTANTS,
     Storage,
     InteractiveEditor,
     ConfigDialog,
-    Message,
-    LineCollector,
     Plotly,
-    TrainOperation,
-    MainCode,
     StorageHelpers,
     ConfirmDialog,
     InformDialog,
@@ -40,9 +28,7 @@ define([
     'use strict';
 
     const WIDGET_CLASS = 'train-keras';
-    const GetTrainCode = _.template(TrainOperation);
     const DashboardSchemas = JSON.parse(SchemaText);
-    MainCode = _.template(MainCode);
 
     class TrainKerasWidget extends InteractiveEditor {
         constructor(logger, container) {
@@ -51,7 +37,7 @@ define([
             this.dashboard.initialize(Plotly, DashboardSchemas);
             this.dashboard.events().addEventListener(
                 'onTrainClicked',
-                () => this.train(this.dashboard.data())
+                () => this.onTrainClicked()
             );
             this.dashboard.events().addEventListener(
                 'saveModel',
@@ -61,25 +47,16 @@ define([
                 'showModelInfo',
                 event => this.onShowModelInfo(event.detail)
             );
-            this.modelCount = 0;
             container.addClass(WIDGET_CLASS);
-            this.currentTrainTask = null;
             this.loadedData = [];
-        }
-
-        async onComputeInitialized(session) {
-            const initCode = await this.getInitializationCode();
-            await session.addFile('utils/init.py', initCode);
-            await session.addFile('plotly_backend.py', JobTemplates.MATPLOTLIB_BACKEND);
-            await session.setEnvVar('MPLBACKEND', 'module://plotly_backend');
         }
 
         isDataLoaded(dataset) {
             return this.loadedData.find(data => _.isEqual(data, dataset));
         }
 
-        async train(config) {
-            if (this.currentTrainTask) {
+        async onTrainClicked() {
+            if (this.isTrainingModel()) {
                 const title = 'Stop Current Training';
                 const body = 'Would you like to stop the current training to train a model with the new configuration?';
                 const dialog = new ConfirmDialog(title, body);
@@ -90,75 +67,43 @@ define([
                 }
 
                 this.dashboard.setModelState(this.getCurrentModelID(), 'Canceled');
-                await this.session.kill(this.currentTrainTask);
+                await this.stopCurrentTask();
             }
 
-            this.modelCount++;
-            const saveName = this.getCurrentModelID();
-            const architecture = await this.getNodeSnapshot(config.architecture.id);
-            const modelInfo = {
-                id: saveName,
-                path: saveName,
-                name: saveName,
-                state: 'Fetching Data...',
-                config,
-                architecture
-            };
-            this.dashboard.addModel(modelInfo);
+            const config = this.dashboard.data();
             const {dataset} = config;
+            const modelInfo = await this.createModelInfo(config);
+            modelInfo.state = 'Fetching Data';
+            this.dashboard.addModel(modelInfo);
+
             if (!this.isDataLoaded(dataset)) {
                 this.loadedData.push(dataset);
                 const auth = await StorageHelpers.getAuthenticationConfig(dataset.dataInfo);
-                await this.session.addArtifact(dataset.name, dataset.dataInfo, dataset.type, auth);
+                await this.addArtifact(dataset, auth);
             }
-            this.dashboard.setModelState(this.getCurrentModelID(), 'Generating Code');
 
-            const archCode = await this.getArchitectureCode(config.architecture.id);
-            config.loss.arguments.concat(config.optimizer.arguments).forEach(arg => {
-                let pyValue = arg.value.toString();
-                if (arg.type === 'boolean') {
-                    pyValue = arg.value ? 'True' : 'False';
-                } else if (arg.type === 'enum') {
-                    pyValue = `"${arg.value}"`;
-                }
-                arg.pyValue = pyValue;
-            });
-            await this.session.addFile('start_train.py', MainCode({
-                dataset,
-                path: modelInfo.path,
-                archCode
-            }));
-            const trainPy = GetTrainCode(config);
-            await this.session.addFile('operations/train.py', trainPy);
-            this.dashboard.setModelState(this.getCurrentModelID(), 'Training...');
-            const trainTask = this.session.spawn('python start_train.py');
-            this.currentTrainTask = trainTask;
-            this.currentTrainTask.on(Message.STDOUT, data => {
-                let line = data.toString();
-                if (line.startsWith(CONSTANTS.START_CMD)) {
-                    line = line.substring(CONSTANTS.START_CMD.length + 1);
-                    const splitIndex = line.indexOf(' ');
-                    const cmd = line.substring(0, splitIndex);
-                    const content = line.substring(splitIndex + 1);
-                    this.parseMetadata(cmd, JSON.parse(content));
-                }
-            });
-            let stderr = '';
-            this.currentTrainTask.on(Message.STDERR, data => stderr += data.toString());
-            this.currentTrainTask.on(Message.COMPLETE, exitCode => {
-                if (exitCode) {
-                    this.dashboard.setModelState(modelInfo.id, 'Error Occurred', stderr);
-                } else {
-                    this.dashboard.setModelState(modelInfo.id);
-                }
-                if (this.currentTrainTask === trainTask) {
-                    this.currentTrainTask = null;
-                }
-            });
+            const createTrainTask = this.train(modelInfo);
+            createTrainTask.on(
+                'update',
+                status => this.dashboard.setModelState(modelInfo.id, status)
+            );
+            createTrainTask.on(
+                'plot',
+                plotData => this.dashboard.setPlotData(modelInfo.id, plotData)
+            );
+            createTrainTask.on(
+                'error',
+                stderr => this.dashboard.setModelState(modelInfo.id, 'Error Occurred', stderr)
+            );
+            createTrainTask.on(
+                'end',
+                () => this.dashboard.setModelState(modelInfo.id)
+            );
+            await createTrainTask;
         }
 
         async onShowModelInfo(modelInfo) {
-            let body = modelInfo.info.replace(/\n/g, '<br/>');
+            let body = (modelInfo.info || '').replace(/\n/g, '<br/>');
             const isSaveError = modelInfo.state === 'Save Failed';
             if (isSaveError) {
                 body += '<br/><br/>Would you like to clear this error?';
@@ -174,10 +119,6 @@ define([
                 );
                 dialog.show();
             }
-        }
-
-        getCurrentModelID() {
-            return `model_${this.modelCount}`;
         }
 
         async promptStorageConfig(name) {
@@ -212,8 +153,7 @@ define([
 
             this.dashboard.setModelState(modelInfo.id, 'Uploading...');
             try {
-                modelInfo.code = GetTrainCode(modelInfo.config);
-                await this.saveModel(modelInfo, storage, this.session);
+                await this.saveModel(modelInfo, storage);
                 this.dashboard.setModelState(modelInfo.id, 'Saved');
             } catch (err) {
                 this.dashboard.setModelState(
@@ -221,14 +161,6 @@ define([
                     'Save Failed',
                     err.stack
                 );
-            }
-        }
-
-        parseMetadata(cmd, content) {
-            if (cmd === 'PLOT') {
-                this.dashboard.setPlotData(this.getCurrentModelID(), content);
-            } else {
-                console.error('Unrecognized command:', cmd);
             }
         }
 
