@@ -1,12 +1,14 @@
 /* globals define */
 define([
     'deepforge/utils',
+    'deepforge/PromiseEvents',
     'deepforge/compute/interactive/task',
     'deepforge/compute/interactive/message',
     'deepforge/compute/interactive/errors',
     'deepforge/gmeConfig',
 ], function(
     utils,
+    PromiseEvents,
     Task,
     Message,
     Errors,
@@ -167,8 +169,7 @@ define([
             const address = gmeConfig.extensions.InteractiveComputeHost ||
                 getDefaultServerURL();
 
-            let createSession;
-            createSession = new PromiseEvents(function(resolve, reject) {
+            return PromiseEvents.new(function(resolve, reject) {
                 const ws = new WebSocket(address);
                 ws.onopen = () => {
                     ws.send(JSON.stringify([computeID, config, getGMEToken()]));
@@ -189,33 +190,11 @@ define([
                             const err = msg.data;
                             reject(err);
                         } else if (msg.type === Message.STATUS) {
-                            createSession.emit('update', msg.data);
+                            this.emit('update', msg.data);
                         }
                     };
                 };
             });
-
-            return createSession;
-        }
-    }
-
-    class PromiseEvents extends Promise {
-        constructor(fn) {
-            super(fn);
-            this._handlers = {};
-        }
-
-        on(event, fn) {
-            if (!this._handlers[event]) {
-                this._handlers[event] = [];
-            }
-            this._handlers[event].push(fn);
-        }
-
-        emit(event) {
-            const handlers = this._handlers[event] || [];
-            const args = Array.prototype.slice.call(arguments, 1);
-            handlers.forEach(fn => fn.apply(null, args));
         }
     }
 

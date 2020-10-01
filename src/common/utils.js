@@ -141,6 +141,10 @@
         return deferred.promise;
     }
 
+    function yield() {
+        return sleep(0);
+    }
+
     async function waitUntil(fn, interval=50) {
         while (!await fn()) {
             await sleep(interval);
@@ -167,6 +171,7 @@
         withTimeout,
         defer,
         sleep,
+        yield,
         waitUntil,
         partition,
     };
