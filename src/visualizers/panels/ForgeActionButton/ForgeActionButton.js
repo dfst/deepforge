@@ -115,7 +115,7 @@ define([
             basename = node.getAttribute('name') || 'ROOT_NODE';
             actions = this.getDefinedActionsFor(basename, node)
                 .filter(action => !action.filter || action.filter.call(this));
-            return actions;
+            return actions.concat(this._registry);
         }
 
         while (base && !(actions && actions.length)) {
@@ -175,17 +175,19 @@ define([
 
     ForgeActionButton.prototype.registerAction = function(action, update=true) {
         this._registry.push(action);
-        this.addAction(action, update);
+        if (update) {
+            this.refresh();
+        }
     };
 
     ForgeActionButton.prototype.unregisterAction = function(name, update=true) {
         const index = this._registry.findIndex(action => action.name === name);
         if (index > -1) {
-            this._actions.splice(index, 1);
+            this._registry.splice(index, 1);
         }
 
         if (update) {
-            this.update();
+            this.refresh();
         }
     };
 
