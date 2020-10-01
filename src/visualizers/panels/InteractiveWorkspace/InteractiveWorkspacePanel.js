@@ -35,8 +35,6 @@ define([
     _.extend(InteractiveWorkspacePanel.prototype, IActivePanel.prototype);
 
     InteractiveWorkspacePanel.prototype._initialize = function () {
-        var self = this;
-
         //set Widget title
         this.setTitle('');
 

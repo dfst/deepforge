@@ -17,7 +17,6 @@ define([
     'use strict';
 
     InteractiveEditors = JSON.parse(InteractiveEditors);
-    const BROWSE_EDITORS_TEXT = 'Open editor';
     function InteractiveWorkspaceControl(options) {
 
         this._logger = options.logger.fork('Control');
@@ -75,99 +74,8 @@ define([
     };
 
     /* * * * * * * * Visualizer content update callbacks * * * * * * * */
-    // One major concept here is with managing the territory. The territory
-    // defines the parts of the project that the visualizer is interested in
-    // (this allows the browser to then only load those relevant parts).
     InteractiveWorkspaceControl.prototype.selectedObjectChanged = function (nodeId) {
-        var desc = this._getObjectDescriptor(nodeId),
-            self = this;
-
-        self._logger.debug('activeObject nodeId \'' + nodeId + '\'');
-
-        // Remove current territory patterns
-        if (self._currentNodeId) {
-            self._client.removeUI(self._territoryId);
-        }
-
-        self._currentNodeId = nodeId;
-        self._currentNodeParentId = undefined;
-
-        if (typeof self._currentNodeId === 'string') {
-            // Put new node's info into territory rules
-            self._selfPatterns = {};
-            self._selfPatterns[nodeId] = {children: 0};  // Territory "rule"
-
-            self._currentNodeParentId = desc.parentId;
-
-            self._territoryId = self._client.addUI(self, function (events) {
-                self._eventCallback(events);
-            });
-
-            // Update the territory
-            self._client.updateTerritory(self._territoryId, self._selfPatterns);
-
-            self._selfPatterns[nodeId] = {children: 1};
-            self._client.updateTerritory(self._territoryId, self._selfPatterns);
-        }
-    };
-
-    // This next function retrieves the relevant node information for the widget
-    InteractiveWorkspaceControl.prototype._getObjectDescriptor = function (nodeId) {
-        var node = this._client.getNode(nodeId),
-            objDescriptor;
-        if (node) {
-            objDescriptor = {
-                id: node.getId(),
-                name: node.getAttribute(nodePropertyNames.Attributes.name),
-                childrenIds: node.getChildrenIds(),
-                parentId: node.getParentId(),
-                isConnection: GMEConcepts.isConnection(nodeId)
-            };
-        }
-
-        return objDescriptor;
-    };
-
-    /* * * * * * * * Node Event Handling * * * * * * * */
-    InteractiveWorkspaceControl.prototype._eventCallback = function (events) {
-        var i = events ? events.length : 0,
-            event;
-
-        this._logger.debug('_eventCallback \'' + i + '\' items');
-
-        while (i--) {
-            event = events[i];
-            switch (event.etype) {
-
-            case CONSTANTS.TERRITORY_EVENT_LOAD:
-                this._onLoad(event.eid);
-                break;
-            case CONSTANTS.TERRITORY_EVENT_UPDATE:
-                this._onUpdate(event.eid);
-                break;
-            case CONSTANTS.TERRITORY_EVENT_UNLOAD:
-                this._onUnload(event.eid);
-                break;
-            default:
-                break;
-            }
-        }
-
-        this._logger.debug('_eventCallback \'' + events.length + '\' items - DONE');
-    };
-
-    InteractiveWorkspaceControl.prototype._onLoad = function (gmeId) {
-        var description = this._getObjectDescriptor(gmeId);
-        this._widget.addNode(description);
-    };
-
-    InteractiveWorkspaceControl.prototype._onUpdate = function (gmeId) {
-        var description = this._getObjectDescriptor(gmeId);
-        this._widget.updateNode(description);
-    };
-
-    InteractiveWorkspaceControl.prototype._onUnload = function (gmeId) {
-        this._widget.removeNode(gmeId);
+        this._currentNodeId = nodeId;
     };
 
     InteractiveWorkspaceControl.prototype._stateActiveObjectChanged = function (model, activeObjectId) {

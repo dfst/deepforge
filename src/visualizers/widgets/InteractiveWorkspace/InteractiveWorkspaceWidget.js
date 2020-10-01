@@ -77,29 +77,9 @@ define([
         this._logger.debug('Widget is resizing...');
     };
 
-    // Adding/Removing/Updating items
-    InteractiveWorkspaceWidget.prototype.addNode = function (desc) {
-    };
-
-    InteractiveWorkspaceWidget.prototype.removeNode = function (gmeId) {
-    };
-
-    InteractiveWorkspaceWidget.prototype.updateNode = function (desc) {
-    };
-
-    /* * * * * * * * Visualizer event handlers * * * * * * * */
-
-    InteractiveWorkspaceWidget.prototype.onNodeClick = function (/*id*/) {
-        // This currently changes the active node to the given id and
-        // this is overridden in the controller.
-    };
-
-    InteractiveWorkspaceWidget.prototype.onBackgroundDblClick = function () {
-        this.$el.append('<div>Background was double-clicked!!</div>');
-    };
-
     /* * * * * * * * Visualizer life cycle callbacks * * * * * * * */
     InteractiveWorkspaceWidget.prototype.destroy = function () {
+        console.log('destroy');
     };
 
     InteractiveWorkspaceWidget.prototype.onActivate = function () {
