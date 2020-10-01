@@ -10,7 +10,6 @@ define([
 ) {
     'use strict';
 
-    console.log({GoldenLayout});
     var WIDGET_CLASS = 'interactive-workspace';
 
     function InteractiveWorkspaceWidget(logger, container) {
