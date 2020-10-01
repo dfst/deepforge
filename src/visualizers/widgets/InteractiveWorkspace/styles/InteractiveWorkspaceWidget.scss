@@ -5,4 +5,14 @@
 .interactive-workspace {
   outline: none;
   padding: 0!important;
+
+  .welcome {
+    color: #757575;
+    font-size: 3em;
+    font-style: italic;
+    left: 50%;
+    top: 50%;
+    transform: translateY(-50%) translateX(-50%);
+    position: absolute;
+  }
 }

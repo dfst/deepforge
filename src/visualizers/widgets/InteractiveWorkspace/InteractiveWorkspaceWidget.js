@@ -1,4 +1,4 @@
-/*globals define */
+/*globals define, $ */
 
 define([
     './lib/golden-layout-1.5.9/dist/goldenlayout',
@@ -23,6 +23,10 @@ define([
             content: []
         };
         this.layout = new GoldenLayout(config, this.$el);
+        this.layout.registerComponent(
+            'Welcome',
+            WelcomeComponent
+        );
         this.layout.on('itemDestroyed', component => {
             if (component.instance instanceof InteractiveEditorComponent) {
                 component.instance.destroy();
@@ -38,6 +42,13 @@ define([
     InteractiveWorkspaceWidget.prototype._initialize = function () {
         // set widget class
         this.$el.addClass(WIDGET_CLASS);
+
+        setTimeout(() => {
+            this.layout.root.addChild({
+                type: 'component',
+                componentName: 'Welcome',
+            });
+        });
     };
 
     InteractiveWorkspaceWidget.prototype.addEditor = function (title, editor) {
@@ -108,6 +119,23 @@ define([
 
         destroy() {
             this.editor.destroy();
+        }
+
+        onResize() {
+            // FIXME: what should the size be?
+            this.editor.onResize(this.editor.$el.width(), this.editor.$el.height());
+        }
+    }
+
+    class WelcomeComponent {
+        constructor(container/*, state*/) {
+
+            const element = $('<div>', {class: 'welcome'});
+            element.text('No editors open...');
+            container.getElement().append(element);
+        }
+
+        destroy() {
         }
     }
 
