@@ -1,13 +1,11 @@
 /* globals define, $ */
 define([
-    'deepforge/compute/interactive/session-with-queue',
     'deepforge/viz/ConfigDialog',
     'deepforge/viz/InformDialog',
     'deepforge/compute/index',
     'deepforge/globals',
     'css!./styles/InteractiveEditorWidget.css',
 ], function(
-    Session,
     ConfigDialog,
     InformDialog,
     Compute,
@@ -18,12 +16,12 @@ define([
     const LoaderHTML = '<div class="lds-ripple"><div></div><div></div></div>';
     class InteractiveEditorWidget {
         constructor(container) {
-            this.showComputeShield(container);
+            this.$el = container;
         }
 
-        showComputeShield(container) {
+        showComputeShield() {
             const overlay = $('<div>', {class: 'compute-shield'});
-            container.append(overlay);
+            this.$el.append(overlay);
             overlay.append($('<div>', {class: 'filler'}));
             const loader = $(LoaderHTML);
             overlay.append(loader);
@@ -38,13 +36,12 @@ define([
             overlay.on('click', async () => {
                 const {id, config} = await this.promptComputeConfig();
                 try {
-                    this.session = await this.createInteractiveSession(id, config, overlay);
+                    await this.createInteractiveSession(id, config);
                     const features = this.getCapabilities();
                     if (features.save) {
                         DeepForge.registerAction('Save', 'save', 10, () => this.save());
                     }
                     overlay.remove();
-                    this.onComputeInitialized(this.session);
                 } catch (err) {
                     const title = 'Compute Creation Error';
                     const body = 'Unable to create compute. Please verify the credentials are correct.';
@@ -108,7 +105,9 @@ define([
             return {id, config};
         }
 
-        showComputeLoadingStatus(status, overlay) {
+        showComputeLoadingStatus() {
+            const overlay = this.$el.find('.compute-shield');
+            this.$el.append(overlay);
             const msg = overlay.find('.subtitle');
             const loader = overlay.find('.lds-ripple');
             const title = overlay.find('.title');
@@ -119,24 +118,12 @@ define([
             return msg;
         }
 
-        updateComputeLoadingStatus(status, subtitle) {
+        updateComputeLoadingStatus(status) {
+            const subtitle = this.$el.find('.subtitle');
             const displayText = status === 'running' ?
                 'Configuring environment' :
                 status.substring(0, 1).toUpperCase() + status.substring(1);
             subtitle.text(`${displayText}...`);
-        }
-
-        async createInteractiveSession(computeId, config, overlay) {
-            const createSession = Session.new(computeId, config);
-
-            const msg = this.showComputeLoadingStatus(status, overlay);
-            this.updateComputeLoadingStatus('Connecting', msg);
-            createSession.on(
-                'update',
-                status => this.updateComputeLoadingStatus(status, msg)
-            );
-            const session = await createSession;
-            return session;
         }
 
         destroy() {
@@ -144,7 +131,6 @@ define([
             if (features.save) {
                 DeepForge.unregisterAction('Save');
             }
-            this.session.close();
         }
 
         updateNode(/*desc*/) {

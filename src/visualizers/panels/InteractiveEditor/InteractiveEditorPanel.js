@@ -3,29 +3,25 @@
 define([
     'js/PanelBase/PanelBaseWithHeader',
     'js/PanelManager/IActivePanel',
-    'widgets/InteractiveEditor/InteractiveEditorWidget',
-    './InteractiveEditorControl'
 ], function (
     PanelBaseWithHeader,
     IActivePanel,
-    InteractiveEditorWidget,
-    InteractiveEditorControl
 ) {
     'use strict';
 
-    function InteractiveEditorPanel(layoutManager, params) {
-        var options = {};
+    function InteractiveEditorPanel(options, params) {
+        const panelOptions = {};
         //set properties from options
-        options[PanelBaseWithHeader.OPTIONS.LOGGER_INSTANCE_NAME] = 'InteractiveEditorPanel';
-        options[PanelBaseWithHeader.OPTIONS.FLOATING_TITLE] = true;
+        panelOptions[PanelBaseWithHeader.OPTIONS.LOGGER_INSTANCE_NAME] = name + 'Panel';
 
         //call parent's constructor
-        PanelBaseWithHeader.apply(this, [options, layoutManager]);
+        PanelBaseWithHeader.call(this, panelOptions);
 
         this._client = params.client;
         this._embedded = params.embedded;
+        this.session = params.session;
 
-        this.initialize();
+        this.initialize(options);
 
         this.logger.debug('ctor finished');
     }
@@ -34,23 +30,25 @@ define([
     _.extend(InteractiveEditorPanel.prototype, PanelBaseWithHeader.prototype);
     _.extend(InteractiveEditorPanel.prototype, IActivePanel.prototype);
 
-    InteractiveEditorPanel.prototype.initialize = function () {
+    InteractiveEditorPanel.prototype.initialize = function (options) {
+        const {Control, Widget} = options;
         var self = this;
 
         //set Widget title
         this.setTitle('');
 
-        this.widget = new InteractiveEditorWidget(this.logger, this.$el);
+        this.widget = new Widget(this.logger, this.$el);
 
         this.widget.setTitle = function (title) {
             self.setTitle(title);
         };
 
-        this.control = new InteractiveEditorControl({
+        this.control = new Control({
             logger: this.logger,
             client: this._client,
             embedded: this._embedded,
-            widget: this.widget
+            widget: this.widget,
+            session: this.session,
         });
 
         this.onActivate();

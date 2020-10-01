@@ -13,8 +13,8 @@
   top: 0;
   z-index: 100; }
 
-.compute-shield .invisible {
-  visibility: hidden; }
+.compute-shield .hidden {
+  display: none; }
 .compute-shield .filler {
   margin-top: 25%; }
 .compute-shield .title {
@@ -24,9 +24,9 @@
   margin: auto;
   text-align: center; }
 .compute-shield .subtitle {
-  color: whitesmoke;
+  font-style: italic;
   display: block;
-  font-size: 1.5em;
+  font-size: 1.3em;
   margin: auto;
   text-align: center; }
 .compute-shield .lds-ripple {
