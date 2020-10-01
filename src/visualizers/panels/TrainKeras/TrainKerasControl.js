@@ -420,17 +420,18 @@ define([
             if (node) {
                 return node.getAttribute('data');
             }
-            return true;
+            return false;
         }
 
         getObjectDescriptor(nodeId) {
             const node = this.client.getNode(nodeId);
             const name = node.getAttribute('name').replace(/\..*$/, '');
+            const dataInfo = node.getAttribute('data');
             return {
                 id: nodeId,
                 name,
                 type: node.getAttribute('type'),
-                dataInfo: JSON.parse(node.getAttribute('data')),
+                dataInfo: dataInfo && JSON.parse(dataInfo),
             };
         }
     }
