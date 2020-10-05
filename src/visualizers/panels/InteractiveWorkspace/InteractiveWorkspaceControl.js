@@ -90,10 +90,7 @@ define([
                 editor.control.selectedObjectChanged(nodeId);
             }
             this.editors.push(editor);
-
             this._widget.addEditor(editorInfo.title, editor);
-            // TODO: Show the modal
-            // TODO: If one selected, import it
         }
 
         require(path) {

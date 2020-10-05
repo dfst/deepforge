@@ -72,7 +72,7 @@ define([
         });
     };
 
-    InteractiveWorkspaceWidget.prototype.onWidgetContainerResize = function (width, height) {
+    InteractiveWorkspaceWidget.prototype.onWidgetContainerResize = function (/*width, height*/) {
         this._logger.debug('Widget is resizing...');
     };
 
@@ -101,7 +101,6 @@ define([
         }
 
         onResize() {
-            // FIXME: what should the size be?
             this.editor.onResize(this.editor.$el.width(), this.editor.$el.height());
         }
     }
