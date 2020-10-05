@@ -68,7 +68,6 @@ define([
                     activeNode: nodeId,
                 };
                 const result = await this.executePlugin(info.pluginId, config, context);
-                console.log('>> result:', result);
                 return result.artifacts[0];
             } else {
                 var metanode = this.core.getMetaType(node),
@@ -132,8 +131,6 @@ define([
                 config,
                 context
             );
-            console.log('FINISHED EXECUTING PLUGIN', pluginId);
-            console.log(result);
             return result;
         }
 
