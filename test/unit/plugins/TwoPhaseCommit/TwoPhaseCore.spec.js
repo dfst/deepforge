@@ -191,6 +191,44 @@ describe('TwoPhaseCore', function() {
                 assert(names.includes('src'));
             });
         });
+
+        describe('getParent', function() {
+            it('should getParent of existing node', function() {
+                const {META, rootNode, core} = plugin;
+                const base = META.FCO;
+                const parent = core.getParent(base);
+
+                assert.equal(parent, rootNode);
+            });
+
+            it('should getParent of new node', function() {
+                const {META, rootNode, core} = plugin;
+                const {FCO} = META;
+                const parent = rootNode;
+                const newNode = core.createNode({base: FCO, parent});
+
+                assert.equal(core.getParent(newNode), parent);
+            });
+        });
+
+        describe('getAllMetaNodes', function() {
+            it('should getAllMetaNodes from existing node', function() {
+                const {META, core} = plugin;
+                const base = META.FCO;
+                const metaDict = core.getAllMetaNodes(base);
+
+                assert(metaDict);
+            });
+
+            it('should getAllMetaNodes from new node', function() {
+                const {META, rootNode, core} = plugin;
+                const {FCO} = META;
+                const parent = rootNode;
+                const newNode = core.createNode({base: FCO, parent});
+
+                assert(core.getAllMetaNodes(newNode));
+            });
+        });
     });
 
     describe('argument validation', function() {

@@ -33,7 +33,6 @@ define([
     passToCore('persist');
     passToCore('loadRoot');
     passToCore('loadSubTree');
-    passToCore('getParent');
     passToCore('getNamespace');
     passToCore('getChildrenMeta');
     passToCore('getChildrenPaths');
@@ -56,6 +55,23 @@ define([
             }
         } else {
             return this.core.loadByPath(node, id);
+        }
+    };
+
+    TwoPhaseCore.prototype.getAllMetaNodes = function (node) {
+        ensureNode(node, 'getAllMetaNodes');
+        while (node instanceof CreatedNode) {
+            node = node.base;
+        }
+        return this.core.getAllMetaNodes(node);
+    };
+
+    TwoPhaseCore.prototype.getParent = function (node) {
+        ensureNode(node, 'getParent');
+        if (node instanceof CreatedNode) {
+            return node.parent;
+        } else {
+            return this.core.getParent(node);
         }
     };
 
