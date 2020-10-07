@@ -2,13 +2,13 @@
 /*eslint-env node, browser*/
 
 define([
-    'plugin/PluginConfig',
+    'plugin/PluginBase',
+    'deepforge/plugin/ExecutionHelpers',
     'text!./metadata.json',
-    'plugin/PluginBase'
 ], function (
-    PluginConfig,
+    PluginBase,
+    ExecutionHelpers,
     pluginMetadata,
-    PluginBase
 ) {
     'use strict';
 
@@ -34,8 +34,9 @@ define([
             });
             this.core.setAttribute(pipeline, 'name', `Provenance of ${name}`);
 
-            const outputData = await this.createOutputOperation(pipeline, artifact);
-            await this.addProvenanceOperation(pipeline, artifact, outputData);
+            const outputOp = await this.createOutputOperation(pipeline, artifact);
+            const [input] = await this.getOperationInputs(outputOp);
+            await this.addProvenanceOperation(pipeline, input);
 
             await this.save(`Created provenance pipeline of ${name}`);
             this.result.setSuccess(true);
@@ -64,15 +65,11 @@ define([
                 base: this.META.Output,
             });
             const [input] = await this.getOperationInputs(output);
-            const dataInfo = this.core.getAttribute(data, 'data');
-            this.core.setAttribute(input, 'data', dataInfo);
-
-            const provId = this.core.getPointerPath(data, 'provenance');
-            if (provId) {
-                const provNode = await this.core.loadByPath(this.rootNode, provId);
-                const provCopy = this.core.copyNode(provNode, input);
-                this.core.setPointer(input, 'provenance', provCopy);
-            }
+            const helpers = new ExecutionHelpers(this.core, this.rootNode);
+            await helpers.setDataContents(input, data);
+            const name = this.core.getAttribute(data, 'name');
+            this.core.setAttribute(output, 'saveName', name);
+            return output;
         }
 
         async getOperationInputs(operation) {
@@ -88,22 +85,22 @@ define([
         }
 
         async getProvAsOperation(artifact) {
-            const impOpId = this.core.getPointerPath(artifact, 'provenance');
-            if (!impOpId) return;
-            const implicitOp = await this.core.loadByPath(this.rootNode, impOpId);
+            const implOpId = this.core.getPointerPath(artifact, 'provenance');
+            if (!implOpId) return;
+            const implicitOp = await this.core.loadByPath(this.rootNode, implOpId);
             const operationId = this.core.getPointerPath(implicitOp, 'operation');
             if (!operationId) {
                 const name = this.core.getAttribute(implicitOp, 'name');
-                throw new Error(`No operation found for ${impOpId} (${name})`);
+                throw new Error(`No operation found for ${implOpId} (${name})`);
             }
             return await this.core.loadByPath(this.rootNode, operationId);
         }
 
         async getOutputData(operation, artifact) {
             const outputs = await this.getOperationOutputs(operation);
-            const dataInfo = this.core.getAttribute(artifact, 'data');
+            const provOutput = this.core.getAttribute(artifact, 'provOutput');
             return outputs.find(
-                data => this.core.getAttribute(data, 'data') === dataInfo
+                data => this.core.getAttribute(data, 'name') === provOutput
             );
         }
 

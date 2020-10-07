@@ -730,9 +730,15 @@ define([
             base: this.META.ExecutedJob,
             parent: dataNode
         });
-        const {snapshot} = await helpers.snapshotOperation(opNode, executedJob, this.META.Operation);
+        const {snapshot} = await helpers.snapshotOperation(
+            opNode,
+            executedJob,
+            this.META.Operation
+        );
         this.core.setPointer(executedJob, 'operation', snapshot);
         this.core.setPointer(dataNode, 'provenance', executedJob);
+        const name = this.core.getAttribute(dataNode, 'name');
+        this.core.setAttribute(dataNode, 'provOutput', name);
     };
 
     //////////////////////////// Special Operations ////////////////////////////

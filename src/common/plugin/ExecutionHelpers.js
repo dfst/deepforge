@@ -73,6 +73,49 @@ define([
 
             return copy;
         }
+
+        async setDataContents(node, dataNode) {
+            const dataType = this.core.getAttribute(dataNode, 'type');
+            this.core.setAttribute(node, 'type', dataType);
+
+            const hash = this.core.getAttribute(dataNode, 'data');
+            this.core.setAttribute(node, 'data', hash);
+
+            const provOutput = this.core.getAttribute(dataNode, 'provOutput');
+            this.core.setAttribute(node, 'provOutput', provOutput);
+
+            await this.clearProvenance(node);
+
+            const provDataId = this.core.getPointerPath(dataNode, 'provenance');
+            if (provDataId) {
+                const implOp = await this.core.loadByPath(this.rootNode, provDataId);
+                const provCopy = this.core.copyNode(implOp, node);
+                this.core.setPointer(node, 'provenance', provCopy);
+            }
+        }
+
+        async clearProvenance(dataNode) {
+            const provDataId = this.core.getPointerPath(dataNode, 'provenance');
+            if (provDataId) {
+                const provData = await this.core.loadByPath(this.rootNode, provDataId);
+                const {node} = this.getImplicitOperation(provData);
+                this.core.deleteNode(node);
+            }
+        }
+
+        getImplicitOperation(dataNode) {
+            const metanodes = Object.values(this.core.getAllMetaNodes(dataNode));
+            const implicitOp = metanodes
+                .find(node => this.core.getAttribute(node, 'name') === 'ImplicitOperation');
+            let node = dataNode;
+            const path = [];
+            while (node && !this.core.isTypeOf(node, implicitOp)) {
+                path.push(this.core.getAttribute(node, 'name'));
+                node = this.core.getParent(node);
+            }
+
+            return {node, path};
+        }
     }
     
     return ExecutionHelpers;

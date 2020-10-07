@@ -16,7 +16,7 @@ define([
         async loadChildren() {
             const provPath = this.core.getPointerPath(this.node, 'provenance');
             const children = (await this.core.loadChildren(this.node))
-                .filter(node => this.core.getPath(node) !== provPath);
+                .filter(node => !provPath.includes(this.core.getPath(node)));
 
             return children;
         }

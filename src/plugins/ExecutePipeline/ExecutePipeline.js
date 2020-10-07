@@ -4,6 +4,7 @@
 define([
     'plugin/CreateExecution/CreateExecution/CreateExecution',
     'plugin/ExecuteJob/ExecuteJob/ExecuteJob',
+    'deepforge/plugin/ExecutionHelpers',
     'common/storage/constants',
     'common/core/constants',
     'deepforge/Constants',
@@ -13,6 +14,7 @@ define([
 ], function (
     CreateExecution,
     ExecuteJob,
+    ExecutionHelpers,
     STORAGE_CONSTANTS,
     GME_CONSTANTS,
     CONSTANTS,
@@ -554,26 +556,12 @@ define([
         const portPairs = resultPorts
             .map((id, i) => [this.nodes[id], this.nodes[nextPortIds[i]]]);
 
-        const forwardData = portPairs.map(async pair => {  // [ resultPort, nextPort ]
-            const [result, next] = pair;
-
-            let dataType = this.core.getAttribute(result, 'type');
-            this.core.setAttribute(next, 'type', dataType);
-
-            let hash = this.core.getAttribute(result, 'data');
-            this.core.setAttribute(next, 'data', hash);
-
-            const provInfoId = this.core.getPointerPath(result, 'provenance', true);
-            if (provInfoId) {
-                const provNode = await this.core.loadByPath(result, provInfoId);
-                const provCopy = this.core.copyNode(provNode, next);
-                this.core.setPointer(next, 'provenance', provCopy);
-            }
-
-            this.logger.info(`forwarding data (${dataType}) from ${this.core.getPath(result)} ` +
-                `to ${this.core.getPath(next)}`);
+        const helpers = new ExecutionHelpers(this.core, this.rootNode);
+        const forwardData = portPairs.map(pair => {
+            const [resultPort, nextPort] = pair;
+            return helpers.setDataContents(nextPort, resultPort);
         });
-        await forwardData;
+        await Promise.all(forwardData);
 
         // For all the nextPortIds, decrement the corresponding operation's incoming counts
         const counts = nextPortIds.map(id => this.getSiblingIdContaining(id))
