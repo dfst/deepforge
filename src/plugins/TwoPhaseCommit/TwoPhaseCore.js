@@ -315,11 +315,14 @@ define([
             const changesBeforeCopy = takeUntil(changes.reverse(), hasCopyNodeEdit)
                 .reverse();
             const value = this._getValueFrom(node.original, attr, changesBeforeCopy);
+
             if (value) {
                 return value;
             } else {
                 return this.core.getAttribute(node.original, attr);
             }
+        } else if (node instanceof CreatedNode) {
+            return this.getAttribute(node.base, attr);
         }
 
         return this.core.getAttribute(node, attr);
@@ -344,7 +347,7 @@ define([
 
     TwoPhaseCore.prototype.apply = async function (rootNode, stagedChanges) {
         const changesets = stagedChanges.changesets();
-        for (let i = 0; i < changesets; i++) {
+        for (let i = 0; i < changesets.length; i++) {
             const changes = changesets[i];
             await this.applyCreations(rootNode, changes);
             await this.applyChanges(rootNode, changes);
