@@ -41,7 +41,6 @@ define([
                     if (features.save) {
                         DeepForge.registerAction('Save', 'save', 10, () => this.save());
                     }
-                    overlay.remove();
                 } catch (err) {
                     const title = 'Compute Creation Error';
                     const body = 'Unable to create compute. Please verify the credentials are correct.';
@@ -56,7 +55,9 @@ define([
             });
         }
 
-        onComputeInitialized(/*session*/) {
+        hideComputeShield() {
+            const overlay = this.$el.find('.compute-shield');
+            overlay.remove();
         }
 
         getCapabilities() {

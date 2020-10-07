@@ -1,11 +1,13 @@
 /*globals define, WebGMEGlobal*/
 
 define([
+    'deepforge/EventEmitter',
     'deepforge/compute/interactive/session-with-queue',
     'deepforge/viz/ConfigDialog',
     'js/Constants',
     'q',
 ], function (
+    EventEmitter,
     Session,
     ConfigDialog,
     CONSTANTS,
@@ -14,8 +16,9 @@ define([
 
     'use strict';
 
-    class InteractiveEditorControl {
+    class InteractiveEditorControl extends EventEmitter {
         constructor(options) {
+            super();
             this._logger = options.logger.fork('Control');
             this.client = options.client;
             this.session = options.session;
@@ -54,9 +57,9 @@ define([
         }
 
         async onComputeInitialized(session) {
+            this._widget.hideComputeShield();
             this.session = session;
-            this._widget.session = session;  // HACK
-            this._widget.onComputeInitialized(session);  // HACK
+            this.emit('computeInitialized', session);
         }
 
         async getInitializationCode () {
@@ -245,6 +248,7 @@ define([
             if (this.session) {
                 this.session.close();
             }
+            this.emit('destroy');
         }
 
         _attachClientEventListeners () {

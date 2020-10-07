@@ -12,7 +12,7 @@
             "ExecutionView"
         ],
         "visualizerOverrides": {
-            "": "ForwardViz",
+            "": "InteractiveWorkspace",
             "MyArtifacts": "ArtifactIndex",
             "MyArchitectures": "ArchIndex",
             "MyExecutions": "ExecutionIndex",

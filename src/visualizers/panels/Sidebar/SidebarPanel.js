@@ -65,11 +65,11 @@ define([
         }
     };
 
-    SidebarPanel.prototype.setEmbeddedPanel = function (category) {
-        var placeName = CATEGORY_TO_PLACE[category];
+    SidebarPanel.prototype.setEmbeddedPanel = async function (category) {
+        const placeName = CATEGORY_TO_PLACE[category];
+        const nodeId = placeName ? await DeepForge.places[placeName]() : '';
 
-        return DeepForge.places[placeName]()
-            .then(nodeId => WebGMEGlobal.State.registerActiveObject(nodeId));
+        return WebGMEGlobal.State.registerActiveObject(nodeId);
     };
 
     SidebarPanel.prototype.selectedObjectChanged = function (nodeId) {

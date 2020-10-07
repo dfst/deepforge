@@ -20,6 +20,7 @@
   let eventElement;
 
   function decorateSchemas(schemas) {
+    let index = 1;
     schemas.losses.concat(schemas.optimizers).forEach(fn => {
       fn.arguments = fn.arguments
         .filter(arg => arg.name !== 'name')
@@ -31,10 +32,13 @@
             arg.type = typeof(arg.default);
           }
           arg.value = arg.default;
-          if (arg.type === 'boolean') {
-              console.warn('Unsupported argument:', arg);
-          }
+          arg.id = `arg${index++}`;
           return arg;
+        })
+        .sort((arg1, arg2) => {
+          const [num1, num2] = [arg1, arg2]
+            .map(arg => arg.type === 'boolean' ? 1 : 0)
+          return num1 - num2;
         });
     });
   }
@@ -252,18 +256,21 @@
           {#each loss.arguments as arg}
             <div class="form-group">
               {#if arg.type === 'string'}
-                <label for="{arg.name}">{arg.name}</label>
-                <input id="{arg.name}" bind:value={arg.value} type="text"/>
+                <label for="{arg.id}">{arg.name}</label>
+                <input id="{arg.id}" bind:value={arg.value} type="text"/>
+              {:else if arg.type === 'boolean'}
+                <input id="{arg.id}" bind:checked={arg.value} type="checkbox"/>
+                <label for="{arg.id}">{arg.name}</label>
               {:else if arg.type === 'enum'}
-                <label for="{arg.name}">{arg.name}</label>
-                <select id="{arg.name}" bind:value={arg.value}>
+                <label for="{arg.id}">{arg.name}</label>
+                <select id="{arg.id}" bind:value={arg.value}>
                   {#each arg.options as option}
                     <option value={option}>{option}</option>
                   {/each}
                 </select>
               {:else}
-                <label for="{arg.name}">{arg.name}</label>
-                <input id="{arg.name}" bind:value={arg.value} type="number"/>
+                <label for="{arg.id}">{arg.name}</label>
+                <input id="{arg.id}" bind:value={arg.value} type="number"/>
               {/if}
             </div>
           {/each}
@@ -281,11 +288,14 @@
           {#each optimizer.arguments as arg}
             <div class="form-group">
               {#if arg.type === 'string'}
-                <label for="{arg.name}">{arg.name}</label>
-                <input id="{arg.name}" bind:value={arg.value} type="text"/>
+                <label for="{arg.id}">{arg.name}</label>
+                <input id="{arg.id}" bind:value={arg.value} type="text"/>
+              {:else if arg.type === 'boolean'}
+                <input id="{arg.id}" bind:checked={arg.value} type="checkbox"/>
+                <label for="{arg.id}">{arg.name}</label>
               {:else}
-                <label for="{arg.name}">{arg.name}</label>
-                <input id="{arg.name}" bind:value={arg.value} type="number"/>
+                <label for="{arg.id}">{arg.name}</label>
+                <input id="{arg.id}" bind:value={arg.value} type="number"/>
               {/if}
             </div>
           {/each}

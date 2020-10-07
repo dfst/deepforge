@@ -13,12 +13,11 @@ define([
     function TwoPhaseCore(logger, core) {
         this.logger = logger;
         this.core = core;
-        this.changes = {};
-        this.createdNodes = [];
-        this.deletions = [];
         this.queuedChanges = [];
-        this._events = {};
         this._createdGMEIds = {};
+        this.stagedChanges = new StagedChanges(
+            this._createdGMEIds
+        );
     }
 
     TwoPhaseCore.prototype.unwrap = function () {
@@ -33,7 +32,6 @@ define([
     passToCore('persist');
     passToCore('loadRoot');
     passToCore('loadSubTree');
-    passToCore('getParent');
     passToCore('getNamespace');
     passToCore('getChildrenMeta');
     passToCore('getChildrenPaths');
@@ -46,7 +44,7 @@ define([
     TwoPhaseCore.prototype.loadByPath = async function (node, id) {
         ensureNode(node, 'loadByPath');
         if (CreatedNode.isCreateId(id)) {
-            const changesets = this.queuedChanges.concat(this);
+            const changesets = this._getAllChangesets();
             for (let i = 0; i < changesets.length; i++) {
                 const createdNodes = changesets[i].createdNodes;
                 const node = createdNodes.find(node => node.id === id);
@@ -56,6 +54,23 @@ define([
             }
         } else {
             return this.core.loadByPath(node, id);
+        }
+    };
+
+    TwoPhaseCore.prototype.getAllMetaNodes = function (node) {
+        ensureNode(node, 'getAllMetaNodes');
+        while (node instanceof CreatedNode) {
+            node = node.base;
+        }
+        return this.core.getAllMetaNodes(node);
+    };
+
+    TwoPhaseCore.prototype.getParent = function (node) {
+        ensureNode(node, 'getParent');
+        if (node instanceof CreatedNode) {
+            return node.parent;
+        } else {
+            return this.core.getParent(node);
         }
     };
 
@@ -139,21 +154,20 @@ define([
 
     TwoPhaseCore.prototype._forAllNodeChanges = function (node, fn) {
         const nodeId = this.getPath(node);
-        for (let i = 0; i < this.queuedChanges.length; i++) {
-            const changes = this.queuedChanges[i].tryGetNodeEdits(nodeId);
-            if (changes) {
-                fn(changes);
+        const changes = this._getAllChangesets();
+        for (let i = 0; i < changes.length; i++) {
+            const nodeEdits = changes[i].tryGetNodeEdits(nodeId);
+            if (nodeEdits) {
+                fn(nodeEdits);
             }
-        }
-        const changes = this.getChangesForNode(node);
-        if (changes) {
-            fn(changes);
         }
     };
 
     TwoPhaseCore.prototype.getBase = function (node) {
         ensureNode(node, 'getBase');
-        if (node instanceof CreatedNode) {
+        if (node instanceof CreatedNode.CopiedNode) {
+            return this.getBase(node.original);
+        } else if (node instanceof CreatedNode) {
             return node.base;
         }
         return this.core.getBase(node);
@@ -167,18 +181,18 @@ define([
         return this.core.isTypeOf(node, base);
     };
 
+    TwoPhaseCore.prototype._getAllChangesets = function () {
+        return this.queuedChanges.concat(this.stagedChanges)
+            .flatMap(changes => changes.changesets());
+    };
+
     TwoPhaseCore.prototype.getStagedChanges = function () {
-        const changes = new StagedChanges(
-            this.createdNodes,
-            this.changes,
-            this.deletions,
+        const stagedChanges = this.stagedChanges;
+        this.queuedChanges.push(stagedChanges);
+        this.stagedChanges = new StagedChanges(
             this._createdGMEIds
         );
-        this.createdNodes = [];
-        this.changes = {};
-        this.deletions = [];
-        this.queuedChanges.push(changes);
-        return changes;
+        return stagedChanges;
     };
 
     TwoPhaseCore.prototype.discard = function (changes) {
@@ -190,31 +204,18 @@ define([
     TwoPhaseCore.prototype.setPointer = function (node, name, target) {
         ensureNode(node, 'setPointer');
         ensureNode(target, 'setPointer');
-        const changes = this.getChangesForNode(node);
+        const nodeId = this.getPath(node);
+        const changes = this.stagedChanges.getChangesForNode(nodeId);
         changes.ptr[name] = target;
     };
 
-    TwoPhaseCore.prototype.getChangesForNode = function (node) {
-        const nodeId = this.getPath(node);
-
-        if (!this.changes[nodeId]) {
-            this.changes[nodeId] = {
-                attr: {},
-                ptr: {},
-            };
-        }
-
-        return this.changes[nodeId];
-    };
-
     TwoPhaseCore.prototype.copyNode = function (node, parent) {
-        assert(node, 'Cannot copy invalid node');
-        assert(parent, 'Cannot copy node without parent');
         ensureNode(node, 'copyNode');
         ensureNode(parent, 'copyNode');
 
-        const newNode = new CreatedNode(node, parent);
-        this.createdNodes.push(newNode);
+        const newNode = new CreatedNode.CopiedNode(node, parent);
+        this.stagedChanges = this.stagedChanges.next();
+        this.stagedChanges.createdNodes.push(newNode);
         return newNode;
     };
 
@@ -227,13 +228,13 @@ define([
         const node = new CreatedNode(base, parent);
 
         this.logger.info(`Creating ${node.id} in ${parentId}`);
-        this.createdNodes.push(node);
+        this.stagedChanges.createdNodes.push(node);
         return node;
     };
 
     TwoPhaseCore.prototype.deleteNode = function (node) {
         ensureNode(node, 'deleteNode');
-        this.deletions.push(node);
+        this.stagedChanges.deletions.push(node);
     };
 
     TwoPhaseCore.prototype.loadChildren = async function (node) {
@@ -241,9 +242,8 @@ define([
         const getId = node => node instanceof CreatedNode ? node.id : this.core.getPath(node);
         const nodeId = getId(node);
 
-        const allCreatedNodes = this.queuedChanges.concat([this])
-            .map(changes => changes.createdNodes)
-            .reduce((l1, l2) => l1.concat(l2));
+        const allCreatedNodes = this._getAllChangesets()
+            .flatMap(changes => changes.createdNodes);
 
         let children = allCreatedNodes.filter(node => getId(node.parent) === nodeId);
         if (node instanceof CreatedNode) {
@@ -265,9 +265,10 @@ define([
             value !== undefined,
             `Cannot set attribute to undefined value (${attr})`
         );
+        const nodeId = this.getPath(node);
 
         this.logger.info(`setting ${attr} to ${value}`);
-        const changes = this.getChangesForNode(node);
+        const changes = this.stagedChanges.getChangesForNode(nodeId);
         changes.attr[attr] = value;
     };
 
@@ -295,56 +296,63 @@ define([
 
     TwoPhaseCore.prototype.getAttribute = function (node, attr) {
         ensureNode(node, 'getAttribute');
-        var nodeId;
-
-        // Check if it was newly created
-        if (node instanceof CreatedNode) {
-            nodeId = node._nodeId || node.id;
-            node = node.base;
-        } else {
-            nodeId = this.core.getPath(node);
-        }
-
-        assert(this.deletions.indexOf(nodeId) === -1,
-            `Cannot get ${attr} from deleted node ${nodeId}`);
 
         // Check the most recent changes, then the staged changes, then the model
-        let value = this._getValueFrom(nodeId, attr, node, this.changes);
+        const changes = this._getAllChangesets()
+            .reverse();
 
-        if (value === undefined) {
-            for (let i = this.queuedChanges.length; i--;) {
-                const changes = this.queuedChanges[i];
-                value = this._getValueFrom(nodeId, attr, node, changes.getAllNodeEdits());
-                if (value !== undefined) {
-                    return value;
-                }
-            }
-        }
+        const nodeId = this.getPath(node);
+        const isDeleted = changes
+            .find(changes => changes.deletions.includes(nodeId));
+        assert(!isDeleted, `Cannot get ${attr} from deleted node ${nodeId}`);
 
+        let value = this._getValueFrom(node, attr, changes);
         if (value !== undefined) {
             return value;
+        } else if (node instanceof CreatedNode.CopiedNode) {
+            const hasCopyNodeEdit = changeset => node instanceof CreatedNode.CopiedNode && 
+                changeset.createdNodes.includes(node);
+            const changesBeforeCopy = takeUntil(changes.reverse(), hasCopyNodeEdit)
+                .reverse();
+            const value = this._getValueFrom(node.original, attr, changesBeforeCopy);
+
+            if (value) {
+                return value;
+            } else {
+                return this.core.getAttribute(node.original, attr);
+            }
+        } else if (node instanceof CreatedNode) {
+            return this.getAttribute(node.base, attr);
         }
 
         return this.core.getAttribute(node, attr);
     };
 
-    TwoPhaseCore.prototype._getValueFrom = function (nodeId, attr, node, changes) {
-        var base;
-        if (changes[nodeId] && changes[nodeId].attr[attr] !== undefined) {
-            // If deleted the attribute, get the default (inherited) value
-            if (changes[nodeId].attr[attr] === null) {
-                base = CreatedNode.isCreateId(nodeId) ? node : this.core.getBase(node);
-                let inherited = this.getAttribute(base, attr);
-                return inherited || null;
+    TwoPhaseCore.prototype._getValueFrom = function (node, attr, changes) {
+        const nodeId = this.getPath(node);
+        for (let i = changes.length; i--;) {
+            const changeset = changes[i];
+            const nodeChanges = changeset.getAllNodeEdits();
+            if (nodeChanges[nodeId] && nodeChanges[nodeId].attr[attr] !== undefined) {
+                // If deleted the attribute, get the default (inherited) value
+                if (nodeChanges[nodeId].attr[attr] === null) {
+                    const base = this.getBase(node);
+                    let inherited = this.getAttribute(base, attr);
+                    return inherited || null;
+                }
+                return nodeChanges[nodeId].attr[attr];
             }
-            return changes[nodeId].attr[attr];
         }
     };
 
-    TwoPhaseCore.prototype.apply = async function (rootNode, changes) {
-        await this.applyCreations(rootNode, changes);
-        await this.applyChanges(rootNode, changes);
-        await this.applyDeletions(rootNode, changes);
+    TwoPhaseCore.prototype.apply = async function (rootNode, stagedChanges) {
+        const changesets = stagedChanges.changesets();
+        for (let i = 0; i < changesets.length; i++) {
+            const changes = changesets[i];
+            await this.applyCreations(rootNode, changes);
+            await this.applyChanges(rootNode, changes);
+            await this.applyDeletions(rootNode, changes);
+        }
     };
 
     TwoPhaseCore.prototype.applyCreations = async function (rootNode, changes) {
@@ -352,29 +360,16 @@ define([
             const createdNode = changes.createdNodes[i];
             const node = await createdNode.toGMENode(rootNode, this.core);
             const nodeId = this.core.getPath(node);
-            this.emit('nodeCreated', createdNode, node);
             this._createdGMEIds[createdNode.id] = nodeId;
         }
         changes.resolveCreateIds();
     };
 
-    TwoPhaseCore.prototype.on = function(ev, cb) {
-        this._events[ev] = this._events[ev] || [];
-        this._events[ev].push(cb);
-    };
-
-    TwoPhaseCore.prototype.emit = function(ev) {
-        const args = Array.prototype.slice.call(arguments, 1);
-        const handlers = this._events[ev] || [];
-        handlers.forEach(fn => fn.apply(this, args));
-    };
-
-    TwoPhaseCore.prototype.applyChanges = async function (rootNode,changes) {
+    TwoPhaseCore.prototype.applyChanges = async function (rootNode, changes) {
         const nodeIds = changes.getModifiedNodeIds();
 
         this.logger.info('Collecting changes to apply in commit');
 
-        this.currentChanges = this.changes;
         for (let i = nodeIds.length; i--;) {
             const id = nodeIds[i];
             const edits = changes.getNodeEdits(id);
@@ -383,7 +378,6 @@ define([
             assert(node, `node is ${node} (${id})`);
             await this._applyNodeChanges(rootNode, node, edits);
         }
-        this.currentChanges = {};
     };
 
     TwoPhaseCore.prototype._applyNodeChanges = async function (rootNode, node, edits) {
@@ -437,6 +431,19 @@ define([
         TwoPhaseCore.prototype[name] = function() {
             return this.core[name].apply(this.core, arguments);
         };
+    }
+
+    function takeUntil(list, fn) {
+        const result = [];
+        for (let i = 0; i < list.length; i++) {
+            if (!fn(list[i])) {
+                result.push(list[i]);
+            } else {
+                break;
+            }
+        }
+
+        return result;
     }
 
     return TwoPhaseCore;

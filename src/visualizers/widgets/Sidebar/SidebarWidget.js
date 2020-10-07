@@ -17,6 +17,7 @@ define([
     var SidebarWidget,
         WIDGET_CLASS = 'main-view',
         CATEGORIES = [
+            'workspace',
             'pipelines',
             'executions',
             'resources',
@@ -31,7 +32,7 @@ define([
         this.$el.addClass(WIDGET_CLASS);
         this.initialize();
         this.logger.debug('ctor finished');
-        this._currentSelection = '$pipelinesIcon';
+        this._currentSelection = '$workspaceIcon';
     };
 
     SidebarWidget.prototype.initialize = function () {

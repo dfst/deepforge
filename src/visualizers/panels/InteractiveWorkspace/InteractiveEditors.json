@@ -1,0 +1,9 @@
+[
+  {
+    "id": "TrainKeras",
+    "title": "Neural Network Trainer",
+    "panel": "panels/TrainKeras/TrainKerasPanel",
+    "dependencies": ["keras"],
+    "DEBUG_ONLY": false
+  }
+]

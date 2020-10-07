@@ -166,5 +166,11 @@
     "title": "PlotlyGraph",
     "panel": "panels/PlotlyGraph/PlotlyGraphPanel",
     "DEBUG_ONLY": false
+  },
+  {
+    "id": "InteractiveWorkspace",
+    "title": "InteractiveWorkspace",
+    "panel": "panels/InteractiveWorkspace/InteractiveWorkspacePanel",
+    "DEBUG_ONLY": false
   }
 ]

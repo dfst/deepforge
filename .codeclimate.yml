@@ -44,3 +44,4 @@ exclude_paths:
 - src/visualizers/widgets/TrainKeras/build
 - src/visualizers/panels/TrainKeras/JSONImporter.js
 - src/visualizers/panels/TrainKeras/changeset.js
+- src/visualizers/widgets/InteractiveWorkspace/lib

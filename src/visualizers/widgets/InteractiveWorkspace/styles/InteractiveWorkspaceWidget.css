@@ -1,0 +1,14 @@
+/**
+ * This file is for any scss that you may want for this visualizer.
+ */
+.interactive-workspace {
+  outline: none;
+  padding: 0 !important; }
+  .interactive-workspace .welcome {
+    color: #757575;
+    font-size: 3em;
+    font-style: italic;
+    left: 50%;
+    top: 50%;
+    transform: translateY(-50%) translateX(-50%);
+    position: absolute; }

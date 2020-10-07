@@ -41,7 +41,8 @@ define([
             return (typeof id === 'string') && (id.indexOf(CreatedNode.CREATE_PREFIX) === 0);
         }
     }
-    CreatedNode.CREATE_PREFIX = 'created_node_';
+
+    CreatedNode.CREATE_PREFIX = '__created_node_';
 
     class InheritedNode extends CreatedNode {
         async toGMENode (rootNode, core) {
