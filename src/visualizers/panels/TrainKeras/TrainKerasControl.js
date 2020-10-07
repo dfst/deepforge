@@ -199,13 +199,14 @@ define([
             );
             core.setPointer(artifact, 'provenance', trainState);
 
-            const operation = await this.createOperation(
+            const {operation, outputNames} = await this.createOperation(
                 core,
                 rootNode,
                 modelInfo,
                 trainState
             );
             core.setPointer(trainState, 'operation', operation);
+            core.setPointer(artifact, 'provOutput', outputNames[0]);
 
             const importer = new Importer(core, rootNode);
             const {architecture} = modelInfo;
@@ -310,7 +311,10 @@ define([
                 core.setAttribute(outputNode, 'name', output.name);
             });
 
-            return node;
+            return {
+                operation: node,
+                outputNames: operation.getOutputs().map(output => output.name),
+            };
         }
 
         async getTerritory(/*nodeId*/) {
