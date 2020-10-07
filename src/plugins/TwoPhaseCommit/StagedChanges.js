@@ -7,33 +7,17 @@ define([
     assert,
 ) {
 
-    function StagedChanges(createdNodes, changes, deletions, idDict) {
-        this.createdNodes = createdNodes;
-        this.changes = changes;
-        this.deletions = deletions;
+    function StagedChanges(idDict, predecessor) {
+        assert(idDict);
+        this.createdNodes = [];
+        this.changes = {};
+        this.deletions = [];
         this._createdGMEIds = idDict;
+        this.predecessor = predecessor;
     }
 
     StagedChanges.prototype.getCreatedNode = function(id) {
         return this.createdNodes.find(node => node.id === id);
-    };
-
-    StagedChanges.prototype.onNodeCreated = function(createdNode, nodeId) {
-        // Update newly created node
-        const tmpId = createdNode.id;
-        if (this.changes[tmpId]) {
-            assert(!this.changes[nodeId],
-                `Newly created node cannot already have changes! (${nodeId})`);
-            this.changes[nodeId] = this.changes[tmpId];
-
-            delete this.changes[tmpId];
-        }
-
-        // Update any deletions
-        let index = this.deletions.indexOf(tmpId);
-        if (index !== -1) {
-            this.deletions.splice(index, 1, nodeId);
-        }
     };
 
     StagedChanges.prototype.resolveCreateIds = function() {
@@ -77,12 +61,13 @@ define([
     };
 
     StagedChanges.prototype.tryGetNodeEdits = function(id) {
-        id = CreatedNode.isCreateId(id) ? this.tryResolveCreateId(id) : id;
-        if (id) {
-            return null;
+        const ids = [id];
+        if (CreatedNode.isCreateId(id) && this.tryResolveCreateId(id)) {
+            ids.push(this.tryResolveCreateId(id));
         }
-
-        return this.changes[id];
+        return ids
+            .map(id => this.changes[id])
+            .find(changes => changes) || null;
     };
 
     StagedChanges.prototype.getModifiedNodeIds = function() {
@@ -94,6 +79,28 @@ define([
             .map(node => CreatedNode.getGMENode(root, core, node));
 
         return Promise.all(gmeNodes);
+    };
+
+    StagedChanges.prototype.getChangesForNode = function (nodeId) {
+        if (!this.changes[nodeId]) {
+            this.changes[nodeId] = {
+                attr: {},
+                ptr: {},
+            };
+        }
+
+        return this.changes[nodeId];
+    };
+
+    StagedChanges.prototype.next = function() {
+        return new StagedChanges(this._createdGMEIds, this);
+    };
+
+    StagedChanges.prototype.changesets = function() {
+        if (this.predecessor) {
+            return this.predecessor.changesets().concat([this]);
+        }
+        return [this];
     };
 
     return StagedChanges;

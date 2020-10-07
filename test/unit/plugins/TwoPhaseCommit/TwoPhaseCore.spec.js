@@ -229,6 +229,95 @@ describe('TwoPhaseCore', function() {
                 assert(core.getAllMetaNodes(newNode));
             });
         });
+
+        describe('copyNode', function() {
+            it('should copy existing node', function() {
+                const {META, core, rootNode} = plugin;
+                const node = META['pipeline.Operation'];
+                const newNode = core.copyNode(node, rootNode);
+
+                assert(newNode);
+            });
+
+            it('should copy new node', function() {
+                const {META, rootNode, core} = plugin;
+                const {FCO} = META;
+                const parent = rootNode;
+                const newNode = core.createNode({base: FCO, parent});
+                const copy = core.copyNode(newNode, rootNode);
+
+                assert(copy);
+            });
+
+            it('should get attribute from copy of new node', function() {
+                const {META, rootNode, core} = plugin;
+                const {FCO} = META;
+                const parent = rootNode;
+                const newNode = core.createNode({base: FCO, parent});
+                core.setAttribute(newNode, 'name', 'newName!');
+                const copy = core.copyNode(newNode, rootNode);
+
+                assert.equal(
+                    core.getAttribute(copy, 'name'),
+                    'newName!'
+                );
+            });
+
+            it('should include added attributes in copy', function() {
+                const {META, rootNode, core} = plugin;
+                const {FCO} = META;
+                const parent = rootNode;
+                const newNode = core.unwrap().createNode({base: FCO, parent});
+                core.setAttribute(newNode, 'name', 'newName!');
+                const copy = core.copyNode(newNode, rootNode);
+
+                assert.equal(
+                    core.getAttribute(copy, 'name'),
+                    'newName!'
+                );
+            });
+
+            it('should get updated attribute in copy', function() {
+                const {META, rootNode, core} = plugin;
+                const {FCO} = META;
+                const parent = rootNode;
+                const newNode = core.unwrap().createNode({base: FCO, parent});
+                const copy = core.copyNode(newNode, rootNode);
+                core.setAttribute(copy, 'name', 'newName!');
+
+                assert.equal(
+                    core.getAttribute(copy, 'name'),
+                    'newName!'
+                );
+            });
+
+            it('should not include later attributes in copy', function() {
+                const {META, rootNode, core} = plugin;
+                const {FCO} = META;
+                const parent = rootNode;
+                const newNode = core.unwrap().createNode({base: FCO, parent});
+                const copy = core.copyNode(newNode, rootNode);
+                core.setAttribute(newNode, 'name', 'newName!');
+
+                assert.notEqual(
+                    core.getAttribute(copy, 'name'),
+                    'newName!'
+                );
+            });
+
+            it('should set correct base in copied node', function() {
+                const {META, rootNode, core} = plugin;
+                const {FCO} = META;
+                const parent = rootNode;
+                const newNode = core.unwrap().createNode({base: FCO, parent});
+                const copy = core.copyNode(newNode, rootNode);
+
+                assert.equal(
+                    core.getPath(core.getBase(copy)),
+                    core.getPath(FCO)
+                );
+            });
+        });
     });
 
     describe('argument validation', function() {
