@@ -60,7 +60,7 @@ define([
                 const inheritancePath = this.getInheritedAncestors(n);
                 const dataMetaNode = inheritancePath.reverse()
                     .find(node => this.core.getAttribute(node, 'name') === 'Data');
-                this.core.setBase(copy, dataMetaNode);
+                this.core.setPointer(copy, 'base', dataMetaNode);
                 this.core.setAttribute(copy, 'name', this.core.getAttribute(n, 'name'));
                 return copy;
             });
