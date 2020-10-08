@@ -3,3 +3,5 @@
 {"version":"0.21.1","changelog":"Update Inheritance of Subgraph, Line, Images, ScatterPoints etc.. nodes"}
 {"version":"0.22.0","changelog":"Incorporate PlotlyJSON into Graph meta node"}
 {"version":"0.23.0","changelog":"Add TrainKeras implicit operation"}
+
+{"version":"0.24.0","changelog":"Add provOutput to WithProvenance mixin (required for pipeline reconstruction)"}
