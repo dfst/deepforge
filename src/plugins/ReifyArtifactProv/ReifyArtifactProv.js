@@ -40,6 +40,7 @@ define([
 
             await this.save(`Created provenance pipeline of ${name}`);
             this.result.setSuccess(true);
+            this.createMessage(pipeline, 'New Provenance Pipeline');
             callback(null, this.result);
         }
 

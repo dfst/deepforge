@@ -52,12 +52,31 @@ define([
                 .sort(metaTypeComparator);
             const [dstInput, dstOutput] = (await this.core.loadChildren(snapshot))
                 .sort(metaTypeComparator);
-            const [srcInputs, srcOutputs] = await Promise.all(srcCntrs.map(ctr => this.core.loadChildren(ctr)));
-            const copies = srcInputs.map(n => this.core.copyNode(n, dstInput));
+
+            const [srcInputs, srcOutputs] = (await Promise.all(srcCntrs.map(ctr => this.core.loadChildren(ctr))));
+
+            const copies = srcInputs.map(n => {
+                const copy = this.core.copyNode(n, dstInput);
+                const inheritancePath = this.getInheritedAncestors(n);
+                const dataMetaNode = inheritancePath.reverse()
+                    .find(node => this.core.getAttribute(node, 'name') === 'Data');
+                this.core.setBase(copy, dataMetaNode);
+                this.core.setAttribute(copy, 'name', this.core.getAttribute(n, 'name'));
+                return copy;
+            });
             copies.push(...srcOutputs.map(n => this.shallowCopy(n, dstOutput)));
             const oldNewPairs = _.zip(srcInputs.concat(srcOutputs), copies);
             oldNewPairs.push([node, snapshot]);
             return {snapshot, pairs: oldNewPairs};
+        }
+
+        getInheritedAncestors (node) {
+            const path = [];
+            while (node) {
+                path.push(node);
+                node = this.core.getBase(node);
+            }
+            return path;
         }
 
         shallowCopy (original, dst) {
