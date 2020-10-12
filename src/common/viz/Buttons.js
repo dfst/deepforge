@@ -59,6 +59,24 @@ define([
         return n && n.getBaseId();
     };
 
+    var GoToOperationDefinition = function(params) {
+        EasyDAGButtons.ButtonBase.call(this, params);
+    };
+
+    GoToOperationDefinition.prototype = Object.create(GoToBase.prototype);
+    GoToOperationDefinition.prototype._onClick = function(item) {
+        var node = client.getNode(item.id),
+            baseId = node.getBaseId();
+
+        const base = client.getNode(baseId);
+        const isSnapshot = base.getAttribute('name') === 'Operation';
+        if (isSnapshot) {
+            WebGMEGlobal.State.registerActiveObject(item.id);
+        } else {
+            GoToBase.prototype._onClick.call(this, item);
+        }
+    };
+
     var CloneAndEdit = function(params) {
         GoToBase.call(this, params);
     };
@@ -131,7 +149,8 @@ define([
         DeleteOne: EasyDAGButtons.DeleteOne,
         GoToBase: GoToBase,
         CloneAndEdit: CloneAndEdit,
-        Insert: Insert
+        Insert: Insert,
+        GoToOperationDefinition,
     };
 });
 

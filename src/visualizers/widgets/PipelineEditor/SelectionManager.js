@@ -31,7 +31,7 @@ define([
         if (!this.selectedItem.isConnection) {
             // If the operation has a user-defined base type,
             // show a button for jumping to the base def
-            new Buttons.GoToBase({
+            new Buttons.GoToOperationDefinition({
                 $pEl: this.$selection,
                 context: this._widget,
                 transition: transition,
