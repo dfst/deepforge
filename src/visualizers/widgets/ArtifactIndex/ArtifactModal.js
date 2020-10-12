@@ -9,12 +9,14 @@ define([
     'use strict';
 
     const ModalControl = function() {
-        this.$modal = $(MODAL_HTML);
-        this.$modalTitle = this.$modal.find('.artifact-name');
-        this.$createdAt = this.$modal.find('.created-at');
-        this.$size = this.$modal.find('.size');
-        this.$backend = this.$modal.find('.backend');
-        this.$dataInfo = this.$modal.find('.artifact-data-info');
+        this.$el = $(MODAL_HTML);
+        this.$modalTitle = this.$el.find('.artifact-name');
+        this.$createdAt = this.$el.find('.created-at');
+        this.$size = this.$el.find('.size');
+        this.$backend = this.$el.find('.backend');
+        this.$dataInfo = this.$el.find('.artifact-data-info');
+        this.$provBtn = this.$el.find('.reify-prov');
+        this.$provBtn.on('click', () => this.onReifyClicked());
     };
 
     ModalControl.prototype.showModal = function (node) {
@@ -24,7 +26,12 @@ define([
         this.$backend.text(node.backendName || 'unknown');
         this.$createdAt.text(createdAt);
         this.$dataInfo.text(`${JSON.stringify(node.dataInfo, null,2)}`);
-        this.$modal.modal({show: true});
+        this.nodeId = node.id;
+        this.$el.modal({show: true});
+    };
+
+    ModalControl.prototype.onReifyClicked = function () {
+        this.$el.trigger('ReifyProvenance', this.nodeId);
     };
 
     return ModalControl;

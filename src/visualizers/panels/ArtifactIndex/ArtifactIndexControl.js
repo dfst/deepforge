@@ -3,12 +3,16 @@
 
 define([
     'deepforge/storage/index',
+    'deepforge/globals',
     'blob/BlobClient',
-    'js/Constants'
+    'js/Constants',
+    'q',
 ], function (
     Storage,
+    DeepForge,
     BlobClient,
-    CONSTANTS
+    CONSTANTS,
+    Q,
 ) {
 
     'use strict';
@@ -70,6 +74,42 @@ define([
             this._client.setAttribute(id, attr, newValue);
             this._client.completeTransaction();
         };
+
+        this._widget.$el.on(
+            'ReifyProvenance',
+            (event, artifactId) => this.reifyProvenance(artifactId),
+        );
+    };
+
+    ArtifactIndexControl.prototype.reifyProvenance = async function (artifactId) {
+        const pluginId = 'ReifyArtifactProv';
+
+        const pluginContext = this._client.getCurrentPluginContext(pluginId);
+        pluginContext.managerConfig.activeNode = await DeepForge.places.MyPipelines();
+        pluginContext.managerConfig.namespace = 'pipeline';
+        pluginContext.pluginConfig = {artifactId};
+
+        const territory = {};
+        territory[pluginContext.managerConfig.activeNode] = {children: 0};
+
+        const result = await this.doInTerritory(
+            territory,
+            () => Q.ninvoke(this._client, 'runBrowserPlugin', pluginId, pluginContext),
+        );
+
+        const [{activeNode: pipeline}] = result.messages;
+        WebGMEGlobal.State.registerActiveObject(pipeline.id);
+    };
+
+    ArtifactIndexControl.prototype.doInTerritory = async function (territory, fn) {
+        const deferred = Q.defer();
+        const ui = this._client.addUI(this, async () => {
+            const result = await fn();
+            this._client.removeUI(ui);
+            deferred.resolve(result);
+        });
+        this._client.updateTerritory(ui, territory);
+        return deferred.promise;
     };
 
     /* * * * * * * * Visualizer content update callbacks * * * * * * * */

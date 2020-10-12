@@ -45,6 +45,9 @@ define([
         this.$el.append(this.$content);
         this.$list = this.$content.find('.list-content');
         this.artifactModal = new ArtifactModal();
+        this.artifactModal.$el.on(
+            'ReifyProvenance', (event, nodeId) => this.$el.trigger('ReifyProvenance', nodeId)
+        );
     };
 
     ArtifactIndexWidget.prototype.onWidgetContainerResize = nop;
