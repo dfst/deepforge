@@ -343,6 +343,12 @@ describe('TwoPhaseCore', function() {
             await assert.rejects(() => plugin.core.loadChildren(invalidNode));
         });
 
+        it('should check base node type on isTypeOf', async function() {
+            const {rootNode} = plugin;
+            const invalidNode = {relid: 'h'};
+            assert.throws(() => plugin.core.isTypeOf(rootNode, invalidNode));
+        });
+
         it('should have meaningful error on null node', async function() {
             assert.throws(
                 () => plugin.core.getAttribute(null, 'name'),

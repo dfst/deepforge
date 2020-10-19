@@ -175,6 +175,7 @@ define([
 
     TwoPhaseCore.prototype.isTypeOf = function (node, base) {
         ensureNode(node, 'isTypeOf');
+        ensureNode(base, 'isTypeOf');
         if (node instanceof CreatedNode) {
             return this.core.isTypeOf(node.base, base);
         }
