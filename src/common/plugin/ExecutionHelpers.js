@@ -21,7 +21,7 @@ define([
                 parent: dst
             });
 
-            const names = this.core.getValidAttributeNames(node);
+            const names = this.core.getAttributeNames(node);
             const values = names.map(name => this.core.getAttribute(node, name));
             names.forEach((name, i) =>
                 this.core.setAttribute(snapshot, name, values[i]));

@@ -52,27 +52,47 @@ describe('ReifyArtifactProv', function () {
         await gmeAuth.unload();
     });
 
-    it('should create new pipeline', async function () {
-        const plugin = await manager.initializePlugin(pluginName);
-        await manager.configurePlugin(plugin, pluginConfig, context);
-        const {core, rootNode} = plugin;
-        const pipelineDir = await core.loadByPath(rootNode, PIPELINES);
-        const initialPipelineCount = core.getChildrenPaths(pipelineDir).length;
+    describe('project edits', function() {
+        it('should create new pipeline', async function () {
+            const plugin = await manager.initializePlugin(pluginName);
+            await manager.configurePlugin(plugin, pluginConfig, context);
+            const {core, rootNode} = plugin;
+            const pipelineDir = await core.loadByPath(rootNode, PIPELINES);
+            const initialPipelineCount = core.getChildrenPaths(pipelineDir).length;
 
-        const result = await manager.runPluginMain(plugin);
-        const pipelineCount = core.getChildrenPaths(pipelineDir).length;
-        assert(result.success);
-        assert.equal(pipelineCount, initialPipelineCount + 1);
+            const result = await manager.runPluginMain(plugin);
+            const pipelineCount = core.getChildrenPaths(pipelineDir).length;
+            assert(result.success);
+            assert.equal(pipelineCount, initialPipelineCount + 1);
+        });
+
+        it('should preserve operation attributes', async function () {
+            const plugin = await manager.initializePlugin(pluginName);
+            await manager.configurePlugin(plugin, pluginConfig, context);
+            const {core, rootNode} = plugin;
+            const result = await manager.runPluginMain(plugin);
+
+            const [{activeNode: newNode}] = result.messages;
+            const pipeline = await core.loadByPath(rootNode, newNode.id);
+            const numberOp = (await core.loadChildren(pipeline))
+                .find(node => core.getAttribute(node, 'name') === 'Number');
+            assert(
+                core.getAttributeNames(numberOp).includes('number'),
+                'Operation is missing "number" attribute'
+            );
+        });
     });
 
-    it('should create message for new node', async function () {
-        const result = await manager.executePlugin(pluginName, pluginConfig, context);
-        assert(result.success);
-        assert(result.messages === 1, 'No messages created');
-        const [{activeNode: pipeline}] = result.messages;
-        assert(
-            pipeline.id.startsWith(PIPELINES),
-            'Pipeline is not in pipelines directory'
-        );
+    describe('messages', function() {
+        it('should create message for new node', async function () {
+            const result = await manager.executePlugin(pluginName, pluginConfig, context);
+            assert(result.success);
+            assert(result.messages === 1, 'No messages created');
+            const [{activeNode: pipeline}] = result.messages;
+            assert(
+                pipeline.id.startsWith(PIPELINES),
+                'Pipeline is not in pipelines directory'
+            );
+        });
     });
 });

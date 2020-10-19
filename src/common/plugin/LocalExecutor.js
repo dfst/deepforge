@@ -57,12 +57,18 @@ define([
                 this.core.getAttribute(node, 'data')
             ]);
         const inputs = await this.getInputs(node);
-        const ids = inputs.map(i => this.core.getPath(i[2]));
-        const incomingData = Object.values(this.nodes)
+        const inputIds = inputs.map(i => this.core.getPath(i[2]));
+        const execution = this.core.getParent(
+            this.core.getParent(node)
+        );
+        const incomingDataIds = (await this.core.loadChildren(execution))
             .filter(node => this.isMetaTypeOf(node, this.META.Transporter))
-            .filter(node => ids.includes(this.core.getPointerPath(node, 'dst')))
-            .map(node => this.core.getPointerPath(node, 'src'))
-            .map(id => this.nodes[id]);
+            .filter(node => inputIds.includes(this.core.getPointerPath(node, 'dst')))
+            .map(node => this.core.getPointerPath(node, 'src'));
+
+        const incomingData = await Promise.all(
+            incomingDataIds.map(id => this.core.loadByPath(this.rootNode, id))
+        );
 
         // Remove nodes that already exist
         const dataNodes = incomingData.filter(dataNode => {
