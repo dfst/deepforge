@@ -3,6 +3,7 @@ describe('ExecutionHelpers', function() {
     const ExecutionHelpers = testFixture.requirejs('deepforge/plugin/ExecutionHelpers');
     const gmeConfig = testFixture.getGmeConfig();
     const logger = testFixture.logger.fork('ExecutionHelpers');
+    const assert = require('assert');
     let project,
         gmeAuth,
         storage,
@@ -66,6 +67,15 @@ describe('ExecutionHelpers', function() {
             core.setPointerMetaTarget(helloWorldNode, 'testPtr', META.Job, 1, 1);
 
             await helpers.snapshotOperation(helloWorldNode, activeNode);
+        });
+
+        it('should snapshot attributes', async () => {
+            const {core, rootNode} = helpers;
+            const helloWorldNode = await core.loadByPath(rootNode, '/f/h/d');
+            core.setAttribute(helloWorldNode, 'attr', 'value');
+
+            const {snapshot} = await helpers.snapshotOperation(helloWorldNode, activeNode);
+            assert(core.getAttributeNames(snapshot).includes('attr'));
         });
     });
 

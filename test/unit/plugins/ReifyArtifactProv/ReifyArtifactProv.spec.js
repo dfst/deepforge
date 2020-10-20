@@ -35,7 +35,7 @@ describe('ReifyArtifactProv', function () {
         const {project, commitHash} = importResult;
         await project.createBranch('test', commitHash);
         pluginConfig = {
-            artifactId: '/G/E'
+            artifactId: '/G/Z'
         };
         context = {
             project: project,
