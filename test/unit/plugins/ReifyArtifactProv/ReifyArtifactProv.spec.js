@@ -35,7 +35,7 @@ describe('ReifyArtifactProv', function () {
         const {project, commitHash} = importResult;
         await project.createBranch('test', commitHash);
         pluginConfig = {
-            artifactId: '/G/Y'
+            artifactId: '/G/q'
         };
         context = {
             project: project,
@@ -87,7 +87,7 @@ describe('ReifyArtifactProv', function () {
         it('should create message for new node', async function () {
             const result = await manager.executePlugin(pluginName, pluginConfig, context);
             assert(result.success);
-            assert(result.messages === 1, 'No messages created');
+            assert(result.messages.length, 'No messages created');
             const [{activeNode: pipeline}] = result.messages;
             assert(
                 pipeline.id.startsWith(PIPELINES),
