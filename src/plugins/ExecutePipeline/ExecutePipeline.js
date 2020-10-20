@@ -4,6 +4,7 @@
 define([
     'plugin/CreateExecution/CreateExecution/CreateExecution',
     'plugin/ExecuteJob/ExecuteJob/ExecuteJob',
+    'deepforge/storage/index',
     'common/storage/constants',
     'common/core/constants',
     'deepforge/Constants',
@@ -13,6 +14,7 @@ define([
 ], function (
     CreateExecution,
     ExecuteJob,
+    Storage,
     STORAGE_CONSTANTS,
     GME_CONSTANTS,
     CONSTANTS,
@@ -427,10 +429,14 @@ define([
             msg += 'finished!';
         }
 
+        if (!this.isDebugMode()) {
+            await this.deleteIntermediateData();
+        }
+
         const isDeleted = await this.isDeleted();
         this.stopExecHeartBeat();
-        if (!isDeleted) {
 
+        if (!isDeleted) {
             this.logger.debug(`Pipeline "${name}" complete!`);
             this.core.setAttribute(this.activeNode, 'endTime', Date.now());
             this.core.setAttribute(this.activeNode, 'status',
@@ -443,30 +449,49 @@ define([
             this._finished = true;
             this.resultMsg(msg);
             await this.save('Pipeline execution finished');
-            this.result.setSuccess(!this.pipelineError);
-            this._callback(this.pipelineError || null, this.result);
         } else {  // deleted!
             this.logger.debug('Execution has been deleted!');
-            this.result.setSuccess(!this.pipelineError);
-            this._callback(this.pipelineError || null, this.result);
         }
+        this.result.setSuccess(!this.pipelineError);
+        this._callback(this.pipelineError || null, this.result);
     };
 
-    ExecutePipeline.prototype.isDeleted = function () {
-        var activeId = this.core.getPath(this.activeNode);
+    ExecutePipeline.prototype.isDebugMode = function() {
+        return !this.core.getAttribute(this.activeNode, 'snapshot');
+    };
+
+    ExecutePipeline.prototype.getStorageConfig = function () {
+        const storage = this.getCurrentConfig().storage || {};
+        storage.id = storage.id || 'gme';
+        storage.config = storage.config || {};
+        return storage;
+    };
+
+    ExecutePipeline.prototype.deleteIntermediateData = async function() {
+        const storageDir = this.getStorageDir();
+        const config = this.getStorageConfig();
+        const client = await Storage.getClient(config.id, this.logger, config.config);
+        return client.deleteDir(storageDir);
+    };
+
+    ExecutePipeline.prototype.getStorageDir = function () {
+        const execName = this.core.getAttribute(this.activeNode, 'name').replace(/\//g, '_');
+        return `${this.projectId}/executions/${execName}/`;
+    };
+
+    ExecutePipeline.prototype.isDeleted = async function () {
+        const activeId = this.core.getPath(this.activeNode);
 
         // Check if the current execution has been deleted
-        return this.project.getBranchHash(this.branchName)
-            .then(hash => this.updateNodes(hash))
-            .then(() => this.core.loadByPath(this.rootNode, activeId))
-            .then(node => {
-                var deleted = node === null,
-                    msg = `Verified that execution is ${deleted ? '' : 'not '}deleted`;
+        const hash = await this.project.getBranchHash(this.branchName);
+        await this.updateNodes(hash);
 
-                this.logger.debug(msg);
-                return deleted;
-            })
-            .fail(err => this.logger.error(err));
+        const node = await this.core.loadByPath(this.rootNode, activeId);
+        const isDeleted = node === null;
+        const msg = `Verified that execution is ${isDeleted ? '' : 'not '}deleted`;
+
+        this.logger.debug(msg);
+        return isDeleted;
     };
 
     ExecutePipeline.prototype.onPipelineDeleted = function () {

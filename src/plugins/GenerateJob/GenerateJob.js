@@ -265,6 +265,15 @@ define([
         return configs;
     };
 
+    GenerateJob.prototype.getStorageDir = function () {
+        const operation = this.activeNode;
+        const execution = this.core.getParent(this.core.getParent(operation));
+
+        const execName = this.core.getAttribute(execution, 'name').replace(/\//g, '_');
+        const jobId = this.core.getPath(this.activeNode).replace(/\//g, '_');
+        return `${this.projectId}/executions/${execName}/${jobId}/`;
+    };
+
     GenerateJob.prototype.createInputs = async function (node, files) {
         this.logger.info('Retrieving inputs and deserialize fns...');
         const allInputs = await this.getInputs(node);
@@ -277,8 +286,7 @@ define([
             .filter(pair => !!this.core.getAttribute(pair[2], 'data'));  // remove empty inputs
 
         const storage = this.getStorageConfig();
-        const jobId = this.core.getPath(this.activeNode).replace(/\//g, '_');
-        const storageDir = `${this.projectId}/executions/${jobId}`;
+        const storageDir = this.getStorageDir();
 
         const configs = {
             storage: {
