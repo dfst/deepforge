@@ -161,6 +161,7 @@ define([
                 createdAt: node.getAttribute('createdAt'),
                 parentId: node.getParentId(),
                 backendName: backendName,
+                hasProvenance: node.getPointer('provenance').to,
                 dataInfo,
                 size,
             };

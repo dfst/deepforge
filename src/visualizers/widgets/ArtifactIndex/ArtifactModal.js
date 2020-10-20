@@ -26,12 +26,20 @@ define([
         this.$backend.text(node.backendName || 'unknown');
         this.$createdAt.text(createdAt);
         this.$dataInfo.text(`${JSON.stringify(node.dataInfo, null,2)}`);
-        this.nodeId = node.id;
-        this.$el.modal({show: true});
+        this.node = node;
+        if (this.node.hasProvenance) {
+            this.$provBtn.removeClass('disabled');
+        } else {
+            this.$provBtn.addClass('disabled');
+        }
+        this.$el.modal('show');
     };
 
     ModalControl.prototype.onReifyClicked = function () {
-        this.$el.trigger('ReifyProvenance', this.nodeId);
+        if (this.node.hasProvenance) {
+            this.$el.trigger('ReifyProvenance', this.node.id);
+            this.$el.modal('hide');
+        }
     };
 
     return ModalControl;
