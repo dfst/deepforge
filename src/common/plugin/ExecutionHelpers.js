@@ -101,7 +101,9 @@ define([
             this.core.setAttribute(node, 'data', hash);
 
             const provOutput = this.core.getAttribute(dataNode, 'provOutput');
-            this.core.setAttribute(node, 'provOutput', provOutput);
+            if (provOutput) {
+                this.core.setAttribute(node, 'provOutput', provOutput);
+            }
 
             await this.clearProvenance(node);
 
