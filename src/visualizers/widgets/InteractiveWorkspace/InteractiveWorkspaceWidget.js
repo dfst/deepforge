@@ -94,6 +94,7 @@ define([
             const {editor} = state;
             container.getElement().append(editor.$el);
             this.editor = editor;
+            container.on('resize', () => this.onResize());
         }
 
         destroy() {
