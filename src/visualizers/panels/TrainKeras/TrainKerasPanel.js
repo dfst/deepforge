@@ -36,11 +36,6 @@ define([
 
         }
 
-        onResize(width, height) {
-            this.logger.debug('onResize --> width: ' + width + ', height: ' + height);
-            this.widget.onWidgetContainerResize(width, height);
-        }
-
         /* * * * * * * * Visualizer life cycle callbacks * * * * * * * */
         destroy() {
             this.control.destroy();

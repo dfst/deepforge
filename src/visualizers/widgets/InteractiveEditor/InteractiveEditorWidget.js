@@ -134,7 +134,13 @@ define([
             }
         }
 
+        addNode(/*desc*/) {
+        }
+
         updateNode(/*desc*/) {
+        }
+
+        removeNode(/*gmeId*/) {
         }
 
         onActivate() {

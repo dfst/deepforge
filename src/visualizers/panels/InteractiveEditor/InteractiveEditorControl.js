@@ -242,6 +242,11 @@ define([
         }
 
         /* * * * * * * * Visualizer life cycle callbacks * * * * * * * */
+        onResize(width, height) {
+            this.logger.debug('onResize --> width: ' + width + ', height: ' + height);
+            this._widget.onWidgetContainerResize(width, height);
+        }
+
         destroy () {
             this._detachClientEventListeners();
             this._widget.destroy();
