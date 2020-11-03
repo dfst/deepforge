@@ -116,9 +116,6 @@ define([
                 DeepForge.unregisterAction(`Open ${info.title}`);
             });
             this._detachClientEventListeners();
-            if (this.session) {
-                this.session.close();
-            }
         }
 
         _attachClientEventListeners() {
