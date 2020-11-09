@@ -211,35 +211,6 @@ define([
         const serializeTpl = _.template(Templates.DEEPFORGE_SERIALIZATION);
         files.addFile('deepforge/serialization.py', serializeTpl(CONSTANTS));
         files.addFile('deepforge/__init__.py', Templates.DEEPFORGE_INIT);
-        //const outputs = await this.getOutputs(node);
-        //const name = this.core.getAttribute(node, 'name');
-        //const content = {};
-
-        // inputs and outputs
-        //content.name = name;
-        //content.outputs = outputs.map(output => output[0]);
-    };
-
-    GenerateJob.prototype.getConnectionContainer = function () {
-        var container = this.core.getParent(this.activeNode);
-
-        if (this.isMetaTypeOf(container, this.META.Job)) {
-            container = this.core.getParent(container);
-        }
-
-        return container;
-    };
-
-    GenerateJob.prototype.getInputPortsFor = function (nodeId) {
-        var container = this.getConnectionContainer();
-
-        // Get the connections to this node
-        return this.core.loadChildren(container)
-            .then(children => {
-                return children.filter(child =>
-                    this.core.getPointerPath(child, 'dst') === nodeId)
-                    .map(conn => this.core.getPointerPath(conn, 'src'))[0];
-            });
     };
 
     GenerateJob.prototype.getStorageConfig = function () {
