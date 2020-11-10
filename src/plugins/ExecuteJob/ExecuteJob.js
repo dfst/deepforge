@@ -183,6 +183,7 @@ define([
                 await this.onUpdate(jobId, status);
             } catch (err) {
                 this.logger.error(`Error when processing operation update: ${err}`);
+                await this.save('Saving remaining edits before pipeline exits w/ error.');
                 throw err;
             }
         });
@@ -202,6 +203,7 @@ define([
                     await this.onOperationEnd(null, job);
                 } catch (err) {
                     this.logger.error(`Error when processing operation end: ${err}`);
+                    await this.save('Saving remaining edits before pipeline exits w/ error.');
                     throw err;
                 }
             }
