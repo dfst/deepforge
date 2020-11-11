@@ -102,7 +102,7 @@ define([
     ExecuteJob.prototype.onMetadataCommand = async function (job, cmd, id, content) {
         const MetadataClass = Metadata.getClassForCommand(cmd);
         const metadata = await this.getMetadataNodes(job);
-        const node = metadata.find(node => this.core.getAttribute(node, 'id')) ||
+        const node = metadata.find(node => +this.core.getAttribute(node, 'id') === id) ||
             await this.createNodeForMetadata(MetadataClass, job, id);
 
         const md = new MetadataClass(node, this.core, this.META);
