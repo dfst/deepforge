@@ -96,7 +96,7 @@ define([
             return JSON.parse(resultsTxt);
         }
 
-        async purge (job) {
+        async purgeJob (job) {
             const {hash} = job;
             if (hash === this.currentJob) {
                 throw new Error('Cannot purge running job.');

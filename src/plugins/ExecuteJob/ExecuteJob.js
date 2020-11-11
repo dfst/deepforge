@@ -62,6 +62,7 @@ define([
         ExecuteJobMetadata.call(this);
         this.pluginMetadata = pluginMetadata;
         this._running = null;
+        this._computeJobs = {};
 
         // Metadata updating
         this.lastAppliedCmd = {};
@@ -190,6 +191,7 @@ define([
 
         compute.on('end',
             async (id/*, info*/) => {
+                const computeJob = this._computeJobs[id];
                 try {
                     const job = this.getNodeForJobId(id);
                     if (job === null) {
@@ -197,13 +199,16 @@ define([
                             this.canceled,
                             `Cannot find node for job ID in running pipeline: ${id}`
                         );
+                        await compute.purgeJob(computeJob);
                         return;
                     }
                     this.cleanJobHashInfo(id);
                     await this.onOperationEnd(null, job);
+                    await compute.purgeJob(computeJob);
                 } catch (err) {
                     this.logger.error(`Error when processing operation end: ${err}`);
                     await this.save('Saving remaining edits before pipeline exits w/ error.');
+                    await compute.purgeJob(computeJob);
                     throw err;
                 }
             }
@@ -534,6 +539,7 @@ define([
             this.startExecHeartBeat();
         }
 
+        this._computeJobs[jobInfo.hash] = computeJob;
         return await this.recordJobOrigin(jobInfo.hash, job);
     };
 
@@ -673,14 +679,14 @@ define([
             this.logManager.deleteLog(jobId);
             if (status === this.compute.SUCCESS) {
                 const results = await this.compute.getResultsInfo(jobInfo);
-                await this.recordOperationOutputs(op, results);
+                return this.recordOperationOutputs(op, results);
             } else {
                 // Parse the most precise error and present it in the toast...
                 const lastline = result.stdout.split('\n').filter(l => !!l).pop() || '';
                 if (lastline.includes('Error')) {
-                    this.onOperationFail(op, lastline); 
+                    return this.onOperationFail(op, lastline); 
                 } else {
-                    this.onOperationFail(op, `Operation "${opName}" failed!`); 
+                    return this.onOperationFail(op, `Operation "${opName}" failed!`); 
                 }
             }
         } else {  // something bad happened...
