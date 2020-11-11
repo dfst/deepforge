@@ -66,7 +66,8 @@ define([
             trimStartRegex = new RegExp(CONSTANTS.START_CMD + '.*'),
             matches,
             content,
-            cmd;
+            cmd,
+            cmdId;
 
         for (let i = 0; i < lines.length; i++) {
             // Check for a deepforge command
@@ -77,13 +78,14 @@ define([
                     args = matches[m].split(/\s+/);
                     args.shift();
                     cmd = args[0];
-                    content = matches[m].substring(matches[m].indexOf(cmd) + cmd.length);
+                    cmdId = args[1];
+                    content = matches[m].substring(matches[m].indexOf(cmdId) + cmdId.length);
                     if (!skip || cmdCnt >= this.lastAppliedCmd[jobId]) {
                         this.lastAppliedCmd[jobId]++;
                         await this.onMetadataCommand(
                             job,
                             cmd,
-                            this.lastAppliedCmd[jobId],
+                            +cmdId,
                             JSON.parse(content)
                         );
                         hasMetadata = true;

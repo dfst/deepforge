@@ -640,7 +640,7 @@ def show(block=None):
     interactive versus batch mode
     """
     for manager in Gcf.get_all_fig_managers():
-        manager.canvas.send_deepforge_update()
+        manager.canvas.send_deepforge_update(fig_num=manager.num)
         pass
 
 
@@ -691,15 +691,15 @@ class FigureCanvasTemplate(FigureCanvasBase):
         """
         Draw the figure using the renderer
         """
-        self.send_deepforge_update()
+        self.send_deepforge_update(fig_num=plt.gcf().number)
         renderer = RendererTemplate(self.figure.dpi)
         self.figure.draw(renderer)
 
-    def send_deepforge_update(self):
+    def send_deepforge_update(self, fig_num):
         state = self.figure_to_state()
         # Probably should do some diff-ing if the state hasn't changed...
         # TODO
-        print('deepforge-cmd PLOT ' + state)
+        print(f'deepforge-cmd PLOT {fig_num} ' + state)
 
     def figure_to_state(self):
         figure = self.figure
