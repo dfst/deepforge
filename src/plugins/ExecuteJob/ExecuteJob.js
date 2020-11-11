@@ -648,9 +648,11 @@ define([
 
     ExecuteJob.prototype.onOperationEnd = async function (err, job) {
         if (err) {
-            return this.onOperationFail(job, err);
+            await this.onOperationFail(job, err);
+            return;
         } else if (this.isLocalOperation(job)) {
-            return this.onOperationComplete(job);
+            await this.onOperationComplete(job);
+            return;
         }
 
         const op = await this.getOperation(job);
@@ -666,7 +668,7 @@ define([
             this.logger.debug(`"${name}" has been CANCELED!`);
             const stdout = await this.logManager.getLog(jobId);
             this.core.setAttribute(job, 'stdout', stdout);
-            return this.onOperationCanceled(op);
+            await this.onOperationCanceled(op);
         }
 
         if (status === this.compute.SUCCESS || status === this.compute.FAILED) {
@@ -679,14 +681,14 @@ define([
             this.logManager.deleteLog(jobId);
             if (status === this.compute.SUCCESS) {
                 const results = await this.compute.getResultsInfo(jobInfo);
-                return this.recordOperationOutputs(op, results);
+                await this.recordOperationOutputs(op, results);
             } else {
                 // Parse the most precise error and present it in the toast...
                 const lastline = result.stdout.split('\n').filter(l => !!l).pop() || '';
                 if (lastline.includes('Error')) {
-                    return this.onOperationFail(op, lastline); 
+                    await this.onOperationFail(op, lastline);
                 } else {
-                    return this.onOperationFail(op, `Operation "${opName}" failed!`); 
+                    await this.onOperationFail(op, `Operation "${opName}" failed!`);
                 }
             }
         } else {  // something bad happened...
@@ -695,7 +697,7 @@ define([
 
             this.core.setAttribute(job, 'stdout', consoleErr);
             this.logger.error(err);
-            return this.onOperationFail(op, err);
+            await this.onOperationFail(op, err);
         }
     };
 
