@@ -340,7 +340,7 @@ define([
     };
 
     OperationInterfaceEditorEvents.prototype.getValidAttributeNames = function(nodeId) {
-        const node = this.client.getNode(nodeId);
+        const node = this._client.getNode(nodeId);
         return node.getValidAttributeNames();
     };
 
