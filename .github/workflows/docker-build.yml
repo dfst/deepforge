@@ -18,15 +18,15 @@ jobs:
       - name: Get Release Tags
         id: get_release_tags
         run: |
-          echo "::set-env name=RELEASE_TAG::$(echo ${GITHUB_REF} | sed -E 's/.*v?([0-9]+)\.([0-9]+)\.([0-9]+)?/\1.\2.\3,\1.\2,\1/')"
-          echo "::set-env name=TAG::stable"
+          echo "RELEASE_TAG=$(echo ${GITHUB_REF} | sed -E 's/.*v?([0-9]+)\.([0-9]+)\.([0-9]+)?/\1.\2.\3,\1.\2,\1/')" >> $GITHUB_ENV
+          echo "TAG=stable" >> $GITHUB_ENV
         if: github.event_name == 'release'
 
       - name: Get Push Tags
         id: get_push_tags
         run: |
-          echo "::set-env name=TAG::latest"
-          echo "::set-env name=RELEASE_TAG::$(echo ${GITHUB_REF:11})"
+          echo "TAG=latest" >> $GITHUB_ENV
+          echo "RELEASE_TAG=$(echo ${GITHUB_REF:11})" >> $GITHUB_ENV
         if: github.event_name == 'push'
 
       - name: Publish to docker hub (server)
