@@ -271,9 +271,25 @@ program.command('start')
         if (args.server) {
             await checkMongo(args);
             const main = path.join(__dirname, '..', 'app.js');
-            await spawn(serverCommand, [main], {
-                shell: SHELL
-            });
+            try {
+                await spawn(serverCommand, [main], {
+                    shell: SHELL
+                });
+            } catch (err) {
+                const isCondaBinMissingError = err.stderr &&
+                    err.stderr.includes('activate: No such file');
+
+                if (isCondaBinMissingError) {
+                    console.error('Unable to start conda environment.\n');
+                    console.error('It is likely that /<path to anaconda home>/bin needs to be added to your PATH. For more information, the following links may be useful:');
+                    console.error('  - https://docs.anaconda.com/anaconda/user-guide/faq/#installing-anaconda');
+                    console.error('  - https://stackoverflow.com/questions/35630276/conda-how-do-i-activate-environments');
+                    console.error('\nIf the problem still persists, feel free to open an issue at https://github.com/deepforge-dev/deepforge/issues');
+                    process.exit(1);
+                } else {
+                    throw err;
+                }
+            }
         }
     });
 
