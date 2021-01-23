@@ -72,16 +72,7 @@ define([
         this.logger.info(`Updates available for ${this.projectId}: ${updateNames}`);
 
         // Combine and report the result
-        const msgs = seedUpdates
-            .concat(
-                updates.map(update => {
-                    return {
-                        type: Updates.MIGRATION,
-                        node: null,
-                        name: update.name
-                    };
-                })
-            );
+        const msgs = seedUpdates.concat(updates);
 
         msgs.forEach(msg => {
             const {node} = msg;

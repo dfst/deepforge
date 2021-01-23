@@ -1,6 +1,7 @@
 <%= JSON.stringify(extensions.map(function(ext) {
     return {
         name: ext.name,
+        version: ext.version,
         description: ext.description,
         nodeTypes: ext.nodeTypes,
         initCode: ext.initCode,

@@ -46,24 +46,21 @@ define([
      *
      * @param {function(string, plugin.PluginResult)} callback - the result callback
      */
-    ImportLibrary.prototype.main = function (callback) {
+    ImportLibrary.prototype.main = async function () {
         const config = this.getCurrentConfig();
         const libraryInfo = config.libraryInfo;
 
-        return this.addSeedToBranch(libraryInfo.seed)
-            .then(branchName => this.createGMELibraryFromBranch(branchName, libraryInfo))
-            .then(branchInfo => this.removeTemporaryBranch(branchInfo))
-            .then(() => this.updateMetaForLibrary(libraryInfo))
-            .then(() => this.addLibraryInitCode(libraryInfo))
-            .then(() => this.save(`Imported ${libraryInfo.name} library`))
-            .then(() => {
-                this.result.setSuccess(true);
-                callback(null, this.result);
-            })
-            .catch(err => {
-                this.logger.error(`Could not check the libraries: ${err}`);
-                callback(err, this.result);
-            });
+        await this.importLibrary(libraryInfo);
+        await this.save(`Imported ${libraryInfo.name} library`);
+        this.result.setSuccess(true);
+    };
+
+    ImportLibrary.prototype.importLibrary = async function (libraryInfo) {
+        const branchName = await this.addSeedToBranch(libraryInfo.seed);
+        const branchInfo = await this.createGMELibraryFromBranch(branchName, libraryInfo);
+        await this.removeTemporaryBranch(branchInfo);
+        await this.updateMetaForLibrary(libraryInfo);
+        await this.addLibraryInitCode(libraryInfo);
     };
 
     ImportLibrary.prototype.getUniqueBranchName = function (basename) {
@@ -105,7 +102,12 @@ define([
         let rootHash = commit.root;
 
         libraryData.commitHash = commit._id;
-        await this.core.addLibrary(this.rootNode, name, rootHash, libraryData);
+        const alreadyExists = this.core.getLibraryNames(this.rootNode).includes(name);
+        if (alreadyExists) {
+            await this.core.updateLibrary(this.rootNode, name, rootHash, libraryData);
+        } else {
+            await this.core.addLibrary(this.rootNode, name, rootHash, libraryData);
+        }
         return {
             name: branchName,
             hash: commit._id
@@ -116,7 +118,7 @@ define([
         return this.project.deleteBranch(branch.name, branch.hash);
     };
 
-    ImportLibrary.prototype.updateMetaForLibrary = function (libraryInfo) {
+    ImportLibrary.prototype.updateMetaForLibrary = async function (libraryInfo) {
         const nodeNames = libraryInfo.nodeTypes;
         const libraryNodes = this.getLibraryMetaNodes(libraryInfo.name);
 
@@ -132,34 +134,37 @@ define([
             .filter(node => !!node);
 
         // Add containment relationships to the meta
-        return this.core.loadChildren(this.rootNode)
-            .then(children => {
-                let parent = children.find(node => this.core.getAttribute(node, 'name') === 'MyResources');
-                if (!parent) throw new Error('Could not find resources location');
-                nodes.forEach(node => this.core.setChildMeta(parent, node));
-            });
+        const children = await this.core.loadChildren(this.rootNode);
+        let parent = children.find(node => this.core.getAttribute(node, 'name') === 'MyResources');
+        if (!parent) throw new Error('Could not find resources location');
+        nodes.forEach(node => this.core.setChildMeta(parent, node));
     };
 
-    ImportLibrary.prototype.addLibraryInitCode = function (libraryInfo) {
-        // Get the library fco node
-        // Add the initialization code for this library;
+    ImportLibrary.prototype.addLibraryInitCode = async function (libraryInfo) {
         const libraryNodes = this.getLibraryMetaNodes(libraryInfo.name);
-        const LibraryCode = this.getLibraryCodeNode();
-        const FCO = this.getFCONode();
-
-        // Make the LibraryCode node
-        const node = this.core.createNode({
-            parent: this.rootNode,
-            base: LibraryCode
-        });
+        const node = await this.createLibraryCodeNode(libraryInfo.name);
 
         this.core.setAttribute(node, 'code', libraryInfo.initCode || '');
-        this.core.setAttribute(node, 'name', `${libraryInfo.name}InitCode`);
+        this.core.setAttribute(node, 'name', libraryInfo.name);
+        this.core.setAttribute(node, 'version', libraryInfo.version);
 
+        const FCO = this.getFCONode();
         const libraryFCO = libraryNodes
             .find(node => this.core.getPointerPath(node, 'base') === this.core.getPath(FCO));
 
         this.core.setPointer(node, 'library', libraryFCO);
+        return node;
+    };
+
+    ImportLibrary.prototype.createLibraryCodeNode = async function (libName) {
+        const LibraryCode = this.getLibraryCodeNode();
+        const libraryCodeNodes = (await this.core.loadChildren(this.rootNode))
+            .filter(node => this.core.isTypeOf(node, LibraryCode));
+
+        return libraryCodeNodes.find(node => {
+            const name = this.core.getAttribute(node, 'name');
+            return name === libName || name === `${libName}InitCode`;
+        }) || this.core.createNode({parent: this.rootNode, base: LibraryCode});
     };
 
     ImportLibrary.prototype.getLibraryMetaNodes = function (libraryName) {

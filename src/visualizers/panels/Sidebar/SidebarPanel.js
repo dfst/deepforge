@@ -173,7 +173,8 @@ define([
                 if (update.type === Updates.SEED) {
                     return 0;
                 }
-                if (Updates.getUpdate(update.name).beforeLibraryUpdates) {
+                const hasBeforeUpdates = update.type === Updates.MIGRATION && Updates.getUpdate(update.name).beforeLibraryUpdates;
+                if (hasBeforeUpdates) {
                     return 1;
                 }
                 return 2;
@@ -195,13 +196,9 @@ define([
 
     SidebarPanel.prototype.applyMigrationUpdates = async function (updates) {
         const pluginId = 'ApplyUpdates';
-        const names = updates.map(update => update.name);
 
         const context = this._client.getCurrentPluginContext(pluginId);
-        context.pluginConfig = {
-            updates: names,
-        };
-
+        context.pluginConfig = {updates};
         await Q.ninvoke(this._client, 'runServerPlugin', pluginId, context);
     };
 

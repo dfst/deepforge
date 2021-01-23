@@ -4,7 +4,7 @@ define([
     'common/storage/constants',
     'q',
     'underscore',
-    'text!./Libraries.json',
+    'text!deepforge/extensions/Libraries.json',
     'text!./LibraryDialogModal.html',
     'css!./LibraryDialog.css'
 ], function(

@@ -6,6 +6,7 @@
 //
 const path = require('path');
 const fs = require('fs');
+const fsp = require('fs').promises;
 const pacote = require('pacote');
 const rm_rf = require('rimraf');
 const exists = require('exists-file');
@@ -67,7 +68,7 @@ extender.getInstalledConfigType = function(name) {
 
 extender.install = async function(projectName, isReinstall) {
     await exec(`npm install ${projectName}`);
-    const {name} = await pacote.manifest(projectName);
+    const {name, version} = await pacote.manifest(projectName);
     const extRoot = path.join(__dirname, '..', 'node_modules', name);
 
     // Check for the extensions.json in the project (look up type, etc)
@@ -85,15 +86,16 @@ extender.install = async function(projectName, isReinstall) {
     }
 
     try {
-        extConfig = JSON.parse(fs.readFileSync(extConfigPath, 'utf8'));
+        extConfig = JSON.parse(await fsp.readFile(extConfigPath, 'utf8'));
+        extConfig.version = version;
     } catch(e) {  // Invalid JSON
-        throw `Invalid ${extender.EXT_CONFIG_NAME}: ${e}`;
+        throw new Error(`Invalid ${extender.EXT_CONFIG_NAME}: ${e}`);
     }
 
     // Try to add the extension to the project (using the extender)
     extType = extConfig.type;
     if (!extender.isSupportedType(extType)) {
-        throw `Unrecognized extension type: "${extType}"`;
+        throw new Error(`Unrecognized extension type: "${extType}"`);
     }
     // add project info to the config
     let project = {
@@ -115,7 +117,7 @@ extender.install = async function(projectName, isReinstall) {
     }
 
     allExtConfigs[extType][extConfig.name] = extConfig;
-    const config = await extender.install[extType](extConfig, project, !!isReinstall);
+    const config = await extender.install[extType](extConfig, project, isReinstall);
     extConfig = config || extConfig;
     // Update the deployment config
     allExtConfigs[extType][extConfig.name] = extConfig;
@@ -206,13 +208,6 @@ function makeInstallFor(typeCfg) {
     };
 }
 
-//var PLUGIN_ROOT = path.join(__dirname, '..', 'src', 'plugins', 'Export');
-//makeInstallFor({
-    //type: 'Export:Pipeline',
-    //template: path.join(PLUGIN_ROOT, 'format.js.ejs'),
-    //targetDir: path.join(PLUGIN_ROOT, 'formats', '<%=name%>')
-//});
-
 const LIBRARY_ROOT = path.join(__dirname, '..', 'src', 'visualizers',
     'panels', 'ForgeActionButton');
 makeInstallFor({
@@ -224,19 +219,18 @@ makeInstallFor({
 
 // Add the extension type for another domain/library
 const libraryType = 'Library';
-const LIBRARY_TEMPLATE_PATH = path.join(__dirname, '..', 'src', 'visualizers',
-    'panels', 'ForgeActionButton', 'Libraries.json.ejs');
-extender.install[libraryType] = (config, project/*, isReinstall*/) => {
-    return webgme.all.import(project.arg)  // import the seed and stuff
-        .then(() => {
-            // Add the initCode to the config
-            config.initCode = config.initCode || '';
-            if (config.initCode) {
-                const initCodePath = path.join(project.root, config.initCode);
-                config.initCode = fs.readFileSync(initCodePath, 'utf8');
-            }
-            return updateTemplateFile(LIBRARY_TEMPLATE_PATH, libraryType);
-        });
+const LIBRARY_TEMPLATE_PATH = path.join(__dirname, '..', 'src', 'common',
+    'extensions', 'Libraries.json.ejs');
+extender.install[libraryType] = async (config, project/*, isReinstall*/) => {
+    await webgme.all.import(project.arg);  // import the seed and stuff
+    // Add the initCode to the config
+    console.log(config);
+    config.initCode = config.initCode || '';
+    if (config.initCode) {
+        const initCodePath = path.join(project.root, config.initCode);
+        config.initCode = await fsp.readFile(initCodePath, 'utf8');
+    }
+    return updateTemplateFile(LIBRARY_TEMPLATE_PATH, libraryType);
 };
 
 extender.uninstall[libraryType] = (/*name, config*/) => {

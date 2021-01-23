@@ -2,13 +2,15 @@
 /*eslint-env node, browser*/
 
 define([
+    'plugin/ImportLibrary/ImportLibrary/ImportLibrary',
     'deepforge/updates/Updates',
     'text!./metadata.json',
-    'plugin/PluginBase'
+    'underscore',
 ], function (
+    PluginBase,
     Updates,
     pluginMetadata,
-    PluginBase
+    _,
 ) {
     'use strict';
 
@@ -50,24 +52,33 @@ define([
     ApplyUpdates.prototype.main = async function (callback) {
         // Retrieve the updates to apply
         const config = this.getCurrentConfig();
-        const updateNames = config.updates || [];
+        const {updates=[]} = config;
 
-        if (!updateNames.length) {
+        if (!updates.length) {
             this.result.setSuccess(true);
             return callback(null, this.result);
         }
 
         // Apply each of the updates
-        const updates = Updates.getUpdates(updateNames);
+        const [migrations, libUpdates] = _.partition(
+            updates,
+            update => update.type === Updates.MIGRATION
+        );
 
-        for (let i = 0, len = updates.length; i < len; i++) {
-            const update = updates[i];
+        for (let i = 0, len = migrations.length; i < len; i++) {
+            const update = migrations[i];
             this.logger.info(`Applying update: ${update.name} to ${this.projectId}`);
             await update.apply(this.core, this.rootNode, this.META);
         }
 
+        for (let i = libUpdates.length; i--;) {
+            const libraryInfo = libUpdates[i].info;
+            await this.importLibrary(libraryInfo);
+        }
+
         // Save the project
-        await this.save(`Applied project updates: ${updateNames.join(",")}`);
+        const updateNames = updates.map(update => update.name);
+        await this.save(`Applied project updates: ${updateNames.join(',')}`);
 
         this.result.setSuccess(true);
         callback(null, this.result);

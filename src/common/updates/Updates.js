@@ -4,14 +4,15 @@ define([
     'deepforge/viz/PlotlyDescExtractor',
     'deepforge/viz/FigureExtractor',
     './Version',
-    'q'
+    'text!deepforge/extensions/Libraries.json',
 ], function(
     Storage,
     PlotlyDescExtractor,
     FigureExtractor,
     Version,
-    Q
+    LibrariesTxt,
 ) {
+    const Libraries = JSON.parse(LibrariesTxt);
     const GRAPH = 'Graph';
     const getGraphNodes = async function(core, rootNode, graphNodes=[]) {
         const children = await core.loadChildren(rootNode);
@@ -148,12 +149,48 @@ define([
 
     const Updates = {};
 
-    Updates.getAvailableUpdates = function(core, rootNode) {
-        return Q.all(allUpdates.map(update => update.isNeeded(core, rootNode)))
-            .then(isNeeded => {
-                const updates = allUpdates.filter((update, i) => isNeeded[i]);
-                return updates;
-            });
+    Updates.getAvailableUpdates = async function(core, rootNode) {
+        const migrations = await this.getMigrationUpdates(core, rootNode);
+        const libUpdates = await this.getLibraryUpdates(core, rootNode);
+        return migrations.concat(libUpdates);
+    };
+
+    Updates.getMigrationUpdates = async function(core, rootNode) {
+        const isNeeded = await Promise.all(
+            allUpdates.map(update => update.isNeeded(core, rootNode))
+        );
+        const updates = allUpdates.filter((update, i) => isNeeded[i]);
+        return updates.map(update => ({
+            type: Updates.MIGRATION,
+            name: update.name,
+        }));
+    };
+
+    Updates.getLibraryUpdates = async function(core, rootNode) {
+        const children = await core.loadChildren(rootNode);
+        const libraryType = Object.values(core.getAllMetaNodes(rootNode))
+            .find(node => core.getAttribute(node, 'name') === 'LibraryCode');
+        const libraries = children.filter(child => core.isTypeOf(child, libraryType));
+        const libUpdates = Libraries.filter(libraryInfo => {
+            const {name, version} = libraryInfo;
+            const libNode = libraries
+                .find(library => {
+                    const nodeName = core.getAttribute(library, 'name');
+                    return nodeName === name || nodeName === `${name}InitCode`;
+                });
+
+            if (libNode) {
+                const nodeVersion = core.getAttribute(libNode, 'version');
+                const installedVersion = new Version(nodeVersion || '0.0.0');
+                const availableVersion = new Version(version || '0.0.0');
+                return installedVersion.lessThan(availableVersion);
+            }
+        });
+        return libUpdates.map(libInfo => ({
+            type: Updates.LIBRARY,
+            name: `Update ${libInfo.name} library`,
+            info: libInfo,
+        }));
     };
 
     Updates.getUpdates = function(names) {
@@ -170,5 +207,6 @@ define([
     // Constants
     Updates.MIGRATION = 'Migration';
     Updates.SEED = 'SeedUpdate';
+    Updates.LIBRARY = 'Library';
     return Updates;
 });

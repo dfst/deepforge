@@ -4,7 +4,7 @@ define([
     'deepforge/OperationCode',
     'deepforge/Constants',
     './Colors',
-    'text!panels/ForgeActionButton/Libraries.json',
+    'text!deepforge/extensions/Libraries.json',
 ], function(
     EasyDAGControlEventHandlers,
     OperationCode,
