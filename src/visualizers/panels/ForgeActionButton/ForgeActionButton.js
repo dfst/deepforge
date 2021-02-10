@@ -104,18 +104,21 @@ define([
     };
 
     ForgeActionButton.prototype.findActionsFor = function(nodeId) {
-        var node = this.client.getNode(nodeId),
-            base = this.client.getNode(node.getMetaTypeId()),
-            isMeta = base && base.getId() === node.getId(),
-            suffix = isMeta ? '_META' : '',
-            actions,
+        const node = this.client.getNode(nodeId);
+        if (!node) {
+            return [];
+        }
+        let base = this.client.getNode(node.getMetaTypeId());
+        const isMeta = base && base.getId() === node.getId();
+        const suffix = isMeta ? '_META' : '';
+        let actions,
             basename;
 
         if (!base) {  // must be ROOT or FCO
             basename = node.getAttribute('name') || 'ROOT_NODE';
             actions = this.getDefinedActionsFor(basename, node)
                 .filter(action => !action.filter || action.filter.call(this));
-            return actions.concat(this._registry);
+            return actions;
         }
 
         while (base && !(actions && actions.length)) {
@@ -127,7 +130,7 @@ define([
             }
         }
 
-        return actions.concat(this._registry);
+        return actions;
     };
 
     ForgeActionButton.prototype.getDefinedActionsFor = function(basename, node) {
@@ -148,7 +151,7 @@ define([
     };
 
     ForgeActionButton.prototype.addActionsForObject = function(nodeId) {
-        var actions = this.findActionsFor(nodeId),
+        var actions = this.findActionsFor(nodeId).concat(this._registry),
             i;
 
         // Remove old actions
