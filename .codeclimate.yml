@@ -42,6 +42,9 @@ exclude_paths:
 - src/visualizers/widgets/TensorPlotter/lib/
 - src/visualizers/widgets/TensorPlotter/styles/simple-grid.min.css
 - src/visualizers/widgets/TrainKeras/build
+- src/visualizers/panels/ForgeActionButton/ExamplesDialog.js
+- src/visualizers/panels/ForgeActionButton/ExamplesDialog.css
+- src/visualizers/panels/ForgeActionButton/ExamplesDialog.js.map
 - src/visualizers/panels/TrainKeras/JSONImporter.js
 - src/visualizers/panels/TrainKeras/changeset.js
 - src/visualizers/widgets/InteractiveWorkspace/lib
