@@ -30,7 +30,6 @@ define([
 
     async function importExample(client, example, parentId) {
         const hash = await uploadExampleToBlob(client, example);
-        // TODO: handle errors
         await Q.ninvoke(
             client,
             'importSelectionFromFile',
@@ -186,7 +185,14 @@ define([
                             'importExample',
                             async event => {
                                 const example = event.detail;
-                                await importExample(client, example, this._currentNodeId);
+                                try {
+                                    Materialize.toast(`Importing ${example.name} from ${example.library}...`, 2000);
+                                    await importExample(client, example, this._currentNodeId);
+                                    Materialize.toast('Import complete!', 2000);
+                                } catch(err) {
+                                    Materialize.toast(`Import failed: ${err.message}`, 3000);
+                                    throw err;
+                                }
                             }
                         );
 

@@ -98,7 +98,7 @@ extender.install = async function(projectName, isReinstall) {
     // add project info to the config
     let project = {
         arg: projectName,
-        root: extRoot,
+        root: path.relative(path.join(__dirname, '..'), extRoot),
         name: name
     };
     let pkgJsonPath = path.join(project.root, 'package.json');
