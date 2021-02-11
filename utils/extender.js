@@ -235,6 +235,9 @@ extender.install[libraryType] = (config, project/*, isReinstall*/) => {
                 const initCodePath = path.join(project.root, config.initCode);
                 config.initCode = fs.readFileSync(initCodePath, 'utf8');
             }
+            config.models = config.models || [];
+            config.models
+                .forEach(model => model.path = path.join(project.root, model.path));
             return updateTemplateFile(LIBRARY_TEMPLATE_PATH, libraryType);
         });
 };

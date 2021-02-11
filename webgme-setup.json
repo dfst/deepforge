@@ -64,6 +64,10 @@
       "ImportArtifact": {
         "src": "src/plugins/ImportArtifact",
         "test": "test/plugins/ImportArtifact"
+      },
+      "UploadLibraryModelToBlob": {
+        "src": "src/plugins/UploadLibraryModelToBlob",
+        "test": "test/plugins/UploadLibraryModelToBlob"
       }
     },
     "layouts": {

@@ -1,4 +1,4 @@
-/*globals define, WebGMEGlobal*/
+/*globals define, WebGMEGlobal, $*/
 // These are actions defined for specific meta types. They are evaluated from
 // the context of the ForgeActionButton
 define([
@@ -9,6 +9,8 @@ define([
     'deepforge/globals',
     'deepforge/viz/TextPrompter',
     'deepforge/viz/StorageHelpers',
+    'text!./Libraries.json',
+    './ExamplesDialog',
 ], function(
     LibraryDialog,
     Materialize,
@@ -17,11 +19,40 @@ define([
     DeepForge,
     TextPrompter,
     StorageHelpers,
+    Libraries,
+    ExamplesDialog,
 ) {
+    Libraries = JSON.parse(Libraries);
     var returnToLast = (place) => {
         var returnId = DeepForge.last[place];
         WebGMEGlobal.State.registerActiveObject(returnId);
     };
+
+    async function importExample(client, example, parentId) {
+        const hash = await uploadExampleToBlob(client, example);
+        // TODO: handle errors
+        await Q.ninvoke(
+            client,
+            'importSelectionFromFile',
+            client.getActiveProjectId(),
+            client.getActiveBranchName(),
+            parentId,
+            hash,
+        );
+    }
+
+    async function uploadExampleToBlob(client, example) {
+        const pluginName = 'UploadLibraryModelToBlob';
+        const context = client.getCurrentPluginContext(pluginName);
+        context.pluginConfig = {
+            libraryName: example.library,
+            modelName: example.name,
+        };
+        const result = await Q.ninvoke(client, 'runServerPlugin', pluginName, context);
+        const [hashMessage] = result.messages;
+        const hash = hashMessage.message;
+        return hash;
+    }
 
     var prototypeButtons = function(type, fromType) {
         return [
@@ -120,6 +151,48 @@ define([
             // TODO: Add support for adding (inherited) children
 
             buttons = addButtons.concat(buttons);
+
+            const installedLibs = client.getLibraryNames()
+                .map(name => Libraries.find(lib => lib.name === name))
+                .filter(lib => !!lib);
+            const hasExampleModels = installedLibs.flatMap(lib => lib.models).length > 0;
+            if (hasExampleModels) {
+                buttons.unshift({
+                    name: 'Import Example...',
+                    icon: 'view_list',
+                    action: function() {
+                        const installedLibs = client.getLibraryNames()
+                            .map(name => Libraries.find(lib => lib.name === name))
+                            .filter(lib => !!lib);
+
+                        installedLibs
+                            .forEach(info => info.models.forEach(model => model.library = info.name));
+                        const exampleModels = installedLibs.flatMap(lib => lib.models);
+
+                        if (this.examplesDialog) {
+                            this.examplesDialog.destroy();
+                        }
+                        this.examplesDialog = new ExamplesDialog(
+                            {
+                                target: document.body,
+                                props: {
+                                    examples: exampleModels,
+                                    jquery: $,
+                                    client,
+                                }
+                            }
+                        );
+                        this.examplesDialog.events().addEventListener(
+                            'importExample',
+                            async event => {
+                                const example = event.detail;
+                                await importExample(client, example, this._currentNodeId);
+                            }
+                        );
+
+                    }
+                });
+            }
             return buttons;
         },
         MyOperations_META: [
