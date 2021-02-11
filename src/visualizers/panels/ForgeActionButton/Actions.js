@@ -10,7 +10,7 @@ define([
     'deepforge/viz/TextPrompter',
     'deepforge/viz/StorageHelpers',
     'text!./Libraries.json',
-    './ExamplesDialog',
+    './build/ExamplesDialog',
 ], function(
     LibraryDialog,
     Materialize,

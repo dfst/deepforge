@@ -14,7 +14,7 @@ export default [
             sourcemap: true,
             format: 'amd',
             name: 'app',
-            file: `src/visualizers/panels/ForgeActionButton/ExamplesDialog.js`
+            file: `src/visualizers/panels/ForgeActionButton/build/ExamplesDialog.js`
         },
         plugins: [
             svelte({
