@@ -13,8 +13,9 @@ fi;
 < config/components.json  jq '.Compute.backends=(.Compute.backends | map(select(. != "local")))' \
 > config/components2.json
 < config/components2.json jq '.Storage.backends=(.Storage.backends | map(select(. != "gme")))' \
-> config/components.json
-rm config/components2.json
+> config/components3.json
+jq '.LanguageServers = input' config/components3.json "$DEEPFORGE_DEPLOYMENT_DIR"/languageServers.json > config/components.json
+rm config/components3.json config/components2.json
 
 # Merging the custom override yml file
 yq m -a docker/docker-compose.yml "$DEEPFORGE_DEPLOYMENT_DIR"/docker-compose-overrides.yml > custom-docker-compose.yml
@@ -24,5 +25,13 @@ docker-compose --file custom-docker-compose.yml -p deepforge pull $SERVER_NAME
 docker-compose --file custom-docker-compose.yml -p deepforge stop $SERVER_NAME
 docker-compose --file custom-docker-compose.yml -p deepforge rm -f $SERVER_NAME
 docker-compose --file custom-docker-compose.yml -p deepforge up -d $SERVER_NAME
+
+if [[ $SERVER_NAME = "server" ]]; then
+  docker-compose --file custom-docker-compose.yml -p deepforge pull language_servers
+  docker-compose --file custom-docker-compose.yml -p deepforge stop language_servers
+  docker-compose --file custom-docker-compose.yml -p deepforge rm -f language_servers
+  docker-compose --file custom-docker-compose.yml -p deepforge up -d language_servers
+fi;
+
 
 docker image prune -f

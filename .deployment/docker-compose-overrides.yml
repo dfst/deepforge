@@ -4,6 +4,8 @@ services:
     environment:
       - "DEEPFORGE_HOST=https://dev.deepforge.org"
       - "DEEPFORGE_INTERACTIVE_COMPUTE_HOST=wss://dev-compute.deepforge.org"
+      - "DEEPFORGE_LANGUAGE_SERVER_HOST=https://langservers.deepforge.org"
+
     volumes:
       - "${DEEPFORGE_DEPLOYMENT_DIR}:/.deployment"
       - "${DEEPFORGE_DEPLOYMENT_DIR}/../config/components.json:/deepforge/config/components.json"
@@ -16,6 +18,7 @@ services:
       - "DEEPFORGE_INTERACTIVE_COMPUTE_HOST=wss://compute.deepforge.org"
       - "DEEPFORGE_PUBLIC_KEY=/token_keys/public_key"
       - "DEEPFORGE_PRIVATE_KEY=/token_keys/private_key"
+      - "DEEPFORGE_LANGUAGE_SERVER_HOST=https://langservers.deepforge.org"
     image: deepforge/kitchen-sink:stable
     ports:
       - "9000:8888"
@@ -26,3 +29,15 @@ services:
       - "${DEEPFORGE_DEPLOYMENT_DIR}/../config/components.json:/deepforge/config/components.json"
     depends_on:
       - mongo
+
+  language_servers:
+    image: deepforge/language-servers:latest
+    ports:
+      - "5000:5000"
+    volumes:
+      - "${DEEPFORGE_DEPLOYMENT_DIR}:/.deployment"
+      - "/tmp/python-models:/tmp/python-models"
+    entrypoint: /.deployment/langserver-entrypoint.sh
+    depends_on:
+      - server
+      - server_stable

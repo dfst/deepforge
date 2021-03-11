@@ -6,6 +6,8 @@ define([
     'underscore',
     'js/Utils/ComponentSettings',
     './MonacoThemesProvider',
+    './DeepForgeLanguageClient',
+    './TextEditorWidget.langServersHelper',
     'text!./MonacoLanguages.json',
     'vs/editor/editor.main',
     'jquery-contextMenu',
@@ -14,15 +16,17 @@ define([
     _,
     ComponentSettings,
     MonacoThemesProvider,
-    MonacoLanguages,
+    DeepforgeLanguageClient,
+    LanguageServersHelper,
+    MonacoLanguages
 ) {
     'use strict';
 
     const WIDGET_CLASS = 'text-editor';
 
     MonacoLanguages = JSON.parse(MonacoLanguages);
-
     const AVAILABLE_KEYBINDINGS = ['default', 'vim'];
+
 
     const TextEditorWidget = function (logger, container, config={}) {
         this.logger = logger.fork('Widget');
@@ -34,7 +38,8 @@ define([
         this.model = this.getModel(monacoURI, value);
         this.model.updateOptions({
             tabSize: 4,
-            insertSpaces: true
+            insertSpaces: true,
+            trimAutoWhitespace: true
         });
 
         const displayMiniMap = config.displayMiniMap !== false;
@@ -68,7 +73,27 @@ define([
 
         this.nodes = {};
         this._initialize();
+
+        if (this.isLanguageServerAvailable(this.language)) {
+            this._initializeLanguageClient();
+        }
         this.logger.debug('ctor finished');
+    };
+
+    TextEditorWidget.prototype.constructor = TextEditorWidget;
+    Object.assign(TextEditorWidget.prototype, LanguageServersHelper);
+
+    TextEditorWidget.prototype._initializeLanguageClient = function () {
+        this.languageClient = new DeepforgeLanguageClient(
+            this.editor,
+            this.getLanguageServerHostName(this.language),
+            {
+                language: this.language,
+                rootUri: this.getWorkspaceURIFor(this.language),
+                socket: {},
+                initializationOptions: this.getInitializationOptionsFor(this.language)
+            }
+        );
     };
 
     TextEditorWidget.prototype.getModel = function(monacoURI, value) {
@@ -83,7 +108,7 @@ define([
     TextEditorWidget.prototype._getMonacoURI = function () {
         const modelSuffix = Math.random().toString(36).substring(2, 15);
         return monaco.Uri.parse(
-            `inmemory://model_${modelSuffix}.${MonacoLanguages[this.language].extensions[0]}`
+            `file:///tmp/python-models/model_${modelSuffix}.${MonacoLanguages[this.language].extensions[0]}`
         );
     };
 

@@ -1,0 +1,29 @@
+FROM continuumio/anaconda3:2019.10
+
+LABEL maintainer1.name="Brian Broll"\
+      maintainer1.email="brain.broll@gmail.com"
+
+LABEL maintainer2.name="Umesh Timalsina"\
+      maintainer2.email="umesh.timalsina@vanderbilt.edu"
+
+EXPOSE 5000
+
+ENV PORT 5000
+
+RUN apt-get update && curl -sL https://deb.nodesource.com/setup_12.x | bash - &&\
+ apt-get install -y nodejs && apt-get install unzip
+
+RUN npm install -g npm && npm -g config set user root && npm install -g jsonrpc-ws-proxy js-yaml
+
+COPY utils/install-microsoft-python-langserver.sh .
+
+COPY docker/create-servers-yml.js .
+
+COPY .deployment/languageServers.json .deployment/
+
+RUN ./install-microsoft-python-langserver.sh && npm link js-yaml &&\
+ node ./create-servers-yml.js && rm create-servers-yml.js
+
+RUN python -m pip install tensorflow==1.14 keras==2.2.5 matplotlib==3.2.2 simplejson==3.17.2
+
+ENTRYPOINT jsonrpc-ws-proxy --port $PORT --languageServers languageServers.yml

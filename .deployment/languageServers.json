@@ -1,0 +1,18 @@
+{
+  "hostName": "https://langservers.deepforge.org",
+  "servers": {
+    "python": {
+      "command": "Microsoft.Python.LanguageServer",
+      "init": {
+        "interpreter": {
+          "properties": {
+            "InterpreterPath": "/opt/conda/bin/python3"
+          },
+          "code": "import func",
+          "item": "functools"
+        }
+      },
+      "workspace": "/tmp/python-models/"
+    }
+  }
+}

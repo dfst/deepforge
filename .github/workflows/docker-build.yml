@@ -4,6 +4,11 @@ on:
   push:
     branches:
       - master
+
+  pull_request:
+    branches:
+      - master
+
   release:
     types:
       - published
@@ -27,7 +32,7 @@ jobs:
         run: |
           echo "TAG=latest" >> $GITHUB_ENV
           echo "RELEASE_TAG=$(echo ${GITHUB_REF:11})" >> $GITHUB_ENV
-        if: github.event_name == 'push'
+
 
       - name: Publish to docker hub (server)
         uses: elgohr/Publish-Docker-Github-Action@master
@@ -35,7 +40,7 @@ jobs:
           name: deepforge/server
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-          tags: "${{ env.TAG }},${{ env.RELEASE_TAG }}"
+          tags: "1908-pyls-integration"
           dockerfile: docker/Dockerfile
 
       - name: Publish to docker hub (kitchen-sink)
@@ -45,9 +50,20 @@ jobs:
           name: deepforge/kitchen-sink
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-          tags: "${{ env.TAG }},${{ env.RELEASE_TAG }}"
+          tags: "1908-pyls-integration"
           dockerfile: docker/Dockerfile.kitchensink
-          buildargs: "TAG=${{ env.TAG }}"
+          buildargs: "TAG=1908-pyls-integration"
+
+      - name: Publish to docker hub (language-servers)
+        uses: elgohr/Publish-Docker-Github-Action@master
+
+        with:
+          name: deepforge/language-servers
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          tags: latest
+          dockerfile: docker/Dockerfile.langservers
+
 
       - name: Deploy (dev.deepforge.org)
         uses: appleboy/ssh-action@master
@@ -58,9 +74,8 @@ jobs:
           port: ${{ secrets.PORT }}
           passphrase: ${{ secrets.PASSPHRASE }}
           script: |
-            rm -rf deepforge && git clone git@github.com:deepforge-dev/deepforge && cd deepforge
+            rm -rf deepforge && git clone git@github.com:deepforge-dev/deepforge && cd deepforge && git checkout -b 1908-pyls-integration origin/1908-pyls-integration
             chmod +x ./.deployment/deploy-deepforge && ./.deployment/deploy-deepforge
-        if: github.event_name == 'push'
 
       - name: Deploy (editor.deepforge.org)
         uses: appleboy/ssh-action@master
