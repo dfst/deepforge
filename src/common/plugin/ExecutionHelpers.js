@@ -41,17 +41,8 @@ define([
             await setPointers;
 
             // Copy the data I/O
-            const metaTypeComparator = (a, b) => {
-                const aId = this.core.getPath(this.core.getMetaType(a));
-                const bId = this.core.getPath(this.core.getMetaType(b));
-
-                return aId < bId ? -1 : 1;
-            };
-
-            const srcCntrs = (await this.core.loadChildren(node))
-                .sort(metaTypeComparator);
-            const [dstInput, dstOutput] = (await this.core.loadChildren(snapshot))
-                .sort(metaTypeComparator);
+            const srcCntrs = await this.getInputOutputContainers(node);
+            const [dstInput, dstOutput] = await this.getInputOutputContainers(snapshot);
 
             const [srcInputs, srcOutputs] = (await Promise.all(srcCntrs.map(ctr => this.core.loadChildren(ctr))));
 
@@ -68,6 +59,22 @@ define([
             const oldNewPairs = _.zip(srcInputs.concat(srcOutputs), copies);
             oldNewPairs.push([node, snapshot]);
             return {snapshot, pairs: oldNewPairs};
+        }
+
+        async getInputOutputContainers (node) {
+            const nodePriority = node => {
+                const metaName = this.core.getAttribute(this.core.getMetaType(node), 'name').toLowerCase();
+                if (metaName === 'inputs') {
+                    return 1;
+                } else if (metaName === 'outputs') {
+                    return 2;
+                }
+                return 3;
+            };
+            const metaTypeComparator = (node1, node2) => nodePriority(node1) < nodePriority(node2) ? -1 : 1;
+
+            return (await this.core.loadChildren(node))
+                .sort(metaTypeComparator);
         }
 
         getInheritedAncestors (node) {
