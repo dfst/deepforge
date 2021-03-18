@@ -1,17 +1,18 @@
 /* globals define */
+
 (function(root, factory){
     if(typeof define === 'function' && define.amd) {
-        define([], function(){
-            return factory();
+        define(['path', 'module'], function(path, module){
+            const __dirname = path.dirname(module.uri);
+            return factory(require(__dirname + '/../routers/SciServerAuth/Tokens'));
         });
     } else if(typeof module === 'object' && module.exports) {
-        module.exports = factory();
+        module.exports = factory(require('../routers/SciServerAuth/Tokens'));
     } else {
-        root.CONSTANTS = factory();
+        root.SciServerAuth = factory();
     }
-}(this, function() {
+}(this, function(TokenStorage) {
     const isBrowser = typeof window !== 'undefined';
-    const TokenStorage = isBrowser ? null : require('../routers/SciServerAuth/Tokens');
 
     async function getTokenBrowser(ssUser) {
         const url = `/routers/SciServerAuth/${ssUser}/token`;
