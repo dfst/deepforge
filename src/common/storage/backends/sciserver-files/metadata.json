@@ -4,23 +4,19 @@
         {
             "name": "username",
             "displayName": "Username",
-            "description": "SciServer username",
+            "description": "SciServer account to use",
             "value": "",
-            "valueType": "string",
+            "valueType": "stringX",
+            "valueItemsURL": "/routers/SciServerAuth",
+            "extraValueItems": [
+                {
+                    "name": "Link account...",
+                    "type": "URL",
+                    "value": "https://apps.sciserver.org/login-portal/login?callbackUrl=<%= window.location.origin %>/routers/SciServerAuth/register"
+                }
+            ],
             "readOnly": false,
             "isAuth": true
-        },
-        {
-            "name": "password",
-            "displayName": "Password",
-            "description": "SciServer password",
-            "value": "",
-            "valueType": "string",
-            "readOnly": false,
-            "isAuth": true,
-            "options": {
-                "isPassword": true
-            }
         },
         {
             "name": "volume",
