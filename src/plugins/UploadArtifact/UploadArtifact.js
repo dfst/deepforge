@@ -2,12 +2,10 @@
 /*eslint-env node, browser*/
 
 define([
-    'deepforge/storage/index',
     'text!./metadata.json',
     'plugin/PluginBase',
     'deepforge/plugin/Artifacts',
 ], function (
-    Storage,
     pluginMetadata,
     PluginBase,
     Artifacts
