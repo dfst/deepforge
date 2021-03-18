@@ -1,11 +1,9 @@
 const {getSciServerPassword, getSciServerUsername, login} = require('./sciserver');
-const TokenStorage = require('../../../src/routers/SciServerAuth/Tokens');
 
 async function getSciServerFilesConfig() {
     const username = getSciServerUsername();
     const password = getSciServerPassword();
-    const token = await login(username, password);
-    await TokenStorage.register(undefined, username, token);
+    await login(username, password);
     const volume = `${username}/deepforge_test`;
     const volumePool = 'Temporary';
 
