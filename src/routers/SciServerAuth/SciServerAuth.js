@@ -2,7 +2,10 @@
 
 const express = require('express');
 const router = express.Router();
-const login = require('../../common/sciserver-auth');
+const fetch = require('node-fetch');
+const TokenStorage = require('./tokens');
+let gmeConfig;
+let storage;
 
 /**
  * Called when the server is created but before it starts to listening to incoming requests.
@@ -19,28 +22,61 @@ const login = require('../../common/sciserver-auth');
  * @param {object} middlewareOpts.workerManager - Spawns and keeps track of "worker" sub-processes.
  */
 function initialize(middlewareOpts) {
+    gmeConfig = middlewareOpts.gmeConfig;
+    const getUserId = req => {
+        return middlewareOpts.getUserId(req) || gmeConfig.authentication.guestAccount;
+    };
     const logger = middlewareOpts.logger.fork('SciServerAuth');
+    storage = require('../storage')(logger, gmeConfig);
 
     logger.debug('initializing ...');
 
-    router.post('/token', async function (req, res/*, next*/) {
-        const {username, password} = req.body;
+    router.get('/register', async function (req, res) {
+        const {token} = req.query;
+        const userId = getUserId(req);
         try {
-            const token = await login(username, password);
-            res.status(200).send(token);
+            const name = await getUsername(token);
+            await TokenStorage.register(userId, name, token);
+            res.status(200).send(`SciServer account "${name}" is now accessible from DeepForge for the next 24 hours.`);
         } catch (err) {
             res.status(500).send(err.message);
+        }
+    });
+
+    router.get('/', async function (req, res) {
+        const userId = getUserId(req);
+        const names = await TokenStorage.getUsernames(userId);
+        return res.json(names);
+    });
+
+    router.get('/:name/token', async function (req, res) {
+        const userId = getUserId(req);
+        const {name} = req.params;
+        try {
+            return res.send(await TokenStorage.getToken(userId, name));
+        } catch (err) {
+            const statusCode = err instanceof TokenStorage.NotFoundError ? 404 : 500;
+            return res.status(statusCode).send(err.message);
         }
     });
 
     logger.debug('ready');
 }
 
+async function getUsername(token) {
+    const url = `https://apps.sciserver.org/login-portal/keystone/v3/tokens/${token}`;
+    const response = await fetch(url);
+    const data = await response.json();
+    return data.token.user.name;
+}
+
 /**
  * Called before the server starts listening.
  * @param {function} callback
  */
-function start(callback) {
+async function start(callback) {
+    const db = await storage;
+    TokenStorage.init(gmeConfig, db);
     callback();
 }
 

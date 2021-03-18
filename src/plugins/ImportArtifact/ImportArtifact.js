@@ -51,6 +51,7 @@ define([
 
     ImportArtifact.prototype.symLink = async function(path, storage) {
         const {id, config} = storage;
+        config.userId = this.getUserId();
         const srcStorage = await Storage.getBackend(id).getClient(this.logger, config);
         return await srcStorage.stat(path);
     };

@@ -7,7 +7,7 @@
     "class": "glyphicon glyphicon-transfer",
     "src": ""
   },
-  "disableServerSideExecution": false,
+  "disableServerSideExecution": true,
   "disableBrowserSideExecution": false,
   "writeAccessRequired": true,
   "configStructure": [

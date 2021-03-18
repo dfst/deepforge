@@ -4,13 +4,12 @@ define([
     'deepforge/sciserver-auth',
 ], function (
     StorageClient,
-    login,
+    getToken,
 ) {
     const BASE_URL = 'https://apps.sciserver.org/fileservice/api/';
     const SciServerFiles = function (id, name, logger, config = {}) {
         StorageClient.apply(this, arguments);
         this.username = config.username;
-        this.password = config.password;
         this.volumePool = config.volumePool || 'Storage';
         this.volume = (config.volume || '').replace(/^Storage\//, '');
     };
@@ -84,7 +83,7 @@ define([
     };
 
     SciServerFiles.prototype.fetch = async function (action, url, opts = {}) {
-        const token = await login(this.username, this.password);
+        const token = await getToken(this.username, this.userId);
         opts.headers = opts.headers || {};
         opts.headers['X-Auth-Token'] = token;
         try {

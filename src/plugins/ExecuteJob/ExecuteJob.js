@@ -164,6 +164,7 @@ define([
     ExecuteJob.prototype.createComputeClient = function () {
         const config = this.getCurrentConfig();
         const backend = Compute.getBackend(config.compute.id);
+        config.compute.config.userId = this.getUserId();
         if (config.compute.id === 'gme') {
             config.compute.config.webgmeToken = this.blobClient.webgmeToken;  // HACK
         }
@@ -218,6 +219,7 @@ define([
     ExecuteJob.prototype.getStorageClient = async function () {
         const {storage} = this.getCurrentConfig();
         const backend = Storage.getBackend(storage.id);
+        storage.config.userId = this.getUserId();
         return await backend.getClient(this.logger, storage.config);
     };
 
@@ -235,6 +237,7 @@ define([
     ExecuteJob.prototype.getStorageClientForInputData = async function (dataInfo) {
         const configDict = await this.getInputStorageConfigs();
         const config = configDict[JSON.stringify(dataInfo)];
+        config.userId = this.getUserId();
         const client = await Storage.getClient(dataInfo.backend, null, config);
         return client;
     };

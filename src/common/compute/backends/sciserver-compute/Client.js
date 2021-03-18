@@ -17,7 +17,7 @@ define([
     module,
     path,
     fetch,
-    login,
+    getToken,
     PREPARE_AND_RUN,
 ) {
     const Headers = fetch.Headers;
@@ -26,7 +26,6 @@ define([
         constructor(logger, blobClient, config) {
             super(logger, blobClient, config);
             this.username = config.username;
-            this.password = config.password;
             this.computeDomain = config.computeDomain;
             this.previousJobState = {};
             this.consoleOutputLen = {};
@@ -66,7 +65,6 @@ define([
             const metadata = await this.blobClient.getMetadata(hash);
             const config =  {
                 username: this.username,
-                password: this.password,
                 volume: `${this.username}/scratch`,
                 volumePool: 'Temporary'
             };
@@ -117,7 +115,7 @@ define([
         }
 
         async token () {
-            return login(this.username, this.password);
+            return getToken(this.username, this.userId);
         }
 
         async getJobState (jobInfo) {
@@ -234,11 +232,10 @@ define([
         _getStorageConfigAndDataInfo (filepath) {
             const dirs = filepath.split('/').slice(4);
             let [volumePool, owner, volume] = dirs.slice(0, 3);
-            const password = this.password;
             volume = owner + '/' + volume;
             const filename = dirs.slice(3).join('/');
             return {
-                config: {username: this.username, volumePool, password, volume},
+                config: {username: this.username, volumePool, volume},
                 dataInfo: {
                     data: {filename, volume, volumePool}
                 }
