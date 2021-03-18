@@ -1,12 +1,15 @@
-const {getSciServerPassword, getSciServerUsername} = require('./sciserver');
+const {getSciServerPassword, getSciServerUsername, login} = require('./sciserver');
+const TokenStorage = require('../../../src/routers/SciServerAuth/Tokens');
 
-function getSciServerFilesConfig() {
+async function getSciServerFilesConfig() {
     const username = getSciServerUsername();
     const password = getSciServerPassword();
+    const token = await login(username, password);
+    await TokenStorage.register(undefined, username, token);
     const volume = `${username}/deepforge_test`;
     const volumePool = 'Temporary';
 
-    return {username, password, volume, volumePool};
+    return {username, volume, volumePool};
 }
 
 function getS3Config() {
@@ -22,7 +25,7 @@ module.exports = async function() {
     const configs = {};
     configs['gme'] = {};
 
-    configs['sciserver-files'] = getSciServerFilesConfig();
+    configs['sciserver-files'] = await getSciServerFilesConfig();
     configs['s3'] = getS3Config();
 
     return configs;
