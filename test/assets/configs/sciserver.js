@@ -1,3 +1,4 @@
+const TokenStorage = require('../../../src/routers/SciServerAuth/Tokens');
 const fetch = require('node-fetch');
 const Headers = fetch.Headers;
 
@@ -9,7 +10,7 @@ function getSciServerPassword() {
     return process.env.SCISERVER_PASSWORD;
 }
 
-async function login(username, password) {
+async function getToken(username, password) {
     const LOGIN_URL = 'https://apps.sciserver.org/login-portal/keystone/v3/tokens';
     const url = `${LOGIN_URL}?TaskName=DeepForge.Authentication.Login`;
     const opts = {
@@ -21,6 +22,11 @@ async function login(username, password) {
     };
     const response = await fetch(url, opts);
     return response.headers.get('X-Subject-Token');
+}
+
+async function login(username, password) {
+    const token = await getToken(username, password);
+    await TokenStorage.register(undefined, username, token);
 }
 
 function getLoginBody(username, password) {
