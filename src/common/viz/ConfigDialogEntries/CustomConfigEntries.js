@@ -2,12 +2,16 @@
 /* eslint-env browser */
 
 define([
-    'deepforge/storage/index'
+    'js/Controls/PropertyGrid/Widgets/StringWidget',
+    'deepforge/storage/index',
+    'underscore',
 ], function (
-    Storage
+    StringWidget,
+    Storage,
+    _,
 ) {
     const SECTION_HEADER = $('<h6 class="config-section-header">');
-    const CUSTOM_WIDGET_TYPES = ['dict', 'section', 'group', 'userAsset'];
+    const CUSTOM_WIDGET_TYPES = ['dict', 'section', 'group', 'userAsset', 'stringX'];
 
     class CustomConfigEntries {
         section(configEntry) {
@@ -16,12 +20,12 @@ define([
             return {el: sectionHeader};
         }
 
-        group(configEntry, config) {
+        async group(configEntry, config) {
             const widget = {el: null};
             widget.el = $('<div>', {class: configEntry.name});
-            const entries = configEntry.valueItems.map(item => {
-                return this.getEntryForProperty(item, config);
-            });
+            const entries = await Promise.all(
+                configEntry.valueItems.map(item => this.getEntryForProperty(item, config))
+            );
 
             entries.forEach(entry => widget.el.append(entry.el));
 
@@ -48,7 +52,7 @@ define([
             return {widget, el: widget.el};
         }
 
-        dict(configEntry, config) {
+        async dict(configEntry, config) {
             const widget = {el: null, active: null};
             widget.el = $('<div>', {class: configEntry.name});
 
@@ -56,11 +60,10 @@ define([
             const valueItemsDict = {};
             for (let i = 0; i < configEntry.valueItems.length; i++) {
                 const valueItem = configEntry.valueItems[i];
-                const entries = valueItem.configStructure
-                    .map(item => {
-                        const entry = this.getEntryForProperty(item, config);
-                        return entry;
-                    });
+                const entries = await Promise.all(
+                    valueItem.configStructure
+                        .map(item => this.getEntryForProperty(item, config))
+                );
 
                 entries.forEach(entry => {
                     if (i > 0) {
@@ -83,7 +86,7 @@ define([
                 valueType: 'string',
                 valueItems: itemNames
             };
-            const selector = this.getEntryForProperty(configForKeys);
+            const selector = await this.getEntryForProperty(configForKeys);
 
             widget.active = defaultValue;
             widget.onSetSelector = value => {
@@ -128,7 +131,7 @@ define([
             return {widget, el: widget.el};
         }
 
-        userAsset(configEntry, config) {
+        async userAsset(configEntry, config) {
             const widget = {el: null, active: null};
             const storageOpts = this._getStorageOpts();
             widget.el = $('<div>', {class: configEntry.name});
@@ -137,8 +140,8 @@ define([
                 displayName: configEntry.displayName,
                 valueType: 'file'
             };
-            const browserAssetWidget = this.getEntryForProperty(browserAssetConfig, config);
-            const storageWidget = this.getEntryForProperty(storageOpts, config);
+            const browserAssetWidget = await this.getEntryForProperty(browserAssetConfig, config);
+            const storageWidget = await this.getEntryForProperty(storageOpts, config);
             widget.el.append(browserAssetWidget.el);
             widget.el.append(storageWidget.el);
 
@@ -165,6 +168,77 @@ define([
             };
 
             return {widget, el: widget.el};
+        }
+
+        async stringX(configEntry) {
+            const stringEntry = Object.assign({}, configEntry);
+            stringEntry.valueType = 'string';
+            if (configEntry.valueItemsURL) {
+                const valueItems = await this._fetchValueItems(configEntry);
+                stringEntry.valueItems = valueItems;
+                if (!stringEntry.value && valueItems.length) {
+                    stringEntry.value = valueItems[0];
+                }
+            } else if (configEntry.extraValueItems) {
+                stringEntry.valueItems = stringEntry.valueItems || [];
+            }
+
+            const widget = await this.getEntryForProperty(stringEntry);
+            if (configEntry.valueItemsURL) {
+                const $dropdown = widget.el.find('select');
+                const updateDropdown = async () => {
+                    const valueItems = await this._fetchValueItems(configEntry);
+                    $dropdown.empty();
+                    const [dropdown] = $dropdown;
+                    valueItems.forEach(value => {
+                        const opt = document.createElement('option');
+                        opt.innerText = value;
+                        dropdown.appendChild(opt);
+                    });
+
+                    if (configEntry.extraValueItems) {
+                        if (!valueItems.length) {
+                            const opt = document.createElement('option');
+                            opt.innerText = '';
+                            dropdown.appendChild(opt);
+                        }
+                        this._addExtraValueItems(widget, configEntry);
+                    }
+                };
+                $dropdown.on('focus', _.throttle(updateDropdown, 1000));
+            }
+
+            return {widget, el: widget.el};
+        }
+
+        async _fetchValueItems(configEntry) {
+            const response = await fetch(configEntry.valueItemsURL);
+            return await response.json();
+        }
+
+        async _addExtraValueItems(widget, configEntry) {
+            const [dropdown] = widget.el.find('select');
+            configEntry.extraValueItems.forEach(item => {
+                if (item.type !== 'URL') {
+                    throw new Error('Unsupported extra value item for ' + JSON.stringify(configEntry));
+                }
+                const opt = document.createElement('option');
+                const url = _.template(item.value)({window});
+                opt.innerText = item.name;
+                opt.setAttribute('data-url', url);
+                opt.style = 'font-style: italic;';
+                dropdown.appendChild(opt);
+            });
+            dropdown.onchange = event => {
+                const selectedOption = [].find.call(
+                    event.target.children,
+                    opt => opt.value === event.target.value
+                );
+                const url = selectedOption && selectedOption.getAttribute('data-url');
+                if (url) {
+                    window.open(url, '_blank');
+                }
+            };
         }
 
         _getStorageOpts() {

@@ -90,7 +90,7 @@ define([
         return deferred.promise;
     };
 
-    ConfigDialog.prototype._initDialog = function(metadata, prevConfig, options) {
+    ConfigDialog.prototype._initDialog = async function(metadata, prevConfig, options) {
         this._dialog = $(pluginConfigDialogTemplate);
 
         this._btnSave = this._dialog.find('.btn-save');
@@ -108,7 +108,7 @@ define([
         this._title = this._modalHeader.find('.modal-title');
         this._title.text(config.title);
 
-        this.generateConfigSection(metadata, prevConfig);
+        await this.generateConfigSection(metadata, prevConfig);
     };
 
     ConfigDialog.prototype.getDialogConfig = function(metadata, options) {
@@ -217,12 +217,12 @@ define([
         return settings;
     };
 
-    ConfigDialog.prototype.generateConfigSection = function (metadata, prevConfig, htmlClass) {
-        const html = this.getConfigHtml(metadata, prevConfig, htmlClass);
+    ConfigDialog.prototype.generateConfigSection = async function (metadata, prevConfig, htmlClass) {
+        const html = await this.getConfigHtml(metadata, prevConfig, htmlClass);
         this._divContainer.append(html);
     };
 
-    ConfigDialog.prototype.getConfigHtml = function (metadata, prevConfig, htmlClass) {
+    ConfigDialog.prototype.getConfigHtml = async function (metadata, prevConfig, htmlClass) {
         var len = metadata.configStructure.length,
             pluginConfigEntry,
             pluginSectionEl = PLUGIN_CONFIG_SECTION_BASE.clone(),
@@ -247,7 +247,7 @@ define([
             }
 
             const config = prevConfig && prevConfig[metadata.id];
-            const entry = this.getEntryForProperty(pluginConfigEntry, config);
+            const entry = await this.getEntryForProperty(pluginConfigEntry, config);
             if (pluginConfigEntry.valueType === 'section') {
                 if (i > 0) {
                     const {name} = pluginConfigEntry;
@@ -266,10 +266,10 @@ define([
         return html;
     };
 
-    ConfigDialog.prototype.getEntryForProperty = function (configEntry, prevConfig = {}) {
+    ConfigDialog.prototype.getEntryForProperty = async function (configEntry, prevConfig = {}) {
         let entry = null;
         if (CustomConfigEntries.isCustomEntryValueType(configEntry.valueType)) {
-            entry = this._customEntriesManager[configEntry.valueType](configEntry, prevConfig);
+            entry = await this._customEntriesManager[configEntry.valueType](configEntry, prevConfig);
         } else {
             const widget = this.getWidgetForProperty(configEntry);
             const el = ENTRY_BASE.clone();
