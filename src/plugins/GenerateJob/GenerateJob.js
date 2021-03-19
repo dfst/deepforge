@@ -3,29 +3,23 @@
 
 define([
     './templates/index',
-    'q',
     'underscore',
     'deepforge/Constants',
     'deepforge/plugin/Operation',
     'deepforge/OperationCode',
     'deepforge/CodeGenerator',
     'deepforge/plugin/GeneratedFiles',
-    'deepforge/storage/index',
-    'common/util/assert',
     'text!./metadata.json',
     'plugin/PluginBase',
     'module'
 ], function (
     Templates,
-    Q,
     _,
     CONSTANTS,
     OperationHelpers,
     OperationCode,
     CodeGenerator,
     GeneratedFiles,
-    Storage,
-    assert,
     pluginMetadata,
     PluginBase,
     module

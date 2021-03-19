@@ -2,17 +2,16 @@
 /*eslint-env node, browser*/
 
 define([
-    'plugin/PluginConfig',
     'text!./metadata.json',
     'plugin/PluginBase',
     'deepforge/storage/index',
     'deepforge/plugin/Artifacts'
 ], function (
-    PluginConfig,
     pluginMetadata,
     PluginBase,
     Storage,
-    Artifacts) {
+    Artifacts
+) {
     'use strict';
 
     pluginMetadata = JSON.parse(pluginMetadata);
