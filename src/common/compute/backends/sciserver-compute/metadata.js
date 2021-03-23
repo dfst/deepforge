@@ -1,6 +1,8 @@
 /*globals define*/
 define([
+    'deepforge/sciserver-auth',
 ], function(
+    fetchToken,
 ) {
     return {
         name: 'SciServer Compute',
@@ -34,5 +36,10 @@ define([
                 ]
             }
         ],
+        prepare: async config => {
+            const token = await fetchToken(config.username);
+            config.token = token;
+            return config;
+        }
     };
 });
