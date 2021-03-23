@@ -2,12 +2,11 @@
 
 (function(root, factory){
     if(typeof define === 'function' && define.amd) {
-        define(['path', 'module'], function(path, module){
-            const __dirname = path.dirname(module.uri);
-            return factory(require(__dirname + '/../routers/SciServerAuth/Tokens'));
+        define([], function(){
+            return factory();
         });
     } else if(typeof module === 'object' && module.exports) {
-        module.exports = factory(require('../routers/SciServerAuth/Tokens'));
+        module.exports = factory();
     } else {
         root.SciServerAuth = factory();
     }
