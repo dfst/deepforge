@@ -208,7 +208,7 @@ define([
                 $dropdown.on('focus', _.throttle(updateDropdown, 1000));
             }
 
-            return {widget, el: widget.el};
+            return widget;
         }
 
         async _fetchValueItems(configEntry) {
