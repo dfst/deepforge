@@ -1,7 +1,7 @@
 /*globals define, requirejs */
 (function() {
     const COMPUTE_BACKENDS = ['gme', 'local', 'sciserver-compute'];
-    const metadataPath = name => `deepforge/compute/backends/${name}/metadata.js`;
+    const metadataPath = name => `deepforge/compute/backends/${name}/metadata`;
     define([
         'module',
         'deepforge/compute/backends/ComputeBackend',
