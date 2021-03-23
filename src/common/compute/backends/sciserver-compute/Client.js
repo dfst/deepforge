@@ -231,7 +231,12 @@ define([
             volume = owner + '/' + volume;
             const filename = dirs.slice(3).join('/');
             return {
-                config: {username: this.username, volumePool, volume},
+                config: {
+                    username: this.username,
+                    token: this.token,
+                    volumePool,
+                    volume
+                },
                 dataInfo: {
                     data: {filename, volume, volumePool}
                 }
