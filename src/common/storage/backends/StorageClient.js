@@ -10,10 +10,9 @@ define([
         require.nodeRequire('node-fetch');
     const Headers = require.isBrowser ? window.Headers : fetch.Headers;
     const stream = require.isBrowser ? null : require.nodeRequire('stream');
-    const StorageClient = function(id, name, logger, config) {
+    const StorageClient = function(id, name, logger) {
         this.id = id;
         this.name = name;
-        this.userId = config.userId;
         if (!logger) {
             logger = Logger.create(`gme:storage:${id}`, gmeConfig.client.log);
         }

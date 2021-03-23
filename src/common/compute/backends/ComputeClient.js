@@ -2,9 +2,8 @@
 define([], function() {
 
     class ComputeClient {
-        constructor (logger, blobClient, config={}) {
+        constructor (logger, blobClient) {
             this.logger = logger.fork('compute');
-            this.userId = config.userId;
             this.blobClient = blobClient;
             this._events = {};
         }
