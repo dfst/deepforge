@@ -44,8 +44,7 @@
                 throw new Error(`Compute backend not found: ${id}`);
             }
 
-            const relativePath = `backends/${id}/metadata.json`;
-            const metadata = JSON.parse(requirejs(`text!deepforge/compute/${relativePath}`));
+            const metadata = requirejs(metadataPath(id));
             metadata.id = id;
             return metadata;
         };
