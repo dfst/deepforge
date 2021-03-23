@@ -38,16 +38,14 @@ define([
     };
 
     Execute.prototype.runExecutionPlugin = async function(pluginId, activeNode) {
-        var deferred = Q.defer(),
-            context = this.client.getCurrentPluginContext(pluginId),
-            node = activeNode || this.client.getNode(this._currentNodeId);
-
         if (this.client.getBranchStatus() !== this.client.CONSTANTS.BRANCH_STATUS.SYNC) {
 
             Materialize.toast('Cannot execute operations when client is out-of-sync', 2000);
             return;
         }
 
+        const context = this.client.getCurrentPluginContext(pluginId);
+        const node = activeNode || this.client.getNode(this._currentNodeId);
         context.managerConfig.namespace = 'pipeline';
         context.managerConfig.activeNode = node.getId();
 
@@ -140,6 +138,7 @@ define([
             .find(metadata => metadata.name === allConfigs[pluginId].compute.name)
             .id;
 
+        const deferred = Q.defer();
         const onPluginInitiated = (sender, event) => {
             this.client.removeEventListener(this._client.CONSTANTS.PLUGIN_INITIATED, onPluginInitiated);
             const {executionId} = event;
