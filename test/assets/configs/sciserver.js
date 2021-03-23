@@ -27,6 +27,7 @@ async function getToken(username, password) {
 async function login(username, password) {
     const token = await getToken(username, password);
     await TokenStorage.register(undefined, username, token);
+    return token;
 }
 
 function getLoginBody(username, password) {
