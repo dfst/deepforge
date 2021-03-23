@@ -9,6 +9,7 @@ define([
     'deepforge/api/JobOriginClient',
     'deepforge/Constants',
     'panel/FloatingActionButton/styles/Materialize',
+    'underscore',
 ], function(
     Q,
     Compute,
@@ -18,6 +19,7 @@ define([
     JobOriginClient,
     CONSTANTS,
     Materialize,
+    _,
 ) {
 
     var Execute = function(client, logger) {
@@ -152,6 +154,24 @@ define([
             onPluginInitiated
         );
 
+        // Prepare configurations
+        const inputPairs = await Promise.all(inputConfigs.map(async pair => {
+            const [node] = pair;
+            const {backend} = JSON.parse(node.getAttribute('data'));
+            const config = context.pluginConfig.inputs[node.getId()];
+            return [node.getId(), await Storage.prepareConfig(backend, config)];
+        }));
+        context.pluginConfig.inputs = _.object(inputPairs);
+        context.pluginConfig.storage.config = await Storage.prepareConfig(
+            context.pluginConfig.storage.id,
+            context.pluginConfig.storage.config
+        );
+        context.pluginConfig.compute.config = await Compute.prepareConfig(
+            context.pluginConfig.compute.id,
+            context.pluginConfig.compute.config
+        );
+
+        // Run plugins
         this.client.runServerPlugin(pluginId, context, (err, result) => {
             const name = node.getAttribute('name');
             let msg = err ? `${name} failed!` : `${name} executed successfully!`,

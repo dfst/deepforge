@@ -93,13 +93,29 @@ define([
         return await backend.getClient(logger, config);
     };
 
+    Storage.prepareConfig = async function(id, config) {
+        const backend = this.getBackend(id);
+        return backend.prepareConfig(config);
+    };
+
     Storage.getClient = async function(id, logger, config={}) {
         const backend = this.getBackend(id);
         return await backend.getClient(logger, config);
     };
 
     function deepCopy(obj) {
-        return JSON.parse(JSON.stringify(obj));
+        if (Array.isArray(obj)) {
+            return obj.slice();
+        } else if (typeof obj === 'object') {
+            const result = {};
+            Object.entries(obj).forEach(entry => {
+                const [key, val] = entry;
+                result[key] = deepCopy(val);
+            });
+            return result;
+        } else {
+            return obj;
+        }
     }
 
     return Storage;
