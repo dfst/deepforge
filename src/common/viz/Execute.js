@@ -9,6 +9,7 @@ define([
     'deepforge/api/JobOriginClient',
     'deepforge/Constants',
     'panel/FloatingActionButton/styles/Materialize',
+    'underscore',
 ], function(
     Q,
     Compute,
@@ -18,6 +19,7 @@ define([
     JobOriginClient,
     CONSTANTS,
     Materialize,
+    _,
 ) {
 
     var Execute = function(client, logger) {
@@ -38,16 +40,14 @@ define([
     };
 
     Execute.prototype.runExecutionPlugin = async function(pluginId, activeNode) {
-        var deferred = Q.defer(),
-            context = this.client.getCurrentPluginContext(pluginId),
-            node = activeNode || this.client.getNode(this._currentNodeId);
-
         if (this.client.getBranchStatus() !== this.client.CONSTANTS.BRANCH_STATUS.SYNC) {
 
             Materialize.toast('Cannot execute operations when client is out-of-sync', 2000);
             return;
         }
 
+        const context = this.client.getCurrentPluginContext(pluginId);
+        const node = activeNode || this.client.getNode(this._currentNodeId);
         context.managerConfig.namespace = 'pipeline';
         context.managerConfig.activeNode = node.getId();
 
@@ -140,6 +140,7 @@ define([
             .find(metadata => metadata.name === allConfigs[pluginId].compute.name)
             .id;
 
+        const deferred = Q.defer();
         const onPluginInitiated = (sender, event) => {
             this.client.removeEventListener(this._client.CONSTANTS.PLUGIN_INITIATED, onPluginInitiated);
             const {executionId} = event;
@@ -152,6 +153,24 @@ define([
             onPluginInitiated
         );
 
+        // Prepare configurations
+        const inputPairs = await Promise.all(inputConfigs.map(async pair => {
+            const [node] = pair;
+            const {backend} = JSON.parse(node.getAttribute('data'));
+            const config = context.pluginConfig.inputs[node.getId()];
+            return [node.getId(), await Storage.prepareConfig(backend, config)];
+        }));
+        context.pluginConfig.inputs = _.object(inputPairs);
+        context.pluginConfig.storage.config = await Storage.prepareConfig(
+            context.pluginConfig.storage.id,
+            context.pluginConfig.storage.config
+        );
+        context.pluginConfig.compute.config = await Compute.prepareConfig(
+            context.pluginConfig.compute.id,
+            context.pluginConfig.compute.config
+        );
+
+        // Run plugins
         this.client.runServerPlugin(pluginId, context, (err, result) => {
             const name = node.getAttribute('name');
             let msg = err ? `${name} failed!` : `${name} executed successfully!`,

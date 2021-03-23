@@ -55,7 +55,8 @@ define([
             if (deleteDataFromStorage) {
                 const dataInfo = this.getDataInfo(node);
                 const {backend} = dataInfo;
-                const storage = await Storage.getClient(backend, this._logger, config);
+                const preparedConfig = await Storage.prepareConfig(backend, config);
+                const storage = await Storage.getClient(backend, this._logger, preparedConfig);
                 await storage.deleteFile(dataInfo);
             }
 

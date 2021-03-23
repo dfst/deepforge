@@ -39,6 +39,11 @@
             return new ComputeBackend(id, metadata);
         };
 
+        Compute.prepareConfig = async function(id, config) {
+            const backend = this.getBackend(id);
+            return backend.prepareConfig(config);
+        };
+
         Compute.getMetadata = function(id) {
             id = id.toLowerCase();
             if (!COMPUTE_BACKENDS.includes(id)) {

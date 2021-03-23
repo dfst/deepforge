@@ -10,6 +10,7 @@ define([
             this.name = name;
             this.dashboardPath = dashboard;
             this.clientPath = client || './Client';
+            this._metadata = metadata;
         }
 
         getClient (logger, blobClient, config) {
@@ -28,6 +29,13 @@ define([
             } else {
                 return null;
             }
+        }
+
+        async prepareConfig (config) {
+            if (this._metadata.prepare) {
+                return await this._metadata.prepare(config);
+            }
+            return config;
         }
 
         require (path) {  // helper for loading async
