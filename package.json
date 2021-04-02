@@ -72,11 +72,12 @@
     "mocha": "^2.2.5",
     "mockery": "^1.7.0",
     "nodemon": "^1.9.2",
-    "skulpt": "^0.11.1",
     "rollup": "^2.3.4",
     "rollup-plugin-livereload": "^1.0.0",
     "rollup-plugin-svelte": "^5.0.3",
     "rollup-plugin-terser": "^5.1.2",
-    "svelte": "^3.0.0"
+    "skulpt": "^0.11.1",
+    "svelte": "^3.0.0",
+    "webpack": "^5.30.0"
   }
 }
