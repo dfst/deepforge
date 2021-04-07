@@ -1,3 +1,4 @@
 name: deepforge
 dependencies:
   - python=3.7
+  - pip=21.0.1
