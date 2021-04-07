@@ -1,6 +1,7 @@
 name: deepforge
 dependencies:
   - python=3.7
+  - pip=21.0.1
   - pip:
       - pillow
       - matplotlib==3.2.2
