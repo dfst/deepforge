@@ -22,6 +22,7 @@ gracefulFs.gracefulify(fs);
 myServer = new webgme.standaloneServer(gmeConfig);
 myServer.start(function (err) {
     if (err) {
+        console.error(err);
         process.exit(1);
     }
 
