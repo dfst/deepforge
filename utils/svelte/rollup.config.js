@@ -5,7 +5,6 @@ import livereload from 'rollup-plugin-livereload';
 import { terser } from 'rollup-plugin-terser';
 
 const production = !process.env.ROLLUP_WATCH;
-const VIZ_ROOT = 'src/visualizers/widgets';
 
 export default [
     {
@@ -55,12 +54,12 @@ export default [
         }
     },
     {
-        input: `${VIZ_ROOT}/TrainKeras/TrainDashboard.svelte`,
+        input: `src/visualizers/widgets/TrainKeras/TrainDashboard.svelte`,
         output: {
             sourcemap: true,
             format: 'amd',
             name: 'app',
-            file: `${VIZ_ROOT}/TrainKeras/build/TrainDashboard.js`
+            file: `src/visualizers/widgets/TrainKeras/build/TrainDashboard.js`
         },
         plugins: [
             svelte({
@@ -69,7 +68,7 @@ export default [
                 // we'll extract any component CSS out into
                 // a separate file - better for performance
                 css: css => {
-                    css.write(`${VIZ_ROOT}/TrainKeras/build/TrainDashboard.css`);
+                    css.write(`TrainDashboard.css`);
                 }
             }),
 
