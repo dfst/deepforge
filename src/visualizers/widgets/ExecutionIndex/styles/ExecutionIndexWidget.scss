@@ -2,6 +2,17 @@
  * This file is for any scss that you may want for this visualizer.
  */
 
-.execution-index {
-  outline: none;
+.execution-index.panel-body {
+    padding: 0;
+}
+
+.execution-index .left {
+  position: absolute;
+  background-color: #eee;
+  overflow-y: scroll;
+}
+
+.execution-index .right {
+  position: absolute;
+  background-color: #eee;
 }
