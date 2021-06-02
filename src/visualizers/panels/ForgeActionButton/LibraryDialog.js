@@ -57,10 +57,28 @@ define([
             row.append(data);
 
             icon.text('clear');
-            icon.on('click', () => this.uninstall(libraryInfo));
+            icon.on('click', () => {
+                icon.remove();
+                row.removeClass('success');
+
+                badge.text('Uninstalling');
+                badge.css('font-style', 'italic');
+                row.addClass('warning');
+                this.uninstall(libraryInfo);
+            });
         } else {
             icon.text('get_app');
-            icon.on('click', () => this.import(libraryInfo));
+            icon.on('click', () => {
+                icon.remove();
+                row.addClass('warning');
+                let badge = $('<span>');
+                badge.css('font-style', 'italic');
+                badge.text('Installing');
+                data.append(badge);
+                badge.addClass('new badge');
+                row.append($('<td>'));
+                this.import(libraryInfo);
+            });
         }
         data = $('<td>');
         data.append(icon);
